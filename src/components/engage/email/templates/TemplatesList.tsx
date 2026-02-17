@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
+import { EngageButton } from '../../shared/EngageButton';
+import { EngageDialogHeader } from '../../shared/EngageDialogHeader';
 
 const VARIABLES = [
   { key: 'first_name', label: 'First Name' },
@@ -204,9 +206,9 @@ export const TemplatesList = () => {
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">{templates.length} templates</p>
         {canEdit && (
-          <Button size="sm" onClick={() => openEditor()}>
+          <EngageButton size="sm" onClick={() => openEditor()}>
             <Plus className="h-4 w-4 mr-1" /> New Template
-          </Button>
+          </EngageButton>
         )}
       </div>
 
@@ -268,8 +270,8 @@ export const TemplatesList = () => {
 
       {/* Editor Dialog */}
       <Dialog open={showEditor} onOpenChange={setShowEditor}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
-          <DialogHeader><DialogTitle>{editingId ? 'Edit Template' : 'Create Email Template'}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <EngageDialogHeader icon={FileText} title={editingId ? 'Edit Template' : 'Create Email Template'} gradientFrom="from-blue-400" gradientTo="to-cyan-400" iconColor="text-blue-400" />
           <div className="space-y-3">
             <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div>
@@ -312,9 +314,9 @@ export const TemplatesList = () => {
                 </div>
               </TabsContent>
             </Tabs>
-            <Button onClick={() => saveTemplate.mutate()} disabled={!form.name || !form.subject} className="w-full">
+            <EngageButton onClick={() => saveTemplate.mutate()} disabled={!form.name || !form.subject} className="w-full">
               {editingId ? 'Update Template' : 'Create Template'}
-            </Button>
+            </EngageButton>
           </div>
         </DialogContent>
       </Dialog>
@@ -322,12 +324,12 @@ export const TemplatesList = () => {
       {/* Test Send Modal */}
       <Dialog open={!!showTestSend} onOpenChange={() => setShowTestSend(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Send Test Email</DialogTitle></DialogHeader>
+          <EngageDialogHeader icon={Send} title="Send Test Email" gradientFrom="from-emerald-400" gradientTo="to-teal-400" iconColor="text-emerald-400" />
           <div className="space-y-3">
             <div><Label>Recipient Email</Label><Input type="email" value={testEmail} onChange={e => setTestEmail(e.target.value)} placeholder="you@example.com" /></div>
-            <Button onClick={() => showTestSend && testSend.mutate(showTestSend)} disabled={!testEmail || testSend.isPending} className="w-full">
+            <EngageButton onClick={() => showTestSend && testSend.mutate(showTestSend)} disabled={!testEmail || testSend.isPending} className="w-full">
               <Send className="h-3.5 w-3.5 mr-1" /> Send Test
-            </Button>
+            </EngageButton>
           </div>
         </DialogContent>
       </Dialog>

@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Shield, Search, Download, Eye, User, FileText, Zap, Settings } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { motion } from 'framer-motion';
+import { EngageButton } from '../shared/EngageButton';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 
 const resourceIcons: Record<string, any> = {
   template: FileText,
@@ -87,9 +89,9 @@ export const AuditLog = () => {
             </h3>
             <p className="text-sm text-muted-foreground">Security-grade who/what/when tracking</p>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV} disabled={filtered.length === 0}>
+          <EngageButton variant="outline" size="sm" onClick={exportCSV} disabled={filtered.length === 0}>
             <Download className="h-3.5 w-3.5 mr-1" /> Export
-          </Button>
+          </EngageButton>
         </div>
       </motion.div>
 
@@ -170,8 +172,8 @@ export const AuditLog = () => {
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-        <DialogContent className="max-w-lg bg-card/95 backdrop-blur-xl border-border/50">
-          <DialogHeader><DialogTitle>Audit Event Details</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg">
+          <EngageDialogHeader icon={Shield} title="Audit Event Details" gradientFrom="from-amber-400" gradientTo="to-orange-400" iconColor="text-amber-400" />
           {selectedLog && (
             <div className="space-y-3">
               <GlassCard className="p-3">

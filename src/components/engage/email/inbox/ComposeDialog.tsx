@@ -78,7 +78,7 @@ export const ComposeDialog: React.FC<ComposeDialogProps> = ({ open, onOpenChange
         workspace_id: currentWorkspaceId!,
         thread_id: thread.id,
         direction: 'outbound',
-        from_email: '',
+        from_email: 'noreply@engage.app',
         to_email: to.trim(),
         subject,
         body_html: bodyHtml,

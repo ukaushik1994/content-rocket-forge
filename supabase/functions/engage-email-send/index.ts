@@ -35,6 +35,20 @@ async function getResendKey(supabase: any, workspaceId: string): Promise<string 
   }
 }
 
+async function getProviderSettings(supabase: any, workspaceId: string) {
+  try {
+    const { data } = await supabase
+      .from("email_provider_settings")
+      .select("provider, config, from_name, from_email")
+      .eq("workspace_id", workspaceId)
+      .limit(1)
+      .single();
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 async function updateCampaignStats(supabase: any, campaignId: string) {
   if (!campaignId) return;
   try {
@@ -76,9 +90,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Fetch queued messages WITHOUT requiring email_provider_settings join
     const { data: messages, error: fetchErr } = await supabase
       .from("email_messages")
-      .select("*, email_provider_settings!inner(provider, config, from_name, from_email)")
+      .select("*")
       .eq("status", "queued")
       .limit(50);
 
@@ -91,12 +106,25 @@ Deno.serve(async (req) => {
     let failed = 0;
     const campaignIds = new Set<string>();
 
-    // Get unsubscribe base URL
+    // Cache provider settings per workspace to avoid repeated lookups
+    const settingsCache = new Map<string, any>();
+
     const baseUrl = Deno.env.get("SUPABASE_URL")!;
 
     for (const msg of messages) {
       try {
+        // Get provider settings for this workspace (cached)
+        let providerSettings = settingsCache.get(msg.workspace_id);
+        if (providerSettings === undefined) {
+          providerSettings = await getProviderSettings(supabase, msg.workspace_id);
+          settingsCache.set(msg.workspace_id, providerSettings);
+        }
+
         const resendKey = await getResendKey(supabase, msg.workspace_id);
+
+        // Determine sender info
+        const fromName = providerSettings?.from_name || "Engage";
+        const fromEmail = providerSettings?.from_email || "noreply@example.com";
 
         // Inject unsubscribe link if contact_id exists
         let bodyHtml = msg.body_html || "";
@@ -116,12 +144,12 @@ Deno.serve(async (req) => {
           unsubHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
         }
 
-        if (resendKey && msg.email_provider_settings?.provider === "resend") {
+        if (resendKey) {
           const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
             body: JSON.stringify({
-              from: `${msg.email_provider_settings.from_name} <${msg.email_provider_settings.from_email}>`,
+              from: `${fromName} <${fromEmail}>`,
               to: [msg.to_email],
               subject: msg.subject,
               html: bodyHtml,
@@ -139,6 +167,8 @@ Deno.serve(async (req) => {
             status: "sent", sent_at: new Date().toISOString(), provider_message_id: resData.id,
           }).eq("id", msg.id);
         } else {
+          // No Resend key — mark as sent (mock delivery for dev/demo)
+          console.warn(`No Resend key for workspace ${msg.workspace_id}, marking as sent without delivery`);
           await supabase.from("email_messages").update({
             status: "sent", sent_at: new Date().toISOString(),
           }).eq("id", msg.id);
@@ -159,7 +189,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update campaign stats for all affected campaigns
     for (const cid of campaignIds) {
       await updateCampaignStats(supabase, cid);
     }

@@ -10,6 +10,7 @@ import { Search, Send, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
+import { EngageDialogHeader } from '../../shared/EngageDialogHeader';
 
 const statusBadge: Record<string, { color: string; icon: any }> = {
   sent: { color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', icon: CheckCircle },
@@ -93,8 +94,8 @@ export const SentList = () => {
 
       {/* Detail dialog */}
       <Dialog open={!!detail} onOpenChange={() => setDetail(null)}>
-        <DialogContent className="max-w-lg bg-card/95 backdrop-blur-xl border-border/50">
-          <DialogHeader><DialogTitle>Email Details</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg">
+          <EngageDialogHeader icon={Send} title="Email Details" gradientFrom="from-emerald-400" gradientTo="to-teal-400" iconColor="text-emerald-400" />
           {detail && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-2 text-xs">
