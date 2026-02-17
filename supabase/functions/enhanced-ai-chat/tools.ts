@@ -1,6 +1,6 @@
 /**
  * Tool Functions for AI Function Calling
- * Provides data fetching and campaign intelligence tools for AI
+ * Provides data fetching, campaign intelligence, and action tools for AI
  */
 
 import { 
@@ -13,6 +13,36 @@ import {
   ENGAGE_TOOL_NAMES,
   executeEngageIntelligenceTool
 } from './engage-intelligence-tool.ts';
+
+import {
+  CONTENT_ACTION_TOOL_DEFINITIONS,
+  CONTENT_ACTION_TOOL_NAMES,
+  executeContentActionTool
+} from './content-action-tools.ts';
+
+import {
+  KEYWORD_ACTION_TOOL_DEFINITIONS,
+  KEYWORD_ACTION_TOOL_NAMES,
+  executeKeywordActionTool
+} from './keyword-action-tools.ts';
+
+import {
+  OFFERINGS_ACTION_TOOL_DEFINITIONS,
+  OFFERINGS_ACTION_TOOL_NAMES,
+  executeOfferingsActionTool
+} from './offerings-action-tools.ts';
+
+import {
+  ENGAGE_ACTION_TOOL_DEFINITIONS,
+  ENGAGE_ACTION_TOOL_NAMES,
+  executeEngageActionTool
+} from './engage-action-tools.ts';
+
+import {
+  CROSS_MODULE_TOOL_DEFINITIONS,
+  CROSS_MODULE_TOOL_NAMES,
+  executeCrossModuleTool
+} from './cross-module-tools.ts';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -248,11 +278,16 @@ const CAMPAIGN_TOOLS = CAMPAIGN_INTELLIGENCE_TOOL_DEFINITIONS;
 // Engage intelligence tools (imported from dedicated module)
 const ENGAGE_TOOLS = ENGAGE_TOOL_DEFINITIONS;
 
-// Export combined tool definitions
+// Export combined tool definitions (READ + WRITE tools)
 export const TOOL_DEFINITIONS = [
   ...CORE_TOOL_DEFINITIONS,
   ...CAMPAIGN_TOOLS,
-  ...ENGAGE_TOOLS
+  ...ENGAGE_TOOLS,
+  ...CONTENT_ACTION_TOOL_DEFINITIONS,
+  ...KEYWORD_ACTION_TOOL_DEFINITIONS,
+  ...OFFERINGS_ACTION_TOOL_DEFINITIONS,
+  ...ENGAGE_ACTION_TOOL_DEFINITIONS,
+  ...CROSS_MODULE_TOOL_DEFINITIONS
 ];
 
 // List of campaign tool names for routing
@@ -315,6 +350,41 @@ export async function executeToolCall(
           console.log(`[TOOL] ${toolName} | Routing to engage intelligence handler`);
           const engageResult = await executeEngageIntelligenceTool(toolName, toolArgs, supabase, userId);
           return { data: engageResult, error: null };
+        }
+
+        // Route content action tools
+        if (CONTENT_ACTION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to content action handler`);
+          const result = await executeContentActionTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
+
+        // Route keyword action tools
+        if (KEYWORD_ACTION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to keyword action handler`);
+          const result = await executeKeywordActionTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
+
+        // Route offerings action tools
+        if (OFFERINGS_ACTION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to offerings action handler`);
+          const result = await executeOfferingsActionTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
+
+        // Route engage action tools
+        if (ENGAGE_ACTION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to engage action handler`);
+          const result = await executeEngageActionTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
+
+        // Route cross-module tools
+        if (CROSS_MODULE_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to cross-module handler`);
+          const result = await executeCrossModuleTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
         }
         
         switch (toolName) {
