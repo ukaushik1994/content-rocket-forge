@@ -1987,6 +1987,13 @@ serve(async (req) => {
     const toolCalls = data?.choices?.[0]?.message?.tool_calls;
 
     // ✅ Handle tool calls if AI requested them
+    // Destructive tools that require user confirmation
+    const DESTRUCTIVE_TOOLS = [
+      'delete_content_item', 'delete_solution',
+      'send_email_campaign', 'send_quick_email',
+      'toggle_automation', 'activate_journey'
+    ];
+
     if (toolCalls && toolCalls.length > 0) {
       console.log(`🔧 AI requested ${toolCalls.length} tool calls`);
       
@@ -1999,6 +2006,27 @@ serve(async (req) => {
         const toolStart = Date.now();
         
         console.log(`[TOOL] ${toolName} | user: ${user.id} | params:`, toolArgs);
+
+        // Check if this is a destructive action needing confirmation
+        // The user can bypass by including "CONFIRMED:" prefix in their message
+        const userMessage = messages[messages.length - 1]?.content || '';
+        const isConfirmed = userMessage.startsWith('CONFIRMED:');
+        
+        if (DESTRUCTIVE_TOOLS.includes(toolName) && !isConfirmed) {
+          console.log(`[TOOL] ${toolName} | BLOCKED - requires user confirmation`);
+          toolResults.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: toolName,
+            content: JSON.stringify({
+              requires_confirmation: true,
+              action: toolName,
+              args: toolArgs,
+              message: `This action (${toolName}) requires your confirmation before executing. Please confirm to proceed.`
+            })
+          });
+          continue;
+        }
         
         try {
           const toolData = await executeToolCall(toolName, toolArgs, supabase, user.id, toolCache);

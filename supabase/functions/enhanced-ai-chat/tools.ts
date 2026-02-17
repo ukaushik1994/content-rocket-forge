@@ -299,6 +299,72 @@ const CAMPAIGN_TOOL_NAMES = [
   'retry_failed_content'
 ];
 
+// Write tool names that should trigger cache invalidation
+const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
+  // Content actions invalidate content reads
+  create_content_item: ['get_content_items', 'get_seo_scores'],
+  update_content_item: ['get_content_items', 'get_seo_scores'],
+  delete_content_item: ['get_content_items', 'get_seo_scores'],
+  submit_for_review: ['get_content_items'],
+  approve_content: ['get_content_items'],
+  reject_content: ['get_content_items'],
+  generate_full_content: ['get_content_items', 'get_seo_scores'],
+  // Keyword actions invalidate keyword reads
+  add_keywords: ['get_keywords'],
+  remove_keywords: ['get_keywords'],
+  trigger_serp_analysis: ['get_serp_analysis'],
+  create_topic_cluster: ['get_keywords'],
+  // Offerings actions invalidate solution/competitor reads
+  create_solution: ['get_solutions'],
+  update_solution: ['get_solutions'],
+  delete_solution: ['get_solutions'],
+  update_company_info: [],
+  add_competitor: ['get_competitors', 'get_competitor_solutions'],
+  update_competitor: ['get_competitors'],
+  trigger_competitor_analysis: ['get_competitors'],
+  // Engage actions invalidate engage reads
+  create_contact: ['get_engage_contacts'],
+  update_contact: ['get_engage_contacts'],
+  tag_contacts: ['get_engage_contacts'],
+  create_segment: ['get_engage_segments'],
+  create_email_campaign: ['get_engage_email_campaigns'],
+  send_email_campaign: ['get_engage_email_campaigns'],
+  create_journey: ['get_engage_journeys'],
+  activate_journey: ['get_engage_journeys'],
+  create_automation: ['get_engage_automations'],
+  toggle_automation: ['get_engage_automations'],
+  // Cross-module
+  promote_content_to_campaign: ['get_campaign_intelligence', 'get_content_items'],
+  content_to_email: ['get_engage_email_campaigns'],
+  campaign_content_to_engage: ['get_engage_email_campaigns'],
+  repurpose_for_social: [],
+};
+
+/**
+ * Invalidate cache entries for related read tools after a write operation
+ */
+function invalidateCacheForWrite(
+  toolName: string,
+  userId: string,
+  cache: Map<string, { data: any; timestamp: number }>
+) {
+  const toolsToInvalidate = WRITE_TOOL_CACHE_INVALIDATION[toolName];
+  if (!toolsToInvalidate || toolsToInvalidate.length === 0) return;
+
+  let invalidated = 0;
+  for (const key of cache.keys()) {
+    for (const readTool of toolsToInvalidate) {
+      if (key.startsWith(`${readTool}:${userId}:`)) {
+        cache.delete(key);
+        invalidated++;
+      }
+    }
+  }
+  if (invalidated > 0) {
+    console.log(`[CACHE] Invalidated ${invalidated} entries after ${toolName}`);
+  }
+}
+
 /**
  * Execute a tool call with caching support
  */
@@ -538,8 +604,13 @@ export async function executeToolCall(
     return [];
   }
   
-  // Cache result (except serp_analysis)
-  if (toolName !== 'get_serp_analysis' && result.data) {
+  // Invalidate related caches after write operations
+  if (toolName in WRITE_TOOL_CACHE_INVALIDATION) {
+    invalidateCacheForWrite(toolName, userId, cache);
+  }
+
+  // Cache result (except serp_analysis and write tools)
+  if (toolName !== 'get_serp_analysis' && !(toolName in WRITE_TOOL_CACHE_INVALIDATION) && result.data) {
     const cacheKey = `${toolName}:${userId}:${JSON.stringify(toolArgs)}`;
     cache.set(cacheKey, { data: result.data, timestamp: Date.now() });
     console.log(`[TOOL] ${toolName} | cache: STORED`);
