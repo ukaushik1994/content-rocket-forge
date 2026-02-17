@@ -1,11 +1,11 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, FunnelChart, Funnel, LabelList } from 'recharts';
-import { TrendingUp, Users, Timer, Target } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Users, Target } from 'lucide-react';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import type { Node } from '@xyflow/react';
 
@@ -22,44 +22,49 @@ export const JourneyPerformance: React.FC<JourneyPerformanceProps> = ({ journeyI
     queryFn: async () => {
       const { data } = await supabase
         .from('journey_enrollments')
-        .select('status, enrolled_at')
+        .select('id, status, enrolled_at')
         .eq('journey_id', journeyId);
       return data || [];
     },
     enabled: open && !!journeyId,
   });
 
+  const enrollmentIds = enrollments.map((e: any) => e.id);
+
+  // F7 FIX: Join through enrollment IDs
   const { data: stepCounts = {} } = useQuery<Record<string, number>>({
-    queryKey: ['journey-perf-steps', journeyId],
+    queryKey: ['journey-perf-steps', journeyId, enrollmentIds.length],
     queryFn: async () => {
+      if (enrollmentIds.length === 0) return {};
       const { data } = await supabase
-        .from('journey_steps' as any)
+        .from('journey_steps')
         .select('node_id, status')
-        .eq('journey_id', journeyId);
+        .in('enrollment_id', enrollmentIds);
       const counts: Record<string, number> = {};
-      ((data as any[]) || []).forEach((s: any) => {
+      (data || []).forEach((s: any) => {
         counts[s.node_id] = (counts[s.node_id] || 0) + 1;
       });
       return counts;
     },
-    enabled: open && !!journeyId,
+    enabled: open && !!journeyId && enrollmentIds.length > 0,
   });
 
   const { data: failedSteps = {} } = useQuery<Record<string, number>>({
-    queryKey: ['journey-perf-failures', journeyId],
+    queryKey: ['journey-perf-failures', journeyId, enrollmentIds.length],
     queryFn: async () => {
+      if (enrollmentIds.length === 0) return {};
       const { data } = await supabase
-        .from('journey_steps' as any)
+        .from('journey_steps')
         .select('node_id')
-        .eq('journey_id', journeyId)
+        .in('enrollment_id', enrollmentIds)
         .eq('status', 'failed');
       const counts: Record<string, number> = {};
-      ((data as any[]) || []).forEach((s: any) => {
+      (data || []).forEach((s: any) => {
         counts[s.node_id] = (counts[s.node_id] || 0) + 1;
       });
       return counts;
     },
-    enabled: open && !!journeyId,
+    enabled: open && !!journeyId && enrollmentIds.length > 0,
   });
 
   const totalEnrolled = enrollments.length;
@@ -67,21 +72,19 @@ export const JourneyPerformance: React.FC<JourneyPerformanceProps> = ({ journeyI
   const active = enrollments.filter((e: any) => e.status === 'active').length;
   const conversionRate = totalEnrolled > 0 ? Math.round((completed / totalEnrolled) * 100) : 0;
 
-  // Build funnel from node order
   const funnelData = nodes
     .filter(n => n.type !== 'end')
     .map(n => ({
-      name: (n.data as any)?.config?.customLabel || n.type?.replace('_', ' ') || n.id,
+      name: (n.data as any)?.config?.label || n.type?.replace('_', ' ') || n.id,
       value: stepCounts[n.id] || 0,
       failed: failedSteps[n.id] || 0,
     }))
     .sort((a, b) => b.value - a.value);
 
-  // Drop-off per node
   const dropOffData = nodes
     .filter(n => n.type !== 'end' && n.type !== 'trigger')
     .map(n => ({
-      name: (n.data as any)?.config?.customLabel || n.type?.replace('_', ' ') || '',
+      name: (n.data as any)?.config?.label || n.type?.replace('_', ' ') || '',
       passed: stepCounts[n.id] || 0,
       failed: failedSteps[n.id] || 0,
     }));
@@ -91,7 +94,6 @@ export const JourneyPerformance: React.FC<JourneyPerformanceProps> = ({ journeyI
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <EngageDialogHeader icon={TrendingUp} title="Journey Performance" gradientFrom="from-emerald-400" gradientTo="to-blue-400" iconColor="text-emerald-400" />
 
-        {/* Summary */}
         <div className="grid grid-cols-4 gap-3">
           {[
             { label: 'Enrolled', value: totalEnrolled, icon: Users, color: 'text-primary' },
@@ -111,7 +113,6 @@ export const JourneyPerformance: React.FC<JourneyPerformanceProps> = ({ journeyI
           ))}
         </div>
 
-        {/* Funnel */}
         <GlassCard className="p-4">
           <h4 className="text-sm font-semibold text-foreground mb-3">Conversion Funnel</h4>
           {funnelData.length > 0 && funnelData.some(d => d.value > 0) ? (
@@ -129,7 +130,6 @@ export const JourneyPerformance: React.FC<JourneyPerformanceProps> = ({ journeyI
           )}
         </GlassCard>
 
-        {/* Drop-off table */}
         <GlassCard className="p-4">
           <h4 className="text-sm font-semibold text-foreground mb-3">Drop-off per Node</h4>
           <div className="space-y-1">

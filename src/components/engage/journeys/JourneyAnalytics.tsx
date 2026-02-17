@@ -1,11 +1,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Users, TrendingDown, Clock, BarChart3 } from 'lucide-react';
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, BarChart, Bar } from 'recharts';
+import { Users, TrendingDown, BarChart3 } from 'lucide-react';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import type { Node } from '@xyflow/react';
@@ -23,27 +22,31 @@ export const JourneyAnalytics: React.FC<JourneyAnalyticsProps> = ({ journeyId, o
     queryFn: async () => {
       const { data } = await supabase
         .from('journey_enrollments')
-        .select('status, enrolled_at, completed_at, exited_at')
+        .select('id, status, enrolled_at, completed_at, exited_at')
         .eq('journey_id', journeyId);
       return data || [];
     },
     enabled: open && !!journeyId,
   });
 
+  // F7 FIX: Join through enrollment IDs instead of querying journey_steps by journey_id
+  const enrollmentIds = enrollments.map((e: any) => e.id);
+
   const { data: stepCounts = {} } = useQuery<Record<string, number>>({
-    queryKey: ['journey-analytics-steps', journeyId],
+    queryKey: ['journey-analytics-steps', journeyId, enrollmentIds.length],
     queryFn: async () => {
+      if (enrollmentIds.length === 0) return {};
       const { data } = await supabase
-        .from('journey_steps' as any)
+        .from('journey_steps')
         .select('node_id')
-        .eq('journey_id', journeyId);
+        .in('enrollment_id', enrollmentIds);
       const counts: Record<string, number> = {};
-      ((data as any[]) || []).forEach((s: any) => {
+      (data || []).forEach((s: any) => {
         counts[s.node_id] = (counts[s.node_id] || 0) + 1;
       });
       return counts;
     },
-    enabled: open && !!journeyId,
+    enabled: open && !!journeyId && enrollmentIds.length > 0,
   });
 
   // Enrollments over time (last 30 days)
@@ -63,7 +66,7 @@ export const JourneyAnalytics: React.FC<JourneyAnalyticsProps> = ({ journeyId, o
     return nodes
       .filter(n => n.type !== 'end')
       .map(n => ({
-        name: (n.data as any)?.config?.customLabel || n.type?.replace('_', ' ') || n.id,
+        name: (n.data as any)?.config?.label || n.type?.replace('_', ' ') || n.id,
         contacts: stepCounts[n.id] || 0,
       }))
       .sort((a, b) => b.contacts - a.contacts);

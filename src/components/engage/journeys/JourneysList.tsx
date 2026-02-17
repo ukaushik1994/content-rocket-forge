@@ -9,15 +9,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, GitBranch, ExternalLink, MoreVertical, Trash2, Play, Pause, Copy, Pencil, Users, Search, Workflow, Sparkles } from 'lucide-react';
+import { Plus, GitBranch, ExternalLink, MoreVertical, Trash2, Play, Pause, Copy, Pencil, Users, Search, Workflow, Sparkles, TrendingUp, CheckSquare, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { EngageHero } from '../shared/EngageHero';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
@@ -96,8 +97,11 @@ export const JourneysList = () => {
   const [description, setDescription] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [renameDesc, setRenameDesc] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
+  // E2: Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const { data: journeys = [], isLoading } = useQuery({
     queryKey: ['journeys', currentWorkspaceId],
@@ -112,22 +116,38 @@ export const JourneysList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  const { data: enrollmentCounts = {} } = useQuery({
-    queryKey: ['journey-enrollment-counts', currentWorkspaceId],
+  // E1: All enrollment data for analytics
+  const { data: allEnrollments = [] } = useQuery({
+    queryKey: ['journey-all-enrollments', currentWorkspaceId],
     queryFn: async () => {
       const { data } = await supabase
         .from('journey_enrollments')
-        .select('journey_id')
-        .eq('workspace_id', currentWorkspaceId!)
-        .eq('status', 'active');
-      const counts: Record<string, number> = {};
-      (data || []).forEach((e: any) => { counts[e.journey_id] = (counts[e.journey_id] || 0) + 1; });
-      return counts;
+        .select('journey_id, status')
+        .eq('workspace_id', currentWorkspaceId!);
+      return data || [];
     },
     enabled: !!currentWorkspaceId,
   });
 
-  // Node counts per journey
+  const enrollmentCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    allEnrollments.filter((e: any) => e.status === 'active').forEach((e: any) => {
+      counts[e.journey_id] = (counts[e.journey_id] || 0) + 1;
+    });
+    return counts;
+  }, [allEnrollments]);
+
+  // E1: Completion rates per journey
+  const completionRates = useMemo(() => {
+    const rates: Record<string, { total: number; completed: number }> = {};
+    allEnrollments.forEach((e: any) => {
+      if (!rates[e.journey_id]) rates[e.journey_id] = { total: 0, completed: 0 };
+      rates[e.journey_id].total++;
+      if (e.status === 'completed') rates[e.journey_id].completed++;
+    });
+    return rates;
+  }, [allEnrollments]);
+
   const { data: nodeCounts = {} } = useQuery({
     queryKey: ['journey-node-counts', currentWorkspaceId],
     queryFn: async () => {
@@ -157,24 +177,17 @@ export const JourneysList = () => {
       }).select().single();
       if (error) throw error;
 
-      // If template selected, insert template nodes and edges
       if (selectedTemplate !== null) {
         const template = journeyTemplates[selectedTemplate];
         const nodeInserts = template.nodes.map(n => ({
-          workspace_id: currentWorkspaceId!,
-          journey_id: data.id,
-          node_id: n.id,
-          type: n.type,
-          config: n.data.config || {},
-          position: n.position,
+          workspace_id: currentWorkspaceId!, journey_id: data.id, node_id: n.id,
+          type: n.type, config: n.data.config || {}, position: n.position,
         }));
         await supabase.from('journey_nodes').insert(nodeInserts);
 
         const edgeInserts = template.edges.map(e => ({
-          workspace_id: currentWorkspaceId!,
-          journey_id: data.id,
-          source_node_id: e.source,
-          target_node_id: e.target,
+          workspace_id: currentWorkspaceId!, journey_id: data.id,
+          source_node_id: e.source, target_node_id: e.target,
           condition_label: (e as any).label || null,
         }));
         await supabase.from('journey_edges').insert(edgeInserts);
@@ -233,10 +246,7 @@ export const JourneysList = () => {
         }
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['journeys'] });
-      toast.success('Journey duplicated');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['journeys'] }); toast.success('Journey duplicated'); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -249,24 +259,60 @@ export const JourneysList = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['journeys'] }),
   });
 
+  // F3: Rename now includes description
   const renameJourney = useMutation({
     mutationFn: async () => {
       if (!renamingId || !renameValue.trim()) return;
-      const { error } = await supabase.from('journeys').update({ name: renameValue.trim() }).eq('id', renamingId);
+      const { error } = await supabase.from('journeys').update({ name: renameValue.trim(), description: renameDesc || null }).eq('id', renamingId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journeys'] });
       setRenamingId(null);
-      toast.success('Journey renamed');
+      toast.success('Journey updated');
     },
   });
+
+  // E2: Bulk actions
+  const bulkAction = useMutation({
+    mutationFn: async (action: 'activate' | 'pause' | 'delete') => {
+      const ids = Array.from(selectedIds);
+      if (action === 'delete') {
+        for (const id of ids) {
+          await supabase.from('journey_nodes').delete().eq('journey_id', id);
+          await supabase.from('journey_edges').delete().eq('journey_id', id);
+          await supabase.from('journeys').delete().eq('id', id);
+        }
+      } else {
+        const status = action === 'activate' ? 'active' : 'paused';
+        await supabase.from('journeys').update({ status }).in('id', ids);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journeys'] });
+      setSelectedIds(new Set());
+      toast.success('Bulk action completed');
+    },
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const stats = {
     active: journeys.filter((j: any) => j.status === 'active').length,
     draft: journeys.filter((j: any) => j.status === 'draft').length,
     paused: journeys.filter((j: any) => j.status === 'paused').length,
   };
+
+  // E1: Global analytics
+  const totalEnrolled = allEnrollments.length;
+  const totalCompleted = allEnrollments.filter((e: any) => e.status === 'completed').length;
+  const avgCompletion = totalEnrolled > 0 ? Math.round((totalCompleted / totalEnrolled) * 100) : 0;
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
@@ -325,24 +371,27 @@ export const JourneysList = () => {
         <Input placeholder="Search journeys..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-white/[0.03] border-white/[0.06] backdrop-blur-sm" />
       </motion.div>
 
-      {/* Rename Dialog */}
+      {/* F3: Rename + Description Dialog */}
       <Dialog open={!!renamingId} onOpenChange={() => setRenamingId(null)}>
         <DialogContent className="max-w-sm">
-          <EngageDialogHeader icon={Pencil} title="Rename Journey" gradientFrom="from-purple-400" gradientTo="to-blue-400" iconColor="text-purple-400" />
+          <EngageDialogHeader icon={Pencil} title="Edit Journey" gradientFrom="from-purple-400" gradientTo="to-blue-400" iconColor="text-purple-400" />
           <div className="space-y-3">
-            <Input value={renameValue} onChange={e => setRenameValue(e.target.value)} />
+            <div><Label className="text-xs">Name</Label><Input value={renameValue} onChange={e => setRenameValue(e.target.value)} /></div>
+            <div><Label className="text-xs">Description</Label><Textarea value={renameDesc} onChange={e => setRenameDesc(e.target.value)} rows={2} placeholder="Optional description..." /></div>
             <Button onClick={() => renameJourney.mutate()} disabled={!renameValue.trim()} className="w-full">Save</Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Stats */}
+      {/* Stats + E1 Analytics */}
       {journeys.length > 0 && (
         <EngageStatGrid
           stats={[
             { label: 'Active', count: stats.active, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Play },
             { label: 'Draft', count: stats.draft, color: 'from-muted/40 to-muted/10', text: 'text-muted-foreground', icon: GitBranch },
             { label: 'Paused', count: stats.paused, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: Pause },
+            { label: 'Enrolled', count: totalEnrolled, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: Users },
+            { label: 'Completion', count: `${avgCompletion}%`, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: TrendingUp },
           ]}
         />
       )}
@@ -362,7 +411,8 @@ export const JourneysList = () => {
             <p className="font-semibold text-foreground">{searchQuery ? 'No matching journeys' : 'No journeys yet'}</p>
             <p className="text-sm text-muted-foreground">Build visual customer journeys to automate engagement</p>
           </div>
-          {canEdit && !searchQuery && <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</Button>}
+          {/* F1: EngageButton instead of plain Button */}
+          {canEdit && !searchQuery && <EngageButton size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</EngageButton>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
@@ -370,36 +420,53 @@ export const JourneysList = () => {
             const sc = statusConfig[j.status] || statusConfig.draft;
             const enrolled = enrollmentCounts[j.id] || 0;
             const nodeCount = nodeCounts[j.id] || 0;
+            const rate = completionRates[j.id];
+            const completionPct = rate && rate.total > 0 ? Math.round((rate.completed / rate.total) * 100) : null;
+            const isSelected = selectedIds.has(j.id);
             return (
               <motion.div key={j.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <GlassCard
-                  className="p-4 cursor-pointer hover:border-primary/30 hover:scale-[1.01] transition-all duration-200"
+                  className={`p-4 cursor-pointer hover:border-primary/30 hover:scale-[1.01] transition-all duration-200 ${isSelected ? 'ring-1 ring-primary/50' : ''}`}
                   onClick={() => navigate(`/engage/journeys/${j.id}`)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-medium text-foreground">{j.name}</h3>
-                        <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
-                          <span className="relative flex h-1.5 w-1.5">
-                            {sc.pulse && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${sc.dot}`} />}
-                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${sc.dot}`} />
-                          </span>
-                          {j.status}
-                        </Badge>
-                        {enrolled > 0 && (
-                          <Badge variant="secondary" className="text-[10px] gap-1">
-                            <Users className="h-2.5 w-2.5" /> {enrolled} enrolled
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* E2: Checkbox */}
+                      {canEdit && (
+                        <div onClick={e => e.stopPropagation()}>
+                          <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(j.id)} />
+                        </div>
+                      )}
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-medium text-foreground">{j.name}</h3>
+                          <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
+                            <span className="relative flex h-1.5 w-1.5">
+                              {sc.pulse && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${sc.dot}`} />}
+                              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${sc.dot}`} />
+                            </span>
+                            {j.status}
                           </Badge>
-                        )}
-                        {nodeCount > 0 && (
-                          <Badge variant="secondary" className="text-[10px] gap-1 bg-purple-500/10 text-purple-400 border-purple-500/30">
-                            <Workflow className="h-2.5 w-2.5" /> {nodeCount} nodes
-                          </Badge>
-                        )}
+                          {enrolled > 0 && (
+                            <Badge variant="secondary" className="text-[10px] gap-1">
+                              <Users className="h-2.5 w-2.5" /> {enrolled} active
+                            </Badge>
+                          )}
+                          {nodeCount > 0 && (
+                            <Badge variant="secondary" className="text-[10px] gap-1 bg-purple-500/10 text-purple-400 border-purple-500/30">
+                              <Workflow className="h-2.5 w-2.5" /> {nodeCount} nodes
+                            </Badge>
+                          )}
+                          {/* E1: Completion rate badge */}
+                          {completionPct !== null && (
+                            <Badge variant="secondary" className="text-[10px] gap-1 bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                              <TrendingUp className="h-2.5 w-2.5" /> {completionPct}% complete
+                            </Badge>
+                          )}
+                        </div>
+                        {j.description && <p className="text-xs text-muted-foreground truncate">{j.description}</p>}
+                        <p className="text-xs text-muted-foreground">{format(new Date(j.created_at), 'MMM d, yyyy')}</p>
                       </div>
-                      {j.description && <p className="text-xs text-muted-foreground truncate">{j.description}</p>}
-                      <p className="text-xs text-muted-foreground">{format(new Date(j.created_at), 'MMM d, yyyy')}</p>
                     </div>
                     <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                       {canEdit && j.status !== 'draft' && (
@@ -413,8 +480,8 @@ export const JourneysList = () => {
                             <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { setRenamingId(j.id); setRenameValue(j.name); }}>
-                              <Pencil className="h-3.5 w-3.5 mr-1" /> Rename
+                            <DropdownMenuItem onClick={() => { setRenamingId(j.id); setRenameValue(j.name); setRenameDesc(j.description || ''); }}>
+                              <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => duplicateJourney.mutate(j)}>
                               <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
@@ -434,6 +501,30 @@ export const JourneysList = () => {
           })}
         </div>
       )}
+
+      {/* E2: Bulk Action Bar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl"
+          >
+            <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
+            <EngageButton size="sm" onClick={() => bulkAction.mutate('activate')}>
+              <Play className="h-3.5 w-3.5 mr-1" /> Activate
+            </EngageButton>
+            <Button variant="outline" size="sm" onClick={() => bulkAction.mutate('pause')}>
+              <Pause className="h-3.5 w-3.5 mr-1" /> Pause
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => bulkAction.mutate('delete')}>
+              <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>Cancel</Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

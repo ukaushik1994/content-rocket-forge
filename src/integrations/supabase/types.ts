@@ -4578,6 +4578,47 @@ export type Database = {
           },
         ]
       }
+      journey_versions: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          journey_id: string
+          snapshot: Json
+          version_number: number
+          workspace_id: string
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journey_id: string
+          snapshot?: Json
+          version_number?: number
+          workspace_id: string
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journey_id?: string
+          snapshot?: Json
+          version_number?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_versions_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journeys: {
         Row: {
           created_at: string | null

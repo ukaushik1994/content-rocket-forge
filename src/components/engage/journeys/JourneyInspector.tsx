@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Mail, Clock, GitBranch, User, Globe, Zap, Flag, Trash2, Tag } from 'lucide-react';
+import { X, Save, Mail, Clock, GitBranch, User, Globe, Zap, Flag, Trash2, Tag, TagIcon, Tags } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,17 +20,21 @@ interface JourneyInspectorProps {
 
 const nodeIcons: Record<string, any> = {
   trigger: Zap, send_email: Mail, wait: Clock, condition: GitBranch,
-  update_contact: User, webhook: Globe, end: Flag,
+  update_contact: User, add_tag: TagIcon, remove_tag: Tags, webhook: Globe, end: Flag,
 };
 
 const nodeColors: Record<string, string> = {
   trigger: 'bg-purple-500', send_email: 'bg-blue-500', wait: 'bg-amber-500',
-  condition: 'bg-emerald-500', update_contact: 'bg-indigo-500', webhook: 'bg-pink-500', end: 'bg-gray-500',
+  condition: 'bg-emerald-500', update_contact: 'bg-indigo-500',
+  add_tag: 'bg-teal-500', remove_tag: 'bg-rose-500',
+  webhook: 'bg-pink-500', end: 'bg-gray-500',
 };
 
 const defaultLabels: Record<string, string> = {
   trigger: 'Trigger', send_email: 'Send Email', wait: 'Wait',
-  condition: 'Condition', update_contact: 'Update Contact', webhook: 'Webhook', end: 'End',
+  condition: 'Condition', update_contact: 'Update Contact',
+  add_tag: 'Add Tag', remove_tag: 'Remove Tag',
+  webhook: 'Webhook', end: 'End',
 };
 
 export const JourneyInspector = ({ node, workspaceId, onUpdate, onClose, onDeleteNode }: JourneyInspectorProps) => {
@@ -180,11 +184,12 @@ export const JourneyInspector = ({ node, workspaceId, onUpdate, onClose, onDelet
               </div>
             )}
 
+            {/* E7: Update Contact now only for set_attribute */}
             {nodeType === 'update_contact' && (
               <>
                 <div>
                   <Label className="text-xs">Action</Label>
-                  <Select value={config.action || 'add_tag'} onValueChange={v => setConfig(c => ({ ...c, action: v }))}>
+                  <Select value={config.action || 'set_attribute'} onValueChange={v => setConfig(c => ({ ...c, action: v }))}>
                     <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="add_tag">Add Tag</SelectItem>
@@ -198,6 +203,22 @@ export const JourneyInspector = ({ node, workspaceId, onUpdate, onClose, onDelet
                   <Input className="h-8 text-xs mt-1" value={config.tag || ''} onChange={e => setConfig(c => ({ ...c, tag: e.target.value }))} placeholder={config.action === 'set_attribute' ? 'key=value' : 'tag-name'} />
                 </div>
               </>
+            )}
+
+            {/* E7: Dedicated Add Tag inspector */}
+            {nodeType === 'add_tag' && (
+              <div>
+                <Label className="text-xs">Tag Name</Label>
+                <Input className="h-8 text-xs mt-1" value={config.tag || ''} onChange={e => setConfig(c => ({ ...c, tag: e.target.value }))} placeholder="e.g. vip, engaged" />
+              </div>
+            )}
+
+            {/* E7: Dedicated Remove Tag inspector */}
+            {nodeType === 'remove_tag' && (
+              <div>
+                <Label className="text-xs">Tag to Remove</Label>
+                <Input className="h-8 text-xs mt-1" value={config.tag || ''} onChange={e => setConfig(c => ({ ...c, tag: e.target.value }))} placeholder="e.g. inactive" />
+              </div>
             )}
 
             {nodeType === 'webhook' && (

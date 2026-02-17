@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Mail, Clock, GitBranch, User, Globe, Flag, Zap } from 'lucide-react';
+import { Mail, Clock, GitBranch, User, Globe, Flag, Zap, TagIcon, Tags } from 'lucide-react';
 
 const baseStyle = 'rounded-xl border border-border/50 bg-card/90 backdrop-blur-md shadow-lg min-w-[160px] transition-all duration-200 hover:shadow-xl hover:border-primary/30';
 
@@ -72,7 +72,25 @@ export const UpdateContactNode = memo(({ data, selected }: NodeProps) => (
   <NodeWrapper color="bg-indigo-500" selected={selected}>
     <Handle type="target" position={Position.Top} className="!bg-indigo-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <Handle type="source" position={Position.Bottom} className="!bg-indigo-500 !w-2.5 !h-2.5 !border-2 !border-background" />
-    <NodeLabel icon={User} label={getLabel(data, 'Update Contact')} summary={(data as any)?.config?.action || 'Add tag'} iconBg="bg-indigo-500" execCount={(data as any)?.execCount} />
+    <NodeLabel icon={User} label={getLabel(data, 'Update Contact')} summary={(data as any)?.config?.action || 'Set attribute'} iconBg="bg-indigo-500" execCount={(data as any)?.execCount} />
+  </NodeWrapper>
+));
+
+// E7: Dedicated Add Tag node
+export const AddTagNode = memo(({ data, selected }: NodeProps) => (
+  <NodeWrapper color="bg-teal-500" selected={selected}>
+    <Handle type="target" position={Position.Top} className="!bg-teal-500 !w-2.5 !h-2.5 !border-2 !border-background" />
+    <Handle type="source" position={Position.Bottom} className="!bg-teal-500 !w-2.5 !h-2.5 !border-2 !border-background" />
+    <NodeLabel icon={TagIcon} label={getLabel(data, 'Add Tag')} summary={(data as any)?.config?.tag || 'No tag'} iconBg="bg-teal-500" execCount={(data as any)?.execCount} />
+  </NodeWrapper>
+));
+
+// E7: Dedicated Remove Tag node
+export const RemoveTagNode = memo(({ data, selected }: NodeProps) => (
+  <NodeWrapper color="bg-rose-500" selected={selected}>
+    <Handle type="target" position={Position.Top} className="!bg-rose-500 !w-2.5 !h-2.5 !border-2 !border-background" />
+    <Handle type="source" position={Position.Bottom} className="!bg-rose-500 !w-2.5 !h-2.5 !border-2 !border-background" />
+    <NodeLabel icon={Tags} label={getLabel(data, 'Remove Tag')} summary={(data as any)?.config?.tag || 'No tag'} iconBg="bg-rose-500" execCount={(data as any)?.execCount} />
   </NodeWrapper>
 ));
 
@@ -97,6 +115,8 @@ export const customNodeTypes = {
   wait: WaitNode,
   condition: ConditionNode,
   update_contact: UpdateContactNode,
+  add_tag: AddTagNode,
+  remove_tag: RemoveTagNode,
   webhook: WebhookNode,
   end: EndNode,
 };
