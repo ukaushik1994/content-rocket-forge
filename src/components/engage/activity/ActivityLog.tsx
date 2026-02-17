@@ -17,6 +17,7 @@ import { motion } from 'framer-motion';
 import { EngageHero } from '../shared/EngageHero';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
+import { AIBriefingCard } from './AIBriefingCard';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { SystemHealth } from './SystemHealth';
 import { AuditLog } from './AuditLog';
@@ -157,6 +158,9 @@ export const ActivityLog = () => {
           { label: 'Journeys', count: journeyCount, color: 'from-primary/20 to-primary/5', text: 'text-primary', icon: GitBranch },
         ]}
       />
+
+      {/* AI Briefing Card */}
+      <AIBriefingCard />
 
       {/* Activity Distribution Chart */}
       {chartData.length > 0 && (
