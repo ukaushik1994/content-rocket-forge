@@ -459,7 +459,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
                     {/* Platform Summary & Quick Actions - More Spacing */}
                     <motion.div 
-                      className="grid grid-cols-1 md:grid-cols-2 gap-8" 
+                      className="space-y-6" 
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.5, duration: 0.4 }}
