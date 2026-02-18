@@ -2974,7 +2974,7 @@ serve(async (req) => {
         id: "explore-dashboard",
         label: "View Dashboard",
         type: "button", 
-        action: "navigate:/dashboard",
+        action: "navigate:/ai-chat",
         data: {}
       }];
     } else if (!actions && visualData) {
