@@ -8,8 +8,13 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
   const [blocks, setBlocks] = useState<EmailBlock[]>(initialBlocks);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [globalStyles, setGlobalStyles] = useState<GlobalStyles>(DEFAULT_GLOBAL_STYLES);
+  const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
   const historyRef = useRef<EmailBlock[][]>([initialBlocks]);
   const historyIndexRef = useRef(0);
+
+  const markDirty = useCallback(() => setIsDirty(true), []);
+  const clearDirty = useCallback(() => setIsDirty(false), []);
 
   const pushHistory = useCallback((next: EmailBlock[]) => {
     const idx = historyIndexRef.current;
@@ -18,6 +23,11 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
     if (stack.length > MAX_HISTORY) stack.shift();
     historyRef.current = stack;
     historyIndexRef.current = stack.length - 1;
+    markDirty();
+  }, [markDirty]);
+
+  const clearJustCreated = useCallback(() => {
+    setTimeout(() => setJustCreatedId(null), 400);
   }, []);
 
   const addBlock = useCallback((type: BlockType, index?: number) => {
@@ -29,12 +39,16 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
       const reordered = next.map((b, i) => ({ ...b, order: i }));
       pushHistory(reordered);
       setSelectedBlockId(block.id);
+      setJustCreatedId(block.id);
+      clearJustCreated();
       return reordered;
     });
-  }, [pushHistory]);
+  }, [pushHistory, clearJustCreated]);
 
   const removeBlock = useCallback((id: string) => {
     setBlocks(prev => {
+      const block = prev.find(b => b.id === id);
+      if (block?.locked) return prev;
       const next = prev.filter(b => b.id !== id).map((b, i) => ({ ...b, order: i }));
       pushHistory(next);
       if (selectedBlockId === id) setSelectedBlockId(null);
@@ -57,14 +71,18 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
       const source = prev[idx];
       const clone = createBlock(source.type, idx + 1);
       clone.props = { ...source.props };
+      clone.locked = false;
+      clone.hidden = source.hidden;
       const next = [...prev];
       next.splice(idx + 1, 0, clone);
       const reordered = next.map((b, i) => ({ ...b, order: i }));
       pushHistory(reordered);
       setSelectedBlockId(clone.id);
+      setJustCreatedId(clone.id);
+      clearJustCreated();
       return reordered;
     });
-  }, [pushHistory]);
+  }, [pushHistory, clearJustCreated]);
 
   const moveBlock = useCallback((fromIndex: number, toIndex: number) => {
     setBlocks(prev => {
@@ -79,6 +97,8 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
 
   const moveBlockUp = useCallback((id: string) => {
     setBlocks(prev => {
+      const block = prev.find(b => b.id === id);
+      if (block?.locked) return prev;
       const idx = prev.findIndex(b => b.id === id);
       if (idx <= 0) return prev;
       const next = [...prev];
@@ -91,6 +111,8 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
 
   const moveBlockDown = useCallback((id: string) => {
     setBlocks(prev => {
+      const block = prev.find(b => b.id === id);
+      if (block?.locked) return prev;
       const idx = prev.findIndex(b => b.id === id);
       if (idx === -1 || idx >= prev.length - 1) return prev;
       const next = [...prev];
@@ -98,6 +120,22 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
       const reordered = next.map((b, i) => ({ ...b, order: i }));
       pushHistory(reordered);
       return reordered;
+    });
+  }, [pushHistory]);
+
+  const toggleLock = useCallback((id: string) => {
+    setBlocks(prev => {
+      const next = prev.map(b => b.id === id ? { ...b, locked: !b.locked } : b);
+      pushHistory(next);
+      return next;
+    });
+  }, [pushHistory]);
+
+  const toggleHidden = useCallback((id: string) => {
+    setBlocks(prev => {
+      const next = prev.map(b => b.id === id ? { ...b, hidden: !b.hidden } : b);
+      pushHistory(next);
+      return next;
     });
   }, [pushHistory]);
 
@@ -137,6 +175,7 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
     historyRef.current = [newBlocks];
     historyIndexRef.current = 0;
     setSelectedBlockId(null);
+    setIsDirty(false);
   }, []);
 
   return {
@@ -151,6 +190,8 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
     moveBlock,
     moveBlockUp,
     moveBlockDown,
+    toggleLock,
+    toggleHidden,
     reorderBlocks,
     undo,
     redo,
@@ -161,5 +202,8 @@ export function useEmailBuilder(initialBlocks: EmailBlock[] = []) {
     loadBlocks,
     globalStyles,
     setGlobalStyles,
+    justCreatedId,
+    isDirty,
+    clearDirty,
   };
 }
