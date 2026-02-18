@@ -1,65 +1,62 @@
 
 
-# Replace Engage Sidebar with Top-Nav Dropdown
+# Navbar Restructure: Option B (Content / Marketing / Audience / Analytics)
 
-## What Changes
+## Current State (6 top-level items)
+Home | Content (dropdown) | Strategy | Campaigns | Engage (dropdown) | Analytics
 
-The Engage module currently uses a dedicated sidebar for navigating between Email, Contacts, Segments, etc. This will be replaced with a **dropdown menu on the "Engage" button** in the top navigation bar. Each item in the dropdown navigates to its own full-width standalone page (no sidebar).
+## New State (4 top-level items)
+Home | Content (dropdown) | Marketing (dropdown) | Audience (dropdown) | Analytics
 
-## Changes Overview
+## Only File Changed
+`src/components/layout/NavItems.tsx` -- nothing else is touched. All routes, pages, and layouts remain exactly as they are.
 
-### 1. Convert the "Engage" NavItem to a Dropdown (NavItems.tsx)
-Replace the current simple `NavItem` link for "Engage" with a `DropdownMenu` component. The dropdown trigger shows "Engage" with a chevron icon. The menu items are:
+## New Dropdown Structure
+
+### Content (absorbs Strategy + Keywords)
+- Builder -> `/content-type-selection`
+- Approval -> `/content-approval`
+- Repository -> `/repository`
+- Keywords -> `/keywords`
+- Strategy -> `/research/content-strategy`
+
+Active when on any of: `/content-builder`, `/content-approval`, `/glossary-builder`, `/repository`, `/drafts`, `/content-type-selection`, `/keywords`, `/research/content-strategy`
+
+### Marketing (absorbs Campaigns + distribution channels)
+- Campaigns -> `/campaigns`
 - Email -> `/engage/email`
+- Social -> `/engage/social`
+- Automations -> `/engage/automations`
+- Journeys -> `/engage/journeys`
+
+Active when on: `/campaigns` or `/engage/email`, `/engage/social`, `/engage/automations`, `/engage/journeys`
+
+### Audience (people-focused items)
 - Contacts -> `/engage/contacts`
 - Segments -> `/engage/segments`
-- Journeys -> `/engage/journeys`
-- Automations -> `/engage/automations`
-- Social -> `/engage/social`
 - Activity -> `/engage/activity`
 
-Each item will have its icon (same icons currently used in the sidebar). The trigger button will highlight when on any `/engage/*` route.
+Active when on: `/engage/contacts`, `/engage/segments`, `/engage/activity`
 
-### 2. Simplify EngageLayout (EngageLayout.tsx)
-- Remove the `EngageSidebar` import and rendering
-- Remove the sidebar flex layout (no more `flex` with sidebar + content)
-- Keep the `EngageBackground`, `WorkspaceProvider`, loading state, and breadcrumb
-- Content now renders full-width within a simple scrollable container
-
-### 3. Delete EngageSidebar (EngageSidebar.tsx)
-The sidebar component is no longer needed and will be deleted.
+### Analytics (standalone, unchanged)
+- Direct link to `/analytics`
 
 ## Technical Details
 
-### NavItems.tsx - Engage Dropdown
-Replace the single Engage `NavItem` (lines ~168-174) with a dropdown:
+### What changes in NavItems.tsx
+1. Add `/research/content-strategy` to the `contentRoutes` array so the Content dropdown highlights for Strategy too
+2. Add Strategy as a new item inside the existing Content dropdown (with Target icon)
+3. Remove the standalone Strategy `NavItem`
+4. Remove the standalone Campaigns `NavItem`
+5. Replace the Engage dropdown with two new dropdowns:
+   - **Marketing** (Megaphone icon) -- contains Campaigns, Email, Social, Automations, Journeys
+   - **Audience** (Users icon) -- contains Contacts, Segments, Activity
+6. Clean up unused icon imports if any
 
-```text
-DropdownMenu
-  DropdownMenuTrigger (styled like other nav items, with ChevronDown icon)
-    "Engage" + Send icon + chevron
-  DropdownMenuContent (solid bg-popover, high z-index)
-    DropdownMenuItem -> Link to /engage/email (Mail icon)
-    DropdownMenuItem -> Link to /engage/contacts (Users icon)
-    DropdownMenuItem -> Link to /engage/segments (Layers icon)
-    DropdownMenuItem -> Link to /engage/journeys (GitBranch icon)
-    DropdownMenuItem -> Link to /engage/automations (Zap icon)
-    DropdownMenuItem -> Link to /engage/social (Share2 icon)
-    DropdownMenuItem -> Link to /engage/activity (Activity icon)
-```
+### Icons
+- Marketing trigger: Megaphone
+- Audience trigger: Users
+- Individual items keep their current icons (Mail, Share2, Zap, GitBranch, Users, Layers, Activity, Target, etc.)
 
-### EngageLayout.tsx - Simplified
-```text
-Before: PageLayout > flex container > [EngageSidebar | Content]
-After:  PageLayout > scrollable container > [Breadcrumb + Content]
-```
-
-The background and workspace provider remain intact. Only the sidebar and its flex wrapper are removed.
-
-### Files Summary
-
-| File | Action |
-|------|--------|
-| `src/components/layout/NavItems.tsx` | Modify - replace Engage NavItem with dropdown |
-| `src/components/engage/EngageLayout.tsx` | Modify - remove sidebar, simplify layout |
-| `src/components/engage/EngageSidebar.tsx` | Delete |
+### Result
+The navbar goes from 6 items down to 4 (Home + 3 dropdowns + Analytics = 5 clickable elements), making it cleaner and more intuitive.
