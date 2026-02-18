@@ -81,7 +81,7 @@ export const RepositoryTabs = React.memo(({ onOpenDetailView }: RepositoryTabsPr
 
                   <span className="relative z-10 text-xs font-medium">{label}</span>
 
-                  {count !== undefined && count > 0 && (
+                  {count !== undefined && count > 0 ? (
                     <span className={`relative z-10 text-[10px] px-2 py-0.5 rounded-full font-medium leading-none
                       ${isActive 
                         ? 'bg-primary/20 text-primary-foreground' 
@@ -89,6 +89,8 @@ export const RepositoryTabs = React.memo(({ onOpenDetailView }: RepositoryTabsPr
                       }`}>
                       {count}
                     </span>
+                  ) : (
+                    <span className="relative z-10 h-4" aria-hidden="true" />
                   )}
                 </TabsTrigger>
               );
