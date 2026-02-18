@@ -305,34 +305,23 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         onInteract={handleSidebarInteraction}
       />
 
-      {/* Floating Sidebar Toggle - Refined */}
-      <motion.div
+      {/* Floating Sidebar Toggle */}
+      <div
         className={`fixed z-[60] transition-all duration-300 ${
           showSidebar 
             ? 'top-[4.5rem] left-[18.5rem]' 
             : 'top-20 left-4'
         }`}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
       >
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           onClick={() => setShowSidebar(!showSidebar)}
-          className={`rounded-full shadow-sm transition-all duration-200 ${
-            showSidebar
-              ? 'bg-card border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground'
-              : 'bg-card border-border/40 hover:bg-muted'
-          }`}
+          className="rounded-full border border-border/20 hover:border-border/40 hover:bg-muted/30 bg-transparent text-muted-foreground hover:text-foreground"
         >
-          <motion.div
-            animate={{ rotate: showSidebar ? 90 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Menu className="h-4 w-4" />
-          </motion.div>
+          <Menu className="h-4 w-4" />
         </Button>
-      </motion.div>
+      </div>
 
       {/* Main Content Area - Chat and Visualization side by side */}
       <div className={cn(
