@@ -52,6 +52,7 @@ export const TemplatesList = () => {
   const [showVisualBuilder, setShowVisualBuilder] = useState(false);
   const [builderBlocks, setBuilderBlocks] = useState<EmailBlock[]>([]);
   const [builderTemplateName, setBuilderTemplateName] = useState('');
+  const [builderTemplateSubject, setBuilderTemplateSubject] = useState('');
   const [showAISubjects, setShowAISubjects] = useState(false);
 
   const { data: templates = [], isLoading } = useQuery({
@@ -218,6 +219,7 @@ export const TemplatesList = () => {
           <div className="flex gap-2">
             <EngageButton variant="outline" size="sm" onClick={() => {
               setBuilderTemplateName('');
+              setBuilderTemplateSubject('');
               setEditingId(null);
               setBuilderBlocks([]);
               setShowVisualBuilder(true);
@@ -379,18 +381,20 @@ export const TemplatesList = () => {
         open={showVisualBuilder}
         onOpenChange={setShowVisualBuilder}
         initialBlocks={builderBlocks}
-        templateName={builderTemplateName || 'New Email'}
-        onSave={async (html, blocks) => {
+        templateName={builderTemplateName || ''}
+        templateSubject={builderTemplateSubject || ''}
+        onSave={async (html, blocks, meta) => {
           try {
             const variables = (html.match(/\{\{(\w+)\}\}/g) || []).map(v => v.replace(/[{}]/g, ''));
             const payload = {
               workspace_id: currentWorkspaceId!,
-              name: builderTemplateName || 'Visual Builder Template',
-              subject: 'Email Subject',
+              name: meta.name,
+              subject: meta.subject,
               body_html: html,
               body_text: html.replace(/<[^>]*>/g, ''),
-              variables: [...new Set(variables)],
+              variables: [...new Set(variables), '__builder_blocks__'],
             };
+            // Store blocks in a separate metadata update
             if (editingId) {
               const { error } = await supabase.from('email_templates').update(payload).eq('id', editingId);
               if (error) throw error;
