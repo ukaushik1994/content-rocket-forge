@@ -1,84 +1,70 @@
 
 
-# Email Builder -- Remaining Features Implementation
+# Email Builder -- Sidebar & Design Polish Pass
 
-## What's Already Done (13 of 15 features complete)
+## Problem
 
-The builder already has: rich text toolbar, between-block insert buttons, social media icons, universal padding controls, responsive HTML export, block layers panel, drag-to-resize spacer, hover animations, zoom controls, gradient backgrounds, border controls, quick-add menu, and color picker with presets.
+The left sidebar (Block Palette + Layers panel) looks utilitarian and plain. The Layers section (shown in the screenshot) is a flat, unstyled list with no visual hierarchy, no depth, and no premium feel. The overall sidebar lacks the glassmorphic, polished aesthetic that the rest of the Engage module follows.
 
-## What's Left to Implement
+## What Will Change
 
-### 1. Template Thumbnail Previews on Cards
-Currently template cards in the list show only text metadata (name, subject, variables, date). Add a small iframe-based HTML preview thumbnail so users can visually identify templates at a glance.
+### 1. Left Sidebar Container Redesign
+**File:** `EmailBuilderDialog.tsx` (line 413)
 
-**File:** `src/components/engage/email/templates/TemplatesList.tsx`
-- Add a 120px-tall iframe with `srcDoc={t.body_html}` inside each template card
-- Use `pointer-events-none` and `transform: scale(0.25)` with a fixed-size container to create a miniature preview
-- Wrap in a container with `overflow-hidden` and `aspect-ratio` for consistent sizing
+- Increase sidebar width from `w-56` (224px) to `w-64` (256px) for better breathing room
+- Add subtle gradient background instead of flat `bg-card/80`
+- Add a proper sidebar header with "Blocks" title and a collapsible Layers toggle button
+- Separate Palette and Layers into two distinct visual sections with proper headers and dividers
 
-### 2. AI Content Assistant in Visual Builder
-The AI writer dialog exists for the code editor but isn't wired into the visual builder's block inspector. Add an "AI Rewrite" button for text blocks.
+### 2. Block Palette Visual Upgrade
+**File:** `BlockPalette.tsx`
 
-**File:** `src/components/engage/email/builder/BlockInspector.tsx`
-- Add an "AI Rewrite" button (with Sparkles icon) in the `text` block section
-- The button triggers a callback (`onAIRewrite`) passed from the parent
+- Redesign palette items as a compact 2-column grid instead of a stacked list (icon + label in a card)
+- Each item gets a subtle glass-card treatment: `bg-white/5 border-white/10 backdrop-blur` with hover glow
+- Category headers get small decorative accent lines
+- Saved Blocks section gets a distinct visual treatment with a gradient accent border
 
-**File:** `src/components/engage/email/builder/EmailBuilderDialog.tsx`
-- Pass `onAIRewrite` callback to `BlockInspector`
-- Open `AIEmailWriterDialog` when triggered, with the current text block content as context
-- On AI result, call `builder.updateBlockProps(blockId, { content: aiResult })`
+### 3. Layers Panel Premium Redesign
+**File:** `BlockLayersPanel.tsx`
 
-**File:** `src/components/engage/email/templates/TemplatesList.tsx`
-- Import and render `AIEmailWriterDialog` within the visual builder context (it may already be available -- reuse the existing component)
+- Add a proper section header with a "Layers" label and block count badge
+- Each layer row gets:
+  - A numbered index indicator (1, 2, 3...) on the left
+  - Block type icon with a subtle colored background circle
+  - The block label with truncation
+  - Lock/hidden status indicators
+  - Move arrows that appear on hover with smooth transitions
+- Selected layer gets a premium highlight: gradient left border + subtle bg glow
+- Add smooth reorder animations
+- Add a subtle scrollbar styling for the list
+- Increase max-height for better usability
 
-### 3. Right-Click Context Menu on Blocks
-Add a context menu using Radix `ContextMenu` that appears on right-click with: Duplicate, Delete, Move Up, Move Down, Lock, Hide.
+### 4. Inspector Panel Header Polish
+**File:** `BlockInspector.tsx`
 
-**File:** `src/components/engage/email/builder/BlockRenderer.tsx`
-- Wrap the block's outer `motion.div` with Radix `ContextMenu` + `ContextMenuTrigger`
-- Add a `ContextMenuContent` with menu items matching the floating toolbar actions
-- Respect `locked` state (disable move/delete when locked)
-- Each item calls the same handlers already passed as props
+- Add a subtle gradient accent on the inspector header when a block is selected
+- Improve the empty state (no block selected) with a more visual "Global Styles" presentation
 
-### 4. Save as Reusable Block
-Allow users to save a configured block as a "Saved Block" for reuse across templates. Store in localStorage (no DB schema change needed).
+### 5. Canvas Background & Empty State
+**File:** `BuilderCanvas.tsx`
 
-**File:** `src/components/engage/email/builder/BlockRenderer.tsx`
-- Add a "Save as reusable" option in the toolbar (bookmark icon) and context menu
-- Calls `onSaveAsReusable(block)` callback
+- Add a subtle dot-grid pattern to the canvas background (like Figma/design tools) for a professional feel
+- Polish the empty state with better spacing and a more inviting design
 
-**File:** `src/components/engage/email/builder/BlockPalette.tsx`
-- Add a "Saved Blocks" section at the bottom of the palette
-- Read saved blocks from localStorage key `email_builder_saved_blocks`
-- Each saved block shows its type icon and a custom name
-- Click to insert, with a small "x" to remove from saved
-
-**File:** `src/components/engage/email/builder/EmailBuilderDialog.tsx`
-- Manage saved blocks state, read/write from localStorage
-- Pass `onSaveAsReusable` handler to `BlockRenderer` via `BuilderCanvas`
-- Prompt for a name via `window.prompt` when saving
-
-**File:** `src/components/engage/email/builder/BuilderCanvas.tsx`
-- Accept and pass through `onSaveAsReusable` prop to `SortableBlock` and `BlockRenderer`
+### 6. Overall Color & Spacing Consistency
+Apply consistent micro-spacing, font sizes, and the premium glassmorphic treatment across all sidebar components to match the Engage module's established visual system.
 
 ---
 
-## Technical Summary
+## Technical File Changes
 
-| File | Action | Changes |
-|------|--------|---------|
-| `TemplatesList.tsx` | Edit | Add iframe thumbnail preview to template cards |
-| `BlockInspector.tsx` | Edit | Add AI Rewrite button for text blocks |
-| `EmailBuilderDialog.tsx` | Edit | Wire AI writer dialog, saved blocks localStorage, pass new callbacks |
-| `BlockRenderer.tsx` | Edit | Add right-click context menu (Radix ContextMenu), save-as-reusable button |
-| `BuilderCanvas.tsx` | Edit | Pass through onSaveAsReusable prop |
-| `BlockPalette.tsx` | Edit | Add "Saved Blocks" section with localStorage persistence |
+| File | Changes |
+|------|---------|
+| `BlockLayersPanel.tsx` | Full redesign: numbered rows, icon backgrounds, gradient selected state, better spacing, scrollbar styling |
+| `BlockPalette.tsx` | 2-column grid layout, glass-card items, improved category headers, polished saved blocks section |
+| `EmailBuilderDialog.tsx` | Wider sidebar, gradient bg, proper section headers with Layers toggle |
+| `BlockInspector.tsx` | Gradient header accent, improved empty state |
+| `BuilderCanvas.tsx` | Dot-grid background pattern, polished empty state |
+| `GlobalStylesPanel.tsx` | Minor styling polish to match new inspector aesthetic |
 
 Total: 6 files modified, 0 new files.
-
-## Implementation Notes
-
-- The right-click context menu uses `@radix-ui/react-context-menu` which is already installed
-- Saved blocks use localStorage to avoid database schema changes -- simple and immediate
-- Template thumbnails use a scaled-down iframe approach which is lightweight and requires no server-side rendering
-- The AI integration reuses the existing `AIEmailWriterDialog` component
