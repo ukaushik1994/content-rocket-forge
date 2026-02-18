@@ -471,7 +471,7 @@ export const useEnhancedAIChatDB = () => {
             break;
           case 'keyword-research':
             console.log('🔍 Opening keyword research');
-            navigate('/research/research-hub');
+            navigate('/research/content-strategy');
             break;
           case 'content-strategy':
             console.log('📊 Opening content strategy');
@@ -484,7 +484,7 @@ export const useEnhancedAIChatDB = () => {
             navigate('/analytics');
             break;
           case 'navigate-keyword-research':
-            navigate('/research/research-hub');
+            navigate('/research/content-strategy');
             break;
           case 'navigate-strategy':
             navigate('/research/content-strategy');
