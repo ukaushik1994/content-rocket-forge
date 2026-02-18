@@ -13,6 +13,8 @@ export interface EmailBlock {
   type: BlockType;
   props: Record<string, any>;
   order: number;
+  locked?: boolean;
+  hidden?: boolean;
 }
 
 export interface BlockDefinition {
@@ -59,7 +61,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     icon: Image,
     category: 'content',
     defaultProps: {
-      url: 'https://placehold.co/600x300/e2e8f0/64748b?text=Your+Image',
+      url: '',
       alt: 'Image',
       width: '100%',
       linkUrl: '',
@@ -169,6 +171,8 @@ export function createBlock(type: BlockType, order: number): EmailBlock {
     type,
     props: { ...def.defaultProps },
     order,
+    locked: false,
+    hidden: false,
   };
 }
 

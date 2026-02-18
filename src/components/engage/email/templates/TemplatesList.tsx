@@ -291,9 +291,14 @@ export const TemplatesList = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {t.variables?.length > 0 && t.variables.map((v: string) => (
-                      <span key={v} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{`{{${v}}}`}</span>
-                    ))}
+                    {t.variables?.length > 0 && t.variables
+                      .filter((v: string) => {
+                        if (v === '__builder_blocks__') return false;
+                        try { JSON.parse(v); return false; } catch { return true; }
+                      })
+                      .map((v: string) => (
+                        <span key={v} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{`{{${v}}}`}</span>
+                      ))}
                     {usage > 0 && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">Used in {usage} campaign{usage > 1 ? 's' : ''}</span>
                     )}

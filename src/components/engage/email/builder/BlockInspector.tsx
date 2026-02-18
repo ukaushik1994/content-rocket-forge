@@ -1,5 +1,5 @@
 import React from 'react';
-import { EmailBlock, getBlockDef, BlockType } from './blockDefinitions';
+import { EmailBlock, getBlockDef } from './blockDefinitions';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,14 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Lock, Unlock, Eye, EyeOff } from 'lucide-react';
 import { GlobalStyles } from './htmlExporter';
 import { GlobalStylesPanel } from './GlobalStylesPanel';
+import { ColorPickerField } from './ColorPickerField';
 
 interface BlockInspectorProps {
   block: EmailBlock | null;
   onUpdate: (id: string, props: Record<string, any>) => void;
   onDelete: (id: string) => void;
+  onToggleLock?: (id: string) => void;
+  onToggleHidden?: (id: string) => void;
   globalStyles?: GlobalStyles;
   onUpdateGlobalStyles?: (styles: GlobalStyles) => void;
 }
@@ -37,7 +40,7 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
   </div>
 );
 
-export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate, onDelete, globalStyles, onUpdateGlobalStyles }) => {
+export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate, onDelete, onToggleLock, onToggleHidden, globalStyles, onUpdateGlobalStyles }) => {
   if (!block) {
     return (
       <div className="w-64 shrink-0 border-l border-border/50 bg-card/80 overflow-y-auto p-4">
@@ -63,8 +66,8 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
             <Field label="Logo URL"><Input className="h-8 text-xs" value={p.logoUrl} onChange={e => set('logoUrl', e.target.value)} placeholder="https://..." /></Field>
             <Field label="Alignment"><AlignmentSelect value={p.alignment} onChange={v => set('alignment', v)} /></Field>
             <Field label="Font Size"><Slider min={16} max={48} step={1} value={[p.fontSize || 28]} onValueChange={([v]) => set('fontSize', v)} /></Field>
-            <Field label="Background Color"><Input type="color" className="h-8 w-full" value={p.backgroundColor} onChange={e => set('backgroundColor', e.target.value)} /></Field>
-            <Field label="Text Color"><Input type="color" className="h-8 w-full" value={p.textColor} onChange={e => set('textColor', e.target.value)} /></Field>
+            <ColorPickerField label="Background Color" value={p.backgroundColor} onChange={v => set('backgroundColor', v)} />
+            <ColorPickerField label="Text Color" value={p.textColor} onChange={v => set('textColor', v)} />
             <Field label="Vertical Padding"><Slider min={8} max={64} step={4} value={[p.paddingY || 32]} onValueChange={([v]) => set('paddingY', v)} /></Field>
           </>
         );
@@ -74,14 +77,14 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
             <Field label="Content (HTML)"><Textarea className="text-xs min-h-[100px]" value={p.content} onChange={e => set('content', e.target.value)} /></Field>
             <Field label="Alignment"><AlignmentSelect value={p.alignment} onChange={v => set('alignment', v)} /></Field>
             <Field label="Font Size"><Slider min={10} max={24} step={1} value={[p.fontSize || 16]} onValueChange={([v]) => set('fontSize', v)} /></Field>
-            <Field label="Text Color"><Input type="color" className="h-8 w-full" value={p.textColor} onChange={e => set('textColor', e.target.value)} /></Field>
+            <ColorPickerField label="Text Color" value={p.textColor} onChange={v => set('textColor', v)} />
             <Field label="Line Height"><Slider min={1} max={2.5} step={0.1} value={[p.lineHeight || 1.6]} onValueChange={([v]) => set('lineHeight', v)} /></Field>
           </>
         );
       case 'image':
         return (
           <>
-            <Field label="Image URL"><Input className="h-8 text-xs" value={p.url} onChange={e => set('url', e.target.value)} /></Field>
+            <Field label="Image URL"><Input className="h-8 text-xs" value={p.url} onChange={e => set('url', e.target.value)} placeholder="https://..." /></Field>
             <Field label="Alt Text"><Input className="h-8 text-xs" value={p.alt} onChange={e => set('alt', e.target.value)} /></Field>
             <Field label="Link URL"><Input className="h-8 text-xs" value={p.linkUrl} onChange={e => set('linkUrl', e.target.value)} placeholder="Optional" /></Field>
             <Field label="Width"><Input className="h-8 text-xs" value={p.width} onChange={e => set('width', e.target.value)} placeholder="100% or 300px" /></Field>
@@ -94,8 +97,8 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
             <Field label="Button Text"><Input className="h-8 text-xs" value={p.text} onChange={e => set('text', e.target.value)} /></Field>
             <Field label="URL"><Input className="h-8 text-xs" value={p.url} onChange={e => set('url', e.target.value)} /></Field>
             <Field label="Alignment"><AlignmentSelect value={p.alignment} onChange={v => set('alignment', v)} /></Field>
-            <Field label="Button Color"><Input type="color" className="h-8 w-full" value={p.backgroundColor} onChange={e => set('backgroundColor', e.target.value)} /></Field>
-            <Field label="Text Color"><Input type="color" className="h-8 w-full" value={p.textColor} onChange={e => set('textColor', e.target.value)} /></Field>
+            <ColorPickerField label="Button Color" value={p.backgroundColor} onChange={v => set('backgroundColor', v)} />
+            <ColorPickerField label="Text Color" value={p.textColor} onChange={v => set('textColor', v)} />
             <Field label="Border Radius"><Slider min={0} max={24} step={1} value={[p.borderRadius || 6]} onValueChange={([v]) => set('borderRadius', v)} /></Field>
             <Field label="Font Size"><Slider min={12} max={24} step={1} value={[p.fontSize || 16]} onValueChange={([v]) => set('fontSize', v)} /></Field>
           </>
@@ -103,7 +106,7 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
       case 'divider':
         return (
           <>
-            <Field label="Color"><Input type="color" className="h-8 w-full" value={p.color} onChange={e => set('color', e.target.value)} /></Field>
+            <ColorPickerField label="Color" value={p.color} onChange={v => set('color', v)} />
             <Field label="Thickness"><Slider min={1} max={6} step={1} value={[p.thickness || 1]} onValueChange={([v]) => set('thickness', v)} /></Field>
             <Field label="Vertical Margin"><Slider min={4} max={48} step={4} value={[p.marginY || 20]} onValueChange={([v]) => set('marginY', v)} /></Field>
           </>
@@ -170,7 +173,7 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
             <Field label="Company Name"><Input className="h-8 text-xs" value={p.companyName} onChange={e => set('companyName', e.target.value)} /></Field>
             <Field label="Address"><Textarea className="text-xs min-h-[60px]" value={p.address} onChange={e => set('address', e.target.value)} /></Field>
             <Field label="Unsubscribe Text"><Input className="h-8 text-xs" value={p.unsubscribeText} onChange={e => set('unsubscribeText', e.target.value)} /></Field>
-            <Field label="Text Color"><Input type="color" className="h-8 w-full" value={p.textColor} onChange={e => set('textColor', e.target.value)} /></Field>
+            <ColorPickerField label="Text Color" value={p.textColor} onChange={v => set('textColor', v)} />
           </>
         );
       case 'video':
@@ -194,9 +197,23 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
           <def.icon className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-foreground">{def.label}</span>
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(block.id)}>
-          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          {onToggleLock && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onToggleLock(block.id)} title={block.locked ? 'Unlock' : 'Lock'}>
+              {block.locked ? <Lock className="h-3.5 w-3.5 text-amber-500" /> : <Unlock className="h-3.5 w-3.5 text-muted-foreground" />}
+            </Button>
+          )}
+          {onToggleHidden && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onToggleHidden(block.id)} title={block.hidden ? 'Show' : 'Hide'}>
+              {block.hidden ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+            </Button>
+          )}
+          {!block.locked && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(block.id)}>
+              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+            </Button>
+          )}
+        </div>
       </div>
       <div className="p-3 space-y-3">
         {renderFields()}

@@ -1,10 +1,10 @@
 import React from 'react';
 import { GlobalStyles } from './htmlExporter';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Palette } from 'lucide-react';
+import { ColorPickerField } from './ColorPickerField';
 
 interface GlobalStylesPanelProps {
   styles: GlobalStyles;
@@ -38,12 +38,8 @@ export const GlobalStylesPanel: React.FC<GlobalStylesPanelProps> = ({ styles, on
         <Palette className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium text-foreground">Email Styles</span>
       </div>
-      <Field label="Email Background">
-        <Input type="color" className="h-8 w-full" value={styles.bgColor} onChange={e => set('bgColor', e.target.value)} />
-      </Field>
-      <Field label="Content Background">
-        <Input type="color" className="h-8 w-full" value={styles.contentBgColor} onChange={e => set('contentBgColor', e.target.value)} />
-      </Field>
+      <ColorPickerField label="Email Background" value={styles.bgColor} onChange={v => set('bgColor', v)} />
+      <ColorPickerField label="Content Background" value={styles.contentBgColor} onChange={v => set('contentBgColor', v)} />
       <Field label={`Content Width: ${styles.contentWidth}px`}>
         <Slider min={400} max={800} step={10} value={[styles.contentWidth]} onValueChange={([v]) => set('contentWidth', v)} />
       </Field>

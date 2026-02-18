@@ -128,7 +128,9 @@ function renderBlock(block: EmailBlock): string {
 }
 
 export function exportBlocksToHtml(blocks: EmailBlock[], styles: GlobalStyles = DEFAULT_GLOBAL_STYLES): string {
-  const sorted = [...blocks].sort((a, b) => a.order - b.order);
+  const sorted = [...blocks]
+    .filter(b => !b.hidden)
+    .sort((a, b) => a.order - b.order);
   const body = sorted.map(renderBlock).join('\n');
 
   return `<!DOCTYPE html>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -16,18 +16,26 @@ interface BuilderCanvasProps {
   onMoveBlockUp: (id: string) => void;
   onMoveBlockDown: (id: string) => void;
   onInlineEdit: (id: string, props: Record<string, any>) => void;
+  onToggleLock: (id: string) => void;
+  onToggleHidden: (id: string) => void;
   previewWidth: number;
   overIndex: number | null;
   totalBlocks: number;
+  justCreatedId?: string | null;
 }
 
-function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete, onDuplicate, onMoveUp, onMoveDown, onInlineEdit }: {
+function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete, onDuplicate, onMoveUp, onMoveDown, onInlineEdit, onToggleLock, onToggleHidden, justCreated }: {
   block: EmailBlock; isSelected: boolean; isFirst: boolean; isLast: boolean;
   onSelect: () => void; onDelete: () => void; onDuplicate: () => void;
   onMoveUp: () => void; onMoveDown: () => void;
   onInlineEdit: (props: Record<string, any>) => void;
+  onToggleLock: () => void; onToggleHidden: () => void;
+  justCreated: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
+    id: block.id,
+    disabled: block.locked,
+  });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -47,7 +55,10 @@ function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete,
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
         onInlineEdit={onInlineEdit}
+        onToggleLock={onToggleLock}
+        onToggleHidden={onToggleHidden}
         dragHandleProps={listeners}
+        justCreated={justCreated}
       />
     </div>
   );
@@ -55,7 +66,8 @@ function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete,
 
 export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   blocks, selectedBlockId, onSelectBlock, onDeleteBlock, onDuplicateBlock,
-  onMoveBlockUp, onMoveBlockDown, onInlineEdit, previewWidth, overIndex, totalBlocks,
+  onMoveBlockUp, onMoveBlockDown, onInlineEdit, onToggleLock, onToggleHidden,
+  previewWidth, overIndex, totalBlocks, justCreatedId,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: 'builder-canvas' });
 
@@ -77,14 +89,13 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
               <Plus className="h-7 w-7 text-primary/60" />
             </div>
             <p className="text-muted-foreground text-sm font-medium">Drag blocks here or click them in the sidebar</p>
-            <p className="text-muted-foreground/60 text-xs mt-1">Build your email visually</p>
+            <p className="text-muted-foreground/60 text-xs mt-1">Press / for quick add</p>
           </motion.div>
         ) : (
           <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-0">
               {blocks.map((block, idx) => (
                 <React.Fragment key={block.id}>
-                  {/* Drop position indicator */}
                   {overIndex === idx && (
                     <div className="h-0.5 bg-primary mx-4 rounded-full shadow-[0_0_8px_hsl(var(--primary)/0.5)] transition-all" />
                   )}
@@ -99,10 +110,12 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
                     onMoveUp={() => onMoveBlockUp(block.id)}
                     onMoveDown={() => onMoveBlockDown(block.id)}
                     onInlineEdit={(props) => onInlineEdit(block.id, props)}
+                    onToggleLock={() => onToggleLock(block.id)}
+                    onToggleHidden={() => onToggleHidden(block.id)}
+                    justCreated={block.id === justCreatedId}
                   />
                 </React.Fragment>
               ))}
-              {/* Drop indicator at end */}
               {overIndex !== null && overIndex >= blocks.length && (
                 <div className="h-0.5 bg-primary mx-4 rounded-full shadow-[0_0_8px_hsl(var(--primary)/0.5)] transition-all" />
               )}
