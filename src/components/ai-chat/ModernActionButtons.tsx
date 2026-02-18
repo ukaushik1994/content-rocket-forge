@@ -144,7 +144,7 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
       };
       navigate('/content-builder', { state: { prefilledData: preloadData } });
     } else if (actionStr.includes('keyword-research') || actionStr.includes('research')) {
-      navigate('/research/content-strategy', { 
+      navigate('/research/research-hub', { 
         state: { prefilledKeyword: action.data?.keyword || action.data?.mainKeyword || action.label }
       });
     } else if (actionStr.includes('strategy')) {

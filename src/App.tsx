@@ -22,7 +22,7 @@ import { migrateKeywordsToArray } from "@/utils/migration/keywordArrayMigration"
 
 import Analytics from "./pages/Analytics";
 import ContentStrategy from "./pages/research/ContentStrategy";
-
+import ResearchHub from "./pages/research/ResearchHub";
 import SerpIntelligence from "./pages/research/SerpIntelligence";
 import TopicClusters from "./pages/research/TopicClusters";
 
@@ -150,7 +150,10 @@ const App = () => (
                   
                    {/* Research routes */}
                    <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
-                     <Route path="/research/serp-intelligence" element={<ProtectedRoute><SerpIntelligence /></ProtectedRoute>} />
+                    <Route path="/research/research-hub" element={<ProtectedRoute><ResearchHub /></ProtectedRoute>} />
+                    <Route path="/research/serp-intelligence" element={<ProtectedRoute><SerpIntelligence /></ProtectedRoute>} />
+                    <Route path="/research/keyword-research" element={<Navigate to="/research/research-hub#keyword-intelligence" replace />} />
+                    <Route path="/research/answer-the-people" element={<Navigate to="/research/research-hub#people-questions" replace />} />
                    <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
                   
                    <Route path="/research/content-gaps" element={<ProtectedRoute><ContentGapsPage /></ProtectedRoute>} />
@@ -175,7 +178,7 @@ const App = () => (
                    
                    {/* Redirects for legacy routes */}
                    <Route path="/settings" element={<Navigate to="/ai-settings" replace />} />
-                   <Route path="/research" element={<Navigate to="/research/content-strategy" replace />} />
+                   <Route path="/research" element={<Navigate to="/research/research-hub" replace />} />
                    
                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />

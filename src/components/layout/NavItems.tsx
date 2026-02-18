@@ -148,6 +148,13 @@ export default function NavItems() {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* Research Hub - Direct Navigation */}
+      <NavItem 
+        to="/research/research-hub" 
+        icon={<Search className="h-4 w-4" />} 
+        label="Research" 
+        active={location.pathname === '/research/research-hub'} 
+      />
       
       {/* Content Strategy - Direct Navigation */}
       <NavItem 

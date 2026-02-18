@@ -78,7 +78,7 @@ export function SetupChecklist() {
           label: 'Run your first research',
           description: 'Start with keyword or competitor research',
           icon: Search,
-          route: '/research/content-strategy',
+          route: '/research/research-hub',
           completed: false, // Always show as incomplete to encourage exploration
         },
       ];
