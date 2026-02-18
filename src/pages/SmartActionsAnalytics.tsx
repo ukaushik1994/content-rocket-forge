@@ -33,22 +33,22 @@ const SmartActionsAnalyticsPage: React.FC = () => {
       </header>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-background/90 backdrop-blur-md border-border/10">
+        <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Total Actions</CardTitle></CardHeader>
           <CardContent className="text-2xl font-bold">{analytics?.totalActions ?? 0}</CardContent>
         </Card>
-        <Card className="bg-background/90 backdrop-blur-md border-border/10">
+        <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Acceptance Rate</CardTitle></CardHeader>
           <CardContent className="text-2xl font-bold">{analytics ? toPercent(analytics.acceptanceRate) : '—'}</CardContent>
         </Card>
-        <Card className="bg-background/90 backdrop-blur-md border-border/10">
+        <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Avg Latency</CardTitle></CardHeader>
           <CardContent className="text-2xl font-bold">{analytics?.avgLatencyMs != null ? `${analytics.avgLatencyMs} ms` : '—'}</CardContent>
         </Card>
       </section>
 
       <section>
-        <Card className="bg-background/90 backdrop-blur-md border-border/10">
+        <Card>
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="inline-flex items-center gap-2 text-sm">
               <BarChart2 className="h-4 w-4" /> Actions by Type
@@ -61,7 +61,7 @@ const SmartActionsAnalyticsPage: React.FC = () => {
                   <XAxis dataKey="action" tick={{ fontSize: 12 }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                   <Tooltip cursor={{ fill: 'hsl(var(--muted)/0.4)' }} />
-                  <Bar dataKey="count" fill="hsl(var(--foreground))" radius={[4,4,0,0]} />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4,4,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

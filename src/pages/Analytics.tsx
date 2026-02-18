@@ -71,14 +71,24 @@ const Analytics = () => {
   };
   
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
     visible: { 
       opacity: 1, 
       y: 0, 
+      scale: 1,
       transition: { 
         duration: 0.5,
         ease: [0.22, 1, 0.36, 1]
       } 
+    }
+  };
+
+  const cardHoverVariants = {
+    hover: { 
+      y: -8,
+      scale: 1.02,
+      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+      transition: { duration: 0.3, ease: "easeOut" }
     }
   };
 
@@ -89,6 +99,8 @@ const Analytics = () => {
       label: 'Page Views', 
       value: realMetrics.totalAnalytics.pageViews.toLocaleString(), 
       icon: Eye,
+      color: 'from-blue-500 to-cyan-400',
+      bgPattern: 'from-blue-500/5 to-cyan-400/10',
       source: 'Google Analytics'
     },
     { 
@@ -96,6 +108,8 @@ const Analytics = () => {
       label: 'Sessions', 
       value: realMetrics.totalAnalytics.sessions.toLocaleString(), 
       icon: Users,
+      color: 'from-emerald-500 to-teal-400',
+      bgPattern: 'from-emerald-500/5 to-teal-400/10',
       source: 'Google Analytics'
     },
     { 
@@ -103,6 +117,8 @@ const Analytics = () => {
       label: 'Search Impressions', 
       value: realMetrics.totalSearchConsole.impressions.toLocaleString(), 
       icon: TrendingUp,
+      color: 'from-violet-500 to-purple-400',
+      bgPattern: 'from-violet-500/5 to-purple-400/10',
       source: 'Search Console'
     },
     { 
@@ -110,6 +126,8 @@ const Analytics = () => {
       label: 'Search Clicks', 
       value: realMetrics.totalSearchConsole.clicks.toLocaleString(), 
       icon: MousePointer,
+      color: 'from-orange-500 to-pink-400',
+      bgPattern: 'from-orange-500/5 to-pink-400/10',
       source: 'Search Console'
     },
     { 
@@ -117,6 +135,8 @@ const Analytics = () => {
       label: 'Avg. Bounce Rate', 
       value: `${(realMetrics.avgBounceRate * 100).toFixed(1)}%`, 
       icon: Activity,
+      color: 'from-red-500 to-rose-400',
+      bgPattern: 'from-red-500/5 to-rose-400/10',
       source: 'Google Analytics'
     },
     { 
@@ -124,6 +144,8 @@ const Analytics = () => {
       label: 'Avg. Session', 
       value: `${Math.floor(realMetrics.avgSessionDuration / 60)}:${(realMetrics.avgSessionDuration % 60).toFixed(0).padStart(2, '0')}`, 
       icon: Clock,
+      color: 'from-yellow-500 to-amber-400',
+      bgPattern: 'from-yellow-500/5 to-amber-400/10',
       source: 'Google Analytics'
     },
     { 
@@ -131,6 +153,8 @@ const Analytics = () => {
       label: 'Avg. CTR', 
       value: `${(realMetrics.avgCTR * 100).toFixed(1)}%`, 
       icon: Target,
+      color: 'from-green-500 to-emerald-400',
+      bgPattern: 'from-green-500/5 to-emerald-400/10',
       source: 'Search Console'
     },
     { 
@@ -138,6 +162,8 @@ const Analytics = () => {
       label: 'Avg. Position', 
       value: realMetrics.avgPosition.toFixed(1), 
       icon: Zap,
+      color: 'from-indigo-500 to-blue-400',
+      bgPattern: 'from-indigo-500/5 to-blue-400/10',
       source: 'Search Console'
     }
   ] : [];
@@ -213,12 +239,12 @@ const Analytics = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <Navbar />
         <main className="pt-20 container py-8">
-          <Card className="bg-destructive/10 border-destructive/20">
+          <Card className="bg-red-50 border-red-200">
             <CardContent className="p-6 text-center">
-              <p className="text-destructive mb-4">Error loading analytics: {error}</p>
+              <p className="text-red-600 mb-4">Error loading analytics: {error}</p>
               <Button onClick={refreshAnalytics} variant="outline">
                 <RefreshCcw className="w-4 h-4 mr-2" />
                 Retry
@@ -247,7 +273,7 @@ const Analytics = () => {
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-4 rounded-lg border border-border/10 bg-background/90 backdrop-blur-md flex items-center gap-3"
+            className="mb-4 p-4 rounded-lg border border-border/50 bg-background/60 backdrop-blur-xl flex items-center gap-3"
           >
             <Activity className="h-5 w-5 text-muted-foreground shrink-0" />
             <p className="text-sm text-muted-foreground">
@@ -269,18 +295,28 @@ const Analytics = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
+                animate={{ opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              />
+              
               <div className="relative">
                 <motion.div 
-                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/90 backdrop-blur-md rounded-full border border-border/10 mb-8"
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
+                  whileHover={{ scale: 1.05 }}
                 >
-                  <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                  <BarChart3 className="h-5 w-5 text-primary" />
                   <span className="text-sm font-medium">Real-time Performance Tracking</span>
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 </motion.div>
                 
                 <motion.h1 
-                  className="text-4xl md:text-6xl font-bold mb-6 text-foreground"
+                  className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent"
                 >
                   Analytics Hub
+                  <br />
+                  <span className="text-primary">Performance</span>
                 </motion.h1>
                 
                 <motion.p 
@@ -295,7 +331,7 @@ const Analytics = () => {
                     onClick={refreshAnalytics}
                     disabled={loading}
                     size="lg"
-                    className="bg-foreground text-background hover:bg-foreground/90 px-8 py-4 text-lg font-semibold"
+                    className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl"
                   >
                     <RefreshCcw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
                     Refresh Data
@@ -306,7 +342,7 @@ const Analytics = () => {
                     disabled={!realMetrics}
                     size="lg"
                     variant="outline"
-                    className="bg-transparent border-border/20 px-8 py-4 text-lg font-semibold"
+                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
                   >
                     <Download className="h-5 w-5 mr-2" />
                     Export Report
@@ -324,16 +360,17 @@ const Analytics = () => {
                     { icon: Users, label: "Sessions", value: realMetrics?.totalAnalytics.sessions.toLocaleString() || '0' },
                     { icon: TrendingUp, label: "Impressions", value: realMetrics?.totalSearchConsole.impressions.toLocaleString() || '0' }
                   ].map((stat) => (
-                    <div 
+                    <motion.div 
                       key={stat.label}
                       className="text-center"
+                      whileHover={{ scale: 1.05 }}
                     >
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-transparent border border-border/20 rounded-xl mb-2">
-                        <stat.icon className="h-5 w-5 text-muted-foreground" />
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
+                        <stat.icon className="h-5 w-5 text-primary" />
                       </div>
                       <div className="text-sm font-bold text-foreground">{stat.value}</div>
                       <div className="text-xs text-muted-foreground">{stat.label}</div>
-                    </div>
+                    </motion.div>
                   ))}
                 </motion.div>
               </div>
@@ -345,25 +382,27 @@ const Analytics = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.0 }}
             >
-              <div className="flex gap-3 p-2 bg-background/90 backdrop-blur-md rounded-2xl border border-border/10">
+              <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
                 {[
                   { key: '24h', label: '24 Hours' },
                   { key: '7days', label: '7 Days' },
                   { key: '30days', label: '30 Days' },
                   { key: '90days', label: '90 Days' }
                 ].map((filter) => (
-                  <button
+                  <motion.button
                     key={filter.key}
                     onClick={() => handleTimeRangeChange(filter.key)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                       timeRange === filter.key 
-                        ? 'bg-foreground text-background' 
-                        : 'hover:bg-muted/20'
+                        ? 'bg-primary text-primary-foreground shadow-lg' 
+                        : 'hover:bg-background/80'
                     }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <CalendarRange className="h-4 w-4" />
                     <span className="font-medium">{filter.label}</span>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </motion.div>
@@ -379,7 +418,7 @@ const Analytics = () => {
               >
                 {loading ? (
                   Array.from({ length: 8 }).map((_, index) => (
-                    <Card key={`loading-${index}`} className="bg-background/90 backdrop-blur-md border-border/10">
+                    <Card key={`loading-${index}`} className="bg-background/60 backdrop-blur-xl border-border/50">
                       <CardContent className="p-6">
                         <div className="animate-pulse space-y-3">
                           <div className="w-12 h-12 bg-muted rounded-xl" />
@@ -396,15 +435,20 @@ const Analytics = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
                       className="h-full"
                     >
-                      <Card className="relative overflow-hidden bg-background/90 backdrop-blur-md border-border/10 transition-colors duration-300 h-full">
+                      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full">
+                        <motion.div
+                          className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
+                        />
+                        
                         <CardContent className="p-6 relative z-10">
                           <div className="flex items-start justify-between mb-4">
-                            <div className="p-3 rounded-xl bg-transparent border border-border/20">
-                              <metric.icon className="w-6 h-6 text-muted-foreground" />
+                            <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
+                              <metric.icon className="w-6 h-6 text-white" />
                             </div>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs bg-background/40">
                               {metric.source}
                             </Badge>
                           </div>
@@ -414,6 +458,10 @@ const Analytics = () => {
                             <p className="text-sm text-muted-foreground">{metric.label}</p>
                           </div>
                         </CardContent>
+
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                        />
                       </Card>
                     </motion.div>
                   ))
@@ -427,7 +475,7 @@ const Analytics = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <Card className="bg-background/90 backdrop-blur-md border-border/10">
+                <Card className="bg-background/60 backdrop-blur-xl border-border/50">
                   <CardContent className="p-6">
                     <div className="flex flex-col lg:flex-row gap-4">
                       <div className="flex-1 relative">
@@ -436,13 +484,13 @@ const Analytics = () => {
                           placeholder="Search analytics data..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-10 bg-transparent border-border/20"
+                          className="pl-10 bg-background/40 border-border/50"
                         />
                       </div>
                       
                       <div className="flex gap-2">
                         <Select value={sortBy} onValueChange={setSortBy}>
-                          <SelectTrigger className="w-40 bg-transparent border-border/20">
+                          <SelectTrigger className="w-40 bg-background/40 border-border/50">
                             <SelectValue placeholder="Sort by" />
                           </SelectTrigger>
                           <SelectContent>
@@ -455,7 +503,7 @@ const Analytics = () => {
                         <Button
                           variant="outline"
                           onClick={refreshAnalytics}
-                          className="bg-transparent border-border/20 hover:bg-muted/20"
+                          className="bg-background/40 border-border/50 hover:bg-background/60"
                         >
                           <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                           Refresh
@@ -468,33 +516,33 @@ const Analytics = () => {
               
               {/* Tabs Section */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <Card className="bg-background/90 backdrop-blur-md border-border/10">
+                <Card className="bg-background/60 backdrop-blur-xl border-border/50">
                   <CardContent className="p-2">
                     <TabsList className="w-full grid grid-cols-4 gap-1 bg-transparent">
                       <TabsTrigger 
                         value="overview" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-foreground data-[state=active]:text-background transition-all duration-200"
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
                       >
                         <BarChart3 className="h-4 w-4" />
                         <span className="font-medium">Overview</span>
                       </TabsTrigger>
                       <TabsTrigger 
                         value="content" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-foreground data-[state=active]:text-background transition-all duration-200"
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
                       >
                         <FileText className="h-4 w-4" />
                         <span className="font-medium">Content</span>
                       </TabsTrigger>
                       <TabsTrigger 
                         value="campaigns" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-foreground data-[state=active]:text-background transition-all duration-200"
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
                       >
                         <Target className="h-4 w-4" />
                         <span className="font-medium">Campaigns</span>
                       </TabsTrigger>
                       <TabsTrigger 
                         value="performance" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-foreground data-[state=active]:text-background transition-all duration-200"
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
                       >
                         <Activity className="h-4 w-4" />
                         <span className="font-medium">Performance</span>
@@ -517,44 +565,44 @@ const Analytics = () => {
                     
                 <TabsContent value="performance">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card className="bg-background/90 backdrop-blur-md border-border/10">
+                    <Card className="bg-background/60 backdrop-blur-xl border-border/50">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg bg-transparent border border-border/20">
-                                <Activity className="h-5 w-5 text-muted-foreground" />
+                              <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500">
+                                <Activity className="h-5 w-5 text-white" />
                               </div>
                               User Engagement
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-6">
                             {[
-                              { label: "Avg. Session Duration", value: "4:32", icon: Clock },
-                              { label: "Bounce Rate", value: "24.3%", icon: TrendingUp },
-                              { label: "Page Views/Session", value: "3.2", icon: Eye },
-                              { label: "Return Visitors", value: "68.7%", icon: Users },
+                              { label: "Avg. Session Duration", value: "4:32", icon: Clock, color: "text-blue-400" },
+                              { label: "Bounce Rate", value: "24.3%", icon: TrendingUp, color: "text-emerald-400" },
+                              { label: "Page Views/Session", value: "3.2", icon: Eye, color: "text-purple-400" },
+                              { label: "Return Visitors", value: "68.7%", icon: Users, color: "text-orange-400" },
                             ].map((metric, index) => (
                               <motion.div 
                                 key={metric.label}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className="flex items-center justify-between p-4 rounded-xl bg-muted/20 hover:bg-muted/30 transition-all duration-300"
+                                className="flex items-center justify-between p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition-all duration-300"
                               >
                                 <div className="flex items-center gap-3">
-                                  <metric.icon className="h-5 w-5 text-muted-foreground" />
-                                  <span className="text-muted-foreground">{metric.label}</span>
+                                  <metric.icon className={`h-5 w-5 ${metric.color}`} />
+                                  <span className="text-slate-300">{metric.label}</span>
                                 </div>
-                                <span className="text-xl font-bold text-foreground">{metric.value}</span>
+                                <span className="text-xl font-bold text-white">{metric.value}</span>
                               </motion.div>
                             ))}
                           </CardContent>
                         </Card>
 
-                    <Card className="bg-background/90 backdrop-blur-md border-border/10">
+                    <Card className="bg-background/60 backdrop-blur-xl border-border/50">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg bg-transparent border border-border/20">
-                                <Globe className="h-5 w-5 text-muted-foreground" />
+                              <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500">
+                                <Globe className="h-5 w-5 text-white" />
                               </div>
                               Top Performing Links
                             </CardTitle>
@@ -571,15 +619,15 @@ const Analytics = () => {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className="p-4 rounded-xl bg-muted/20 hover:bg-muted/30 transition-all duration-300 group"
+                                className="p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition-all duration-300 group"
                               >
                                 <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-medium text-foreground">{link.source}</h4>
-                                  <Badge variant="outline">
+                                  <h4 className="font-medium text-white group-hover:text-blue-300 transition-colors">{link.source}</h4>
+                                  <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
                                     {link.ctr}
                                   </Badge>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2 text-sm text-slate-400">
                                   <MousePointer className="h-4 w-4" />
                                   <span>{link.clicks.toLocaleString()} clicks</span>
                                 </div>

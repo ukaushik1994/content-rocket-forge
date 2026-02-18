@@ -289,15 +289,16 @@ export const SegmentsList = () => {
       ) : filteredSegments.length === 0 ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
           <div className="relative h-20 w-20 mx-auto">
-            <div className="relative h-20 w-20 rounded-2xl bg-transparent border border-border/20 flex items-center justify-center">
-              <Layers className="h-9 w-9 text-muted-foreground" />
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/30 to-purple-500/30 blur-xl" />
+            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-white/[0.08] flex items-center justify-center">
+              <Layers className="h-9 w-9 text-violet-400" />
             </div>
           </div>
           <div className="space-y-1">
             <p className="font-semibold text-foreground">{searchQuery ? 'No matching segments' : 'No segments yet'}</p>
             <p className="text-sm text-muted-foreground">Create rule-based segments to target specific audiences</p>
           </div>
-          {canEdit && !searchQuery && <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90" onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-1" /> Create First Segment</Button>}
+          {canEdit && !searchQuery && <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow" onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-1" /> Create First Segment</Button>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
@@ -305,7 +306,7 @@ export const SegmentsList = () => {
             const memberCount = s.engage_segment_memberships?.[0]?.count || 0;
             return (
               <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <GlassCard className="p-4 transition-colors duration-200">
+                <GlassCard className="p-4 hover:border-primary/30 hover:scale-[1.005] transition-all duration-200">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1.5 flex-1 min-w-0">
                       <div className="flex items-center gap-2">
