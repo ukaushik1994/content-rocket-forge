@@ -99,7 +99,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
       className="flex-1 overflow-y-auto p-6"
       style={{
         backgroundColor: 'hsl(var(--muted) / 0.15)',
-        backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.08) 1px, transparent 1px)',
+        backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.06) 1px, transparent 1px)',
         backgroundSize: '20px 20px',
       }}
       onClick={() => onSelectBlock('')}

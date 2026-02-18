@@ -28,15 +28,15 @@ function DraggablePaletteItem({ type, label, icon: Icon, onAdd }: { type: BlockT
       {...attributes}
       {...listeners}
       onClick={onAdd}
-      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg text-center transition-all
-        bg-muted/20 hover:bg-muted/50 border border-border/20 hover:border-primary/30
-        hover:shadow-[0_0_12px_hsl(var(--primary)/0.06)]
+      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-center transition-all duration-200
+        bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-primary/40
+        hover:shadow-[0_0_20px_hsl(var(--primary)/0.1)] backdrop-blur-sm
         ${isDragging ? 'opacity-40 scale-90' : ''}`}
     >
-      <div className="h-7 w-7 rounded-md bg-primary/8 flex items-center justify-center">
-        <Icon className="h-3.5 w-3.5 text-primary/80" />
+      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+        <Icon className="h-4.5 w-4.5 text-primary/80" />
       </div>
-      <span className="text-[10px] text-foreground/70 font-medium leading-tight">{label}</span>
+      <span className="text-[11px] text-foreground/70 font-medium leading-tight">{label}</span>
     </button>
   );
 }
@@ -49,17 +49,17 @@ const CATEGORIES = [
 
 export const BlockPalette: React.FC<BlockPaletteProps> = ({ onAddBlock, savedBlocks = [], onInsertSavedBlock, onRemoveSavedBlock }) => {
   return (
-    <div className="p-3 space-y-4">
+    <div className="p-4 space-y-5">
       {CATEGORIES.map((cat) => {
         const items = BLOCK_DEFINITIONS.filter(d => d.category === cat.key);
         if (!items.length) return null;
         return (
           <div key={cat.key} className="space-y-2">
             <div className="flex items-center gap-2 px-0.5">
-              <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest">{cat.label}</p>
+              <p className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-widest">{cat.label}</p>
               <div className="flex-1 h-px bg-border/30" />
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               {items.map((def, i) => (
                 <motion.div
                   key={def.type}
