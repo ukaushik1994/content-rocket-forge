@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, FileText, BarChart3, Puzzle, CheckCircle, ChevronDown, Search, Target, Megaphone, Mail, Users, Layers, GitBranch, Zap, Share2, Activity, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,18 +20,11 @@ const NavItem: React.FC<NavItemProps> = React.memo(({
     to={to} 
     className={cn(
       'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-      active ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' : 'hover:bg-white/10 text-white/60 hover:text-white'
+      active ? 'bg-muted/30 text-foreground' : 'hover:bg-muted/20 text-muted-foreground hover:text-foreground'
     )}
   >
     {icon}
     {label}
-    {active && (
-      <motion.span 
-        layoutId={`nav-highlight-${to}`}
-        transition={{ type: "spring", duration: 0.3, bounce: 0.2 }} 
-        className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
-      />
-    )}
   </Link>
 ));
 
@@ -52,30 +44,23 @@ const NavDropdown: React.FC<NavDropdownProps> = ({ icon, label, active, items, p
         className={cn(
           'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
           active
-            ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md'
-            : 'hover:bg-white/10 text-white/60 hover:text-white'
+            ? 'bg-muted/30 text-foreground'
+            : 'hover:bg-muted/20 text-muted-foreground hover:text-foreground'
         )}
       >
         {icon}
         {label}
         <ChevronDown className="h-3 w-3" />
-        {active && (
-          <motion.span 
-            layoutId={`nav-highlight-${label}`}
-            transition={{ type: "spring", duration: 0.3, bounce: 0.2 }} 
-            className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
-          />
-        )}
       </Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="start" className="w-48 bg-card border border-white/10 z-50">
+    <DropdownMenuContent align="start" className="w-48 bg-card border border-border/20 z-50">
       {items.map((item) => (
         <DropdownMenuItem key={item.path} asChild>
           <Link
             to={item.path}
             className={cn(
               'flex items-center gap-2 w-full cursor-pointer',
-              pathname.startsWith(item.path) && 'bg-accent text-accent-foreground'
+              pathname.startsWith(item.path) && 'bg-muted/30 text-foreground'
             )}
           >
             <item.icon className="h-4 w-4" />
@@ -86,6 +71,87 @@ const NavDropdown: React.FC<NavDropdownProps> = ({ icon, label, active, items, p
     </DropdownMenuContent>
   </DropdownMenu>
 );
+
+
+interface MobileNavItemProps {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  active?: boolean;
+}
+
+const MobileNavItem: React.FC<MobileNavItemProps> = React.memo(( {
+  to, icon, label, onClick, active
+}) => (
+  <Link
+    to={to}
+    onClick={onClick}
+    className={cn(
+      'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+      active ? 'bg-muted/30 text-foreground' : 'hover:bg-muted/20 text-muted-foreground hover:text-foreground'
+    )}
+  >
+    {icon}
+    {label}
+  </Link>
+));
+
+interface MobileNavDropdownProps {
+  icon: React.ReactNode;
+  label: string;
+  items: { path: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
+  pathname: string;
+  onClick?: () => void;
+}
+
+const MobileNavDropdown: React.FC<MobileNavDropdownProps> = ({ icon, label, items, pathname, onClick }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const toggleOpen = () => {
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div>
+      <Button
+        variant="ghost"
+        className={cn(
+          'flex items-center justify-between w-full gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
+          isOpen ? 'bg-muted/30 text-foreground' : 'hover:bg-muted/20 text-muted-foreground hover:text-foreground'
+        )}
+        onClick={() => {
+          toggleOpen();
+          onClick?.();
+        }}
+      >
+        <div className="flex items-center gap-2">
+          {icon}
+          {label}
+        </div>
+        <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", isOpen && "rotate-180")} />
+      </Button>
+      {isOpen && (
+        <div className="flex flex-col pl-4">
+          {items.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={onClick}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                pathname.startsWith(item.path) && 'bg-muted/30 text-foreground'
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const contentRoutes = [
   '/content-builder', '/content-approval', '/glossary-builder',

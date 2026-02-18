@@ -40,7 +40,7 @@ const Navbar = () => {
   const userEmail = user?.email || '';
   
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/10">
       <header className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <div className="mr-4 hidden lg:flex">
@@ -84,7 +84,7 @@ const Navbar = () => {
                 <UserCircle className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-card border border-border/20 z-50">
               <DropdownMenuLabel className="flex flex-col">
                 <span className="font-medium">{userFullName}</span>
                 <span className="text-xs text-muted-foreground">{userEmail}</span>
