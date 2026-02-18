@@ -1,90 +1,115 @@
 
 
-# UX Critique and Fix Plan: AI Chat Welcome Screen
+# Complete Email Builder with Drag-and-Drop
 
-## Critical Issues Found
+## What Exists Today
 
-### Issue 1: `handleLegacyAction` is BROKEN for all new actions (CRITICAL)
+The current email template editor is a raw HTML textarea with 5 formatting buttons (Bold, Italic, Heading, Link, Image), variable insertion, and an AI writer. Users must manually write HTML to build emails. There is no visual drag-and-drop, no content blocks, no layout system, and no mobile preview.
 
-`handleLegacyAction` in `useUnifiedChatDB.ts` does this:
-```
-if (typeof action === 'string') {
-  sendMessage(action);
-}
-```
+## What We're Building
 
-The quick actions and badges pass strings like `"workflow:content-creation"` or `"send:Write a blog post about my top solution"`. The function sends these **raw strings** as chat messages. So the AI literally receives `"workflow:content-creation"` as user input instead of a meaningful prompt. The `"send:"` prefix actions send `"send:Write a blog post..."` instead of just `"Write a blog post..."`.
-
-**Fix:** Parse `send:` and `workflow:` prefixes in `handleLegacyAction`:
-- `send:X` -- strip prefix, send `X` as message
-- `workflow:X` -- convert to a descriptive prompt like "Help me with content creation"
-
-### Issue 2: Layout Cramping -- 6 cards in half-width column (MODERATE)
-
-`EnhancedQuickActions` uses `lg:grid-cols-3` for its 6 cards, but it sits inside a `md:grid-cols-2` parent grid. On desktop, each quick action card gets roughly 1/6th of screen width. Titles and descriptions get truncated or squeezed unreadably.
-
-**Fix:** Change the parent layout so PlatformSummaryCard is full-width on top and EnhancedQuickActions is full-width below it. This gives the 6 action cards proper breathing room.
-
-### Issue 3: No Visual Separation Between Sections (MINOR)
-
-Both sections have the same visual weight. The user's eye doesn't know where to start -- metrics and actions compete equally for attention.
-
-**Fix:** Keep PlatformSummaryCard compact on top as a data bar, then give the full width to the action cards below. The natural top-to-bottom reading flow creates hierarchy: "Here's where you are" -> "Here's what I can do".
-
-### Issue 4: Capability Hint Badges Redundant with Suggestion Badges (MINOR)
-
-PlatformSummaryCard has 3 capability hint badges ("Analyze trends", "Create content", "Check campaigns") and EnhancedQuickActions has 6 suggestion badges. Both are clickable text pills that send messages. Users see ~9 similar-looking interactive badges with overlapping purposes.
-
-**Fix:** Remove the capability hints from PlatformSummaryCard. The contextual nudge CTA already serves as the action bridge from metrics. The suggestion badges in QuickActions are more specific and useful.
+A full visual email builder that replaces the existing code-only editor with a 3-mode system: **Visual Builder** (drag-and-drop blocks), **Code Editor** (existing HTML editor, preserved), and **Preview** (desktop/mobile toggle). The visual builder uses `@dnd-kit` which is already installed in the project.
 
 ---
 
-## Files to Modify
+## Architecture
+
+The email builder will be a new full-screen dialog that opens when creating/editing templates. It contains:
+
+1. **Left Sidebar** -- Block palette (draggable content blocks)
+2. **Center Canvas** -- Drop zone where blocks are arranged vertically
+3. **Right Inspector** -- Settings panel for the selected block
+4. **Top Toolbar** -- Save, undo, preview mode toggle, device preview, AI writer
+
+### Content Block Types
+
+| Block | Description | Configurable Properties |
+|-------|-------------|------------------------|
+| **Header** | Logo + heading text | Text, alignment, background color, logo URL |
+| **Text** | Rich paragraph | Content (inline editing), font size, color, alignment |
+| **Image** | Single image | URL, alt text, width, link URL, alignment |
+| **Button** | CTA button | Text, URL, color, border radius, alignment |
+| **Divider** | Horizontal line | Color, thickness, margin |
+| **Spacer** | Vertical spacing | Height (px) |
+| **Columns** | 2 or 3 column layout | Column count, content per column |
+| **Social Links** | Social media icons | Which platforms, URLs, icon style |
+| **Footer** | Unsubscribe + address | Company name, address, unsubscribe text |
+| **Video** | Video thumbnail with play | Thumbnail URL, video URL |
+
+### Data Model (In-Memory, No DB Changes)
+
+Each block is stored as a JSON object:
+
+```
+{
+  id: string,          // uuid
+  type: 'header' | 'text' | 'button' | ...,
+  props: Record<string, any>,  // block-specific config
+  order: number
+}
+```
+
+The block array is converted to email-safe HTML on save (using table-based layout for email client compatibility). The existing `body_html` column stores the final output -- no schema changes needed.
+
+---
+
+## File Plan
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `src/components/engage/email/builder/EmailBuilderDialog.tsx` | Full-screen dialog shell with toolbar, 3-panel layout |
+| `src/components/engage/email/builder/BlockPalette.tsx` | Left sidebar with draggable block types |
+| `src/components/engage/email/builder/BuilderCanvas.tsx` | Center drop zone with sortable blocks using `@dnd-kit/sortable` |
+| `src/components/engage/email/builder/BlockRenderer.tsx` | Renders each block type visually on the canvas |
+| `src/components/engage/email/builder/BlockInspector.tsx` | Right panel with property editors for selected block |
+| `src/components/engage/email/builder/blocks/` | Individual block config components (HeaderBlock, TextBlock, ButtonBlock, etc.) |
+| `src/components/engage/email/builder/useEmailBuilder.ts` | Hook managing block state, undo/redo stack, selection, HTML export |
+| `src/components/engage/email/builder/htmlExporter.ts` | Converts block JSON array to email-compatible HTML (table-based) |
+| `src/components/engage/email/builder/blockDefinitions.ts` | Block type registry with default props, icons, labels |
+| `src/components/engage/email/builder/EmailBuilderPreview.tsx` | Desktop/mobile preview with device frame toggle |
+
+### Modified Files
 
 | File | Change |
-|---|---|
-| `src/hooks/useUnifiedChatDB.ts` | Fix `handleLegacyAction` to parse `send:` and `workflow:` prefixes |
-| `src/components/ai-chat/EnhancedChatInterface.tsx` | Change layout from side-by-side to stacked (summary on top, actions below) |
-| `src/components/ai-chat/PlatformSummaryCard.tsx` | Remove capability hint badges; keep contextual nudge |
+|------|--------|
+| `src/components/engage/email/templates/TemplatesList.tsx` | Add "Visual Builder" button alongside existing editor; wire up `EmailBuilderDialog` |
 
 ---
 
-## Technical Details
+## UX Flow
 
-### useUnifiedChatDB.ts -- Fix handleLegacyAction (lines 1002-1006)
+1. User clicks **"New Template"** or edits an existing one
+2. A mode selector appears: **"Visual Builder"** or **"Code Editor"**
+   - Code Editor = the existing dialog (unchanged)
+   - Visual Builder = opens the new `EmailBuilderDialog`
+3. In the Visual Builder:
+   - Left sidebar shows block categories (Content, Layout, Social)
+   - User drags a block from the palette onto the canvas
+   - Blocks snap into vertical order (reorderable via drag handles)
+   - Clicking a block selects it and opens its inspector on the right
+   - Inline text editing for Text and Header blocks
+   - Top toolbar: Undo/Redo, Device Preview (desktop 600px / mobile 320px), AI Writer, Save
+4. On save, the block array is exported to HTML and stored in `body_html`
+5. When editing an existing template that was built with the visual builder, the block JSON is stored in the template's existing `variables` field as a special entry, allowing round-trip editing
 
-Replace the simple string passthrough with prefix-aware routing:
+## Design Language
 
-```typescript
-handleLegacyAction: (action: any, data?: any) => {
-  if (typeof action === 'string') {
-    if (action.startsWith('send:')) {
-      sendMessage(action.substring(5));
-    } else if (action.startsWith('workflow:')) {
-      const workflow = action.substring(9).replace(/-/g, ' ');
-      sendMessage(`Help me with ${workflow}`);
-    } else {
-      sendMessage(action);
-    }
-  }
-}
-```
+- Same `bg-card border-border/50` panels as the rest of Engage
+- Block palette items: `bg-muted/30 hover:bg-muted/50` with subtle borders
+- Selected block: `ring-2 ring-primary` outline
+- Canvas background: `bg-white` (email preview context) with centered 600px max-width
+- Inspector: standard `Label` + `Input` / `Select` components
+- All animations: framer-motion consistent with existing Engage patterns
+- Drag overlay: slight scale + shadow during drag
 
-### EnhancedChatInterface.tsx -- Stacked layout (line 462)
+## Technical Notes
 
-Change from `grid grid-cols-1 md:grid-cols-2 gap-8` to `space-y-6` so PlatformSummaryCard sits above EnhancedQuickActions at all breakpoints. This gives the 6 action cards full width.
-
-### PlatformSummaryCard.tsx -- Remove capability hints (lines 156-174)
-
-Remove the `capabilityHints` array and the badges section. The contextual nudge CTA at the bottom already bridges metrics to actions.
-
----
-
-## What's Preserved
-- All 6 quick action cards and their `workflow:` actions
-- All 6 suggestion badges and their `send:` actions
-- PlatformSummaryCard metrics grid (4 metrics from Supabase)
-- Contextual nudge with data-driven text
-- All animation patterns, colors, styling
-- Loading skeleton
+- **@dnd-kit** is already installed (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`) and used in `CompetitiveAnalysisTab.tsx`
+- HTML export uses `<table>` layout for maximum email client compatibility (Outlook, Gmail, Apple Mail)
+- The builder stores block JSON in a metadata field for round-trip editing, but the final output is always pure HTML in `body_html`
+- Undo/redo uses a simple state history stack (max 50 entries)
+- No new database tables or columns required
+- No new dependencies needed
 
