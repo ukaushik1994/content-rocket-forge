@@ -116,7 +116,7 @@ export class ResearchNotifications {
           id: 'view_keywords',
           label: 'View Keywords',
           action: 'navigate',
-          url: '/research/research-hub',
+          url: '/research/content-strategy',
           variant: 'primary'
         },
         {
