@@ -1,21 +1,45 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { EmailBlock, getBlockDef } from './blockDefinitions';
-import { GripVertical, Trash2, Copy } from 'lucide-react';
+import { GripVertical, Trash2, Copy, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface BlockRendererProps {
   block: EmailBlock;
   isSelected: boolean;
+  isFirst?: boolean;
+  isLast?: boolean;
   onSelect: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onInlineEdit?: (props: Record<string, any>) => void;
   dragHandleProps?: any;
 }
 
 export const BlockRenderer: React.FC<BlockRendererProps> = ({
-  block, isSelected, onSelect, onDelete, onDuplicate, dragHandleProps,
+  block, isSelected, isFirst, isLast, onSelect, onDelete, onDuplicate,
+  onMoveUp, onMoveDown, onInlineEdit, dragHandleProps,
 }) => {
   const def = getBlockDef(block.type);
   const p = block.props;
+  const [isEditing, setIsEditing] = useState(false);
+  const editRef = useRef<HTMLDivElement>(null);
+
+  const handleInlineBlur = (key: string) => {
+    if (editRef.current && onInlineEdit) {
+      const newText = editRef.current.innerText;
+      onInlineEdit({ [key]: key === 'content' ? editRef.current.innerHTML : newText });
+      setIsEditing(false);
+    }
+  };
+
+  const handleInlineKeyDown = (e: React.KeyboardEvent, key: string) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleInlineBlur(key);
+      editRef.current?.blur();
+    }
+  };
 
   const renderContent = () => {
     switch (block.type) {
@@ -23,14 +47,41 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
         return (
           <div style={{ backgroundColor: p.backgroundColor, padding: `${p.paddingY || 32}px 24px`, textAlign: p.alignment as any }}>
             {p.logoUrl && <img src={p.logoUrl} alt="Logo" style={{ maxHeight: 40, marginBottom: 8 }} />}
-            <h1 style={{ margin: 0, fontSize: p.fontSize || 28, color: p.textColor, fontFamily: 'Arial, sans-serif' }}>{p.text}</h1>
+            <h1
+              ref={isSelected ? editRef : undefined}
+              contentEditable={isSelected}
+              suppressContentEditableWarning
+              onFocus={() => setIsEditing(true)}
+              onBlur={() => handleInlineBlur('text')}
+              onKeyDown={(e) => handleInlineKeyDown(e, 'text')}
+              style={{
+                margin: 0, fontSize: p.fontSize || 28, color: p.textColor,
+                fontFamily: 'Arial, sans-serif', outline: 'none',
+                cursor: isSelected ? 'text' : 'pointer',
+              }}
+            >
+              {p.text}
+            </h1>
           </div>
         );
       case 'text':
         return (
-          <div style={{ padding: `${p.paddingY || 12}px 24px`, fontSize: p.fontSize || 16, color: p.textColor, textAlign: p.alignment as any, lineHeight: p.lineHeight || 1.6 }}
-            dangerouslySetInnerHTML={{ __html: p.content }}
-          />
+          <div
+            ref={isSelected ? editRef : undefined}
+            contentEditable={isSelected}
+            suppressContentEditableWarning
+            onFocus={() => setIsEditing(true)}
+            onBlur={() => handleInlineBlur('content')}
+            style={{
+              padding: `${p.paddingY || 12}px 24px`, fontSize: p.fontSize || 16,
+              color: p.textColor, textAlign: p.alignment as any,
+              lineHeight: p.lineHeight || 1.6, outline: 'none',
+              cursor: isSelected ? 'text' : 'pointer',
+            }}
+            dangerouslySetInnerHTML={!isSelected ? { __html: p.content } : undefined}
+          >
+            {isSelected ? undefined : undefined}
+          </div>
         );
       case 'image':
         return (
@@ -103,7 +154,17 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
     >
       {/* Toolbar */}
       <div className={`absolute -top-3 right-2 z-10 flex gap-0.5 bg-card border border-border/60 rounded-md shadow-sm px-1 py-0.5 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-        <button {...dragHandleProps} className="p-1 hover:bg-muted/50 rounded cursor-grab" title="Drag">
+        {onMoveUp && !isFirst && (
+          <button onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="p-1 hover:bg-muted/50 rounded" title="Move up">
+            <ChevronUp className="h-3 w-3 text-muted-foreground" />
+          </button>
+        )}
+        {onMoveDown && !isLast && (
+          <button onClick={(e) => { e.stopPropagation(); onMoveDown(); }} className="p-1 hover:bg-muted/50 rounded" title="Move down">
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          </button>
+        )}
+        <button {...(isEditing ? {} : dragHandleProps)} className="p-1 hover:bg-muted/50 rounded cursor-grab" title="Drag">
           <GripVertical className="h-3 w-3 text-muted-foreground" />
         </button>
         <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="p-1 hover:bg-muted/50 rounded" title="Duplicate">

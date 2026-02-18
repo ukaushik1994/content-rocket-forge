@@ -250,7 +250,24 @@ export const TemplatesList = () => {
               <motion.div key={t.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <GlassCard
                   className="p-4 space-y-2 cursor-pointer hover:border-primary/30 hover:scale-[1.01] transition-all duration-200"
-                  onClick={() => canEdit && openEditor(t)}
+                  onClick={() => {
+                    if (!canEdit) return;
+                    // Check if template was built with visual builder for round-trip
+                    const vars = t.variables || [];
+                    const builderIdx = vars.indexOf('__builder_blocks__');
+                    if (builderIdx >= 0 && vars[builderIdx + 1]) {
+                      try {
+                        const blocks = JSON.parse(vars[builderIdx + 1]) as EmailBlock[];
+                        setEditingId(t.id);
+                        setBuilderBlocks(blocks);
+                        setBuilderTemplateName(t.name);
+                        setBuilderTemplateSubject(t.subject);
+                        setShowVisualBuilder(true);
+                        return;
+                      } catch {}
+                    }
+                    openEditor(t);
+                  }}
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -386,15 +403,15 @@ export const TemplatesList = () => {
         onSave={async (html, blocks, meta) => {
           try {
             const variables = (html.match(/\{\{(\w+)\}\}/g) || []).map(v => v.replace(/[{}]/g, ''));
+            const builderMeta = JSON.stringify(blocks);
             const payload = {
               workspace_id: currentWorkspaceId!,
               name: meta.name,
               subject: meta.subject,
               body_html: html,
               body_text: html.replace(/<[^>]*>/g, ''),
-              variables: [...new Set(variables), '__builder_blocks__'],
+              variables: [...new Set(variables), '__builder_blocks__', builderMeta],
             };
-            // Store blocks in a separate metadata update
             if (editingId) {
               const { error } = await supabase.from('email_templates').update(payload).eq('id', editingId);
               if (error) throw error;

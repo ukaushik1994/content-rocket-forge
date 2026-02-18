@@ -8,11 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Trash2 } from 'lucide-react';
+import { GlobalStyles } from './htmlExporter';
+import { GlobalStylesPanel } from './GlobalStylesPanel';
 
 interface BlockInspectorProps {
   block: EmailBlock | null;
   onUpdate: (id: string, props: Record<string, any>) => void;
   onDelete: (id: string) => void;
+  globalStyles?: GlobalStyles;
+  onUpdateGlobalStyles?: (styles: GlobalStyles) => void;
 }
 
 const AlignmentSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
@@ -33,11 +37,15 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
   </div>
 );
 
-export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate, onDelete }) => {
+export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate, onDelete, globalStyles, onUpdateGlobalStyles }) => {
   if (!block) {
     return (
-      <div className="w-64 shrink-0 border-l border-border/50 bg-card/80 p-4 flex items-center justify-center">
-        <p className="text-xs text-muted-foreground text-center">Select a block to edit its properties</p>
+      <div className="w-64 shrink-0 border-l border-border/50 bg-card/80 overflow-y-auto p-4">
+        {globalStyles && onUpdateGlobalStyles ? (
+          <GlobalStylesPanel styles={globalStyles} onChange={onUpdateGlobalStyles} />
+        ) : (
+          <p className="text-xs text-muted-foreground text-center">Select a block to edit its properties</p>
+        )}
       </div>
     );
   }
