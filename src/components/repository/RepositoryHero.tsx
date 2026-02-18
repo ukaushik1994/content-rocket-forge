@@ -54,8 +54,8 @@ export const RepositoryHero = React.memo(({ onCreate }: RepositoryHeroProps) => 
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.8 }}
         >
-          Comprehensive content management workspace with AI-powered analysis, 
-          performance tracking, and seamless workflow integration
+          Your unified content hub — blogs, socials, emails, video scripts, 
+          and campaigns all in one powerful workspace
         </motion.p>
 
         <motion.div
