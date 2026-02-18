@@ -284,7 +284,7 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
   };
 
   return (
-    <div className="w-64 shrink-0 border-l border-border/30 bg-gradient-to-b from-card/90 to-card/70 backdrop-blur-sm overflow-y-auto">
+    <div className="w-64 shrink-0 border-l border-white/[0.06] bg-[hsl(var(--card))] overflow-y-auto">
       <div className="p-3 border-b border-border/30 flex items-center justify-between bg-primary/[0.03]">
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center">

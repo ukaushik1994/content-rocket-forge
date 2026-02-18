@@ -42,7 +42,7 @@ export const BlockLayersPanel: React.FC<BlockLayersPanelProps> = ({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.025 }}
               onClick={() => onSelectBlock(block.id)}
-              className={`flex items-center gap-2 w-full px-2 py-2 rounded-lg text-left text-[11px] transition-all group relative ${
+              className={`flex items-center gap-2 w-full px-2.5 py-2.5 rounded-lg text-left text-[11px] transition-all group relative ${
                 isSelected
                   ? 'bg-primary/10 border border-primary/25 shadow-[0_0_12px_hsl(var(--primary)/0.08)]'
                   : 'hover:bg-muted/50 border border-transparent'
@@ -56,12 +56,12 @@ export const BlockLayersPanel: React.FC<BlockLayersPanelProps> = ({
               </span>
 
               {/* Icon with background */}
-              <div className={`h-6 w-6 rounded-md flex items-center justify-center shrink-0 ${
+              <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${
                 isSelected 
                   ? 'bg-primary/15' 
-                  : 'bg-muted/40'
+                  : 'bg-white/[0.06]'
               }`}>
-                <Icon className={`h-3 w-3 ${isSelected ? 'text-primary' : 'text-muted-foreground/70'}`} />
+                <Icon className={`h-3.5 w-3.5 ${isSelected ? 'text-primary' : 'text-muted-foreground/70'}`} />
               </div>
 
               {/* Label */}
