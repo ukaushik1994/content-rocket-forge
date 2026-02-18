@@ -1,8 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { TrendingUp, FileText, CheckCircle, Clock, Target, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -10,23 +7,18 @@ interface PlatformSummaryCardProps {
   onAction: (action: string, data?: any) => void;
 }
 
-export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
-  onAction
-}) => {
+export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = () => {
   const [summary, setSummary] = useState({
     totalContent: 0,
     published: 0,
     inReview: 0,
     avgSeoScore: 0,
-    solutions: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      fetchSummaryData();
-    }
+    if (user) fetchSummaryData();
   }, [user]);
 
   const fetchSummaryData = async () => {
@@ -37,25 +29,14 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
         .select('id, status, seo_score')
         .eq('user_id', user.id);
 
-      const { data: solutions } = await supabase
-        .from('solutions')
-        .select('id')
-        .eq('user_id', user.id);
-
       const totalContent = contentItems?.length || 0;
       const published = contentItems?.filter(item => item.status === 'published').length || 0;
       const inReview = contentItems?.filter(item => item.status === 'review').length || 0;
-      const avgSeoScore = totalContent > 0 
-        ? Math.round(contentItems.reduce((acc, item) => acc + (item.seo_score || 0), 0) / totalContent) 
+      const avgSeoScore = totalContent > 0
+        ? Math.round(contentItems.reduce((acc, item) => acc + (item.seo_score || 0), 0) / totalContent)
         : 0;
 
-      setSummary({
-        totalContent,
-        published,
-        inReview,
-        avgSeoScore,
-        solutions: solutions?.length || 0
-      });
+      setSummary({ totalContent, published, inReview, avgSeoScore });
     } catch (error) {
       console.error('Error fetching summary data:', error);
     } finally {
@@ -63,116 +44,28 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
     }
   };
 
-  const contextualNudge = useMemo(() => {
-    if (summary.totalContent === 0) {
-      return {
-        text: "Your platform is ready. Let me help you get started.",
-        action: 'send:Help me create my first piece of content',
-        buttonText: 'Get Started'
-      };
-    }
-    if (summary.inReview > 0) {
-      return {
-        text: `You have ${summary.inReview} item${summary.inReview > 1 ? 's' : ''} awaiting review — want me to help?`,
-        action: 'send:Show me my content items in review and help me process them',
-        buttonText: 'Review Now'
-      };
-    }
-    if (summary.avgSeoScore > 0 && summary.avgSeoScore < 50) {
-      return {
-        text: 'Your SEO score could improve — let me suggest optimizations',
-        action: 'send:Analyze my content SEO scores and suggest improvements',
-        buttonText: 'Optimize'
-      };
-    }
-    return {
-      text: 'Ready to optimize? Let me take a look',
-      action: 'workflow:get-started',
-      buttonText: "Let's Go"
-    };
-  }, [summary]);
+  if (isLoading || summary.totalContent === 0) return null;
 
   const metrics = [
     { label: 'Content', value: summary.totalContent },
     { label: 'Published', value: summary.published },
     { label: 'In Review', value: summary.inReview },
-    { label: 'SEO Score', value: `${summary.avgSeoScore}%` }
+    { label: 'SEO Score', value: `${summary.avgSeoScore}%` },
   ];
 
-  if (isLoading) {
-    return (
-      <Card className="bg-card border-border/50 shadow-none">
-        <CardContent className="p-5">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-muted rounded w-1/3"></div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-14 bg-muted rounded"></div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+    <motion.div
+      className="border-t border-border/30 pt-6 flex justify-center gap-8 sm:gap-12"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.3, duration: 0.4 }}
     >
-      <Card className="bg-card border-border/50 shadow-none">
-        <CardContent className="p-5">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-medium text-foreground">
-                Platform Overview
-              </h3>
-            </div>
-            
-            {summary.totalContent > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {metrics.map((metric, index) => (
-                  <motion.div 
-                    key={metric.label}
-                    className="p-3 rounded-xl bg-muted/30 border border-border/30"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * index, duration: 0.2 }}
-                  >
-                    <div className="text-xl font-bold text-foreground">{metric.value}</div>
-                    <div className="text-xs text-muted-foreground">{metric.label}</div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-
-            {/* Contextual Nudge */}
-            <motion.div 
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-muted/20 rounded-xl border border-border/30"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary shrink-0" />
-                <span className="text-sm text-foreground">{contextualNudge.text}</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onAction(contextualNudge.action)}
-                className="text-primary hover:text-primary/80 hover:bg-primary/5 shrink-0"
-              >
-                {contextualNudge.buttonText}
-                <ArrowRight className="h-3.5 w-3.5 ml-1" />
-              </Button>
-            </motion.div>
-          </div>
-        </CardContent>
-      </Card>
+      {metrics.map((metric, index) => (
+        <div key={metric.label} className="text-center">
+          <div className="text-lg font-semibold text-foreground">{metric.value}</div>
+          <div className="text-xs text-muted-foreground">{metric.label}</div>
+        </div>
+      ))}
     </motion.div>
   );
 };
