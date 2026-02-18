@@ -220,10 +220,6 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
           )}
         </div>
 
-        {/* Keyboard hints */}
-        <p className="text-[10px] text-muted-foreground text-center">
-          Esc to close • Tab to switch view
-        </p>
       </div>
     </TooltipProvider>
   );

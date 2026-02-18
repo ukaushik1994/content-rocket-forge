@@ -71,8 +71,8 @@ export const PremiumMetricCard: React.FC<PremiumMetricCardProps> = ({
     <div 
       className={cn(
         "relative p-5 h-full rounded-lg",
-        "bg-card/50",
-        "border border-border/50",
+        "bg-transparent",
+        "border border-border/20",
         "border-l-2",
         trendConfig.borderColor
       )}
