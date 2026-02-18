@@ -3,26 +3,24 @@ import { Helmet } from 'react-helmet-async';
 import { AnimatedBackground } from '@/components/auth/AnimatedBackground';
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { LandingHero } from '@/components/landing/LandingHero';
-import { ProblemSolution } from '@/components/landing/ProblemSolution';
-import { ValuePropositions } from '@/components/landing/ValuePropositions';
-import { FeaturesCarousel } from '@/components/landing/FeaturesCarousel';
-
+import { ContentShowcase } from '@/components/landing/ContentShowcase';
+import { MarketingShowcase } from '@/components/landing/MarketingShowcase';
+import { AudienceShowcase } from '@/components/landing/AudienceShowcase';
+import { AnalyticsShowcase } from '@/components/landing/AnalyticsShowcase';
+import { AIIntelligenceShowcase } from '@/components/landing/AIIntelligenceShowcase';
 import { ComparisonTable } from '@/components/landing/ComparisonTable';
 import { InvestorSection } from '@/components/landing/InvestorSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
-import { AIIntelligenceShowcase } from '@/components/landing/AIIntelligenceShowcase';
-import { IntegrationsHub } from '@/components/landing/IntegrationsHub';
-import { PerformanceSection } from '@/components/landing/PerformanceSection';
 
 const Landing = () => {
   return (
     <>
       <Helmet>
-        <title>Creaiter - The Self-Learning Content Engine That Gets Smarter With Every Post</title>
-        <meta name="description" content="Not just AI content creation. Creaiter learns from YOUR results, adapts to YOUR audience, and creates content that gets exponentially better over time. Be among the first creators with personalized AI engines." />
-        <meta name="keywords" content="AI content creation, SERP data, keyword research, content strategy, self-learning AI, business content" />
-        <meta property="og:title" content="Creaiter - AI-Powered Content Creation Platform" />
-        <meta property="og:description" content="The self-learning content engine that gets smarter with every post. AI-powered content creation with team collaboration and enterprise-grade features." />
+        <title>Creaiter - One AI Conversation. Every Content Operation.</title>
+        <meta name="description" content="Create content, run campaigns, manage audiences, and track performance — all from a single AI-powered conversation. Or take manual control anytime." />
+        <meta name="keywords" content="AI content creation, AI chat, content marketing, email campaigns, audience CRM, analytics, image generation, video generation" />
+        <meta property="og:title" content="Creaiter - AI-Powered Content Operating System" />
+        <meta property="og:description" content="One AI conversation runs your entire content operation — writing, marketing, audience management, and analytics." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://creaiter.lovable.app" />
         <meta property="og:image" content="https://creaiter.lovable.app/og-image.png" />
@@ -42,32 +40,28 @@ const Landing = () => {
             <LandingHero />
           </section>
           
-          <section id="problem" className="scroll-mt-16">
-            <ProblemSolution />
+          <section id="content" className="scroll-mt-16">
+            <ContentShowcase />
           </section>
           
-          <section id="value" className="scroll-mt-16">
-            <ValuePropositions />
+          <section id="marketing" className="scroll-mt-16">
+            <MarketingShowcase />
+          </section>
+          
+          <section id="audience" className="scroll-mt-16">
+            <AudienceShowcase />
+          </section>
+          
+          <section id="analytics" className="scroll-mt-16">
+            <AnalyticsShowcase />
           </section>
           
           <section id="ai-showcase" className="scroll-mt-16">
             <AIIntelligenceShowcase />
           </section>
           
-          <section id="features" className="scroll-mt-16">
-            <FeaturesCarousel />
-          </section>
-          
           <section id="comparison" className="scroll-mt-16">
             <ComparisonTable />
-          </section>
-          
-          <section id="performance" className="scroll-mt-16">
-            <PerformanceSection />
-          </section>
-          
-          <section id="integrations" className="scroll-mt-16">
-            <IntegrationsHub />
           </section>
           
           <section id="investors" className="scroll-mt-16">
