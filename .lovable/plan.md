@@ -1,130 +1,131 @@
 
+# Email Builder -- Major Feature & Polish Upgrade
 
-# Email Builder -- Polish and Enhancement Pass
+## Current State
 
-## Current State Assessment
+The builder has a solid foundation: 10 block types, drag-and-drop with DragOverlay, sortable reordering, block palette, inspector panel, Build/Code/Preview modes, global styles, 5 starter templates, undo/redo, keyboard shortcuts, quick-add menu, color picker with presets, lock/hide, unsaved changes guard, and round-trip persistence. It's functional but lacks the depth and polish of a production-grade email builder.
 
-The builder has solid foundations: 10 block types, drag-and-drop, DragOverlay, positional insertion, inline editing, Code/Build/Preview modes, global styles, starter templates, undo/redo, and round-trip persistence. However, there are several rough edges and missing "must-have" features that prevent it from feeling complete and professional.
-
----
-
-## Part 1: Polish (Fixing What Exists)
-
-### 1. Template Card Variables Leak Builder Metadata
-The template cards in the list show `__builder_blocks__` and the raw JSON string as variable badges. The variables array filter needs to strip these internal entries before display.
-
-**File:** `TemplatesList.tsx` -- filter out `__builder_blocks__` and the JSON blob from the displayed variable badges.
-
-### 2. BlockRenderer Inline Edit Bug for Text Blocks
-The text block uses `dangerouslySetInnerHTML` when NOT selected but sets no initial content when selected (both branches render `undefined`). When a user clicks to edit, the block goes blank. Need to set `editRef.current.innerHTML` on focus instead.
-
-**File:** `BlockRenderer.tsx` -- fix the text block to populate innerHTML in the contentEditable div on selection, and properly sync back on blur.
-
-### 3. Code Mode is View-Only (Misleading)
-The Code tab says "Changes here are view-only and won't modify visual blocks" but still allows editing. Either make it truly editable (syncing HTML back to blocks is too complex) or make it read-only with a copy button.
-
-**File:** `EmailBuilderDialog.tsx` -- make Code textarea read-only, add a "Copy HTML" button.
-
-### 4. Preview Mode Should Use iframe
-Using `dangerouslySetInnerHTML` for preview breaks when email CSS leaks into the app. The preview should render inside a sandboxed iframe for accurate representation.
-
-**File:** `EmailBuilderPreview.tsx` -- render HTML in an iframe via `srcdoc` instead of `dangerouslySetInnerHTML`.
-
-### 5. Canvas Width Should Sync with Global Styles
-The canvas `maxWidth` is driven by the `previewWidth` state (600/320 toggle) but ignores the `globalStyles.contentWidth` setting. When the user sets content width to 700px in Global Styles, the canvas should reflect that.
-
-**File:** `BuilderCanvas.tsx` and `EmailBuilderDialog.tsx` -- pass `globalStyles.contentWidth` as the desktop width baseline.
-
-### 6. Empty State Deselect Click Propagation
-Clicking the empty canvas area should deselect any selected block. Currently clicking between blocks doesn't deselect because `stopPropagation` prevents the outer handler.
-
-**File:** `BuilderCanvas.tsx` -- ensure clicking empty space within the canvas deselects blocks.
+## What's Missing (Organized by Priority)
 
 ---
 
-## Part 2: Must-Have Enhancements
+### TIER 1: Core UX Gaps (Must Fix)
 
-### 7. Block Locking (Prevent Accidental Edits)
-Add a lock toggle to any block. Locked blocks cannot be moved, edited, or deleted -- useful for headers/footers that should stay fixed.
+#### 1. No Rich Text Toolbar for Text Blocks
+Text blocks currently require writing raw HTML in the inspector textarea or using contentEditable with no formatting controls. Need a floating mini-toolbar (Bold, Italic, Link, List) that appears when a text block is selected and being edited on the canvas.
 
-**Files:** `blockDefinitions.ts` (add `locked` field), `BlockRenderer.tsx` (show lock icon, disable toolbar actions), `BlockInspector.tsx` (add lock toggle).
+**File:** New `InlineTextToolbar.tsx` -- floating toolbar using `document.execCommand` for B/I/U/Link/List
+**File:** `BlockRenderer.tsx` -- show toolbar above text block when editing
 
-### 8. Block Visibility Toggle (Hide Without Deleting)
-Allow hiding a block temporarily without removing it. Useful for A/B testing sections or seasonal content.
+#### 2. No Block Between-Insert Button
+Users can only add blocks by dragging or appending. Add a "+" button that appears between blocks on hover, opening the quick-add menu at that position.
 
-**Files:** `blockDefinitions.ts` (add `hidden` field), `BlockRenderer.tsx` (show opacity overlay + eye icon), `htmlExporter.ts` (skip hidden blocks in export).
+**File:** `BuilderCanvas.tsx` -- add hover-triggered "+" insert buttons between blocks
 
-### 9. Confirmation Before Discarding Unsaved Changes
-If the user has made edits and clicks X or changes mode, show a confirmation dialog to prevent accidental loss.
+#### 3. Social Block Shows Plain Text Instead of Icons
+The social links block renders platform names as plain text. Should render recognizable social media icons (using simple SVG circles with letters or unicode).
 
-**File:** `EmailBuilderDialog.tsx` -- track dirty state, intercept close with an AlertDialog.
+**File:** `BlockRenderer.tsx` -- upgrade social block rendering with styled icon circles
+**File:** `htmlExporter.ts` -- export social links with styled inline icons
 
-### 10. Block Search / Quick Add (Slash Command)
-When the canvas is focused and user types `/`, show a floating command palette to quickly insert a block type without dragging. This is a major productivity UX pattern.
+#### 4. No Padding/Margin Controls on Most Blocks
+Only header and text have padding controls. Button, image, columns, social, and footer blocks need padding/spacing controls in the inspector.
 
-**Files:** New `QuickAddMenu.tsx` component, wire into `EmailBuilderDialog.tsx`.
-
-### 11. Export Options (Download HTML, Copy to Clipboard)
-Add a dropdown next to Save with: "Download .html", "Copy HTML to clipboard". Currently the only way to get HTML out is the Code tab.
-
-**File:** `EmailBuilderDialog.tsx` -- add export dropdown next to Save button.
-
-### 12. Responsive Preview with Device Frame
-The preview mode shows plain HTML. Add a device frame (phone bezel, desktop browser chrome) around the preview for a more realistic feel.
-
-**File:** `EmailBuilderPreview.tsx` -- wrap iframe in a styled device frame with rounded corners and mock browser/phone UI.
-
-### 13. Block Count and Template Stats in Toolbar
-Show a subtle block count badge in the toolbar (e.g., "8 blocks") so users have context about template complexity.
-
-**File:** `EmailBuilderDialog.tsx` -- add block count indicator.
+**File:** `BlockInspector.tsx` -- add universal padding controls to all block types
+**File:** `blockDefinitions.ts` -- add `paddingX`, `paddingY` defaults to blocks that lack them
 
 ---
 
-## Part 3: Enhancement Features
+### TIER 2: Professional Features
 
-### 14. Color Picker Upgrade with Presets
-Replace raw `<input type="color">` with a proper color picker that includes preset brand colors and recently used colors. This is a visual builder -- the color picker matters.
+#### 5. Responsive Preview Isn't Actually Responsive
+The mobile preview just shrinks the canvas width. The HTML export doesn't include any responsive `@media` queries, so emails look identical on mobile. Add basic responsive CSS in the HTML export wrapper.
 
-**Files:** New `ColorPickerField.tsx` component with swatches + hex input + custom color picker. Update `BlockInspector.tsx` and `GlobalStylesPanel.tsx` to use it.
+**File:** `htmlExporter.ts` -- add `@media` query in `<style>` for max-width breakpoints (stack columns, scale images, adjust font sizes)
 
-### 15. Image Block Upload Placeholder
-The image block requires a URL. Add a visual upload placeholder that shows a dashed border with "Click to add image URL" and a URL input that appears on click.
+#### 6. Template Thumbnail Preview on Cards
+Template cards in the list show no visual preview. Generate a tiny HTML preview thumbnail using an iframe for each template card.
 
-**File:** `BlockRenderer.tsx` -- improve image block rendering with a visual placeholder when URL is the default placeholder.
+**File:** `TemplatesList.tsx` -- add a small iframe-based thumbnail preview on each template card
 
-### 16. Button Block Hover Preview
-Show a subtle hover state preview on the button block in the canvas so users can see what the button will feel like.
+#### 7. Block Layers Panel (Outline View)
+No way to see the full structure at a glance. Add a collapsible layers panel at the bottom of the left sidebar showing all blocks as a compact ordered list with drag-to-reorder.
 
-**File:** `BlockRenderer.tsx` -- add hover brightness filter on button blocks.
+**File:** New `BlockLayersPanel.tsx` -- compact sortable list of blocks with type icons, lock/hide indicators
+**File:** `EmailBuilderDialog.tsx` -- integrate layers panel below palette with a toggle
 
-### 17. Keyboard Shortcuts Panel
-Add a `?` keyboard shortcut that shows a floating panel listing all available shortcuts (Cmd+Z, Cmd+S, Delete, arrows, etc.).
+#### 8. AI Content Assistant Integration
+The AI writer exists in the code editor but isn't wired into the visual builder. Add an AI button to the text block inspector that generates/rewrites content.
 
-**File:** `EmailBuilderDialog.tsx` -- add shortcut handler and floating help panel.
+**File:** `BlockInspector.tsx` -- add "AI Rewrite" button for text blocks that calls the AI writer
+**File:** `EmailBuilderDialog.tsx` -- wire AI dialog for visual builder context
 
-### 18. Block Duplicate Animation
-When duplicating a block, add a brief flash/highlight animation on the new block so the user sees where it was inserted.
+#### 9. Drag-to-Resize Spacer
+Spacer blocks require opening the inspector to change height. Should be directly resizable on the canvas by dragging the bottom edge.
 
-**File:** `BuilderCanvas.tsx` / `BlockRenderer.tsx` -- add a `justCreated` animation state.
+**File:** `BlockRenderer.tsx` -- add a resize handle on spacer blocks with `onMouseDown` drag-to-resize behavior
 
 ---
 
-## Technical Summary
+### TIER 3: Enhancement & Delight
 
-| File | Changes |
-|------|---------|
-| `TemplatesList.tsx` | Filter builder metadata from variable badges |
-| `BlockRenderer.tsx` | Fix inline edit bug, add lock/hide UI, image placeholder, button hover, duplicate animation |
-| `EmailBuilderDialog.tsx` | Read-only Code mode + copy, unsaved changes guard, block count, export dropdown, keyboard help, quick-add wiring, sync canvas width |
-| `EmailBuilderPreview.tsx` | iframe-based preview with device frames |
-| `BuilderCanvas.tsx` | Deselect fix, sync canvas width with global styles, animation states |
-| `BlockInspector.tsx` | Lock toggle, hide toggle, use ColorPickerField |
-| `GlobalStylesPanel.tsx` | Use ColorPickerField |
-| `blockDefinitions.ts` | Add `locked` and `hidden` fields |
-| `htmlExporter.ts` | Skip hidden blocks |
-| **New:** `ColorPickerField.tsx` | Color picker with presets + hex input |
-| **New:** `QuickAddMenu.tsx` | Slash-command block insertion palette |
+#### 10. Block Animations on Hover
+Blocks should have a subtle lift/shadow effect on hover to communicate interactivity, not just a ring outline.
 
-Total: 9 files modified, 2 new files created.
+**File:** `BlockRenderer.tsx` -- add `hover:shadow-md hover:-translate-y-px` transition
 
+#### 11. Zoom Controls for Canvas
+Add zoom in/out (75%, 100%, 125%) for the canvas area so users can see more or less of their email.
+
+**File:** `EmailBuilderDialog.tsx` -- add zoom state and CSS transform scale on the canvas wrapper
+**File:** `BuilderCanvas.tsx` -- apply zoom transform
+
+#### 12. Block Context Menu (Right-Click)
+Right-clicking a block should show a context menu with: Duplicate, Delete, Move Up, Move Down, Lock, Hide -- matching the floating toolbar options.
+
+**File:** `BlockRenderer.tsx` -- add `onContextMenu` handler with a custom context menu using Radix `ContextMenu`
+
+#### 13. Gradient Background Support
+Header and button blocks should support gradient backgrounds in addition to solid colors. Add a simple "Gradient" toggle in the inspector with start/end color + direction.
+
+**File:** `BlockInspector.tsx` -- add gradient toggle for header/button blocks
+**File:** `blockDefinitions.ts` -- add `gradientEnabled`, `gradientEndColor`, `gradientDirection` props
+**File:** `BlockRenderer.tsx` and `htmlExporter.ts` -- render gradient backgrounds
+
+#### 14. Border Controls
+Add border width, color, and radius controls for image, button, and column blocks.
+
+**File:** `BlockInspector.tsx` -- add border section (width, color, radius, style)
+**File:** `blockDefinitions.ts` -- add border defaults
+**File:** `BlockRenderer.tsx` and `htmlExporter.ts` -- render borders
+
+#### 15. Save as Reusable Block
+Allow users to save a configured block (e.g., a styled CTA button) as a "Saved Block" that appears in the palette for reuse across templates.
+
+**File:** New logic in `BlockPalette.tsx` -- "Saved Blocks" section at bottom of palette
+**File:** `BlockRenderer.tsx` -- "Save as reusable" option in block toolbar
+**File:** Database: store saved blocks in a new table or in workspace settings
+
+---
+
+## Technical Plan -- Files
+
+| File | Action | Changes |
+|------|--------|---------|
+| `BlockRenderer.tsx` | Edit | Rich text toolbar integration, social icons, spacer resize handle, hover animations, context menu, gradient rendering, borders |
+| `BuilderCanvas.tsx` | Edit | Between-block "+" insert buttons, zoom transform |
+| `BlockInspector.tsx` | Edit | Universal padding controls, gradient toggle, border section, AI rewrite button |
+| `blockDefinitions.ts` | Edit | Add missing padding defaults, gradient props, border props |
+| `htmlExporter.ts` | Edit | Responsive media queries, social icons export, gradient backgrounds, borders |
+| `EmailBuilderDialog.tsx` | Edit | Zoom controls, layers panel integration, AI writer wiring |
+| `TemplatesList.tsx` | Edit | Template thumbnail previews |
+| **New:** `InlineTextToolbar.tsx` | Create | Floating B/I/U/Link toolbar for text blocks |
+| **New:** `BlockLayersPanel.tsx` | Create | Compact outline/layers view of all blocks |
+
+## Implementation Order
+
+1. Tier 1 items first (1-4) -- these fix core UX gaps
+2. Tier 2 items next (5-9) -- these add professional depth
+3. Tier 3 items last (10-15) -- these add delight and power-user features
+
+Due to the scope, this will be implemented in 2-3 passes to keep each change set manageable and testable.
