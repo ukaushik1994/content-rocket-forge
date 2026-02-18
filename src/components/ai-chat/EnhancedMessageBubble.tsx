@@ -113,13 +113,13 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
     >
       {/* Avatar (only for AI messages) */}
       {!isUser && (
-        <motion.div 
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-card border border-primary/20 flex-shrink-0 shadow-sm"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.2 }}
-        >
-          <Bot className="h-4 w-4 text-primary" />
+         <motion.div 
+           className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent border border-border/20 flex-shrink-0"
+           initial={{ scale: 0.8, opacity: 0 }}
+           animate={{ scale: 1, opacity: 1 }}
+           transition={{ delay: 0.1, duration: 0.2 }}
+         >
+           <Bot className="h-4 w-4 text-muted-foreground" />
         </motion.div>
       )}
 
@@ -150,11 +150,11 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           )}
 
           {/* Message Content - Premium Minimal Styling */}
-          <Card className={`shadow-sm relative ${
-            isUser 
-              ? 'bg-primary/10 text-foreground border border-primary/20 ml-4' 
-              : 'bg-card border border-border/50 mr-4'
-          }`}>
+          <Card className={`relative ${
+             isUser 
+               ? 'bg-muted/30 text-foreground border border-border/20 ml-4' 
+               : 'bg-transparent border border-border/20 mr-4'
+           }`}>
             <div className="px-6 py-4">
               <div className={`text-sm leading-relaxed ${
                 isUser ? 'text-foreground' : 'text-foreground'
@@ -234,20 +234,20 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
               
               {/* Keyword Metrics Cards - Cleaner */}
               <div className="grid grid-cols-3 gap-3">
-                <Card className="p-3 bg-card border-border/50">
-                  <div className="text-xs text-muted-foreground">Avg Volume</div>
-                  <div className="text-xl font-bold text-foreground">
-                    {(message.serpData as any).structured.aggregateMetrics.avgSearchVolume.toLocaleString()}
-                  </div>
-                </Card>
-                <Card className="p-3 bg-card border-border/50">
-                  <div className="text-xs text-muted-foreground">Difficulty</div>
-                  <div className="text-xl font-bold text-foreground">
-                    {(message.serpData as any).structured.aggregateMetrics.avgKeywordDifficulty}%
-                  </div>
-                </Card>
-                <Card className="p-3 bg-card border-border/50">
-                  <div className="text-xs text-muted-foreground">Competition</div>
+                 <Card className="p-3 bg-transparent border-border/20">
+                   <div className="text-xs text-muted-foreground">Avg Volume</div>
+                   <div className="text-xl font-bold text-foreground">
+                     {(message.serpData as any).structured.aggregateMetrics.avgSearchVolume.toLocaleString()}
+                   </div>
+                 </Card>
+                 <Card className="p-3 bg-transparent border-border/20">
+                   <div className="text-xs text-muted-foreground">Difficulty</div>
+                   <div className="text-xl font-bold text-foreground">
+                     {(message.serpData as any).structured.aggregateMetrics.avgKeywordDifficulty}%
+                   </div>
+                 </Card>
+                 <Card className="p-3 bg-transparent border-border/20">
+                   <div className="text-xs text-muted-foreground">Competition</div>
                   <div className="text-xl font-bold text-foreground">
                     {(message.serpData as any).structured.aggregateMetrics.avgCompetitionScore}%
                   </div>
@@ -260,32 +260,32 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-border/50 hover:border-primary/30"
-                    onClick={() => {
-                      onSendMessage?.(`Show me content gaps for ${(message.serpData as any).keywords.join(', ')}`);
-                    }}
-                  >
-                    <FileText className="w-3 h-3 mr-1" />
-                    {(message.serpData as any).structured.aggregateMetrics.totalContentGaps} Gaps
-                  </Button>
-                )}
-                {(message.serpData as any).structured.aggregateMetrics.totalQuestions > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-border/50 hover:border-primary/30"
-                    onClick={() => {
-                      onSendMessage?.(`What are people asking about ${(message.serpData as any).keywords.join(', ')}?`);
-                    }}
-                  >
-                    <HelpCircle className="w-3 h-3 mr-1" />
-                    {(message.serpData as any).structured.aggregateMetrics.totalQuestions} Questions
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-border/50 hover:border-primary/30"
+                     className="border-border/20 hover:border-border/40 hover:bg-muted/30"
+                     onClick={() => {
+                       onSendMessage?.(`Show me content gaps for ${(message.serpData as any).keywords.join(', ')}`);
+                     }}
+                   >
+                     <FileText className="w-3 h-3 mr-1" />
+                     {(message.serpData as any).structured.aggregateMetrics.totalContentGaps} Gaps
+                   </Button>
+                 )}
+                 {(message.serpData as any).structured.aggregateMetrics.totalQuestions > 0 && (
+                   <Button
+                     size="sm"
+                     variant="outline"
+                     className="border-border/20 hover:border-border/40 hover:bg-muted/30"
+                     onClick={() => {
+                       onSendMessage?.(`What are people asking about ${(message.serpData as any).keywords.join(', ')}?`);
+                     }}
+                   >
+                     <HelpCircle className="w-3 h-3 mr-1" />
+                     {(message.serpData as any).structured.aggregateMetrics.totalQuestions} Questions
+                   </Button>
+                 )}
+                 <Button
+                   size="sm"
+                   variant="outline"
+                   className="border-border/20 hover:border-border/40 hover:bg-muted/30"
                   onClick={() => {
                     onSendMessage?.(`Who's ranking for ${(message.serpData as any).keywords.join(', ')}?`);
                   }}
@@ -345,7 +345,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       {/* Avatar (only for user messages) */}
       {isUser && (
         <motion.div 
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/10 border border-secondary/20 flex-shrink-0"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent border border-border/20 flex-shrink-0"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.2 }}

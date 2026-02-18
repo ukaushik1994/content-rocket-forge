@@ -469,37 +469,32 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                   className="flex items-center gap-3 max-w-4xl mx-auto"
                 >
                     {/* Avatar with pulse */}
-                    <div className="flex-shrink-0 relative">
-                      <div className="w-8 h-8 rounded-full bg-card border border-primary/20 flex items-center justify-center shadow-sm">
-                        <Brain className="w-4 h-4 text-primary" />
-                      </div>
-                      <motion.div 
-                        className="absolute inset-0 rounded-full border border-primary/30"
-                        animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0, 0.6] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                      />
-                    </div>
-                    
-                    {/* Clean message card */}
-                    <Card className="flex items-center gap-3 text-muted-foreground text-sm px-4 py-3 bg-card border-border/50 shadow-sm">
-                      {/* Subtle animated dots */}
-                      <div className="flex gap-1">
-                        <motion.div 
-                          className="w-1.5 h-1.5 bg-primary/60 rounded-full" 
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
-                        />
-                        <motion.div 
-                          className="w-1.5 h-1.5 bg-primary/60 rounded-full" 
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
-                        />
-                        <motion.div 
-                          className="w-1.5 h-1.5 bg-primary/60 rounded-full" 
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
-                        />
-                      </div>
+                     <div className="flex-shrink-0">
+                       <div className="w-8 h-8 rounded-full bg-transparent border border-border/20 flex items-center justify-center">
+                         <Brain className="w-4 h-4 text-muted-foreground" />
+                       </div>
+                     </div>
+                     
+                     {/* Clean message card */}
+                     <Card className="flex items-center gap-3 text-muted-foreground text-sm px-4 py-3 bg-transparent border border-border/20">
+                       {/* Subtle animated dots */}
+                       <div className="flex gap-1">
+                         <motion.div 
+                           className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full" 
+                           animate={{ opacity: [0.4, 1, 0.4] }}
+                           transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
+                         />
+                         <motion.div 
+                           className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full" 
+                           animate={{ opacity: [0.4, 1, 0.4] }}
+                           transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
+                         />
+                         <motion.div 
+                           className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full" 
+                           animate={{ opacity: [0.4, 1, 0.4] }}
+                           transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+                         />
+                       </div>
                       <span className="text-sm">Thinking...</span>
                     </Card>
                   </motion.div>}
