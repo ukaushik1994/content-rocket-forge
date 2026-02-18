@@ -30,7 +30,7 @@ export const BlockLayersPanel: React.FC<BlockLayersPanelProps> = ({
       </div>
 
       {/* Layer list */}
-      <div className="space-y-0.5 max-h-[180px] overflow-y-auto scrollbar-thin pr-0.5">
+      <div className="space-y-0.5 overflow-y-auto scrollbar-thin pr-0.5" style={{ maxHeight: 'calc(100% - 28px)' }}>
         {blocks.map((block, idx) => {
           const def = getBlockDef(block.type);
           const Icon = def.icon;

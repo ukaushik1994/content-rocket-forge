@@ -14,6 +14,9 @@ export const EmailBuilderPreview: React.FC<EmailBuilderPreviewProps> = ({ html }
     .replace(/\{\{first_name\}\}/g, 'John')
     .replace(/\{\{last_name\}\}/g, 'Doe')
     .replace(/\{\{email\}\}/g, 'john@example.com')
+    .replace(/\{\{company_name\}\}/g, 'Acme Inc.')
+    .replace(/\{\{company\}\}/g, 'Acme Inc.')
+    .replace(/\{\{date\}\}/g, new Date().toLocaleDateString())
     .replace(/\{\{unsubscribe_link\}\}/g, '#');
 
   return (

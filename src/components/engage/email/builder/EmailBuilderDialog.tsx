@@ -412,7 +412,7 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
                 {/* Left sidebar: palette + layers */}
                 <div className="w-64 shrink-0 border-r border-white/[0.06] bg-[hsl(var(--card))] flex flex-col h-full">
                   {/* Scrollable palette */}
-                  <div className="flex-1 overflow-y-auto min-h-0">
+                  <div className={`overflow-y-auto min-h-0 ${builder.blocks.length > 0 ? 'flex-1' : 'flex-1'}`} style={{ maxHeight: builder.blocks.length > 0 ? 'calc(100% - 220px)' : '100%' }}>
                     <BlockPalette
                       onAddBlock={(type) => builder.addBlock(type)}
                       savedBlocks={savedBlocks}
@@ -420,9 +420,9 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
                       onRemoveSavedBlock={handleRemoveSavedBlock}
                     />
                   </div>
-                  {/* Fixed layers panel at bottom */}
+                  {/* Layers panel - guaranteed minimum height */}
                   {showLayers && builder.blocks.length > 0 && (
-                    <div className="shrink-0 px-3 pb-3 pt-3 border-t border-white/[0.08] bg-[hsl(var(--card))]">
+                    <div className="shrink-0 px-3 pb-3 pt-3 border-t border-white/[0.08] bg-[hsl(var(--card))] overflow-y-auto" style={{ height: 220 }}>
                       <BlockLayersPanel
                         blocks={builder.blocks}
                         selectedBlockId={builder.selectedBlockId}
