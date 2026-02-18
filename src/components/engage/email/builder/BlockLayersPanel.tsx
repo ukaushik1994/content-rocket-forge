@@ -30,7 +30,7 @@ export const BlockLayersPanel: React.FC<BlockLayersPanelProps> = ({
       </div>
 
       {/* Layer list */}
-      <div className="space-y-0.5 max-h-[240px] overflow-y-auto scrollbar-thin pr-0.5">
+      <div className="space-y-0.5 max-h-[180px] overflow-y-auto scrollbar-thin pr-0.5">
         {blocks.map((block, idx) => {
           const def = getBlockDef(block.type);
           const Icon = def.icon;
@@ -42,7 +42,7 @@ export const BlockLayersPanel: React.FC<BlockLayersPanelProps> = ({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.025 }}
               onClick={() => onSelectBlock(block.id)}
-              className={`flex items-center gap-2 w-full px-2.5 py-2.5 rounded-lg text-left text-[11px] transition-all group relative ${
+              className={`flex items-center gap-2 w-full px-2.5 py-2 rounded-lg text-left text-[11px] transition-all group relative ${
                 isSelected
                   ? 'bg-primary/10 border border-primary/25 shadow-[0_0_12px_hsl(var(--primary)/0.08)]'
                   : 'hover:bg-muted/50 border border-transparent'
