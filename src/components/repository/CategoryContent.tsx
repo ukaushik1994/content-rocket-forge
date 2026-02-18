@@ -28,6 +28,21 @@ type StatusFilter = 'all' | 'draft' | 'published' | 'archived';
 
 export const CategoryContent: React.FC<CategoryContentProps> = ({ category, onOpenDetailView }) => {
   const { unifiedItems, loading } = useRepositoryContent();
+
+  // Build a map: originalContentId -> array of repurposed format codes
+  const repurposedFormatsMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    unifiedItems
+      .filter(item => item.sourceType === 'repurposed' && item.sourceContentId)
+      .forEach(item => {
+        const existing = map.get(item.sourceContentId!) || [];
+        if (!existing.includes(item.formatCode)) {
+          existing.push(item.formatCode);
+        }
+        map.set(item.sourceContentId!, existing);
+      });
+    return map;
+  }, [unifiedItems]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date');
@@ -176,6 +191,7 @@ export const CategoryContent: React.FC<CategoryContentProps> = ({ category, onOp
                 key={item.id}
                 content={item.originalItem!}
                 onView={() => onOpenDetailView(item.originalItem!)}
+                repurposedFormats={repurposedFormatsMap.get(item.id)}
               />
             )
           )}

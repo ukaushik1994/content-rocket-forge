@@ -20,6 +20,8 @@ import { motion } from 'framer-motion';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { VideoComingSoonBadge } from '@/components/content/VideoPlaceholder';
 import { useNavigate } from 'react-router-dom';
+import { getPlatformConfig } from '@/utils/platformIcons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // AI preamble patterns for display-level title sanitization
 const AI_PREAMBLE_PATTERNS = [
@@ -46,11 +48,13 @@ function getDisplayTitle(content: ContentItemType): string {
 interface SimplifiedRepositoryCardProps {
   content: ContentItemType;
   onView: () => void;
+  repurposedFormats?: string[];
 }
 
 export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> = ({ 
   content, 
-  onView 
+  onView,
+  repurposedFormats 
 }) => {
   const navigate = useNavigate();
 
@@ -229,9 +233,38 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-6 border-t border-border/30 mt-auto relative">
-            <span className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors duration-300">
-              Updated {formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors duration-300">
+                Updated {formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}
+              </span>
+              {repurposedFormats && repurposedFormats.length > 0 && (
+                <TooltipProvider delayDuration={200}>
+                  <div className="flex items-center gap-1">
+                    {repurposedFormats.slice(0, 5).map((formatCode) => {
+                      const platform = getPlatformConfig(formatCode);
+                      const PlatformIcon = platform.icon;
+                      return (
+                        <Tooltip key={formatCode}>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center justify-center rounded-full bg-white/[0.06] border border-white/[0.08] p-0.5">
+                              <PlatformIcon className="h-3.5 w-3.5" style={{ color: platform.color }} />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            {platform.name}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                    {repurposedFormats.length > 5 && (
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        +{repurposedFormats.length - 5}
+                      </span>
+                    )}
+                  </div>
+                </TooltipProvider>
+              )}
+            </div>
             
             <div className="flex items-center gap-2">
               <Button 
