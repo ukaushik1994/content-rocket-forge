@@ -18,7 +18,9 @@ import { BlockRenderer } from './BlockRenderer';
 import { BlockLayersPanel } from './BlockLayersPanel';
 import { QuickAddMenu } from './QuickAddMenu';
 import { EmailBlock, BlockType, getBlockDef, createBlock } from './blockDefinitions';
+import { SavedBlock } from './BlockPalette';
 import { UnsavedChangesDialog } from '@/components/content-builder/UnsavedChangesDialog';
+import { AIEmailWriterDialog } from '../templates/AIEmailWriterDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +58,12 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showLayers, setShowLayers] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const [showAIRewrite, setShowAIRewrite] = useState(false);
+  const [aiRewriteBlockId, setAiRewriteBlockId] = useState<string | null>(null);
+  const [aiRewriteContent, setAiRewriteContent] = useState('');
+  const [savedBlocks, setSavedBlocks] = useState<SavedBlock[]>(() => {
+    try { return JSON.parse(localStorage.getItem('email_builder_saved_blocks') || '[]'); } catch { return []; }
+  });
 
   const builder = useEmailBuilder(initialBlocks || []);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -165,6 +173,42 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
   const handleInsertBlockAt = useCallback((index: number) => {
     setQuickAddIndex(index);
     setShowQuickAdd(true);
+  }, []);
+
+  const handleSaveAsReusable = useCallback((block: EmailBlock) => {
+    const name = window.prompt('Name for this saved block:', getBlockDef(block.type).label);
+    if (!name) return;
+    const newSaved = [...savedBlocks, { name, block: { ...block, id: '' } }];
+    setSavedBlocks(newSaved);
+    localStorage.setItem('email_builder_saved_blocks', JSON.stringify(newSaved));
+    toast.success(`Saved "${name}" as reusable block`);
+  }, [savedBlocks]);
+
+  const handleRemoveSavedBlock = useCallback((index: number) => {
+    const newSaved = savedBlocks.filter((_, i) => i !== index);
+    setSavedBlocks(newSaved);
+    localStorage.setItem('email_builder_saved_blocks', JSON.stringify(newSaved));
+    toast.success('Removed saved block');
+  }, [savedBlocks]);
+
+  const handleInsertSavedBlock = useCallback((savedBlock: EmailBlock) => {
+    const newBlock = createBlock(savedBlock.type, builder.blocks.length);
+    // We'll add the block then immediately update its props with the saved ones
+    builder.addBlock(savedBlock.type);
+    // Use setTimeout to update props after the block is added
+    setTimeout(() => {
+      const latest = builder.blocks;
+      const added = latest[latest.length - 1];
+      if (added) {
+        builder.updateBlockProps(added.id, savedBlock.props);
+      }
+    }, 50);
+  }, [builder]);
+
+  const handleAIRewrite = useCallback((blockId: string, content: string) => {
+    setAiRewriteBlockId(blockId);
+    setAiRewriteContent(content);
+    setShowAIRewrite(true);
   }, []);
 
   const handleZoomIn = useCallback(() => {
@@ -368,7 +412,12 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
                 {/* Left sidebar: palette + layers */}
                 <div className="w-56 shrink-0 border-r border-border/50 bg-card/80 overflow-y-auto flex flex-col">
                   <div className="flex-1 overflow-y-auto">
-                    <BlockPalette onAddBlock={(type) => builder.addBlock(type)} />
+                    <BlockPalette
+                      onAddBlock={(type) => builder.addBlock(type)}
+                      savedBlocks={savedBlocks}
+                      onInsertSavedBlock={handleInsertSavedBlock}
+                      onRemoveSavedBlock={handleRemoveSavedBlock}
+                    />
                   </div>
                   {showLayers && builder.blocks.length > 0 && (
                     <div className="shrink-0 px-3 pb-3">
@@ -398,6 +447,7 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
                   totalBlocks={builder.blocks.length}
                   justCreatedId={builder.justCreatedId}
                   onInsertBlockAt={handleInsertBlockAt}
+                  onSaveAsReusable={handleSaveAsReusable}
                   zoom={zoom}
                 />
                 <BlockInspector
@@ -406,6 +456,7 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
                   onDelete={builder.removeBlock}
                   onToggleLock={builder.toggleLock}
                   onToggleHidden={builder.toggleHidden}
+                  onAIRewrite={handleAIRewrite}
                   globalStyles={builder.globalStyles}
                   onUpdateGlobalStyles={builder.setGlobalStyles}
                 />
@@ -481,6 +532,19 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
         onClose={() => { setShowUnsavedDialog(false); setPendingClose(false); }}
         onSave={() => { handleSave(); setShowUnsavedDialog(false); onOpenChange(false); }}
         onDiscard={() => { setShowUnsavedDialog(false); builder.clearDirty(); onOpenChange(false); }}
+      />
+
+      {/* AI Rewrite Dialog */}
+      <AIEmailWriterDialog
+        open={showAIRewrite}
+        onOpenChange={setShowAIRewrite}
+        onGenerated={(html) => {
+          if (aiRewriteBlockId) {
+            builder.updateBlockProps(aiRewriteBlockId, { content: html });
+          }
+          setShowAIRewrite(false);
+        }}
+        existingHtml={aiRewriteContent}
       />
     </Dialog>
   );

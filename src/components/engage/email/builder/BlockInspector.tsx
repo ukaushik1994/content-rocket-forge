@@ -18,6 +18,7 @@ interface BlockInspectorProps {
   onDelete: (id: string) => void;
   onToggleLock?: (id: string) => void;
   onToggleHidden?: (id: string) => void;
+  onAIRewrite?: (blockId: string, currentContent: string) => void;
   globalStyles?: GlobalStyles;
   onUpdateGlobalStyles?: (styles: GlobalStyles) => void;
 }
@@ -109,7 +110,7 @@ const BorderControls = ({ p, set }: { p: Record<string, any>; set: (key: string,
   </div>
 );
 
-export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate, onDelete, onToggleLock, onToggleHidden, globalStyles, onUpdateGlobalStyles }) => {
+export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate, onDelete, onToggleLock, onToggleHidden, onAIRewrite, globalStyles, onUpdateGlobalStyles }) => {
   if (!block) {
     return (
       <div className="w-64 shrink-0 border-l border-border/50 bg-card/80 overflow-y-auto p-4">
@@ -148,6 +149,11 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
         return (
           <>
             <Field label="Content (HTML)"><Textarea className="text-xs min-h-[100px]" value={p.content} onChange={e => set('content', e.target.value)} /></Field>
+            {onAIRewrite && (
+              <Button variant="outline" size="sm" className="w-full h-7 text-xs gap-1.5" onClick={() => onAIRewrite(block.id, p.content || '')}>
+                <Sparkles className="h-3 w-3" /> AI Rewrite
+              </Button>
+            )}
             <Field label="Alignment"><AlignmentSelect value={p.alignment} onChange={v => set('alignment', v)} /></Field>
             <Field label="Font Size"><Slider min={10} max={24} step={1} value={[p.fontSize || 16]} onValueChange={([v]) => set('fontSize', v)} /></Field>
             <ColorPickerField label="Text Color" value={p.textColor} onChange={v => set('textColor', v)} />

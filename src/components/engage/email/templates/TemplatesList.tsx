@@ -252,7 +252,6 @@ export const TemplatesList = () => {
                   className="p-4 space-y-2 cursor-pointer hover:border-primary/30 hover:scale-[1.01] transition-all duration-200"
                   onClick={() => {
                     if (!canEdit) return;
-                    // Check if template was built with visual builder for round-trip
                     const vars = t.variables || [];
                     const builderIdx = vars.indexOf('__builder_blocks__');
                     if (builderIdx >= 0 && vars[builderIdx + 1]) {
@@ -269,6 +268,24 @@ export const TemplatesList = () => {
                     openEditor(t);
                   }}
                 >
+                  {/* Thumbnail preview */}
+                  {t.body_html && (
+                    <div className="relative w-full h-[120px] overflow-hidden rounded-md bg-white border border-border/30 mb-2">
+                      <iframe
+                        srcDoc={t.body_html}
+                        className="pointer-events-none absolute top-0 left-0 border-0"
+                        style={{
+                          width: '600px',
+                          height: '480px',
+                          transform: 'scale(0.25)',
+                          transformOrigin: 'top left',
+                        }}
+                        tabIndex={-1}
+                        sandbox=""
+                        title={`Preview: ${t.name}`}
+                      />
+                    </div>
+                  )}
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-medium text-foreground">{t.name}</h3>
