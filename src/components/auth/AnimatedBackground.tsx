@@ -5,16 +5,14 @@ import { motion } from 'framer-motion';
 export const AnimatedBackground = () => {
   return (
     <div className="fixed inset-0 overflow-hidden -z-10">
-      {/* Gradient mesh background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-background">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(155,135,245,0.15)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.1)_0%,transparent_50%)]" />
+      {/* Neutral radial gradient */}
+      <div className="absolute inset-0 bg-background">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.03)_0%,transparent_60%)]" />
       </div>
 
-      {/* Floating orbs */}
+      {/* Monochrome breathing orbs */}
       <motion.div
-        className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-full blur-3xl"
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-foreground/5 rounded-full blur-3xl"
         animate={{
           scale: [1, 1.2, 1],
           opacity: [0.3, 0.5, 0.3],
@@ -27,7 +25,7 @@ export const AnimatedBackground = () => {
       />
       
       <motion.div
-        className="absolute top-3/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-3xl"
+        className="absolute top-3/4 right-1/4 w-80 h-80 bg-foreground/5 rounded-full blur-3xl"
         animate={{
           scale: [1.2, 1, 1.2],
           opacity: [0.5, 0.3, 0.5],
@@ -39,29 +37,6 @@ export const AnimatedBackground = () => {
           delay: 2,
         }}
       />
-
-      
-      {/* Floating particles */}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-primary/60 rounded-full"
-          style={{
-            left: `${20 + (i * 15)}%`,
-            top: `${30 + (i * 10)}%`,
-          }}
-          animate={{
-            y: [-20, -40, -20],
-            opacity: [0.4, 1, 0.4],
-          }}
-          transition={{
-            duration: 4 + (i * 0.5),
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.5,
-          }}
-        />
-      ))}
     </div>
   );
 };

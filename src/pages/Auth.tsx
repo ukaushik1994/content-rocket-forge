@@ -34,7 +34,7 @@ const Auth = () => {
         toast.error(result.error.message);
       } else {
         toast.success('Welcome back! 🚀');
-        navigate(redirectTo || '/dashboard');
+        navigate(redirectTo || '/ai-chat');
       }
     } finally {
       setIsLoading(false);
@@ -89,7 +89,7 @@ const Auth = () => {
       {/* Main content */}
       <div className="relative z-10 w-full max-w-md">
         {/* Glass morphism container */}
-        <motion.div className="glass-panel rounded-3xl p-8 shadow-2xl" initial={{
+        <motion.div className="bg-background/90 backdrop-blur-md border border-border/10 rounded-3xl p-8" initial={{
         opacity: 0,
         scale: 0.9,
         y: 20

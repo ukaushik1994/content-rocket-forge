@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail, Lock, Sparkles } from 'lucide-react';
+import { Loader2, Mail, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EnhancedAuthFormProps {
@@ -44,8 +44,6 @@ export const EnhancedAuthForm = ({
   onToggleMode,
   onGoogleSignIn,
 }: EnhancedAuthFormProps) => {
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-
   const title = isSignIn ? 'Welcome Back' : 'Start Your Journey';
   const subtitle = isSignIn 
     ? 'Sign in to continue creating amazing content' 
@@ -62,7 +60,7 @@ export const EnhancedAuthForm = ({
       {/* Header */}
       <div className="text-center mb-8">
         <motion.h2
-          className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent"
+          className="text-3xl font-bold mb-2 text-foreground"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
@@ -100,13 +98,8 @@ export const EnhancedAuthForm = ({
               placeholder="Enter your email"
               value={email}
               onChange={(e) => onEmailChange(e.target.value)}
-              onFocus={() => setFocusedField('email')}
-              onBlur={() => setFocusedField(null)}
               disabled={isLoading}
-              className={cn(
-                "pl-10 h-12 transition-all duration-300 border-border/40 focus-visible:ring-primary/50",
-                focusedField === 'email' && "border-primary/60 shadow-lg shadow-primary/10"
-              )}
+              className="pl-10 h-12 border-border/40 focus:border-border/60 focus-visible:ring-0 focus-visible:ring-offset-0"
               required
             />
           </div>
@@ -125,49 +118,28 @@ export const EnhancedAuthForm = ({
               placeholder="Enter your password"
               value={password}
               onChange={(e) => onPasswordChange(e.target.value)}
-              onFocus={() => setFocusedField('password')}
-              onBlur={() => setFocusedField(null)}
               disabled={isLoading}
-              className={cn(
-                "pl-10 h-12 transition-all duration-300 border-border/40 focus-visible:ring-primary/50",
-                focusedField === 'password' && "border-primary/60 shadow-lg shadow-primary/10"
-              )}
+              className="pl-10 h-12 border-border/40 focus:border-border/60 focus-visible:ring-0 focus-visible:ring-offset-0"
               required
             />
           </div>
         </div>
 
         {/* Submit Button */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+        <Button
+          type="submit"
+          disabled={isLoading || !email || !password}
+          className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-medium transition-colors duration-200"
         >
-          <Button
-            type="submit"
-            disabled={isLoading || !email || !password}
-            className="w-full h-12 bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white font-medium shadow-lg shadow-primary/25 transition-all duration-300"
-          >
-            {isLoading ? (
-              <motion.div
-                className="flex items-center gap-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Launching...</span>
-              </motion.div>
-            ) : (
-              <motion.div
-                className="flex items-center gap-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>{buttonText}</span>
-              </motion.div>
-            )}
-          </Button>
-        </motion.div>
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Launching...</span>
+            </div>
+          ) : (
+            <span>{buttonText}</span>
+          )}
+        </Button>
       </motion.form>
 
       {/* Divider */}
@@ -179,7 +151,7 @@ export const EnhancedAuthForm = ({
       >
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border/30" />
+            <div className="w-full border-t border-border/10" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">or continue with</span>
@@ -193,34 +165,24 @@ export const EnhancedAuthForm = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.55 }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
       >
         <Button
           type="button"
           variant="outline"
           onClick={onGoogleSignIn}
           disabled={isLoading || isGoogleLoading}
-          className="w-full h-12 bg-background hover:bg-muted/50 border-border/40 hover:border-border/60 font-medium shadow-sm transition-all duration-300"
+          className="w-full h-12 bg-transparent border-border/20 hover:border-border/40 hover:bg-muted/20 font-medium transition-colors duration-200"
         >
           {isGoogleLoading ? (
-            <motion.div
-              className="flex items-center gap-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
+            <div className="flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>Connecting...</span>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              className="flex items-center gap-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
+            <div className="flex items-center gap-3">
               <GoogleLogo />
               <span>Continue with Google</span>
-            </motion.div>
+            </div>
           )}
         </Button>
       </motion.div>
@@ -238,7 +200,7 @@ export const EnhancedAuthForm = ({
             type="button"
             onClick={onToggleMode}
             disabled={isLoading || isGoogleLoading}
-            className="ml-2 font-medium text-primary hover:text-primary/80 transition-colors duration-200 underline underline-offset-4"
+            className="ml-2 font-medium text-foreground hover:text-foreground/80 transition-colors duration-200 underline underline-offset-4"
           >
             {isSignIn ? "Create account" : "Sign in"}
           </button>
