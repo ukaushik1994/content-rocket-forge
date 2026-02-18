@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverEvent, DragOverlay } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Undo2, Redo2, Monitor, Smartphone, Save, Eye, Paintbrush, X, FileText, Mail, Code, Copy, Download, Keyboard, Hash } from 'lucide-react';
+import { Undo2, Redo2, Monitor, Smartphone, Save, Eye, Paintbrush, X, FileText, Mail, Code, Copy, Download, Keyboard, Hash, ZoomIn, ZoomOut, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useEmailBuilder } from './useEmailBuilder';
@@ -15,6 +15,7 @@ import { BlockInspector } from './BlockInspector';
 import { EmailBuilderPreview } from './EmailBuilderPreview';
 import { StarterTemplatesPanel } from './StarterTemplatesPanel';
 import { BlockRenderer } from './BlockRenderer';
+import { BlockLayersPanel } from './BlockLayersPanel';
 import { QuickAddMenu } from './QuickAddMenu';
 import { EmailBlock, BlockType, getBlockDef, createBlock } from './blockDefinitions';
 import { UnsavedChangesDialog } from '@/components/content-builder/UnsavedChangesDialog';
@@ -35,6 +36,8 @@ interface EmailBuilderDialogProps {
   templateSubject?: string;
 }
 
+const ZOOM_LEVELS = [0.75, 0.85, 1, 1.15, 1.25];
+
 export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
   open, onOpenChange, initialBlocks, onSave, templateName, templateSubject,
 }) => {
@@ -47,24 +50,24 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
   const [showStarters, setShowStarters] = useState(false);
   const [codeHtml, setCodeHtml] = useState('');
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddIndex, setQuickAddIndex] = useState<number | undefined>(undefined);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showLayers, setShowLayers] = useState(true);
+  const [zoom, setZoom] = useState(1);
 
   const builder = useEmailBuilder(initialBlocks || []);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  // Sync canvas width with global styles
   const desktopWidth = builder.globalStyles.contentWidth || 600;
 
-  // Show starter templates when opening with no blocks
   useEffect(() => {
     if (open && (!initialBlocks || initialBlocks.length === 0) && builder.blocks.length === 0) {
       setShowStarters(true);
     }
   }, [open]);
 
-  // Sync name/subject from props
   useEffect(() => {
     if (open) {
       setName(templateName || '');
@@ -72,7 +75,6 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
     }
   }, [open, templateName, templateSubject]);
 
-  // Sync code HTML when switching to code mode
   useEffect(() => {
     if (mode === 'code') {
       setCodeHtml(builder.exportHtml());
@@ -160,7 +162,25 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
     toast.success('HTML file downloaded');
   }, [builder, name]);
 
-  // Get active block for drag overlay
+  const handleInsertBlockAt = useCallback((index: number) => {
+    setQuickAddIndex(index);
+    setShowQuickAdd(true);
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    setZoom(z => {
+      const idx = ZOOM_LEVELS.indexOf(z);
+      return idx < ZOOM_LEVELS.length - 1 ? ZOOM_LEVELS[idx + 1] : z;
+    });
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoom(z => {
+      const idx = ZOOM_LEVELS.indexOf(z);
+      return idx > 0 ? ZOOM_LEVELS[idx - 1] : z;
+    });
+  }, []);
+
   const activeBlock = activeDragId
     ? builder.blocks.find(b => b.id === activeDragId) ||
       (activeDragId.startsWith('palette-') ? (() => {
@@ -176,8 +196,11 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); builder.undo(); }
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) { e.preventDefault(); builder.redo(); }
       if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); handleSave(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === '=') { e.preventDefault(); handleZoomIn(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === '-') { e.preventDefault(); handleZoomOut(); }
       if (e.key === '/' && !e.metaKey && !e.ctrlKey && !(e.target as HTMLElement)?.closest('[contenteditable]') && !(e.target as HTMLElement)?.closest('input') && !(e.target as HTMLElement)?.closest('textarea')) {
         e.preventDefault();
+        setQuickAddIndex(undefined);
         setShowQuickAdd(true);
       }
       if (e.key === '?' && e.shiftKey) {
@@ -197,7 +220,7 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [open, builder, handleSave]);
+  }, [open, builder, handleSave, handleZoomIn, handleZoomOut]);
 
   const SHORTCUTS = [
     { keys: '⌘Z', label: 'Undo' },
@@ -205,6 +228,7 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
     { keys: '⌘S', label: 'Save' },
     { keys: '/', label: 'Quick add block' },
     { keys: 'Del', label: 'Delete block' },
+    { keys: '⌘+/−', label: 'Zoom in/out' },
     { keys: '⇧?', label: 'Toggle shortcuts' },
   ];
 
@@ -282,7 +306,7 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
 
               <div className="h-5 w-px bg-border/50 mx-1" />
 
-              {/* Device Preview */}
+              {/* Device Preview + Zoom */}
               {mode === 'visual' && (
                 <>
                   <Button variant={previewWidth === desktopWidth ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setPreviewWidth(desktopWidth)} title="Desktop">
@@ -290,6 +314,14 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
                   </Button>
                   <Button variant={previewWidth === 320 ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setPreviewWidth(320)} title="Mobile">
                     <Smartphone className="h-4 w-4" />
+                  </Button>
+                  <div className="h-5 w-px bg-border/50 mx-1" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut} disabled={zoom <= ZOOM_LEVELS[0]} title="Zoom out (⌘−)">
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <span className="text-[10px] text-muted-foreground w-8 text-center">{Math.round(zoom * 100)}%</span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomIn} disabled={zoom >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1]} title="Zoom in (⌘+)">
+                    <ZoomIn className="h-4 w-4" />
                   </Button>
                   <div className="h-5 w-px bg-border/50 mx-1" />
                 </>
@@ -333,7 +365,23 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
               />
             ) : mode === 'visual' ? (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-                <BlockPalette onAddBlock={(type) => builder.addBlock(type)} />
+                {/* Left sidebar: palette + layers */}
+                <div className="w-56 shrink-0 border-r border-border/50 bg-card/80 overflow-y-auto flex flex-col">
+                  <div className="flex-1 overflow-y-auto">
+                    <BlockPalette onAddBlock={(type) => builder.addBlock(type)} />
+                  </div>
+                  {showLayers && builder.blocks.length > 0 && (
+                    <div className="shrink-0 px-3 pb-3">
+                      <BlockLayersPanel
+                        blocks={builder.blocks}
+                        selectedBlockId={builder.selectedBlockId}
+                        onSelectBlock={(id) => builder.setSelectedBlockId(id)}
+                        onMoveUp={builder.moveBlockUp}
+                        onMoveDown={builder.moveBlockDown}
+                      />
+                    </div>
+                  )}
+                </div>
                 <BuilderCanvas
                   blocks={builder.blocks}
                   selectedBlockId={builder.selectedBlockId}
@@ -349,6 +397,8 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
                   overIndex={overIndex}
                   totalBlocks={builder.blocks.length}
                   justCreatedId={builder.justCreatedId}
+                  onInsertBlockAt={handleInsertBlockAt}
+                  zoom={zoom}
                 />
                 <BlockInspector
                   block={builder.selectedBlock}
@@ -398,8 +448,8 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
         {/* Quick Add Menu */}
         <QuickAddMenu
           open={showQuickAdd}
-          onClose={() => setShowQuickAdd(false)}
-          onAddBlock={(type) => builder.addBlock(type)}
+          onClose={() => { setShowQuickAdd(false); setQuickAddIndex(undefined); }}
+          onAddBlock={(type) => builder.addBlock(type, quickAddIndex)}
         />
 
         {/* Keyboard Shortcuts Panel */}

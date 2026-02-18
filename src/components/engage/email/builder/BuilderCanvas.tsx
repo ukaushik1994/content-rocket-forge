@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { EmailBlock } from './blockDefinitions';
+import { EmailBlock, BlockType } from './blockDefinitions';
 import { BlockRenderer } from './BlockRenderer';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
@@ -22,6 +22,8 @@ interface BuilderCanvasProps {
   overIndex: number | null;
   totalBlocks: number;
   justCreatedId?: string | null;
+  onInsertBlockAt?: (index: number) => void;
+  zoom?: number;
 }
 
 function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete, onDuplicate, onMoveUp, onMoveDown, onInlineEdit, onToggleLock, onToggleHidden, justCreated }: {
@@ -64,10 +66,28 @@ function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete,
   );
 }
 
+// Between-block insert button
+function InsertButton({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="relative h-0 group/insert z-[3]">
+      <div className="absolute inset-x-4 top-0 flex items-center justify-center -translate-y-1/2">
+        <div className="flex-1 h-px bg-transparent group-hover/insert:bg-primary/30 transition-colors" />
+        <button
+          onClick={(e) => { e.stopPropagation(); onClick(); }}
+          className="h-5 w-5 rounded-full bg-primary/80 text-primary-foreground flex items-center justify-center opacity-0 group-hover/insert:opacity-100 transition-all hover:bg-primary hover:scale-110 shadow-sm"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+        <div className="flex-1 h-px bg-transparent group-hover/insert:bg-primary/30 transition-colors" />
+      </div>
+    </div>
+  );
+}
+
 export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   blocks, selectedBlockId, onSelectBlock, onDeleteBlock, onDuplicateBlock,
   onMoveBlockUp, onMoveBlockDown, onInlineEdit, onToggleLock, onToggleHidden,
-  previewWidth, overIndex, totalBlocks, justCreatedId,
+  previewWidth, overIndex, totalBlocks, justCreatedId, onInsertBlockAt, zoom = 1,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: 'builder-canvas' });
 
@@ -76,7 +96,12 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
       <div
         ref={setNodeRef}
         className={`mx-auto bg-white shadow-lg rounded-sm min-h-[400px] transition-all ${isOver ? 'ring-2 ring-primary/50' : ''}`}
-        style={{ maxWidth: previewWidth, width: '100%' }}
+        style={{
+          maxWidth: previewWidth,
+          width: '100%',
+          transform: zoom !== 1 ? `scale(${zoom})` : undefined,
+          transformOrigin: 'top center',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {blocks.length === 0 ? (
@@ -94,6 +119,8 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
         ) : (
           <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-0">
+              {/* Insert button before first block */}
+              {onInsertBlockAt && <InsertButton onClick={() => onInsertBlockAt(0)} />}
               {blocks.map((block, idx) => (
                 <React.Fragment key={block.id}>
                   {overIndex === idx && (
@@ -114,6 +141,8 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
                     onToggleHidden={() => onToggleHidden(block.id)}
                     justCreated={block.id === justCreatedId}
                   />
+                  {/* Insert button between blocks */}
+                  {onInsertBlockAt && <InsertButton onClick={() => onInsertBlockAt(idx + 1)} />}
                 </React.Fragment>
               ))}
               {overIndex !== null && overIndex >= blocks.length && (
