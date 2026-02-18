@@ -180,7 +180,7 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
                 className={
                   destructive
                     ? "h-8 px-3 gap-1.5 text-xs"
-                    : "h-8 px-3 gap-1.5 bg-background/50 hover:bg-primary/10 border-border/50 hover:border-primary/30 text-xs"
+                    : "h-8 px-3 gap-1.5 bg-transparent border-border/20 hover:border-border/40 hover:bg-muted/30 text-muted-foreground hover:text-foreground text-xs"
                 }
                 onClick={() => handleActionClick(action)}
               >

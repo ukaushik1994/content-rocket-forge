@@ -368,7 +368,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     controls?: React.ReactNode;
   }> = ({ title, children, compact = false, controls }) => (
     <div className={cn(
-      "rounded-xl bg-card/30 border border-border/30",
+      "rounded-xl bg-transparent border border-border/20",
       compact ? "p-4" : "p-5"
     )}>
       {(title || controls) && (
@@ -925,20 +925,18 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 "fixed top-20 right-0 bottom-24 z-[35]",
                 // Responsive widths: full on mobile, 400px on tablet, 520-600px on desktop
                 "w-full sm:w-[400px] lg:w-[520px] xl:w-[600px]",
-                "bg-background/98 backdrop-blur-xl",
-                "border-l border-border/50",
+                "bg-background/90 backdrop-blur-md",
+                "border-l border-border/10",
                 "flex flex-col overflow-hidden"
               )}
             >
               {/* Clean Header */}
               <div className="flex-shrink-0">
-                <div className="px-6 py-5 border-b border-border/50">
+                <div className="px-6 py-5 border-b border-border/10">
                   <div className="flex items-start gap-3">
                     {/* Simple icon container */}
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
-                        <Activity className="w-5 h-5 text-muted-foreground" />
-                      </div>
+                       <Activity className="w-5 h-5 text-muted-foreground" />
                     </div>
                     
                     {/* Title and description */}
@@ -1041,7 +1039,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </div>
 
                     {/* Premium Minimal Chart Container */}
-                    <div className="rounded-xl bg-card/30 border border-border/30 p-5">
+                    <div className="rounded-xl bg-transparent border border-border/20 p-5">
                       <AnimatePresence mode="wait">
                         {activeView === 'chart' ? (
                           <motion.div
@@ -1177,15 +1175,15 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             const config = getInsightConfig(insight.insightType);
                             const InsightIcon = config.icon;
                             return (
-                              <Card 
-                                key={idx} 
-                                className={cn(
-                                  "p-3 border transition-colors hover:bg-white/[0.02]",
-                                  "bg-white/[0.02] backdrop-blur-sm",
-                                  "border-white/8",
-                                  "border-l-2",
-                                  config.borderColor.replace('border-', 'border-l-')
-                                )}
+                               <Card 
+                                 key={idx} 
+                                 className={cn(
+                                   "p-3 border transition-colors hover:bg-muted/20",
+                                   "bg-transparent",
+                                   "border-border/20",
+                                   "border-l-2",
+                                   config.borderColor.replace('border-', 'border-l-')
+                                 )}
                               >
                                 <div className="flex items-start gap-3">
                                   <div className={cn("flex-shrink-0 mt-0.5", config.textColor)}>
