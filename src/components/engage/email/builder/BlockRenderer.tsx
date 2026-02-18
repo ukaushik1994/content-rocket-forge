@@ -1,8 +1,15 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { EmailBlock, getBlockDef } from './blockDefinitions';
-import { GripVertical, Trash2, Copy, ChevronUp, ChevronDown, Lock, Unlock, Eye, EyeOff, ImagePlus } from 'lucide-react';
+import { GripVertical, Trash2, Copy, ChevronUp, ChevronDown, Lock, Unlock, Eye, EyeOff, ImagePlus, Bookmark } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InlineTextToolbar } from './InlineTextToolbar';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 
 // Social media icon colors & letters
 const SOCIAL_ICON_MAP: Record<string, { letter: string; color: string }> = {
@@ -28,6 +35,7 @@ interface BlockRendererProps {
   onInlineEdit?: (props: Record<string, any>) => void;
   onToggleLock?: () => void;
   onToggleHidden?: () => void;
+  onSaveAsReusable?: (block: EmailBlock) => void;
   dragHandleProps?: any;
   justCreated?: boolean;
 }
@@ -35,7 +43,7 @@ interface BlockRendererProps {
 export const BlockRenderer: React.FC<BlockRendererProps> = ({
   block, isSelected, isFirst, isLast, onSelect, onDelete, onDuplicate,
   onMoveUp, onMoveDown, onInlineEdit, onToggleLock, onToggleHidden,
-  dragHandleProps, justCreated,
+  onSaveAsReusable, dragHandleProps, justCreated,
 }) => {
   const def = getBlockDef(block.type);
   const p = block.props;
@@ -349,13 +357,67 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
         <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="p-1 hover:bg-muted/50 rounded" title="Duplicate">
           <Copy className="h-3 w-3 text-muted-foreground" />
         </button>
+        {onSaveAsReusable && (
+          <button onClick={(e) => { e.stopPropagation(); onSaveAsReusable(block); }} className="p-1 hover:bg-muted/50 rounded" title="Save as reusable">
+            <Bookmark className="h-3 w-3 text-muted-foreground" />
+          </button>
+        )}
         {!isLocked && (
           <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1 hover:bg-destructive/20 rounded" title="Delete">
             <Trash2 className="h-3 w-3 text-destructive" />
           </button>
         )}
       </div>
-      {renderContent()}
+
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div>{renderContent()}</div>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-48">
+          <ContextMenuItem onClick={onDuplicate}>
+            <Copy className="h-3.5 w-3.5 mr-2" /> Duplicate
+          </ContextMenuItem>
+          {!isLocked && onMoveUp && !isFirst && (
+            <ContextMenuItem onClick={onMoveUp}>
+              <ChevronUp className="h-3.5 w-3.5 mr-2" /> Move Up
+            </ContextMenuItem>
+          )}
+          {!isLocked && onMoveDown && !isLast && (
+            <ContextMenuItem onClick={onMoveDown}>
+              <ChevronDown className="h-3.5 w-3.5 mr-2" /> Move Down
+            </ContextMenuItem>
+          )}
+          <ContextMenuSeparator />
+          {onToggleLock && (
+            <ContextMenuItem onClick={onToggleLock}>
+              {isLocked ? <Unlock className="h-3.5 w-3.5 mr-2" /> : <Lock className="h-3.5 w-3.5 mr-2" />}
+              {isLocked ? 'Unlock' : 'Lock'}
+            </ContextMenuItem>
+          )}
+          {onToggleHidden && (
+            <ContextMenuItem onClick={onToggleHidden}>
+              {isHidden ? <Eye className="h-3.5 w-3.5 mr-2" /> : <EyeOff className="h-3.5 w-3.5 mr-2" />}
+              {isHidden ? 'Show' : 'Hide'}
+            </ContextMenuItem>
+          )}
+          {onSaveAsReusable && (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem onClick={() => onSaveAsReusable(block)}>
+                <Bookmark className="h-3.5 w-3.5 mr-2" /> Save as Reusable
+              </ContextMenuItem>
+            </>
+          )}
+          {!isLocked && (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+                <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+              </ContextMenuItem>
+            </>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
     </motion.div>
   );
 };

@@ -23,15 +23,17 @@ interface BuilderCanvasProps {
   totalBlocks: number;
   justCreatedId?: string | null;
   onInsertBlockAt?: (index: number) => void;
+  onSaveAsReusable?: (block: EmailBlock) => void;
   zoom?: number;
 }
 
-function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete, onDuplicate, onMoveUp, onMoveDown, onInlineEdit, onToggleLock, onToggleHidden, justCreated }: {
+function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete, onDuplicate, onMoveUp, onMoveDown, onInlineEdit, onToggleLock, onToggleHidden, onSaveAsReusable, justCreated }: {
   block: EmailBlock; isSelected: boolean; isFirst: boolean; isLast: boolean;
   onSelect: () => void; onDelete: () => void; onDuplicate: () => void;
   onMoveUp: () => void; onMoveDown: () => void;
   onInlineEdit: (props: Record<string, any>) => void;
   onToggleLock: () => void; onToggleHidden: () => void;
+  onSaveAsReusable?: (block: EmailBlock) => void;
   justCreated: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
@@ -59,6 +61,7 @@ function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete,
         onInlineEdit={onInlineEdit}
         onToggleLock={onToggleLock}
         onToggleHidden={onToggleHidden}
+        onSaveAsReusable={onSaveAsReusable}
         dragHandleProps={listeners}
         justCreated={justCreated}
       />
@@ -87,7 +90,7 @@ function InsertButton({ onClick }: { onClick: () => void }) {
 export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   blocks, selectedBlockId, onSelectBlock, onDeleteBlock, onDuplicateBlock,
   onMoveBlockUp, onMoveBlockDown, onInlineEdit, onToggleLock, onToggleHidden,
-  previewWidth, overIndex, totalBlocks, justCreatedId, onInsertBlockAt, zoom = 1,
+  previewWidth, overIndex, totalBlocks, justCreatedId, onInsertBlockAt, onSaveAsReusable, zoom = 1,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: 'builder-canvas' });
 
@@ -139,6 +142,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
                     onInlineEdit={(props) => onInlineEdit(block.id, props)}
                     onToggleLock={() => onToggleLock(block.id)}
                     onToggleHidden={() => onToggleHidden(block.id)}
+                    onSaveAsReusable={onSaveAsReusable}
                     justCreated={block.id === justCreatedId}
                   />
                   {/* Insert button between blocks */}
