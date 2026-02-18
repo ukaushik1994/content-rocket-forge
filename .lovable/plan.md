@@ -1,60 +1,99 @@
 
-# Email Builder -- Sidebar Fix & Feature Continuation
 
-## Current State (Tested End-to-End)
+# Repository Restructure -- Format-Based Content Hub
 
-### Working
-- Starter template picker (5 templates + start from scratch)
-- Block palette with 10 block types across 3 categories
-- Block selection, floating toolbar (lock, hide, move, duplicate, save, delete)
-- Inspector with full controls (text, colors, alignment, spacing, borders, gradients)
-- AI Rewrite on text blocks
-- Preview mode with Desktop/Mobile device frames
-- Code view with copy button
-- Undo/Redo, zoom controls
-- Canvas dot-grid background
-- Drag-and-drop reordering
+## Overview
 
-### Issues Found
+Transform the Repository from a flat "All Content" list into a format-organized hub with icon tabs at the top. Repurposed content (memes, social posts, emails, etc.) will be pulled from the `repurposed_contents` table and displayed under the correct category tab, each with a "link back" badge to its source article.
 
-1. **Layers panel barely visible** -- Only the "LAYERS 6" header and first row ("1 Header") peek above the bottom edge. The rest of the 6 layers are completely hidden. The sidebar palette takes up all vertical space and doesn't leave enough room.
+## How It Will Work
 
-2. **Sidebar has no collapsible sections** -- Users can't collapse palette categories to make room for layers. The palette and layers compete for the same vertical space.
+When you land on the Repository page, you'll see a row of icon tabs:
 
-3. **Variable placeholders not replaced in Preview** -- The preview shows `{{company_name}}` literally in the header instead of replacing it with the preview variable. The text body correctly shows "Hi John," but the header doesn't resolve.
+```text
+[All] [Socials] [Email/Newsletter] [Blog/Articles] [Video Scripts] [Campaigns]
+```
 
-## Fixes
+- **All**: Shows everything (current behavior)
+- **Socials**: Twitter, LinkedIn, Facebook, Instagram posts + Carousels + Memes (all pulled from `repurposed_contents` where `format_code` starts with `social-`, plus `carousel` and `meme`)
+- **Email/Newsletter**: Email content from `repurposed_contents` (format_code = `email`) + any `content_items` with `content_type = 'email'`
+- **Blog/Articles**: Content items with `content_type` = `article` or `blog` + repurposed `blog` format
+- **Video Scripts**: Repurposed content with `format_code = 'script'`
+- **Campaigns**: Existing campaign tab (unchanged)
 
-### 1. Make Sidebar Properly Split (`EmailBuilderDialog.tsx`)
-- Use a **resizable split** approach: palette gets `flex-1 min-h-0 overflow-y-auto` and layers gets a guaranteed minimum height
-- Add a **collapsible toggle** for the palette section so users can collapse it and see just layers
-- When blocks exist, layers section gets at minimum ~200px of guaranteed space
+Each repurposed content card will show a small badge like "From: [Original Article Title]" linking back to the source.
 
-### 2. Add Collapsible Categories to Palette (`BlockPalette.tsx`)
-- Make each category header clickable to collapse/expand its grid
-- This lets users collapse "Content" or "Layout" to save space
-- Add a small chevron indicator on each category header
-- Default all expanded, remembers state during session
+## What Changes
 
-### 3. Compact Palette Cards Further
-- Reduce card padding from `p-3` to `p-2.5`
-- Reduce icon from `h-8 w-8` to `h-7 w-7`
-- Reduce font from `text-[11px]` to `text-[10px]`
-- This saves another ~80px of vertical space
+### 1. New Data Hook: `useRepositoryContent`
+A new hook that fetches from BOTH `content_items` (existing) AND `repurposed_contents` (new), merging them into a unified list. Each repurposed item gets normalized into a display-friendly shape with:
+- `sourceType`: 'original' or 'repurposed'
+- `sourceContentId`: link to parent article (for repurposed)
+- `sourceContentTitle`: parent article title (for the badge)
+- `formatCode`: the format identifier
 
-### 4. Fix Variable Resolution in Preview Header
-- The `EmailBuilderPreview` component likely replaces variables in text blocks but may miss the header block's `text` prop
-- Ensure all block types get variable substitution in preview mode
+### 2. Update `RepositoryTabs.tsx`
+Replace the current 2-tab layout (All Content / Campaigns) with 6 icon tabs:
+- Each tab gets an icon from the existing `platformIcons.ts` config
+- Active tab highlights with the platform's color
+- URL param `?tab=socials` keeps state on refresh
+
+### 3. Update `RepositoryContent.tsx`
+- Accept a `category` prop that determines which content to show
+- For "socials" tab: filter for social format codes
+- For "email" tab: filter for email format codes + email content_type
+- For "blog" tab: filter for article/blog content_type
+- For "scripts" tab: filter for script format codes
+
+### 4. New Component: `RepurposedContentCard.tsx`
+A card variant for repurposed content that shows:
+- Format icon (Twitter, LinkedIn, Meme, etc.)
+- Content preview (first ~150 chars)
+- "From: [Article Title]" link badge
+- Created date
+- Quick actions (view, copy, delete)
+
+### 5. Update `RepositoryCard.tsx` / `SimplifiedRepositoryCard.tsx`
+Add a small format icon badge so original articles also show which repurposed formats exist (e.g., tiny Twitter + LinkedIn icons if those were generated).
 
 ---
 
-## Technical Summary
+## Technical Details
 
+### Files to Create
+| File | Purpose |
+|------|---------|
+| `src/hooks/useRepositoryContent.ts` | Fetches + merges content_items and repurposed_contents |
+| `src/components/repository/RepurposedContentCard.tsx` | Card component for repurposed content display |
+| `src/components/repository/CategoryContent.tsx` | Wrapper that filters content by category |
+
+### Files to Modify
 | File | Changes |
 |------|---------|
-| `EmailBuilderDialog.tsx` | Guaranteed min-height for layers section, collapse toggle for palette |
-| `BlockPalette.tsx` | Collapsible category sections with chevrons, slightly more compact cards |
-| `BlockLayersPanel.tsx` | Minor: remove max-height cap since parent now controls sizing |
-| `EmailBuilderPreview.tsx` | Fix variable replacement to cover header block text |
+| `RepositoryTabs.tsx` | 6 icon tabs instead of 2 |
+| `RepositoryContent.tsx` | Accept category filter, use new hook |
+| `RepositoryCard.tsx` | Add repurposed format badges |
+| `RepositoryHero.tsx` | Update subtitle to reflect multi-format hub |
 
-Total: 4 files modified, 0 new files.
+### Data Flow
+```text
+Repository Page
+  --> RepositoryTabs (6 icon tabs)
+      --> CategoryContent (filters by selected tab)
+          --> useRepositoryContent hook
+              --> content_items table (originals)
+              --> repurposed_contents table (repurposed)
+          --> RepositoryCard (for originals)
+          --> RepurposedContentCard (for repurposed, with "From:" badge)
+```
+
+### Category-to-Format Mapping
+| Tab | Format Codes Included |
+|-----|----------------------|
+| All | Everything |
+| Socials | `social-twitter`, `social-linkedin`, `social-facebook`, `social-instagram`, `carousel`, `meme` |
+| Email | `email` + content_type `email` |
+| Blog | content_type `article`, `blog` + format `blog` |
+| Video Scripts | `script` |
+| Campaigns | Existing campaign logic (unchanged) |
+
