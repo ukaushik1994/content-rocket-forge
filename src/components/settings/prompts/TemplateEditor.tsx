@@ -115,7 +115,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               />
               
               {/* Placeholder Help */}
-              <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
+              <div className="flex items-start gap-2 p-3 bg-transparent border border-border/20 rounded-md">
                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                 <div className="text-xs space-y-1">
                   <p className="font-medium">Available placeholders:</p>
@@ -133,7 +133,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           {placeholderPreview && (
             <div className="space-y-2">
               <Label className="text-sm font-medium">Live Preview</Label>
-              <div className="p-3 bg-primary/5 rounded-md border border-primary/20">
+              <div className="p-3 bg-transparent rounded-md border border-border/20">
                 <pre className="text-xs whitespace-pre-wrap text-muted-foreground leading-relaxed">
                   {placeholderPreview}
                 </pre>

@@ -17,7 +17,7 @@ export const ApiKeyStatus = ({
 }: ApiKeyStatusProps) => {
   if (provider.required && !keyExists) {
     return (
-      <Alert variant="destructive" className="bg-red-900/20 border-red-500/30">
+      <Alert variant="destructive" className="bg-transparent border-red-500/20">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>API Key Required</AlertTitle>
         <AlertDescription>
@@ -30,7 +30,7 @@ export const ApiKeyStatus = ({
   
   if (keyExists && testSuccessful) {
     return (
-      <Alert className="bg-green-900/20 border-green-500/30">
+      <Alert className="bg-transparent border-green-500/20">
         <Check className="h-4 w-4 text-green-500" />
         <AlertTitle>API Connected</AlertTitle>
         <AlertDescription>

@@ -97,7 +97,7 @@ export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
   if (!connectionInfo || !connectionInfo.is_active) {
     return (
       <div className="space-y-4">
-        <Card className="p-4 bg-muted/50">
+        <Card className="p-4 bg-transparent border-border/20">
           <h4 className="font-medium mb-2 text-sm">🔐 Wix API Connection</h4>
           <p className="text-xs text-muted-foreground mb-2">
             Connect your Wix site using your Site ID and API Key.
@@ -150,7 +150,7 @@ export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
 
   return (
     <div className="space-y-4">
-      <Card className="p-4 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+      <Card className="p-4 bg-transparent border border-green-500/20">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-600" />

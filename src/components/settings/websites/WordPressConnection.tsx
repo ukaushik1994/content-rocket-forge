@@ -120,7 +120,7 @@ export const WordPressConnection = ({ onConnectionChange }: WordPressConnectionP
   return (
     <div className="space-y-4">
       {/* Helper Card */}
-      <Card className="p-4 bg-muted/50">
+      <Card className="p-4 bg-transparent border-border/20">
         <h4 className="font-medium mb-2 text-sm">📘 How to create an Application Password:</h4>
         <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
           <li>Log into WordPress → Users → Profile</li>
