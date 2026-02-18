@@ -308,7 +308,7 @@ export function FormatPromptSettings() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Sparkles className="h-5 w-5 text-muted-foreground" />
               AI-Enhanced Template Preview
             </DialogTitle>
             <DialogDescription>
@@ -318,9 +318,9 @@ export function FormatPromptSettings() {
           
           <div className="grid gap-6 py-4">
             {enhancementResult?.feedbackAnalysis && (
-              <div className="p-4 bg-gradient-to-r from-primary/10 to-purple/10 rounded-lg border border-primary/20">
+              <div className="p-4 bg-transparent rounded-lg border border-border/20">
                 <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
+                  <Sparkles className="h-4 w-4 text-muted-foreground" />
                   Feedback Analysis
                 </h4>
                 <p className="text-sm text-muted-foreground">{enhancementResult.feedbackAnalysis}</p>
@@ -328,9 +328,9 @@ export function FormatPromptSettings() {
             )}
             
             {enhancementResult?.suggestions && enhancementResult.suggestions.length > 0 && (
-              <div className="p-4 bg-gradient-to-r from-secondary/10 to-accent/10 rounded-lg border border-secondary/20">
+              <div className="p-4 bg-transparent rounded-lg border border-border/20">
                 <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-secondary" />
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
                   Common Issues Addressed
                 </h4>
                 <div className="flex flex-wrap gap-2">
@@ -346,7 +346,7 @@ export function FormatPromptSettings() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="text-sm font-medium">Current Template</div>
-                <div className="p-3 bg-muted/30 rounded-md border">
+                <div className="p-3 bg-transparent rounded-md border border-border/20">
                   <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
                     {getPromptTemplatesByType(activeFormatId)[0]?.promptTemplate || 'No template found'}
                   </pre>
@@ -355,7 +355,7 @@ export function FormatPromptSettings() {
               
               <div className="space-y-2">
                 <div className="text-sm font-medium">Enhanced Template</div>
-                <div className="p-3 bg-primary/5 rounded-md border border-primary/20">
+                <div className="p-3 bg-transparent rounded-md border border-border/20">
                   <pre className="text-xs whitespace-pre-wrap font-mono">
                     {enhancementResult?.enhancedTemplate || 'No enhancement available'}
                   </pre>
