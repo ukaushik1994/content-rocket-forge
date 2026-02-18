@@ -1,7 +1,19 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { EmailBlock, getBlockDef } from './blockDefinitions';
 import { GripVertical, Trash2, Copy, ChevronUp, ChevronDown, Lock, Unlock, Eye, EyeOff, ImagePlus } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { InlineTextToolbar } from './InlineTextToolbar';
+
+// Social media icon colors & letters
+const SOCIAL_ICON_MAP: Record<string, { letter: string; color: string }> = {
+  Twitter: { letter: '𝕏', color: '#000000' },
+  LinkedIn: { letter: 'in', color: '#0077B5' },
+  Facebook: { letter: 'f', color: '#1877F2' },
+  Instagram: { letter: '📷', color: '#E4405F' },
+  YouTube: { letter: '▶', color: '#FF0000' },
+  TikTok: { letter: '♪', color: '#000000' },
+  Pinterest: { letter: 'P', color: '#E60023' },
+};
 
 interface BlockRendererProps {
   block: EmailBlock;
@@ -31,6 +43,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
   const editRef = useRef<HTMLDivElement>(null);
   const isLocked = block.locked;
   const isHidden = block.hidden;
+  const [spacerDragging, setSpacerDragging] = useState(false);
+  const spacerStartRef = useRef<{ y: number; height: number }>({ y: 0, height: 0 });
 
   // Populate innerHTML when entering edit mode for text blocks
   useEffect(() => {
@@ -54,21 +68,74 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
   };
 
   const handleInlineKeyDown = (e: React.KeyboardEvent, key: string) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && block.type === 'header') {
       e.preventDefault();
       handleInlineBlur(key);
       editRef.current?.blur();
     }
   };
 
+  // Spacer drag-to-resize
+  const handleSpacerMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isLocked) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setSpacerDragging(true);
+    spacerStartRef.current = { y: e.clientY, height: p.height || 32 };
+
+    const handleMove = (ev: MouseEvent) => {
+      const delta = ev.clientY - spacerStartRef.current.y;
+      const newHeight = Math.max(8, Math.min(200, spacerStartRef.current.height + delta));
+      onInlineEdit?.({ height: Math.round(newHeight / 4) * 4 });
+    };
+
+    const handleUp = () => {
+      setSpacerDragging(false);
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+  }, [isLocked, p.height, onInlineEdit]);
+
   const isDefaultImage = !p.url || p.url === '';
 
+  // Gradient background helper
+  const getGradientBg = (bgColor: string) => {
+    if (p.gradientEnabled && p.gradientEndColor) {
+      return `linear-gradient(${p.gradientDirection || '135deg'}, ${bgColor}, ${p.gradientEndColor})`;
+    }
+    return undefined;
+  };
+
+  // Border style helper
+  const getBorderStyle = () => {
+    if (p.borderWidth && p.borderWidth > 0) {
+      return {
+        border: `${p.borderWidth}px ${p.borderStyle || 'solid'} ${p.borderColor || '#e2e8f0'}`,
+        borderRadius: p.borderRadius ? `${p.borderRadius}px` : undefined,
+      };
+    }
+    return {};
+  };
+
   const renderContent = () => {
+    const blockPadding = `${p.paddingY ?? 12}px ${p.paddingX ?? 24}px`;
+
     switch (block.type) {
-      case 'header':
+      case 'header': {
+        const bg = getGradientBg(p.backgroundColor);
         return (
-          <div style={{ backgroundColor: p.backgroundColor, padding: `${p.paddingY || 32}px 24px`, textAlign: p.alignment as any }}>
+          <div style={{
+            backgroundColor: bg ? undefined : p.backgroundColor,
+            backgroundImage: bg,
+            padding: `${p.paddingY || 32}px ${p.paddingX ?? 24}px`,
+            textAlign: p.alignment as any,
+            ...getBorderStyle(),
+          }}>
             {p.logoUrl && <img src={p.logoUrl} alt="Logo" style={{ maxHeight: 40, marginBottom: 8 }} />}
+            {isSelected && !isLocked && <InlineTextToolbar visible={isEditing} />}
             <h1
               ref={isSelected && !isLocked ? editRef : undefined}
               contentEditable={isSelected && !isLocked}
@@ -86,28 +153,33 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
             </h1>
           </div>
         );
+      }
       case 'text':
         return (
-          <div
-            ref={isSelected && !isLocked ? editRef : undefined}
-            contentEditable={isSelected && !isLocked}
-            suppressContentEditableWarning
-            onFocus={() => setIsEditing(true)}
-            onBlur={() => handleInlineBlur('content')}
-            style={{
-              padding: `${p.paddingY || 12}px 24px`, fontSize: p.fontSize || 16,
-              color: p.textColor, textAlign: p.alignment as any,
-              lineHeight: p.lineHeight || 1.6, outline: 'none',
-              cursor: isSelected && !isLocked ? 'text' : 'pointer',
-            }}
-            dangerouslySetInnerHTML={!isSelected ? { __html: p.content } : undefined}
-          />
+          <div>
+            {isSelected && !isLocked && <div className="px-6 pt-1"><InlineTextToolbar visible={isEditing} /></div>}
+            <div
+              ref={isSelected && !isLocked ? editRef : undefined}
+              contentEditable={isSelected && !isLocked}
+              suppressContentEditableWarning
+              onFocus={() => setIsEditing(true)}
+              onBlur={() => handleInlineBlur('content')}
+              style={{
+                padding: blockPadding, fontSize: p.fontSize || 16,
+                color: p.textColor, textAlign: p.alignment as any,
+                lineHeight: p.lineHeight || 1.6, outline: 'none',
+                cursor: isSelected && !isLocked ? 'text' : 'pointer',
+                ...getBorderStyle(),
+              }}
+              dangerouslySetInnerHTML={!isSelected ? { __html: p.content } : undefined}
+            />
+          </div>
         );
       case 'image':
         if (isDefaultImage) {
           return (
-            <div style={{ padding: '12px 24px', textAlign: p.alignment as any }}>
-              <div className="flex flex-col items-center justify-center gap-2 py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg bg-muted/10">
+            <div style={{ padding: blockPadding, textAlign: p.alignment as any }}>
+              <div className="flex flex-col items-center justify-center gap-2 py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg bg-muted/10" style={getBorderStyle()}>
                 <ImagePlus className="h-8 w-8 text-muted-foreground/40" />
                 <span className="text-xs text-muted-foreground/60">Add image URL in inspector</span>
               </div>
@@ -115,37 +187,59 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
           );
         }
         return (
-          <div style={{ padding: '12px 24px', textAlign: p.alignment as any }}>
-            <img src={p.url} alt={p.alt} style={{ width: p.width, maxWidth: '100%', display: 'inline-block' }} />
+          <div style={{ padding: blockPadding, textAlign: p.alignment as any }}>
+            <img src={p.url} alt={p.alt} style={{ width: p.width, maxWidth: '100%', display: 'inline-block', ...getBorderStyle() }} />
           </div>
         );
-      case 'button':
+      case 'button': {
+        const btnBg = getGradientBg(p.backgroundColor);
         return (
-          <div style={{ padding: '16px 24px', textAlign: p.alignment as any }}>
+          <div style={{ padding: blockPadding, textAlign: p.alignment as any }}>
             <span
-              className="transition-all hover:brightness-110"
+              className="transition-all hover:brightness-110 hover:shadow-md"
               style={{
-                display: 'inline-block', backgroundColor: p.backgroundColor, color: p.textColor,
-                padding: `${p.paddingY || 14}px ${p.paddingX || 32}px`, borderRadius: p.borderRadius || 6,
+                display: 'inline-block',
+                backgroundColor: btnBg ? undefined : p.backgroundColor,
+                backgroundImage: btnBg,
+                color: p.textColor,
+                padding: `${p.paddingY || 14}px ${p.paddingX || 32}px`,
+                borderRadius: p.borderRadius || 6,
                 fontSize: p.fontSize || 16, fontWeight: 'bold', fontFamily: 'Arial, sans-serif',
                 cursor: 'pointer',
               }}
             >{p.text}</span>
           </div>
         );
+      }
       case 'divider':
         return (
-          <div style={{ padding: `${p.marginY || 20}px 24px` }}>
+          <div style={{ padding: `${p.marginY || 20}px ${p.paddingX ?? 24}px` }}>
             <hr style={{ border: 'none', borderTop: `${p.thickness || 1}px solid ${p.color}`, margin: 0 }} />
           </div>
         );
       case 'spacer':
-        return <div style={{ height: p.height || 32 }} className="flex items-center justify-center"><span className="text-[10px] text-muted-foreground">{p.height}px</span></div>;
+        return (
+          <div
+            style={{ height: p.height || 32, position: 'relative' }}
+            className="flex items-center justify-center"
+          >
+            <span className="text-[10px] text-muted-foreground">{p.height || 32}px</span>
+            {/* Resize handle */}
+            {isSelected && !isLocked && (
+              <div
+                onMouseDown={handleSpacerMouseDown}
+                className={`absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize flex justify-center items-center hover:bg-primary/10 transition-colors ${spacerDragging ? 'bg-primary/20' : ''}`}
+              >
+                <div className="w-8 h-0.5 bg-primary/40 rounded-full" />
+              </div>
+            )}
+          </div>
+        );
       case 'columns': {
         const cols = p.columns || [];
         const count = p.columnCount || 2;
         return (
-          <div style={{ padding: '12px 24px', display: 'flex', gap: p.gap || 16 }}>
+          <div style={{ padding: blockPadding, display: 'flex', gap: p.gap || 16, ...getBorderStyle() }}>
             {cols.slice(0, count).map((col: any, i: number) => (
               <div key={i} style={{ flex: 1, fontSize: 14, color: '#333' }} dangerouslySetInnerHTML={{ __html: col.content || '' }} />
             ))}
@@ -155,16 +249,33 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
       case 'social': {
         const enabled = (p.platforms || []).filter((pl: any) => pl.enabled);
         return (
-          <div style={{ padding: '16px 24px', textAlign: p.alignment as any }}>
-            {enabled.map((pl: any, i: number) => (
-              <span key={i} style={{ display: 'inline-block', margin: '0 6px', color: '#3b82f6', fontSize: 14 }}>{pl.name}</span>
-            ))}
+          <div style={{ padding: blockPadding, textAlign: p.alignment as any }}>
+            <div style={{ display: 'inline-flex', gap: 10, alignItems: 'center' }}>
+              {enabled.map((pl: any, i: number) => {
+                const icon = SOCIAL_ICON_MAP[pl.name] || { letter: pl.name[0], color: '#6b7280' };
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      width: 36, height: 36, borderRadius: p.iconStyle === 'rounded' ? 8 : '50%',
+                      backgroundColor: icon.color, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#fff', fontSize: 14, fontWeight: 'bold', fontFamily: 'Arial, sans-serif',
+                      cursor: 'pointer', transition: 'transform 0.15s',
+                    }}
+                    className="hover:scale-110"
+                    title={pl.name}
+                  >
+                    {icon.letter}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         );
       }
       case 'footer':
         return (
-          <div style={{ padding: 24, textAlign: 'center', fontSize: p.fontSize || 12, color: p.textColor, lineHeight: 1.5 }}>
+          <div style={{ padding: `${p.paddingY ?? 24}px ${p.paddingX ?? 24}px`, textAlign: 'center', fontSize: p.fontSize || 12, color: p.textColor, lineHeight: 1.5 }}>
             <p style={{ margin: '0 0 4px' }}>{p.companyName}</p>
             <p style={{ margin: '0 0 4px' }}>{p.address}</p>
             <p style={{ margin: 0 }}><span style={{ textDecoration: 'underline' }}>{p.unsubscribeText}</span></p>
@@ -172,8 +283,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
         );
       case 'video':
         return (
-          <div style={{ padding: '12px 24px', textAlign: p.alignment as any }}>
-            <img src={p.thumbnailUrl} alt={p.alt} style={{ maxWidth: '100%', display: 'inline-block' }} />
+          <div style={{ padding: blockPadding, textAlign: p.alignment as any }}>
+            <img src={p.thumbnailUrl} alt={p.alt} style={{ maxWidth: '100%', display: 'inline-block', ...getBorderStyle() }} />
           </div>
         );
       default:
@@ -184,12 +295,15 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
   return (
     <motion.div
       onClick={onSelect}
-      initial={justCreated ? { scale: 0.95, opacity: 0.5 } : false}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.25 }}
+      initial={justCreated ? { scale: 0.95, opacity: 0.5, boxShadow: '0 0 0 3px hsl(var(--primary) / 0.3)' } : false}
+      animate={{ scale: 1, opacity: 1, boxShadow: '0 0 0 0px transparent' }}
+      transition={{ duration: 0.35 }}
       className={`group relative transition-all cursor-pointer ${
         isLocked ? 'cursor-default' : ''
-      } ${isSelected ? 'ring-2 ring-primary rounded-sm' : 'hover:ring-1 hover:ring-border rounded-sm'}`}
+      } ${isSelected
+        ? 'ring-2 ring-primary rounded-sm'
+        : 'hover:ring-1 hover:ring-border hover:shadow-sm hover:-translate-y-[0.5px] rounded-sm'
+      }`}
     >
       {/* Hidden overlay */}
       {isHidden && (
@@ -207,13 +321,11 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
 
       {/* Toolbar */}
       <div className={`absolute -top-3 right-2 z-10 flex gap-0.5 bg-card border border-border/60 rounded-md shadow-sm px-1 py-0.5 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-        {/* Lock/Unlock */}
         {onToggleLock && (
           <button onClick={(e) => { e.stopPropagation(); onToggleLock(); }} className="p-1 hover:bg-muted/50 rounded" title={isLocked ? 'Unlock' : 'Lock'}>
             {isLocked ? <Lock className="h-3 w-3 text-amber-500" /> : <Unlock className="h-3 w-3 text-muted-foreground" />}
           </button>
         )}
-        {/* Visibility */}
         {onToggleHidden && (
           <button onClick={(e) => { e.stopPropagation(); onToggleHidden(); }} className="p-1 hover:bg-muted/50 rounded" title={isHidden ? 'Show' : 'Hide'}>
             {isHidden ? <EyeOff className="h-3 w-3 text-muted-foreground" /> : <Eye className="h-3 w-3 text-muted-foreground" />}

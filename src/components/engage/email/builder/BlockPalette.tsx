@@ -39,7 +39,7 @@ const CATEGORIES = [
 
 export const BlockPalette: React.FC<BlockPaletteProps> = ({ onAddBlock }) => {
   return (
-    <div className="w-56 shrink-0 border-r border-border/50 bg-card/80 overflow-y-auto p-3 space-y-4">
+    <div className="p-3 space-y-4">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Blocks</p>
       {CATEGORIES.map((cat) => {
         const items = BLOCK_DEFINITIONS.filter(d => d.category === cat.key);

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, Lock, Unlock, Eye, EyeOff } from 'lucide-react';
+import { Trash2, Lock, Unlock, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { GlobalStyles } from './htmlExporter';
 import { GlobalStylesPanel } from './GlobalStylesPanel';
 import { ColorPickerField } from './ColorPickerField';
@@ -40,6 +40,75 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
   </div>
 );
 
+// Universal padding controls
+const PaddingControls = ({ p, set }: { p: Record<string, any>; set: (key: string, value: any) => void }) => (
+  <div className="space-y-2 pt-2 border-t border-border/30">
+    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Spacing</p>
+    <Field label={`Horizontal Padding: ${p.paddingX ?? 24}px`}>
+      <Slider min={0} max={60} step={4} value={[p.paddingX ?? 24]} onValueChange={([v]) => set('paddingX', v)} />
+    </Field>
+    <Field label={`Vertical Padding: ${p.paddingY ?? 12}px`}>
+      <Slider min={0} max={60} step={4} value={[p.paddingY ?? 12]} onValueChange={([v]) => set('paddingY', v)} />
+    </Field>
+  </div>
+);
+
+// Gradient controls
+const GradientControls = ({ p, set }: { p: Record<string, any>; set: (key: string, value: any) => void }) => (
+  <div className="space-y-2 pt-2 border-t border-border/30">
+    <div className="flex items-center justify-between">
+      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Gradient</p>
+      <Switch checked={p.gradientEnabled || false} onCheckedChange={v => set('gradientEnabled', v)} />
+    </div>
+    {p.gradientEnabled && (
+      <>
+        <ColorPickerField label="End Color" value={p.gradientEndColor || '#8b5cf6'} onChange={v => set('gradientEndColor', v)} />
+        <Field label="Direction">
+          <Select value={p.gradientDirection || '135deg'} onValueChange={v => set('gradientDirection', v)}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0deg">Top → Bottom</SelectItem>
+              <SelectItem value="90deg">Left → Right</SelectItem>
+              <SelectItem value="135deg">Diagonal ↘</SelectItem>
+              <SelectItem value="180deg">Bottom → Top</SelectItem>
+              <SelectItem value="270deg">Right → Left</SelectItem>
+              <SelectItem value="315deg">Diagonal ↗</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+      </>
+    )}
+  </div>
+);
+
+// Border controls
+const BorderControls = ({ p, set }: { p: Record<string, any>; set: (key: string, value: any) => void }) => (
+  <div className="space-y-2 pt-2 border-t border-border/30">
+    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Border</p>
+    <Field label={`Width: ${p.borderWidth || 0}px`}>
+      <Slider min={0} max={8} step={1} value={[p.borderWidth || 0]} onValueChange={([v]) => set('borderWidth', v)} />
+    </Field>
+    {(p.borderWidth || 0) > 0 && (
+      <>
+        <ColorPickerField label="Border Color" value={p.borderColor || '#e2e8f0'} onChange={v => set('borderColor', v)} />
+        <Field label="Style">
+          <Select value={p.borderStyle || 'solid'} onValueChange={v => set('borderStyle', v)}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="solid">Solid</SelectItem>
+              <SelectItem value="dashed">Dashed</SelectItem>
+              <SelectItem value="dotted">Dotted</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label={`Border Radius: ${p.borderRadius || 0}px`}>
+          <Slider min={0} max={24} step={1} value={[p.borderRadius || 0]} onValueChange={([v]) => set('borderRadius', v)} />
+        </Field>
+      </>
+    )}
+  </div>
+);
+
 export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate, onDelete, onToggleLock, onToggleHidden, globalStyles, onUpdateGlobalStyles }) => {
   if (!block) {
     return (
@@ -57,6 +126,11 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
   const p = block.props;
   const set = (key: string, value: any) => onUpdate(block.id, { [key]: value });
 
+  // Which block types support which extra controls
+  const hasPadding = ['header', 'text', 'image', 'button', 'columns', 'social', 'footer', 'video', 'divider'].includes(block.type);
+  const hasGradient = ['header', 'button'].includes(block.type);
+  const hasBorder = ['text', 'image', 'columns', 'video'].includes(block.type);
+
   const renderFields = () => {
     switch (block.type) {
       case 'header':
@@ -68,7 +142,6 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
             <Field label="Font Size"><Slider min={16} max={48} step={1} value={[p.fontSize || 28]} onValueChange={([v]) => set('fontSize', v)} /></Field>
             <ColorPickerField label="Background Color" value={p.backgroundColor} onChange={v => set('backgroundColor', v)} />
             <ColorPickerField label="Text Color" value={p.textColor} onChange={v => set('textColor', v)} />
-            <Field label="Vertical Padding"><Slider min={8} max={64} step={4} value={[p.paddingY || 32]} onValueChange={([v]) => set('paddingY', v)} /></Field>
           </>
         );
       case 'text':
@@ -150,6 +223,15 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
         return (
           <>
             <Field label="Alignment"><AlignmentSelect value={p.alignment} onChange={v => set('alignment', v)} /></Field>
+            <Field label="Icon Style">
+              <Select value={p.iconStyle || 'filled'} onValueChange={v => set('iconStyle', v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="filled">Circle</SelectItem>
+                  <SelectItem value="rounded">Rounded</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
             {(p.platforms || []).map((pl: any, i: number) => (
               <div key={i} className="flex items-center gap-2">
                 <Switch checked={pl.enabled} onCheckedChange={v => {
@@ -217,6 +299,9 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
       </div>
       <div className="p-3 space-y-3">
         {renderFields()}
+        {hasPadding && <PaddingControls p={p} set={set} />}
+        {hasGradient && <GradientControls p={p} set={set} />}
+        {hasBorder && <BorderControls p={p} set={set} />}
       </div>
     </div>
   );
