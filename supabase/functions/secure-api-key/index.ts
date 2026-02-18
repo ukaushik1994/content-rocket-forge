@@ -227,9 +227,11 @@ serve(async (req) => {
       } catch (decryptError: any) {
         console.error('❌ Decryption failed:', decryptError);
         
-        // Check if it's a legacy key format error
+        // Check if it's a legacy/incompatible key format error
         const isLegacyKey = decryptError?.message === 'LEGACY_KEY_FORMAT' || 
-                           decryptError?.message?.includes('Tag length overflows');
+                           decryptError?.message?.includes('Tag length overflows') ||
+                           decryptError?.name === 'OperationError' ||
+                           decryptError?.message?.includes('Decryption failed');
         
        // Return 200 with success:false for legacy keys so client can handle gracefully
         return new Response(
