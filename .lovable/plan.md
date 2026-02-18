@@ -1,79 +1,94 @@
 
 
-# Chat Sidebar — Apple-Inspired Theme Alignment
+# Auth Pages — Apple-Inspired Theme Alignment
 
-## Current Issues
-The `ChatHistorySidebar` still uses the old visual language: gradient buttons (`bg-primary`), heavy borders (`border-border/30`), left-border accents on active items, filter/sort dropdowns adding visual noise, large empty-state icons, and a cluttered footer with a Settings button and conversation count. The floating sidebar toggle button in `EnhancedChatInterface.tsx` also uses `bg-card` with shadows — inconsistent with the flat, transparent aesthetic.
+## Overview
 
-## Changes
+Strip all gradient fills, colored glows, animated shimmer effects, and shadow-heavy styling from the auth pages. Replace with the same flat, transparent, monochrome aesthetic used throughout the rest of the app.
 
-### 1. ChatHistorySidebar.tsx — Full Thematic Overhaul
+## Files and Changes
 
-**Header**
-- Remove the `History` icon + label row — unnecessary chrome. Replace with just "Chats" as a subtle `text-xs uppercase tracking-widest text-muted-foreground/50` label
-- "New Chat" button: Change from solid `bg-primary` to a ghost pill — `bg-transparent border border-border/20 text-muted-foreground hover:text-foreground hover:border-border/40 rounded-full`. Just a `+` icon and "New Chat" text, no fill color
+### 1. AnimatedBackground.tsx — Simplify to subtle monochrome
 
-**Search**
-- Flatten the input: `bg-transparent border-border/20 focus:border-border/40` — remove `focus:ring` entirely
-- Remove the Filter and Sort dropdown buttons below search. They add clutter for a feature most users never touch. The default "recent first, hide archived" behavior is sufficient
+**Remove:**
+- Purple/blue radial gradients (`rgba(155,135,245,0.15)`, `rgba(59,130,246,0.1)`)
+- Colored floating orbs (`from-primary/20 to-blue-500/20`, `from-blue-500/20 to-purple-500/20`)
+- Colored floating particles (`bg-primary/60`)
 
-**Conversation Items**
-- Remove the left-border accent (`border-l-2 border-l-primary`) on active items — replace with a subtle `bg-muted/40` background only
-- Remove `MessageSquare` icon from each item — the context is obvious, the icon is redundant
-- Remove hover scale animations (`whileHover`, `whileTap`) — flat and still
-- Simplify the three-dot menu: keep it, but make it `opacity-0 group-hover:opacity-100` with no transition flair
-- Pin icon stays but becomes even more subtle (`text-muted-foreground/40`)
+**Replace with:**
+- Single neutral radial gradient: `bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.03)_0%,transparent_60%)]`
+- Two monochrome orbs using `bg-foreground/5` with `blur-3xl` (keep the gentle breathing animation but no color)
+- Remove floating particles entirely (visual noise)
 
-**Empty States**
-- Reduce icon size from `h-10 w-10` to `h-5 w-5`
-- Lighter text weight, fewer words
+### 2. RocketLogo.tsx — Remove gradient text
 
-**Footer**
-- Remove the conversation count text
-- Remove the Settings button (settings is accessible from the main navbar)
-- Remove the mobile "Close" button from footer — the backdrop click and swipe already handle closing
-- Result: The footer section is removed entirely, making the sidebar cleaner
+**Remove:**
+- `bg-gradient-to-r from-primary via-blue-500 to-primary bg-300% bg-clip-text text-transparent animate-gradient-shift` on the "Creaiter" heading
 
-**Container**
-- Background: `bg-background/90 backdrop-blur-md` (lighter, more transparent)
-- Border: `border-border/10` (nearly invisible divider)
-- Remove the staggered item entrance animations (delay per item) — just a single fade-in for the list
+**Replace with:**
+- `text-foreground text-2xl font-bold` (plain monochrome)
+- Tagline stays as `text-muted-foreground`
 
-### 2. EnhancedChatInterface.tsx — Sidebar Toggle Button
+### 3. EnhancedAuthForm.tsx — Flatten inputs and buttons
 
-**Floating toggle button (lines 308-335)**
-- Remove `shadow-sm` and `bg-card` — replace with `bg-transparent border-border/20 hover:border-border/40 hover:bg-muted/30`
-- Remove the `motion.div` wrapper with `whileHover` scale — keep it flat and still
-- Remove the rotate animation on the Menu icon — unnecessary motion
-- Keep the position logic (shifts when sidebar opens)
+**Header:**
+- Title: Remove `bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent` — use `text-foreground`
 
-## Files Changed
+**Inputs:**
+- Remove focus glow: `shadow-lg shadow-primary/10` and `border-primary/60` on focus
+- Use flat focus: `border-border/40` default, `focus:border-border/60` on focus, no shadow, no ring color override
 
-| File | What |
-|------|------|
-| `src/components/ai-chat/ChatHistorySidebar.tsx` | Flatten all styling: ghost buttons, remove filters/sort, remove footer, simplify active states, reduce animations |
-| `src/components/ai-chat/EnhancedChatInterface.tsx` | Flatten the floating sidebar toggle button — remove shadows, scales, icon rotation |
+**Submit button:**
+- Remove `bg-gradient-to-r from-primary to-blue-500` and `shadow-lg shadow-primary/25`
+- Replace with `bg-foreground text-background hover:bg-foreground/90` (solid monochrome, same as onboarding Next button)
+- Remove `whileHover scale` and `whileTap scale` on wrapper
+- Remove Sparkles icon — just show the text
 
-## What Gets Removed
-- Filter dropdown (All / Pinned / Archived)
-- Sort dropdown (Recent / Title / Pinned)
-- Settings button in sidebar footer
-- Conversation count in footer
-- Mobile close button in footer
-- MessageSquare icons on each conversation row
-- Left-border accent on active conversation
-- Staggered entrance animations per conversation item
-- Scale hover/tap animations on items
-- Shadow and fill on the floating toggle button
-- Rotate animation on the menu icon
+**Google button:**
+- Remove `whileHover scale` and `whileTap scale` on wrapper
+- Flatten to `bg-transparent border border-border/20 hover:border-border/40 hover:bg-muted/20`
 
-## What Stays
-- Search input (flattened)
-- New Chat button (ghost pill style)
-- Three-dot menu per conversation (pin, archive, delete)
-- Swipe-to-close on mobile
-- Mobile backdrop overlay
-- Pin icon on pinned conversations
-- Tags badge (simplified)
-- Load More pagination
+**Divider:**
+- Change `border-border/30` to `border-border/10`
+
+**Toggle mode link:**
+- Change `text-primary` to `text-foreground` with `underline underline-offset-4`
+
+### 4. Auth.tsx — Flatten container
+
+- Replace `glass-panel` class with `bg-background/90 backdrop-blur-md border border-border/10 rounded-3xl`
+- Remove `shadow-2xl`
+- Keep the fade-in animation (subtle, functional)
+
+### 5. CheckEmail.tsx — Same treatment
+
+- Replace `glass-panel` class with `bg-background/90 backdrop-blur-md border border-border/10 rounded-3xl`
+- Remove `shadow-2xl`
+- Back link: Change `text-white/80 hover:text-white` to `text-muted-foreground hover:text-foreground`
+- Mail icon container: Change `bg-primary/20` to `bg-transparent border border-border/20`; icon from `text-primary` to `text-muted-foreground`
+- Heading: Change `text-white` to `text-foreground`
+- Body text: Change `text-white/80` to `text-muted-foreground`
+- Footer text: Change `text-white/60` to `text-muted-foreground/60`
+- "Try signing up again" link: Change `text-primary` to `text-foreground underline`
+
+### 6. AuthCallback.tsx — Flatten callback page
+
+- Background: Change `bg-gradient-to-br from-background via-background to-primary/5` to plain `bg-background`
+- Logo: Change `bg-gradient-to-br from-primary to-primary/80 shadow-lg` to `bg-transparent border border-border/20`; Rocket icon to `text-muted-foreground`
+- Card: Change `bg-card shadow-xl border-border/50` to `bg-background/90 backdrop-blur-md border border-border/10`; remove `shadow-xl`
+- Spinner: Change `text-primary` to `text-muted-foreground`
+- Success icon: Keep `text-green-500` (semantic color is fine for success)
+- Error buttons: Primary button becomes `bg-foreground text-background`; outline button becomes `bg-transparent border border-border/20`
+- All redirects: Change `/dashboard` to `/ai-chat` (from previously approved plan)
+
+## Summary of Removals
+- All `bg-gradient-to-r` and `bg-gradient-to-br` color fills
+- All `shadow-lg`, `shadow-xl`, `shadow-2xl`
+- All `shadow-primary/*` colored shadows
+- All `text-primary` accent colors (replaced with `text-foreground` or `text-muted-foreground`)
+- All `whileHover/whileTap scale` bounce animations
+- `animate-gradient-shift` on logo
+- `glass-panel` class usage (replaced with explicit transparent styling)
+- Floating particles in background
+- Sparkles icon on submit button
 
