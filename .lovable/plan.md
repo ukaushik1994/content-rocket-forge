@@ -1,59 +1,60 @@
 
-# Email Builder -- Fixes & Design Polish
+# Email Builder -- Sidebar Fix & Feature Continuation
 
-## Testing Results
+## Current State (Tested End-to-End)
 
-After logging in and testing the builder end-to-end, here is what I found:
-
-### Working Well
-- Starter template picker (clean cards, 5 options + "Start from scratch")
-- Block selection with floating toolbar (lock, hide, move, duplicate, save, delete)
-- Inspector panel with full controls (text content, colors, alignment, spacing, borders, gradients)
-- AI Rewrite button on text blocks
-- Preview mode with desktop/mobile device frames and variable rendering
+### Working
+- Starter template picker (5 templates + start from scratch)
+- Block palette with 10 block types across 3 categories
+- Block selection, floating toolbar (lock, hide, move, duplicate, save, delete)
+- Inspector with full controls (text, colors, alignment, spacing, borders, gradients)
+- AI Rewrite on text blocks
+- Preview mode with Desktop/Mobile device frames
+- Code view with copy button
+- Undo/Redo, zoom controls
 - Canvas dot-grid background
-- Block palette with categorized 2-column grid (Content, Layout, Social & Footer)
+- Drag-and-drop reordering
 
 ### Issues Found
-1. **Layers panel is invisible** -- It's at the bottom of the sidebar but the palette cards are so tall (h-10 icons + p-4 padding) that the palette pushes layers completely below the viewport. Users never see it.
-2. **"Social & Footer" category is cut off** at the bottom -- only partially visible
-3. **Palette cards are oversized** -- The large icon containers (h-10 w-10) and generous padding (p-4) waste vertical space, making the sidebar feel bloated
-4. **No collapsible sections** -- Users can't collapse palette categories to reveal layers
-5. **Sidebar scrolling doesn't expose layers** -- The layers panel is in a `shrink-0` section outside the scrollable area but the outer flex column doesn't scroll properly
+
+1. **Layers panel barely visible** -- Only the "LAYERS 6" header and first row ("1 Header") peek above the bottom edge. The rest of the 6 layers are completely hidden. The sidebar palette takes up all vertical space and doesn't leave enough room.
+
+2. **Sidebar has no collapsible sections** -- Users can't collapse palette categories to make room for layers. The palette and layers compete for the same vertical space.
+
+3. **Variable placeholders not replaced in Preview** -- The preview shows `{{company_name}}` literally in the header instead of replacing it with the preview variable. The text body correctly shows "Hi John," but the header doesn't resolve.
 
 ## Fixes
 
-### 1. Compact the Block Palette (`BlockPalette.tsx`)
-- Reduce icon containers from `h-10 w-10` to `h-8 w-8`
-- Reduce card padding from `p-4` to `p-3`
-- Reduce gap between cards from `gap-2` to `gap-1.5`
-- Reduce container padding from `p-4` to `p-3`
-- Reduce category spacing from `space-y-5` to `space-y-3`
-- This alone will save roughly 100px of vertical space
+### 1. Make Sidebar Properly Split (`EmailBuilderDialog.tsx`)
+- Use a **resizable split** approach: palette gets `flex-1 min-h-0 overflow-y-auto` and layers gets a guaranteed minimum height
+- Add a **collapsible toggle** for the palette section so users can collapse it and see just layers
+- When blocks exist, layers section gets at minimum ~200px of guaranteed space
 
-### 2. Fix Sidebar Layout (`EmailBuilderDialog.tsx`)
-- Change the sidebar from a simple `flex flex-col` to a proper split layout
-- Make the palette section scrollable independently (`overflow-y-auto`)
-- Give the layers panel a fixed height at the bottom (always visible when blocks exist)
-- Add a visual separator between palette and layers
+### 2. Add Collapsible Categories to Palette (`BlockPalette.tsx`)
+- Make each category header clickable to collapse/expand its grid
+- This lets users collapse "Content" or "Layout" to save space
+- Add a small chevron indicator on each category header
+- Default all expanded, remembers state during session
 
-### 3. Ensure Layers Always Visible (`BlockLayersPanel.tsx`)
-- Reduce `max-h-[240px]` to `max-h-[180px]` so it doesn't try to consume too much space
-- Keep the scrollable list inside the panel for when there are many blocks
-- Slightly reduce row height from `py-2.5` to `py-2` for compactness
+### 3. Compact Palette Cards Further
+- Reduce card padding from `p-3` to `p-2.5`
+- Reduce icon from `h-8 w-8` to `h-7 w-7`
+- Reduce font from `text-[11px]` to `text-[10px]`
+- This saves another ~80px of vertical space
 
-### 4. Minor Canvas Polish (`BuilderCanvas.tsx`)
-- Refine dot-grid opacity slightly for better contrast
+### 4. Fix Variable Resolution in Preview Header
+- The `EmailBuilderPreview` component likely replaces variables in text blocks but may miss the header block's `text` prop
+- Ensure all block types get variable substitution in preview mode
 
 ---
 
-## Technical File Changes
+## Technical Summary
 
 | File | Changes |
 |------|---------|
-| `BlockPalette.tsx` | Compact cards: h-8 icons, p-3 padding, gap-1.5, space-y-3 |
-| `EmailBuilderDialog.tsx` | Split sidebar: scrollable palette top + fixed layers bottom with separator |
-| `BlockLayersPanel.tsx` | Reduce max-height to 180px, slightly tighter rows |
-| `BuilderCanvas.tsx` | Minor dot-grid refinement |
+| `EmailBuilderDialog.tsx` | Guaranteed min-height for layers section, collapse toggle for palette |
+| `BlockPalette.tsx` | Collapsible category sections with chevrons, slightly more compact cards |
+| `BlockLayersPanel.tsx` | Minor: remove max-height cap since parent now controls sizing |
+| `EmailBuilderPreview.tsx` | Fix variable replacement to cover header block text |
 
 Total: 4 files modified, 0 new files.
