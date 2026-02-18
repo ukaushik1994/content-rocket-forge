@@ -61,16 +61,16 @@ export const PremiumChartTypeSelect: React.FC<PremiumChartTypeSelectProps> = ({
       <SelectTrigger 
         className={cn(
           "h-9 w-[180px] gap-2",
-          "bg-muted/30 border-border/50",
-          "hover:bg-muted/50 hover:border-border",
-          "focus:ring-1 focus:ring-primary/30",
+          "bg-transparent border-border/20",
+          "hover:bg-muted/20 hover:border-border/40",
+          "focus:ring-0",
           "transition-all duration-200",
           className
         )}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/10">
-            <Icon className="w-3.5 h-3.5 text-primary" />
+          <div className="flex items-center justify-center w-6 h-6 rounded-md">
+            <Icon className="w-3.5 h-3.5 text-muted-foreground" />
           </div>
           <SelectValue placeholder="Chart type">
             <span className="truncate text-sm">{selectedOption.label}</span>
@@ -78,7 +78,7 @@ export const PremiumChartTypeSelect: React.FC<PremiumChartTypeSelectProps> = ({
         </div>
       </SelectTrigger>
       <SelectContent 
-        className="w-[260px] bg-popover/95 backdrop-blur-xl border-border/50"
+        className="w-[260px] bg-popover/90 backdrop-blur-md border-border/20"
         align="end"
       >
         {/* Common Charts */}
@@ -101,8 +101,8 @@ export const PremiumChartTypeSelect: React.FC<PremiumChartTypeSelectProps> = ({
                   <div className={cn(
                     "flex items-center justify-center w-7 h-7 rounded-lg",
                     value === option.value 
-                      ? "bg-primary/20 text-primary" 
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-muted/40 text-foreground" 
+                      : "bg-muted/30 text-muted-foreground"
                   )}>
                     <OptionIcon className="w-4 h-4" />
                   </div>
@@ -116,7 +116,7 @@ export const PremiumChartTypeSelect: React.FC<PremiumChartTypeSelectProps> = ({
           })}
 
         {/* Separator */}
-        <div className="my-1 mx-2 h-px bg-border/50" />
+        <div className="my-1 mx-2 h-px bg-border/10" />
 
         {/* Advanced Charts */}
         <div className="px-2 py-1.5">
@@ -138,8 +138,8 @@ export const PremiumChartTypeSelect: React.FC<PremiumChartTypeSelectProps> = ({
                   <div className={cn(
                     "flex items-center justify-center w-7 h-7 rounded-lg",
                     value === option.value 
-                      ? "bg-primary/20 text-primary" 
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-muted/40 text-foreground" 
+                      : "bg-muted/30 text-muted-foreground"
                   )}>
                     <OptionIcon className="w-4 h-4" />
                   </div>

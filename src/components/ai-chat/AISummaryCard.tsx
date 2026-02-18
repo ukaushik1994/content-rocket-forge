@@ -80,12 +80,12 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
     <div
       className={cn(
         "rounded-lg p-4",
-        "bg-muted/30 border border-border/30",
+        "bg-transparent border border-border/20",
         className
       )}
     >
       <div className="flex items-start gap-3">
-        <Sparkles className="w-4 h-4 text-primary/60 flex-shrink-0 mt-0.5" />
+        <Sparkles className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
         <div className="flex-1">
           <p className="text-sm leading-relaxed text-foreground/70">
             {summary}

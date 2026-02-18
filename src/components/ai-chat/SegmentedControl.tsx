@@ -33,8 +33,8 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
       <div 
         className={cn(
           "relative flex items-center rounded-lg",
-          "bg-white/[0.04] backdrop-blur-sm",
-          "border border-white/8",
+          "bg-transparent",
+          "border border-border/20",
           size === 'sm' ? 'p-0.5' : 'p-1',
           className
         )}
@@ -43,8 +43,8 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
         <motion.div
           className={cn(
             "absolute rounded-md",
-            "bg-white/10",
-            "shadow-sm shadow-black/10",
+            "bg-muted/30",
+            "",
             size === 'sm' ? 'top-0.5 bottom-0.5' : 'top-1 bottom-1'
           )}
           initial={false}
