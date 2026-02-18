@@ -26,13 +26,13 @@ export const WebsiteProviderCard = ({ provider, isConnected, onConnectionChange 
 
   const getStatusBadge = () => {
     if (isConnected) {
-      return <Badge variant="outline" className="text-green-600 border-green-600">Connected</Badge>;
+      return <Badge variant="outline" className="text-green-500/70 border-green-500/30">Connected</Badge>;
     }
     return <Badge variant="outline">Not Configured</Badge>;
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 bg-transparent border-border/20">
       <div className="space-y-4">
         {/* Collapsed Header */}
         <div className="flex items-center justify-between">
@@ -41,7 +41,7 @@ export const WebsiteProviderCard = ({ provider, isConnected, onConnectionChange 
             className="flex items-center gap-3 p-0 h-auto hover:bg-transparent flex-1 justify-start"
             onClick={() => setIsExpanded(!isExpanded)}
           >
-            <provider.icon className="h-5 w-5 text-primary" />
+            <provider.icon className="h-5 w-5 text-muted-foreground" />
             <span className="font-medium">{provider.name}</span>
             {getStatusIcon()}
             {isExpanded ? (

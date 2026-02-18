@@ -57,7 +57,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             </Badge>
             <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
               <div 
-                className="h-full bg-primary transition-all duration-300"
+                className="h-full bg-foreground transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>

@@ -69,7 +69,7 @@ export function ProfileSettingsTab() {
               <div
                 key={index}
                 className={`w-1.5 h-1.5 rounded-full ${
-                  index < profileCompletion ? 'bg-primary' : 'bg-muted'
+                  index < profileCompletion ? 'bg-foreground' : 'bg-muted'
                 }`}
               />
             ))}
@@ -107,7 +107,7 @@ export function ProfileSettingsTab() {
                   <div
                     key={i}
                     className={`w-1.5 h-1.5 rounded-full ${
-                      i < profileCompletion ? 'bg-primary' : 'bg-muted'
+                      i < profileCompletion ? 'bg-foreground' : 'bg-muted'
                     }`}
                   />
                 ))}
@@ -153,8 +153,8 @@ export function ProfileSettingsTab() {
               
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Profile Picture</Label>
-                <div className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center border shrink-0">
+                <div className="flex items-center gap-4 p-4 rounded-lg border border-border/20 bg-transparent hover:bg-muted/20 transition-colors">
+                  <div className="h-12 w-12 rounded-full bg-muted/30 flex items-center justify-center border border-border/20 shrink-0">
                     <span className="text-lg font-medium">
                       {firstName && lastName 
                         ? `${firstName[0]}${lastName[0]}` 

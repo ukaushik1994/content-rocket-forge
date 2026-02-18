@@ -32,7 +32,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
         <CollapsibleTrigger asChild>
           <Button 
             variant="ghost" 
-            className="w-full justify-between p-4 h-auto hover:bg-muted/50 transition-colors"
+            className="w-full justify-between p-4 h-auto hover:bg-muted/20 transition-colors"
           >
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -58,7 +58,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
               <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
                 <div 
                   className={`h-full transition-all duration-300 ${
-                    isComplete ? 'bg-primary' : 'bg-primary/60'
+                    isComplete ? 'bg-foreground' : 'bg-foreground/60'
                   }`}
                   style={{ width: `${progress}%` }}
                 />

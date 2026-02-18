@@ -46,7 +46,7 @@ export const CategorySection = ({
             </div>
             
             {hasRequiredProviders && !allRequiredConfigured && (
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              <div className="w-2 h-2 bg-foreground rounded-full animate-pulse" />
             )}
           </div>
           
@@ -59,7 +59,7 @@ export const CategorySection = ({
                 <div
                   key={i}
                   className={`w-1.5 h-1.5 rounded-full ${
-                    i < connectedCount ? 'bg-primary' : 'bg-muted'
+                    i < connectedCount ? 'bg-foreground' : 'bg-muted'
                   }`}
                 />
               ))}

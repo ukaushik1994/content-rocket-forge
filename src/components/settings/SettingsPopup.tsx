@@ -68,9 +68,9 @@ export const SettingsPopup = () => {
   return (
     <Dialog open={isOpen} onOpenChange={closeSettings}>
       <DialogContent className="max-w-4xl max-h-[80vh] p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b">
+        <DialogHeader className="px-6 py-4 border-b border-border/10">
           <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+            <Settings className="h-5 w-5 text-muted-foreground" />
             Settings
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -80,14 +80,14 @@ export const SettingsPopup = () => {
         
         <div className="flex h-[calc(80vh-80px)]">
           {/* Simplified Sidebar */}
-          <div className="w-48 bg-muted/20 border-r">
+          <div className="w-48 bg-transparent border-r border-border/10">
             <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="flex-1">
               <TabsList className="flex-col h-auto gap-1 bg-transparent p-3 justify-start w-full">
                 {tabs.map((tab) => (
                   <TabsTrigger
                     key={tab.id}
                     value={tab.id}
-                    className="w-full justify-start data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                    className="w-full justify-start data-[state=active]:bg-muted/30"
                   >
                     <div className="flex items-center gap-2 w-full">
                       {tab.icon}
