@@ -1,143 +1,91 @@
 
+# Onboarding Carousel — Complete Rebuild with Apple-Inspired Theme
 
-# Settings Modal — Apple-Inspired Theme Alignment
+## Why Rebuild
 
-This is a large scope covering the Settings modal shell and all 7 sub-tabs. We will work through them one by one in a single pass.
+The current onboarding uses the old visual language heavily: animated gradient borders (`GradientBorder`), neon-purple/neon-blue color schemes, gradient-filled icon badges, shimmer effects, pulsing glow rings, `bg-slate-900/60`, and colored `bg-gradient-to-br` overlays. It also lacks coverage for the Engage, Audience, Glossary, and Enterprise modules added since the original 8-step design. A patch would be messier than a clean rewrite.
 
----
+## New Step Structure (10 Steps)
 
-## Phase 1: Settings Shell (`SettingsPopup.tsx`)
+The tour will be reorganized to match the current navigation structure:
 
-**Dialog container** — already uses `bg-card/95 backdrop-blur-2xl` from the shared dialog primitive, which is fine.
+| # | Title | Subtitle | Route | Key Benefits |
+|---|-------|----------|-------|--------------|
+| 1 | Welcome to Creaiter | The Self-Learning Content Engine | — | AI learns your style, Data-driven, End-to-end workflow, Continuous optimization |
+| 2 | Content Creation Suite | Builder, Repository, Approvals, Keywords | /content-type-selection | 5-step AI writing, Version control, Team approvals, Quality scoring |
+| 3 | Research and Strategy | SERP Intelligence, Content Strategy, Calendar | /research/content-strategy | Live SERP analysis, AI proposals, Editorial calendar, Topic clusters |
+| 4 | Campaigns | Strategy, Generation, Execution | /campaigns | Strategy selection, Batch generation, Queue tracking, Solution branding |
+| 5 | Email Marketing | Compose, Automate, Deliver | /engage/email | AI-powered copy, Template library, Scheduling, Performance tracking |
+| 6 | Social Media | Create, Schedule, Analyze | /engage/social | Multi-channel posting, Content calendar, Engagement analytics, Auto-scheduling |
+| 7 | Audience Management | Contacts, Segments, Activity | /engage/contacts | Contact database, Smart segments, Activity tracking, Behavioral insights |
+| 8 | Analytics and Performance | Metrics, GA4, Search Console | /analytics | GA4 integration, Search Console, Content metrics, ROI tracking |
+| 9 | AI Strategy Coach | Chat, Charts, Insights | /ai-chat | Natural language, Live charts, Campaign status, Smart suggestions |
+| 10 | Integrations and Settings | Publishing, Analytics, AI Providers | /ai-settings | WordPress and Wix, GA4 and GSC, Multi-AI support, Slack alerts |
 
-**Header** (line 71)
-- Change `border-b` to `border-b border-border/10` (thinner divider)
-- Settings icon: change to `text-muted-foreground` (remove default foreground weight)
+## Visual Theme Changes
 
-**Sidebar** (line 83)
-- Change `bg-muted/20 border-r` to `bg-transparent border-r border-border/10`
-- Tab triggers (line 90): Remove `data-[state=active]:shadow-sm` — replace with `data-[state=active]:bg-muted/30` only, no shadow
+### GradientBorder.tsx — Flatten completely
+- Remove animated gradient border (`bg-gradient-to-r from-neon-purple via-neon-blue`)
+- Remove outer glow blur
+- Replace with `bg-background/90 backdrop-blur-md border border-border/10 rounded-3xl` — same as the rest of the app
 
----
+### OnboardingCarousel.tsx — Clean container and controls
+- **Backdrop**: Keep `bg-black/85 backdrop-blur-xl` (functional)
+- **Header**: Replace `bg-slate-900/50` with `bg-transparent border-b border-border/10`
+- **Logo icon**: Remove animated boxShadow glow and gradient fill — use `bg-transparent border border-border/20` with `text-muted-foreground` Sparkles icon
+- **Step badge**: Remove `bg-gradient-to-r from-white/10` — use `bg-transparent border border-border/20` with `text-muted-foreground`
+- **Progress segments**: Replace neon gradients with `bg-foreground` (completed) and `bg-muted-foreground/40` (current fill) and `bg-border/20` (empty)
+- **Footer**: Replace `bg-slate-900/50` with `bg-transparent border-t border-border/10`
+- **Segmented progress bar**: Replace colored gradients with `bg-foreground` (done) and `bg-muted-foreground/40` (current)
+- **Step dots**: Replace neon gradients and pulse animations with `bg-foreground` (active/completed) and `bg-border/30` (empty) — no pulse
+- **Next button**: Remove gradient background, shimmer, and glow — use `bg-foreground text-background` (solid, monochrome)
+- **Previous/Skip**: Keep ghost style, use `border-border/20` and `text-muted-foreground`
+- **Content area**: Replace `bg-slate-950/80` with `bg-transparent`
 
-## Phase 2: Profile Tab (`ProfileSettingsTab.tsx`)
+### OnboardingStep.tsx — Flat content layout
+- **Illustration panel**: Remove multi-layer gradient backgrounds, animated colored overlays, grid patterns, radial glows, animated border glow, and corner accents — use `bg-transparent border border-border/20 rounded-2xl`
+- **Icon badge**: Remove gradient fill, outer glow ring, and inner shine — use `bg-transparent border border-border/20 rounded-xl` with `text-muted-foreground` icon
+- **Subtitle**: Remove gradient text clip — use `text-muted-foreground text-sm font-medium uppercase tracking-widest`
+- **Title**: Keep `text-foreground` (already clean)
+- **Description**: Keep `text-muted-foreground` (already clean)
+- **Benefits checkmarks**: Remove green gradient circles and celebration burst animation — use `bg-transparent border border-border/20 rounded-full` with `text-foreground` Check icon
+- **Pro Tip callout**: Remove amber gradient background — use `bg-transparent border border-border/20` with `text-muted-foreground` Lightbulb icon
+- **Action button**: Remove gradient fill, shimmer, and glow — use `bg-foreground text-background rounded-xl` (solid monochrome button)
 
-**Progress dots** (lines 71-74, 109)
-- Change completed dot from `bg-primary` to `bg-foreground` (muted, no color accent)
+### getStepConfigs — Update data
+- Update from 8 to 10 steps with new titles, descriptions, benefits, routes
+- Remove `gradient` property from all steps (no longer used)
+- Keep existing illustrations for steps that map 1:1; reuse closest illustration for new steps (Email reuses Campaign, Social reuses Campaign, Audience reuses Integrations)
 
-**Profile picture card** (line 156)
-- Change `border bg-card hover:bg-accent/50` to `border border-border/20 bg-transparent hover:bg-muted/20`
+### Illustrations — Keep as-is
+The SVG illustrations inside the illustration panel are self-contained. They will render fine on the new transparent background. No changes needed to illustration files themselves.
 
-**Avatar circle** (line 157)
-- Change `bg-muted border` to `bg-muted/30 border border-border/20`
+## Files Changed
 
-**Inputs** — default styling is acceptable, no changes needed
+| File | What |
+|---|---|
+| `OnboardingCarousel.tsx` | Full rewrite: 10 steps, flat header/footer/controls, remove all neon/gradient/glow styling |
+| `OnboardingStep.tsx` | Full rewrite: flat illustration panel, monochrome icon badge, remove gradients and animations |
+| `ui/GradientBorder.tsx` | Strip to a simple transparent bordered container |
 
-**Save button** — keep as `Button` default (functional accent is fine)
+## What Gets Removed
+- All `neon-purple`, `neon-blue` gradient references
+- All `animate-gradient-shift`, shimmer animations, glow effects
+- All `boxShadow` animated pulsing
+- Colored progress bar gradients (replaced with monochrome)
+- Celebration burst animation on benefit checkmarks
+- Corner accent decorative borders on illustration panel
+- Grid pattern overlay on illustration background
+- Radial glow overlay
+- `gradient` property from step configs
 
----
-
-## Phase 3: API Keys Tab (`ApiSettings.tsx` + `SimpleProviderCard.tsx` + `CategorySection.tsx`)
-
-**ApiSettings.tsx**
-- Progress dots: `bg-primary` to `bg-foreground` (same pattern as Profile)
-- Search input: add `bg-transparent border-border/20 focus:border-border/40` classes
-
-**SimpleProviderCard.tsx**
-- Loading skeleton (line 231): Change `bg-card hover:bg-accent/50` to `bg-transparent border-border/20`
-- Collapsed icon container (line 252): Change `bg-primary/10` to `bg-muted/30`, icon from `text-primary` to `text-muted-foreground`
-- Required pulse dot (line 257): Change `bg-primary` to `bg-foreground`
-- Expanded card (line 273): Change `border rounded-lg bg-card` to `border border-border/20 rounded-lg bg-transparent`
-- Expanded icon (line 282): Same — `bg-muted/30` instead of `bg-primary/10`, `text-muted-foreground` instead of `text-primary`
-- Required badge (line 289): Change `text-primary bg-primary/10` to `text-muted-foreground bg-muted/30`
-- Config section (line 305): Change `bg-muted/20` to `bg-transparent`
-
-**CategorySection.tsx (api/)**
-- Required pulse dot (line 49): `bg-primary` to `bg-foreground`
-- Progress dots (line 62): `bg-primary` to `bg-foreground`
-
----
-
-## Phase 4: Websites Tab (`WebsiteConnectionsSettings.tsx` + `WebsiteProviderCard.tsx`)
-
-**WebsiteConnectionsSettings.tsx**
-- No heavy styling to change beyond inherited components
-
-**WebsiteProviderCard.tsx**
-- Card (line 35): Change `<Card className="p-4">` to `<Card className="p-4 bg-transparent border-border/20">`
-- Provider icon (line 44): Change `text-primary` to `text-muted-foreground`
-- Connected badge (line 29): Change `text-green-600 border-green-600` to `text-green-500/70 border-green-500/30` (softer)
-
----
-
-## Phase 5: Notifications Tab (`NotificationSettings.tsx`)
-
-**Notification rows** (lines 102, 112, 122, 176, 186)
-- Change `border bg-card hover:bg-accent/50` to `border border-border/20 bg-transparent hover:bg-muted/20`
-
-**Progress dots**
-- `bg-primary` to `bg-foreground`
-
----
-
-## Phase 6: Prompts Tab (prompts/ sub-components)
-
-**prompts/CategorySection.tsx**
-- Hover (line 35): Change `hover:bg-muted/50` to `hover:bg-muted/20`
-- Progress bar track (line 58): Keep `bg-muted` — fine
-- Progress bar fill (lines 60-61): Change `bg-primary` / `bg-primary/60` to `bg-foreground` / `bg-foreground/60`
-
-**prompts/MinimalFormatCard.tsx**
-- Card border (lines 34-36): Change `border-primary/20 bg-primary/5` (configured) to `border-border/20 bg-transparent`. Unconfigured: `border-border hover:border-border/60` to `border-border/20 hover:border-border/40`
-- Remove `hover:shadow-sm`
-- Status dot (line 45): Change `bg-primary text-primary-foreground` to `bg-foreground text-background`
-- Expanded border (line 68): Change `border-border/50` to `border-border/20`
-
-**prompts/SearchBar.tsx**
-- Progress bar fill (line 60): `bg-primary` to `bg-foreground`
-- No other heavy styling
-
----
-
-## Phase 7: Help and Tour Tab (`HelpAndTourSettings.tsx`)
-
-**Header icon** (line 56)
-- Change `text-primary` to `text-muted-foreground`
-
-**Tour card** (line 65)
-- Change `bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20` to `bg-transparent border border-border/20`
-
-**Tour icon container** (line 67)
-- Change `bg-gradient-to-br from-primary to-primary/80` to `bg-muted/30 border border-border/20`
-- Sparkles icon: `text-primary-foreground` to `text-muted-foreground`
-
-**Quick links** (line 100)
-- Change `bg-muted/50 hover:bg-muted` to `bg-transparent border border-border/20 hover:bg-muted/20`
-- Icon container (line 102): Change `bg-background border` to `bg-transparent border border-border/20`
-
----
-
-## Phase 8: Engage Tab (`EngageIntegrationSettings.tsx`)
-
-This is a thin wrapper around `<EngageSettings />` — no styling to change in the wrapper itself. The inner Engage settings follow their own design system (addressed separately if needed).
-
----
-
-## Summary
-
-| File | Key Changes |
-|------|-------------|
-| `SettingsPopup.tsx` | Thinner borders, remove sidebar fill and active shadows |
-| `ProfileSettingsTab.tsx` | Transparent cards, muted progress dots |
-| `ApiSettings.tsx` | Muted dots, flattened search |
-| `api/SimpleProviderCard.tsx` | Remove `bg-card`, `bg-primary/10` icons, transparent everywhere |
-| `api/CategorySection.tsx` | Muted dots |
-| `NotificationSettings.tsx` | Transparent notification rows |
-| `websites/WebsiteProviderCard.tsx` | Transparent card, muted icons |
-| `prompts/CategorySection.tsx` | Muted progress bar |
-| `prompts/MinimalFormatCard.tsx` | Remove primary tints, transparent cards |
-| `prompts/SearchBar.tsx` | Muted progress bar |
-| `HelpAndTourSettings.tsx` | Remove gradients, transparent cards and icon containers |
-
-**12 files total, all following the same pattern**: replace `bg-card`, `bg-primary/10`, `shadow-sm`, and `border-primary/20` with `bg-transparent`, `border-border/20`, and `text-muted-foreground`.
-
+## What Stays
+- Auto-advance timer logic (10s)
+- Pause on hover behavior
+- Keyboard-accessible dot navigation
+- AnimatePresence step transitions (fade/slide)
+- BusinessSetupForm integration
+- All routing and action handling
+- All illustrations (unchanged)
+- Skip/Previous/Next flow
+- OnboardingContext integration
