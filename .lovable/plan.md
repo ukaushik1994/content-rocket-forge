@@ -1,87 +1,31 @@
 
 
-# AI Chat Welcome Screen — Complete Redesign
+# Input Bar — Apple-Inspired Theme Alignment
 
-## Design Philosophy
-Apple-inspired: Typography-driven, spacious, deliberate. Every element earns its place. White space is a feature, not waste. Interactions feel inevitable, not discovered.
+## Current Issues
+The input bar area still uses the old styling: heavy borders, `bg-background/95`, `ring-1` focus effects, bold primary-colored send button, and a `GlobalApiStatus` badge sitting next to the input. The helper text ("Enter to send") also adds visual noise. None of this matches the minimal, typography-driven welcome screen above it.
 
-## New Welcome Screen Layout
+## Changes
 
-```text
-+----------------------------------------------------------+
-|                                                          |
-|                                                          |
-|              [Brain icon - subtle, small]                |
-|                                                          |
-|                   Good afternoon.                        |
-|            What would you like to do?                    |
-|                                                          |
-|  +----------------------------------------------------+  |
-|  |  [input bar — prominent, centered, hero element]   |  |
-|  +----------------------------------------------------+  |
-|                                                          |
-|     Write content    Research keywords    Run campaign    |
-|     Manage contacts    Check performance    Draft email   |
-|                                                          |
-|  +--------------------------------------------------+    |
-|  |  [metrics strip - only if user has data]          |    |
-|  |  12 Content  |  8 Published  |  3 Review  |  72%  |    |
-|  +--------------------------------------------------+    |
-|                                                          |
-+----------------------------------------------------------+
-```
+### 1. ContextAwareMessageInput.tsx — Flatten the input container
+- **Container border**: Change from `border-border/40` to `border-border/20`, remove the `ring-1 ring-primary/20` focus effect, replace with just `border-primary/30` on focus
+- **Background**: Change from `bg-background/95` to `bg-background/60` for a lighter, more transparent feel
+- **Box shadow**: Remove the animated boxShadow entirely — flat is the goal
+- **Send button**: Change from `bg-primary` filled button to a ghost-style button: `bg-transparent text-muted-foreground hover:text-foreground`, no background color, just an icon that becomes visible on hover. Keep it `rounded-xl`
+- **Attachment button**: Already ghost, just reduce opacity further (`text-muted-foreground/40`)
+- **Helper text**: Remove the "Enter to send" line entirely — it adds clutter. Remove the character count too
+- **Container padding**: Reduce from `p-3` to `p-2.5` for tighter feel
+- **Border radius**: Keep `rounded-2xl`
 
-## What Gets Rebuilt
-
-### 1. EnhancedChatInterface.tsx (Welcome Section Only, lines 404-470)
-- Remove the current hero with pulsing ring, icon block, and paragraph subtitle
-- Replace with a vertically-centered, spacious layout:
-  - Tiny Brain icon (h-6 w-6), no backgrounds, no rings, no animations
-  - Two-line heading: Line 1 = time greeting ("Good afternoon."), Line 2 = "What would you like to do?" in lighter weight
-  - The chat input bar moves UP into the welcome area as the hero element (visually prominent, not buried at the bottom)
-  - Below the input: a single row of pill-shaped prompt suggestions (no cards, no categories, no section headers)
-  - Below suggestions: a minimal metrics strip (only renders if user has content data)
-- When a conversation starts (messages > 0), the input returns to the bottom bar as normal
-
-### 2. EnhancedQuickActions.tsx — Complete Rewrite
-- Delete all current card grid, category headers, and badge sections
-- Replace with a single component that renders 6-8 pill-shaped text suggestions in a centered flex-wrap row
-- Each pill: `px-4 py-2 rounded-full border border-border/40 bg-card/50 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all cursor-pointer`
-- No icons inside pills. Just clean text: "Write content", "Research keywords", "Run a campaign", "Draft an email", "Check my performance", "Manage contacts"
-- On click, each sends a pre-written prompt (same logic as current `onAction`)
-
-### 3. PlatformSummaryCard.tsx — Minimal Strip
-- Complete visual rewrite
-- Renders ONLY when `summary.totalContent > 0` (the entire component returns null otherwise)
-- Layout: A single horizontal row with 4 metrics separated by subtle dividers
-- Each metric: just the number + label, no cards, no backgrounds, no icons
-- Remove the contextual nudge bar entirely (the input + suggestions handle that role now)
-- Style: `text-center text-muted-foreground text-xs` for labels, `text-lg font-semibold text-foreground` for values
-- Ultra-flat: no Card wrapper, just a `div` with a top border `border-t border-border/30 pt-6`
-
-## What This Removes
-- Pulsing ring animation around brain icon
-- "Create and Build" / "Analyze and Engage" category headers
-- 6 action cards with descriptions and left-border accents
-- Badge-style suggestion chips with staggered animations
-- Contextual nudge bar ("You have X items awaiting review")
-- Icon backgrounds and decorative elements
-- Excessive framer-motion entrance animations (keep only 1 subtle fade-in)
-
-## What This Adds
-- A clean, centered input bar as the hero element in the welcome state
-- Simple pill-shaped prompt suggestions (no visual hierarchy competition)
-- Breathing room — generous vertical spacing, no visual clutter
-
-## Technical Notes
-- The input bar in the welcome state is a visual duplicate positioned in the welcome area; when a message is sent, the welcome disappears and the fixed-bottom input takes over (already exists)
-- Alternatively: scroll the existing bottom input into visual prominence using CSS when messages are empty — simpler, no duplication
-- The approach: conditionally add `items-center justify-center` to the main content area when `messages.length === 0`, which naturally centers the bottom input bar. The welcome content renders ABOVE it inside the scroll area. This avoids duplicating the input component.
+### 2. EnhancedChatInterface.tsx — Clean the input area wrapper
+- **Outer container**: Keep `border-t border-border/20 bg-background/80 backdrop-blur-md` (already updated)
+- **Remove GlobalApiStatus** from next to the input — it breaks the minimal layout. Move it to the navbar or remove it entirely from this view
+- **Remove the `flex items-center gap-3` wrapper** that holds the input + status. Let the input take full width
+- **Padding**: Tighten from `px-6 py-4` to `px-4 py-3` for a more compact bar
 
 ## Files Changed
-| File | Change |
-|------|--------|
-| `EnhancedQuickActions.tsx` | Full rewrite — pills only, no cards/categories |
-| `PlatformSummaryCard.tsx` | Full rewrite — minimal metric strip or null |
-| `EnhancedChatInterface.tsx` | Welcome section rewrite (lines 404-470) — centered layout, minimal hero, remove decorative elements |
+| File | What |
+|------|------|
+| `src/components/ai-chat/ContextAwareMessageInput.tsx` | Flatten container, ghost send button, remove helper text, reduce padding |
+| `src/components/ai-chat/EnhancedChatInterface.tsx` | Remove GlobalApiStatus from input row, simplify wrapper, tighten padding |
 
