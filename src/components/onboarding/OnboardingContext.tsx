@@ -24,7 +24,7 @@ export const useOnboarding = () => {
   return context;
 };
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 10;
 const STORAGE_KEY = 'creAiter-onboarding-completed';
 
 export const OnboardingProvider = ({ children }: { children: ReactNode }) => {

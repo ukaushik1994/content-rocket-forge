@@ -4,7 +4,6 @@ import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useOnboarding } from './OnboardingContext';
 import { OnboardingStep } from './OnboardingStep';
 import { BusinessSetupForm } from './BusinessSetupForm';
-
 import { GradientBorder } from './ui/GradientBorder';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -20,9 +19,21 @@ import { AIChatIllustration } from './illustrations/AIChatIllustration';
 import { IntegrationsIllustration } from './illustrations/IntegrationsIllustration';
 
 // Step icons
-import { Sparkles as SparklesIcon, FileText, Search, Target, Rocket, BarChart3, MessageSquare, Puzzle } from 'lucide-react';
+import {
+  Sparkles as SparklesIcon,
+  FileText,
+  Search,
+  Target,
+  Rocket,
+  Mail,
+  Share2,
+  Users,
+  BarChart3,
+  MessageSquare,
+  Puzzle,
+} from 'lucide-react';
 
-const AUTO_ADVANCE_DURATION = 10000; // 10 seconds
+const AUTO_ADVANCE_DURATION = 10000;
 
 interface StepConfig {
   title: string;
@@ -33,7 +44,6 @@ interface StepConfig {
   icon: React.ReactNode;
   route?: string;
   actionLabel?: string;
-  gradient: string;
 }
 
 const getStepConfigs = (): StepConfig[] => [
@@ -44,43 +54,29 @@ const getStepConfigs = (): StepConfig[] => [
     benefits: ['AI that learns your style', 'Data-driven insights', 'End-to-end workflow', 'Continuous optimization'],
     illustration: <WelcomeIllustration />,
     icon: <SparklesIcon className="w-7 h-7" />,
-    gradient: 'from-purple-500 via-pink-500 to-purple-500',
   },
   {
     title: 'Content Creation Suite',
-    subtitle: 'Builder • Repository • Approvals',
+    subtitle: 'Builder • Repository • Approvals • Keywords',
     description: 'Create content through a guided 5-step process, manage all your assets in a centralized repository, and collaborate with team approval workflows.',
     benefits: ['5-step AI writing', 'Version control', 'Team approvals', 'Quality scoring'],
     illustration: <ContentSuiteIllustration />,
     icon: <FileText className="w-7 h-7" />,
-    route: '/content-builder',
+    route: '/content-type-selection',
     actionLabel: 'Try Content Builder',
-    gradient: 'from-blue-500 via-cyan-500 to-blue-500',
   },
   {
-    title: 'Research & Keywords',
-    subtitle: 'SERP Intelligence • Keyword Discovery',
-    description: 'Analyze live SERP data, discover high-value keywords, explore People Also Ask questions, and identify content gaps your competitors are missing.',
-    benefits: ['Live SERP analysis', 'Keyword clusters', 'PAA insights', 'Gap detection'],
+    title: 'Research & Strategy',
+    subtitle: 'SERP Intelligence • Content Strategy • Calendar',
+    description: 'Analyze live SERP data, generate AI-driven strategy proposals, plan your editorial calendar, and organize topics into semantic clusters.',
+    benefits: ['Live SERP analysis', 'AI proposals', 'Editorial calendar', 'Topic clusters'],
     illustration: <ResearchIllustration />,
     icon: <Search className="w-7 h-7" />,
-    route: '/research',
-    actionLabel: 'Explore Research',
-    gradient: 'from-emerald-500 via-teal-500 to-emerald-500',
-  },
-  {
-    title: 'Content Strategy',
-    subtitle: 'Goals • Proposals • Calendar',
-    description: 'Set content goals and let AI generate strategic proposals based on your data. Plan your editorial calendar and organize topics into semantic clusters.',
-    benefits: ['Goal tracking', 'AI proposals', 'Editorial calendar', 'Topic clusters'],
-    illustration: <StrategyIllustration />,
-    icon: <Target className="w-7 h-7" />,
     route: '/research/content-strategy',
-    actionLabel: 'View Strategy',
-    gradient: 'from-amber-500 via-orange-500 to-amber-500',
+    actionLabel: 'Explore Research',
   },
   {
-    title: 'Campaign Management',
+    title: 'Campaigns',
     subtitle: 'Strategy • Generation • Execution',
     description: 'Launch complete content campaigns with AI-generated strategies. Watch as content is batch-generated in real-time with full progress tracking.',
     benefits: ['Strategy selection', 'Batch generation', 'Queue tracking', 'Solution branding'],
@@ -88,7 +84,36 @@ const getStepConfigs = (): StepConfig[] => [
     icon: <Rocket className="w-7 h-7" />,
     route: '/campaigns',
     actionLabel: 'Start Campaign',
-    gradient: 'from-pink-500 via-rose-500 to-pink-500',
+  },
+  {
+    title: 'Email Marketing',
+    subtitle: 'Compose • Automate • Deliver',
+    description: 'Craft AI-powered email campaigns with smart templates, automated sequences, and detailed performance tracking to maximize engagement.',
+    benefits: ['AI-powered copy', 'Template library', 'Scheduling', 'Performance tracking'],
+    illustration: <CampaignIllustration />,
+    icon: <Mail className="w-7 h-7" />,
+    route: '/engage/email',
+    actionLabel: 'Open Email',
+  },
+  {
+    title: 'Social Media',
+    subtitle: 'Create • Schedule • Analyze',
+    description: 'Manage your social presence with multi-channel posting, content calendars, engagement analytics, and intelligent auto-scheduling.',
+    benefits: ['Multi-channel posting', 'Content calendar', 'Engagement analytics', 'Auto-scheduling'],
+    illustration: <CampaignIllustration />,
+    icon: <Share2 className="w-7 h-7" />,
+    route: '/engage/social',
+    actionLabel: 'Open Social',
+  },
+  {
+    title: 'Audience Management',
+    subtitle: 'Contacts • Segments • Activity',
+    description: 'Build and manage your contact database with smart segmentation, activity tracking, and behavioral insights to target the right audience.',
+    benefits: ['Contact database', 'Smart segments', 'Activity tracking', 'Behavioral insights'],
+    illustration: <IntegrationsIllustration />,
+    icon: <Users className="w-7 h-7" />,
+    route: '/engage/contacts',
+    actionLabel: 'View Contacts',
   },
   {
     title: 'Analytics & Performance',
@@ -99,7 +124,6 @@ const getStepConfigs = (): StepConfig[] => [
     icon: <BarChart3 className="w-7 h-7" />,
     route: '/analytics',
     actionLabel: 'View Analytics',
-    gradient: 'from-violet-500 via-purple-500 to-violet-500',
   },
   {
     title: 'AI Strategy Coach',
@@ -110,10 +134,9 @@ const getStepConfigs = (): StepConfig[] => [
     icon: <MessageSquare className="w-7 h-7" />,
     route: '/ai-chat',
     actionLabel: 'Open AI Chat',
-    gradient: 'from-cyan-500 via-blue-500 to-cyan-500',
   },
   {
-    title: 'Integrations Ecosystem',
+    title: 'Integrations & Settings',
     subtitle: 'Publishing • Analytics • AI Providers',
     description: 'Connect your favorite tools: publish to WordPress or Wix, sync with GA4 and Search Console, choose from multiple AI providers, and get Slack notifications.',
     benefits: ['WordPress & Wix', 'GA4 & GSC', 'Multi-AI support', 'Slack alerts'],
@@ -121,31 +144,30 @@ const getStepConfigs = (): StepConfig[] => [
     icon: <Puzzle className="w-7 h-7" />,
     route: '/ai-settings',
     actionLabel: 'Configure Integrations',
-    gradient: 'from-indigo-500 via-purple-500 to-indigo-500',
   },
 ];
 
 export const OnboardingCarousel = () => {
-  const { 
-    isActive, 
-    currentStep, 
-    totalSteps, 
-    nextStep, 
-    prevStep, 
-    goToStep, 
+  const {
+    isActive,
+    currentStep,
+    totalSteps,
+    nextStep,
+    prevStep,
+    goToStep,
     skipOnboarding,
     endOnboarding,
-    showBusinessSetup
+    showBusinessSetup,
   } = useOnboarding();
-  
+
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  
+
   const stepConfigs = getStepConfigs();
   const currentConfig = stepConfigs[currentStep];
 
-  // Auto-advance progress (only during tour, not during business setup)
+  // Auto-advance progress
   useEffect(() => {
     if (!isActive || isPaused || showBusinessSetup) {
       setProgress(0);
@@ -167,7 +189,6 @@ export const OnboardingCarousel = () => {
     return () => clearInterval(interval);
   }, [isActive, currentStep, isPaused, nextStep, showBusinessSetup]);
 
-  // Reset progress on step change
   useEffect(() => {
     setProgress(0);
   }, [currentStep]);
@@ -190,7 +211,7 @@ export const OnboardingCarousel = () => {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {/* Backdrop with blur */}
+        {/* Backdrop */}
         <motion.div
           className="absolute inset-0 bg-black/85 backdrop-blur-xl"
           initial={{ opacity: 0 }}
@@ -199,8 +220,7 @@ export const OnboardingCarousel = () => {
           onClick={skipOnboarding}
         />
 
-
-        {/* Main container with gradient border */}
+        {/* Main container */}
         <GradientBorder className="relative z-10 w-full max-w-6xl">
           <motion.div
             className="relative h-[680px] max-h-[90vh] overflow-hidden rounded-3xl flex flex-col"
@@ -211,42 +231,24 @@ export const OnboardingCarousel = () => {
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
-            {/* Premium header */}
-            <div className="relative flex-shrink-0 flex items-center justify-between px-8 py-5 border-b border-white/5 bg-slate-900/50 backdrop-blur-sm">
-              {/* Logo and step counter */}
+            {/* Header */}
+            <div className="relative flex-shrink-0 flex items-center justify-between px-8 py-5 border-b border-border/10 bg-transparent">
               <div className="flex items-center gap-4">
-                <motion.div
-                  className="relative"
-                  animate={{
-                    boxShadow: [
-                      '0 0 20px rgba(155, 135, 245, 0.3)',
-                      '0 0 40px rgba(155, 135, 245, 0.5)',
-                      '0 0 20px rgba(155, 135, 245, 0.3)',
-                    ],
-                  }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                >
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                </motion.div>
-                
-                {/* Step indicator badge */}
-                <motion.div
-                  className="px-4 py-1.5 rounded-full bg-gradient-to-r from-white/10 to-white/5 border border-white/10"
-                  animate={{ opacity: [0.8, 1, 0.8] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <span className="text-sm font-medium bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                <div className="w-10 h-10 rounded-xl bg-transparent border border-border/20 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-muted-foreground" />
+                </div>
+
+                <div className="px-4 py-1.5 rounded-full bg-transparent border border-border/20">
+                  <span className="text-sm font-medium text-muted-foreground">
                     Step {currentStep + 1} of {totalSteps}
                   </span>
-                </motion.div>
+                </div>
               </div>
 
               {/* Progress segments */}
               <div className="hidden md:flex items-center gap-1">
                 {stepConfigs.map((_, index) => (
-                  <motion.button
+                  <button
                     key={index}
                     onClick={() => goToStep(index)}
                     className={cn(
@@ -257,34 +259,34 @@ export const OnboardingCarousel = () => {
                     <div className={cn(
                       "absolute inset-0 rounded-full transition-all duration-500",
                       index < currentStep
-                        ? "bg-gradient-to-r from-neon-purple to-neon-blue"
+                        ? "bg-foreground"
                         : index === currentStep
-                        ? "bg-gradient-to-r from-neon-purple to-neon-blue"
-                        : "bg-white/20"
+                        ? "bg-muted-foreground/40"
+                        : "bg-border/20"
                     )} />
                     {index === currentStep && (
-                      <motion.div
-                        className="absolute inset-0 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue"
+                      <div
+                        className="absolute inset-0 rounded-full bg-foreground"
                         style={{ width: `${progress}%` }}
                       />
                     )}
-                  </motion.button>
+                  </button>
                 ))}
               </div>
-              
-              {/* Close button */}
+
+              {/* Close */}
               <motion.button
                 onClick={skipOnboarding}
-                className="p-2.5 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-all duration-300"
+                className="p-2.5 rounded-xl hover:bg-muted/20 border border-transparent hover:border-border/20 transition-all duration-300"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <X className="w-5 h-5 text-white/60" />
+                <X className="w-5 h-5 text-muted-foreground" />
               </motion.button>
             </div>
 
-            {/* Content area with step transition */}
-            <div className="flex-1 overflow-hidden bg-slate-950/80">
+            {/* Content */}
+            <div className="flex-1 overflow-hidden bg-transparent">
               <AnimatePresence mode="wait">
                 {showBusinessSetup ? (
                   <motion.div
@@ -315,87 +317,75 @@ export const OnboardingCarousel = () => {
               </AnimatePresence>
             </div>
 
-            {/* Premium footer controls - hide when showing business setup */}
+            {/* Footer */}
             {!showBusinessSetup && (
-              <div className="flex-shrink-0 px-8 py-5 border-t border-white/5 bg-slate-900/50 backdrop-blur-sm">
+              <div className="flex-shrink-0 px-8 py-5 border-t border-border/10 bg-transparent">
                 {/* Segmented progress bar */}
                 <div className="flex gap-1 mb-5">
-                  {stepConfigs.map((config, index) => (
-                    <motion.div
+                  {stepConfigs.map((_, index) => (
+                    <div
                       key={index}
                       className={cn(
                         "flex-1 h-1 rounded-full overflow-hidden transition-all duration-300",
-                        index <= currentStep ? "bg-slate-700" : "bg-slate-800"
+                        index <= currentStep ? "bg-border/30" : "bg-border/10"
                       )}
                     >
                       {index < currentStep && (
-                        <div className={cn("h-full w-full bg-gradient-to-r", config.gradient)} />
+                        <div className="h-full w-full bg-foreground" />
                       )}
                       {index === currentStep && (
-                        <motion.div
-                          className={cn("h-full bg-gradient-to-r", config.gradient)}
+                        <div
+                          className="h-full bg-foreground"
                           style={{ width: `${progress}%` }}
                         />
                       )}
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
 
                 <div className="flex items-center justify-between">
-                  {/* Navigation arrows and dots */}
+                  {/* Navigation */}
                   <div className="flex items-center gap-3">
                     <motion.button
                       onClick={prevStep}
                       disabled={currentStep === 0}
                       className={cn(
                         "p-2.5 rounded-xl border transition-all duration-300",
-                        currentStep === 0 
-                          ? "opacity-30 cursor-not-allowed border-transparent" 
-                          : "hover:bg-white/5 border-white/10 hover:border-white/20"
+                        currentStep === 0
+                          ? "opacity-30 cursor-not-allowed border-transparent"
+                          : "hover:bg-muted/20 border-border/20 hover:border-border/40"
                       )}
                       whileHover={currentStep > 0 ? { scale: 1.05 } : {}}
                       whileTap={currentStep > 0 ? { scale: 0.95 } : {}}
                     >
-                      <ChevronLeft className="w-5 h-5 text-white/70" />
+                      <ChevronLeft className="w-5 h-5 text-muted-foreground" />
                     </motion.button>
 
                     {/* Step dots */}
                     <div className="hidden sm:flex items-center gap-2">
                       {stepConfigs.map((_, index) => (
-                        <motion.button
+                        <button
                           key={index}
                           onClick={() => goToStep(index)}
-                          className="relative"
-                          whileHover={{ scale: 1.2 }}
-                        >
-                          <div
-                            className={cn(
-                              "w-2.5 h-2.5 rounded-full transition-all duration-300",
-                              index === currentStep
-                                ? "bg-gradient-to-r from-neon-purple to-neon-blue scale-125"
-                                : index < currentStep
-                                ? "bg-neon-purple/60"
-                                : "bg-white/20"
-                            )}
-                          />
-                          {index === currentStep && (
-                            <motion.div
-                              className="absolute inset-0 rounded-full bg-neon-purple/50"
-                              animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                            />
+                          className={cn(
+                            "w-2.5 h-2.5 rounded-full transition-all duration-300",
+                            index === currentStep
+                              ? "bg-foreground scale-125"
+                              : index < currentStep
+                              ? "bg-foreground/60"
+                              : "bg-border/30"
                           )}
-                        </motion.button>
+                        />
                       ))}
                     </div>
 
                     <motion.button
                       onClick={nextStep}
-                      className="p-2.5 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-300"
+                      className="p-2.5 rounded-xl border border-border/20 hover:border-border/40 hover:bg-muted/20 transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <ChevronRight className="w-5 h-5 text-white/70" />
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     </motion.button>
                   </div>
 
@@ -403,7 +393,7 @@ export const OnboardingCarousel = () => {
                   <div className="flex items-center gap-4">
                     <motion.button
                       onClick={skipOnboarding}
-                      className="px-5 py-2.5 text-sm text-white/50 hover:text-white/80 transition-colors"
+                      className="px-5 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       whileHover={{ scale: 1.02 }}
                     >
                       Skip Tour
@@ -412,37 +402,22 @@ export const OnboardingCarousel = () => {
                     {currentStep > 0 && (
                       <motion.button
                         onClick={prevStep}
-                        className="hidden sm:block px-5 py-2.5 text-sm text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-xl transition-all"
+                        className="hidden sm:block px-5 py-2.5 text-sm text-muted-foreground hover:text-foreground border border-border/20 hover:border-border/40 rounded-xl transition-all"
                         whileHover={{ scale: 1.02 }}
                       >
                         Previous
                       </motion.button>
                     )}
 
-                    {/* Premium next button with shimmer */}
+                    {/* Next button — solid monochrome */}
                     <motion.button
                       onClick={nextStep}
-                      className="relative px-7 py-3 rounded-xl text-white text-sm font-semibold overflow-hidden group"
+                      className="px-7 py-3 rounded-xl bg-foreground text-background text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity"
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                     >
-                      {/* Gradient background */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-neon-purple via-neon-blue to-neon-purple bg-[length:200%_100%] animate-gradient-shift" />
-                      
-                      {/* Shimmer effect */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full"
-                        animate={{ translateX: ['100%', '-100%'] }}
-                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                      />
-                      
-                      {/* Glow */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-neon-purple to-neon-blue opacity-0 group-hover:opacity-50 blur-xl transition-opacity" />
-                      
-                      <span className="relative z-10 flex items-center gap-2">
-                        {currentStep === totalSteps - 1 ? 'Get Started' : 'Next'}
-                        <ChevronRight className="w-4 h-4" />
-                      </span>
+                      {currentStep === totalSteps - 1 ? 'Get Started' : 'Next'}
+                      <ChevronRight className="w-4 h-4" />
                     </motion.button>
                   </div>
                 </div>
