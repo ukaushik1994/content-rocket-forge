@@ -113,11 +113,16 @@ const BorderControls = ({ p, set }: { p: Record<string, any>; set: (key: string,
 export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate, onDelete, onToggleLock, onToggleHidden, onAIRewrite, globalStyles, onUpdateGlobalStyles }) => {
   if (!block) {
     return (
-      <div className="w-64 shrink-0 border-l border-border/50 bg-card/80 overflow-y-auto p-4">
+      <div className="w-64 shrink-0 border-l border-border/30 bg-gradient-to-b from-card/90 to-card/70 backdrop-blur-sm overflow-y-auto p-4">
         {globalStyles && onUpdateGlobalStyles ? (
           <GlobalStylesPanel styles={globalStyles} onChange={onUpdateGlobalStyles} />
         ) : (
-          <p className="text-xs text-muted-foreground text-center">Select a block to edit its properties</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="h-10 w-10 rounded-xl bg-muted/30 flex items-center justify-center mb-3">
+              <Sparkles className="h-5 w-5 text-muted-foreground/40" />
+            </div>
+            <p className="text-xs text-muted-foreground/60 font-medium">Select a block to edit</p>
+          </div>
         )}
       </div>
     );
@@ -279,10 +284,12 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
   };
 
   return (
-    <div className="w-64 shrink-0 border-l border-border/50 bg-card/80 overflow-y-auto">
-      <div className="p-3 border-b border-border/40 flex items-center justify-between">
+    <div className="w-64 shrink-0 border-l border-border/30 bg-gradient-to-b from-card/90 to-card/70 backdrop-blur-sm overflow-y-auto">
+      <div className="p-3 border-b border-border/30 flex items-center justify-between bg-primary/[0.03]">
         <div className="flex items-center gap-2">
-          <def.icon className="h-4 w-4 text-primary" />
+          <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center">
+            <def.icon className="h-3.5 w-3.5 text-primary" />
+          </div>
           <span className="text-sm font-medium text-foreground">{def.label}</span>
         </div>
         <div className="flex items-center gap-0.5">

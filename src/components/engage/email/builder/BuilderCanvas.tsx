@@ -95,7 +95,15 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   const { setNodeRef, isOver } = useDroppable({ id: 'builder-canvas' });
 
   return (
-    <div className="flex-1 overflow-y-auto bg-muted/20 p-6" onClick={() => onSelectBlock('')}>
+    <div 
+      className="flex-1 overflow-y-auto p-6"
+      style={{
+        backgroundColor: 'hsl(var(--muted) / 0.15)',
+        backgroundImage: 'radial-gradient(circle, hsl(var(--muted-foreground) / 0.08) 1px, transparent 1px)',
+        backgroundSize: '20px 20px',
+      }}
+      onClick={() => onSelectBlock('')}
+    >
       <div
         ref={setNodeRef}
         className={`mx-auto bg-white shadow-lg rounded-sm min-h-[400px] transition-all ${isOver ? 'ring-2 ring-primary/50' : ''}`}
