@@ -23,7 +23,7 @@ export const HelpAndTourSettings = () => {
     closeSettings();
     // Navigate to dashboard and trigger the tour
     setTimeout(() => {
-      navigate('/dashboard?welcome=true');
+      navigate('/ai-chat?welcome=true');
     }, 300);
   };
 

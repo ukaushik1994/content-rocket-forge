@@ -193,15 +193,12 @@ export default function NavItems() {
   const { user } = useAuth();
   const { pathname } = location;
 
-  const homeRoute = user ? '/dashboard' : '/';
-  const isHomeActive = user ? pathname === '/dashboard' : pathname === '/';
   const isContentActive = contentRoutes.includes(pathname);
   const isMarketingActive = marketingRoutes.some(r => pathname.startsWith(r));
   const isAudienceActive = audienceRoutes.some(r => pathname.startsWith(r));
 
   return (
     <div className="flex flex-row gap-1">
-      <NavItem to={homeRoute} icon={<Home className="h-4 w-4" />} label="Home" active={isHomeActive} />
       <NavDropdown icon={<Puzzle className="h-4 w-4" />} label="Content" active={isContentActive} items={contentItems} pathname={pathname} />
       <NavDropdown icon={<Send className="h-4 w-4" />} label="Marketing" active={isMarketingActive} items={marketingItems} pathname={pathname} />
       <NavDropdown icon={<Users className="h-4 w-4" />} label="Audience" active={isAudienceActive} items={audienceItems} pathname={pathname} />
