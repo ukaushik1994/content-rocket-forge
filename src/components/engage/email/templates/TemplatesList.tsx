@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Trash2, Eye, Variable, Send, Copy, Bold, Italic, Link, Heading, Image, Sparkles, BarChart3 } from 'lucide-react';
+import { Plus, FileText, Trash2, Eye, Variable, Send, Copy, Bold, Italic, Link, Heading, Image, Sparkles, BarChart3, Paintbrush } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -19,6 +19,8 @@ import { EngageButton } from '../../shared/EngageButton';
 import { EngageDialogHeader } from '../../shared/EngageDialogHeader';
 import { AIEmailWriterDialog } from './AIEmailWriterDialog';
 import { AISubjectLineDialog } from './AISubjectLineDialog';
+import { EmailBuilderDialog } from '../builder/EmailBuilderDialog';
+import { EmailBlock } from '../builder/blockDefinitions';
 
 const VARIABLES = [
   { key: 'first_name', label: 'First Name' },
@@ -47,6 +49,9 @@ export const TemplatesList = () => {
   const [testEmail, setTestEmail] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showAIWriter, setShowAIWriter] = useState(false);
+  const [showVisualBuilder, setShowVisualBuilder] = useState(false);
+  const [builderBlocks, setBuilderBlocks] = useState<EmailBlock[]>([]);
+  const [builderTemplateName, setBuilderTemplateName] = useState('');
   const [showAISubjects, setShowAISubjects] = useState(false);
 
   const { data: templates = [], isLoading } = useQuery({
@@ -210,9 +215,19 @@ export const TemplatesList = () => {
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">{templates.length} templates</p>
         {canEdit && (
-          <EngageButton size="sm" onClick={() => openEditor()}>
-            <Plus className="h-4 w-4 mr-1" /> New Template
-          </EngageButton>
+          <div className="flex gap-2">
+            <EngageButton variant="outline" size="sm" onClick={() => {
+              setBuilderTemplateName('');
+              setEditingId(null);
+              setBuilderBlocks([]);
+              setShowVisualBuilder(true);
+            }}>
+              <Paintbrush className="h-4 w-4 mr-1" /> Visual Builder
+            </EngageButton>
+            <EngageButton size="sm" onClick={() => openEditor()}>
+              <Plus className="h-4 w-4 mr-1" /> New Template
+            </EngageButton>
+          </div>
         )}
       </div>
 
@@ -359,6 +374,37 @@ export const TemplatesList = () => {
         onSelect={(subject) => setForm(f => ({ ...f, subject }))}
         subject={form.subject}
         bodyHtml={form.body_html}
+      />
+      <EmailBuilderDialog
+        open={showVisualBuilder}
+        onOpenChange={setShowVisualBuilder}
+        initialBlocks={builderBlocks}
+        templateName={builderTemplateName || 'New Email'}
+        onSave={async (html, blocks) => {
+          try {
+            const variables = (html.match(/\{\{(\w+)\}\}/g) || []).map(v => v.replace(/[{}]/g, ''));
+            const payload = {
+              workspace_id: currentWorkspaceId!,
+              name: builderTemplateName || 'Visual Builder Template',
+              subject: 'Email Subject',
+              body_html: html,
+              body_text: html.replace(/<[^>]*>/g, ''),
+              variables: [...new Set(variables)],
+            };
+            if (editingId) {
+              const { error } = await supabase.from('email_templates').update(payload).eq('id', editingId);
+              if (error) throw error;
+            } else {
+              const { error } = await supabase.from('email_templates').insert({ ...payload, created_by: user?.id });
+              if (error) throw error;
+            }
+            queryClient.invalidateQueries({ queryKey: ['email-templates'] });
+            setShowVisualBuilder(false);
+            toast.success('Template saved from Visual Builder');
+          } catch (e: any) {
+            toast.error(e.message);
+          }
+        }}
       />
     </div>
   );
