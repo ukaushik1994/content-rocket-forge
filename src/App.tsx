@@ -7,6 +7,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Landing from "./pages/Landing";
+import ContentFeaturePage from "./pages/features/ContentPage";
+import MarketingFeaturePage from "./pages/features/MarketingPage";
+import AudienceFeaturePage from "./pages/features/AudiencePage";
+import AnalyticsFeaturePage from "./pages/features/AnalyticsPage";
 import Auth from "./pages/Auth";
 import CheckEmail from "./pages/CheckEmail";
 import AuthCallback from "./pages/AuthCallback";
@@ -125,6 +129,10 @@ const App = () => (
                   
                   {/* Landing is now the main entry point */}
                   <Route path="/" element={<Landing />} />
+                  <Route path="/features/content" element={<ContentFeaturePage />} />
+                  <Route path="/features/marketing" element={<MarketingFeaturePage />} />
+                  <Route path="/features/audience" element={<AudienceFeaturePage />} />
+                  <Route path="/features/analytics" element={<AnalyticsFeaturePage />} />
                   <Route path="/dashboard" element={<Navigate to="/ai-chat" replace />} />
                   <Route path="/drafts" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/repository" element={<ProtectedRoute><Repository /></ProtectedRoute>} />

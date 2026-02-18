@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 export const LandingNavbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -20,23 +21,35 @@ export const LandingNavbar = () => {
   }, []);
 
   const navItems = [
-    { name: 'Platform', href: '#hero' },
-    { name: 'Content', href: '#content' },
-    { name: 'Marketing', href: '#marketing' },
-    { name: 'Audience', href: '#audience' },
-    { name: 'Analytics', href: '#analytics' },
-    { name: 'Investors', href: '#investors' }
+    { name: 'Platform', href: '/', isRoute: false, anchor: '#hero' },
+    { name: 'Content', href: '/features/content', isRoute: true },
+    { name: 'Marketing', href: '/features/marketing', isRoute: true },
+    { name: 'Audience', href: '/features/audience', isRoute: true },
+    { name: 'Analytics', href: '/features/analytics', isRoute: true },
+    { name: 'Investors', href: '/', isRoute: false, anchor: '#investors' },
   ];
 
-  const scrollToSection = (href: string) => {
-    const element = document.querySelector(href);
-    if (element) {
-      const navbar = document.querySelector('nav');
-      const navbarHeight = navbar?.offsetHeight || 64;
-      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
-      window.scrollTo({ top: elementPosition, behavior: 'smooth' });
-    }
+  const handleNavClick = (item: typeof navItems[0]) => {
     setIsMobileMenuOpen(false);
+    if (item.isRoute) {
+      navigate(item.href);
+    } else if (item.anchor) {
+      if (location.pathname !== '/') {
+        navigate('/');
+        setTimeout(() => {
+          const el = document.querySelector(item.anchor!);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else {
+        const el = document.querySelector(item.anchor);
+        if (el) {
+          const navbar = document.querySelector('nav');
+          const navbarHeight = navbar?.offsetHeight || 64;
+          const elementPosition = el.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
+          window.scrollTo({ top: elementPosition, behavior: 'smooth' });
+        }
+      }
+    }
   };
 
   return (
@@ -55,7 +68,7 @@ export const LandingNavbar = () => {
           <motion.div
             whileHover={{ scale: 1.05 }}
             className="cursor-pointer"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           >
             <CreAiterLogo showText size="md" />
           </motion.div>
@@ -65,11 +78,15 @@ export const LandingNavbar = () => {
             {navItems.map((item) => (
               <button
                 key={item.name}
-                onClick={() => scrollToSection(item.href)}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200 relative group"
+                onClick={() => handleNavClick(item)}
+                className={`transition-colors duration-200 relative group ${
+                  item.isRoute && location.pathname === item.href ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
                 {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                <span className={`absolute -bottom-1 left-0 h-0.5 bg-primary transition-all duration-300 ${
+                  item.isRoute && location.pathname === item.href ? 'w-full' : 'w-0 group-hover:w-full'
+                }`}></span>
               </button>
             ))}
           </div>
@@ -116,8 +133,10 @@ export const LandingNavbar = () => {
               {navItems.map((item) => (
                 <button
                   key={item.name}
-                  onClick={() => scrollToSection(item.href)}
-                  className="text-left text-muted-foreground hover:text-foreground transition-colors duration-200 py-2"
+                  onClick={() => handleNavClick(item)}
+                  className={`text-left transition-colors duration-200 py-2 ${
+                    item.isRoute && location.pathname === item.href ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  }`}
                 >
                   {item.name}
                 </button>
