@@ -20,11 +20,11 @@ export const LandingNavbar = () => {
   }, []);
 
   const navItems = [
-    { name: 'Home', href: '#hero' },
-    { name: 'Problem', href: '#problem' },
-    { name: 'Features', href: '#features' },
-    { name: 'Comparison', href: '#comparison' },
-    { name: 'Value', href: '#value' },
+    { name: 'Platform', href: '#hero' },
+    { name: 'Content', href: '#content' },
+    { name: 'Marketing', href: '#marketing' },
+    { name: 'Audience', href: '#audience' },
+    { name: 'Analytics', href: '#analytics' },
     { name: 'Investors', href: '#investors' }
   ];
 
