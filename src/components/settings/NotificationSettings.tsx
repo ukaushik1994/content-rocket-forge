@@ -49,7 +49,7 @@ export function NotificationSettings() {
               <div
                 key={index}
                 className={`w-1.5 h-1.5 rounded-full ${
-                  notification.enabled ? 'bg-primary' : 'bg-muted'
+                  notification.enabled ? 'bg-foreground' : 'bg-muted'
                 }`}
               />
             ))}
@@ -88,7 +88,7 @@ export function NotificationSettings() {
                     <div
                       key={i}
                       className={`w-1.5 h-1.5 rounded-full ${
-                        i < emailEnabled ? 'bg-primary' : 'bg-muted'
+                        i < emailEnabled ? 'bg-foreground' : 'bg-muted'
                       }`}
                     />
                   ))}
@@ -99,7 +99,7 @@ export function NotificationSettings() {
           
           {emailExpanded && (
             <div className="space-y-2 pl-6">
-              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-border/20 bg-transparent hover:bg-muted/20 transition-colors">
                 <div className="space-y-0.5">
                   <Label htmlFor="email-content-published" className="font-medium text-sm">Content Published</Label>
                   <p className="text-xs text-muted-foreground">
@@ -109,7 +109,7 @@ export function NotificationSettings() {
                 <Switch id="email-content-published" defaultChecked />
               </div>
               
-              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-border/20 bg-transparent hover:bg-muted/20 transition-colors">
                 <div className="space-y-0.5">
                   <Label htmlFor="email-ranking-changes" className="font-medium text-sm">Ranking Changes</Label>
                   <p className="text-xs text-muted-foreground">
@@ -119,7 +119,7 @@ export function NotificationSettings() {
                 <Switch id="email-ranking-changes" defaultChecked />
               </div>
               
-              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-border/20 bg-transparent hover:bg-muted/20 transition-colors">
                 <div className="space-y-0.5">
                   <Label htmlFor="email-marketing" className="font-medium text-sm">Marketing Updates</Label>
                   <p className="text-xs text-muted-foreground">
@@ -162,7 +162,7 @@ export function NotificationSettings() {
                     <div
                       key={i}
                       className={`w-1.5 h-1.5 rounded-full ${
-                        i < appEnabled ? 'bg-primary' : 'bg-muted'
+                        i < appEnabled ? 'bg-foreground' : 'bg-muted'
                       }`}
                     />
                   ))}
@@ -173,7 +173,7 @@ export function NotificationSettings() {
           
           {appExpanded && (
             <div className="space-y-2 pl-6">
-              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-border/20 bg-transparent hover:bg-muted/20 transition-colors">
                 <div className="space-y-0.5">
                   <Label htmlFor="app-comments" className="font-medium text-sm">Comments</Label>
                   <p className="text-xs text-muted-foreground">
@@ -183,7 +183,7 @@ export function NotificationSettings() {
                 <Switch id="app-comments" defaultChecked />
               </div>
               
-              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border border-border/20 bg-transparent hover:bg-muted/20 transition-colors">
                 <div className="space-y-0.5">
                   <Label htmlFor="app-mentions" className="font-medium text-sm">Mentions</Label>
                   <p className="text-xs text-muted-foreground">

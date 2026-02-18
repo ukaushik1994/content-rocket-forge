@@ -53,7 +53,7 @@ export const HelpAndTourSettings = () => {
       {/* Header */}
       <div>
         <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Compass className="h-5 w-5 text-primary" />
+          <Compass className="h-5 w-5 text-muted-foreground" />
           Help & Tour
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -62,10 +62,10 @@ export const HelpAndTourSettings = () => {
       </div>
 
       {/* App Tour Section */}
-      <div className="p-6 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
+      <div className="p-6 rounded-xl bg-transparent border border-border/20">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="h-6 w-6 text-primary-foreground" />
+          <div className="w-12 h-12 rounded-xl bg-muted/30 border border-border/20 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="h-6 w-6 text-muted-foreground" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-lg">Interactive App Tour</h3>
@@ -97,9 +97,9 @@ export const HelpAndTourSettings = () => {
             <button
               key={index}
               onClick={link.onClick}
-              className="w-full flex items-center gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left"
+              className="w-full flex items-center gap-4 p-4 rounded-lg bg-transparent border border-border/20 hover:bg-muted/20 transition-colors text-left"
             >
-              <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center border">
+              <div className="w-10 h-10 rounded-lg bg-transparent flex items-center justify-center border border-border/20">
                 {link.icon}
               </div>
               <div className="flex-1">

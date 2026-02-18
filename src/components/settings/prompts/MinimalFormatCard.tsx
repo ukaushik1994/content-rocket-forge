@@ -26,13 +26,13 @@ export const MinimalFormatCard: React.FC<MinimalFormatCardProps> = ({
   const hasTemplate = existingTemplates.length > 0;
 
   const statusColor = hasTemplate 
-    ? 'bg-primary text-primary-foreground' 
+    ? 'bg-foreground text-background' 
     : 'bg-muted text-muted-foreground';
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <div className={`border rounded-lg transition-all hover:shadow-sm ${
-        hasTemplate ? 'border-primary/20 bg-primary/5' : 'border-border hover:border-border/60'
+      <div className={`border rounded-lg transition-all ${
+        hasTemplate ? 'border-border/20 bg-transparent' : 'border-border/20 hover:border-border/40'
       }`}>
         {/* Collapsed State - Ultra Minimal */}
         <CollapsibleTrigger asChild>
@@ -65,7 +65,7 @@ export const MinimalFormatCard: React.FC<MinimalFormatCardProps> = ({
 
         {/* Expanded State - Show Details & Actions */}
         <CollapsibleContent className="px-3 pb-3">
-          <div className="space-y-3 pt-2 border-t border-border/50">
+          <div className="space-y-3 pt-2 border-t border-border/20">
             <p className="text-xs text-muted-foreground leading-relaxed">
               {format.description}
             </p>

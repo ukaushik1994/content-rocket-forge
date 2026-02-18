@@ -228,7 +228,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-between py-2 px-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+      <div className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/20 bg-transparent transition-colors">
         <div className="flex items-center gap-3">
           <div className="w-4 h-4 rounded bg-muted animate-pulse" />
           <div className="h-4 bg-muted rounded w-20 animate-pulse" />
@@ -249,12 +249,12 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
         >
           <div className="flex items-center justify-between w-full py-2 px-3">
             <div className="flex items-center gap-3">
-              <div className="w-4 h-4 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                <provider.icon className="h-2.5 w-2.5 text-primary" />
+              <div className="w-4 h-4 rounded bg-muted/30 flex items-center justify-center shrink-0">
+                <provider.icon className="h-2.5 w-2.5 text-muted-foreground" />
               </div>
               <span className="font-medium text-sm text-left">{provider.name}</span>
               {provider.required && status === 'unconfigured' && (
-                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                <div className="w-1.5 h-1.5 bg-foreground rounded-full animate-pulse" />
               )}
             </div>
             
@@ -270,7 +270,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
 
   // Expanded state with full configuration
   return (
-    <div className="border rounded-lg bg-card">
+    <div className="border border-border/20 rounded-lg bg-transparent">
       {/* Collapsible header */}
       <Button
         variant="ghost"
@@ -279,14 +279,14 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
       >
         <div className="flex items-center justify-between w-full py-3 px-4">
           <div className="flex items-center gap-3">
-            <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center shrink-0">
-              <provider.icon className="h-3 w-3 text-primary" />
+            <div className="w-5 h-5 rounded bg-muted/30 flex items-center justify-center shrink-0">
+              <provider.icon className="h-3 w-3 text-muted-foreground" />
             </div>
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <span className="font-medium text-sm">{provider.name}</span>
                 {provider.required && (
-                  <span className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded">Required</span>
+                  <span className="text-xs text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded">Required</span>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">{provider.description}</p>
@@ -302,7 +302,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
       </Button>
 
       {/* Configuration section */}
-      <div className={`px-4 pb-4 space-y-4 border-t bg-muted/20 transition-opacity ${!isEnabled ? 'opacity-60' : ''}`}>
+      <div className={`px-4 pb-4 space-y-4 border-t border-border/20 bg-transparent transition-opacity ${!isEnabled ? 'opacity-60' : ''}`}>
         {/* Enable/Disable Toggle - Show for any configured service */}
         {(status !== 'unconfigured' || apiKey.trim()) && (
           <div className="flex items-center justify-between pt-3 pb-2 border-b">

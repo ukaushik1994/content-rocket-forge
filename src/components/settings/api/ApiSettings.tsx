@@ -95,7 +95,7 @@ export const ApiSettings = () => {
                 <div
                   key={provider.serviceKey}
                   className={`w-1.5 h-1.5 rounded-full ${
-                    providerStatuses[provider.serviceKey] ? 'bg-primary' : 'bg-muted'
+                    providerStatuses[provider.serviceKey] ? 'bg-foreground' : 'bg-muted'
                   }`}
                 />
               ))}
