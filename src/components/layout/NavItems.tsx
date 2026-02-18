@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book, Megaphone, Send } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book, Megaphone, Send, Mail, Users, Layers, GitBranch, Zap, Share2, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -165,13 +165,48 @@ export default function NavItems() {
         active={location.pathname === '/campaigns'} 
       />
       
-      {/* Engage - Marketing Hub */}
-      <NavItem 
-        to="/engage" 
-        icon={<Send className="h-4 w-4" />} 
-        label="Engage" 
-        active={location.pathname.startsWith('/engage')} 
-      />
+      {/* Engage Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className={cn(
+              'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
+              location.pathname.startsWith('/engage')
+                ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md'
+                : 'hover:bg-white/10 text-white/60 hover:text-white'
+            )}
+          >
+            <Send className="h-4 w-4" />
+            Engage
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48 bg-card border border-white/10 z-50">
+          {[
+            { path: '/engage/email', label: 'Email', icon: Mail },
+            { path: '/engage/contacts', label: 'Contacts', icon: Users },
+            { path: '/engage/segments', label: 'Segments', icon: Layers },
+            { path: '/engage/journeys', label: 'Journeys', icon: GitBranch },
+            { path: '/engage/automations', label: 'Automations', icon: Zap },
+            { path: '/engage/social', label: 'Social', icon: Share2 },
+            { path: '/engage/activity', label: 'Activity', icon: Activity },
+          ].map((item) => (
+            <DropdownMenuItem key={item.path} asChild>
+              <Link
+                to={item.path}
+                className={cn(
+                  'flex items-center gap-2 w-full cursor-pointer',
+                  location.pathname.startsWith(item.path) && 'bg-accent text-accent-foreground'
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <NavItem to="/analytics" icon={<BarChart3 className="h-4 w-4" />} label="Analytics" active={location.pathname === '/analytics'} />
     </div>
   );
