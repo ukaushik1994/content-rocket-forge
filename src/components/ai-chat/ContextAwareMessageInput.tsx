@@ -201,17 +201,12 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="relative">
-        <motion.div 
-          className={`relative flex items-end gap-2 p-3 bg-background/95 border rounded-2xl transition-all duration-200 ${
+        <div 
+          className={`relative flex items-end gap-2 p-2.5 bg-background/60 border rounded-2xl transition-all duration-200 ${
             isFocused 
-              ? 'border-primary/40 ring-1 ring-primary/20' 
-              : 'border-border/40 hover:border-border/60'
+              ? 'border-primary/30' 
+              : 'border-border/20 hover:border-border/40'
           }`}
-          animate={{ 
-            boxShadow: isFocused 
-              ? '0 4px 20px -4px hsl(var(--primary) / 0.1)' 
-              : '0 2px 10px -2px hsl(var(--foreground) / 0.05)'
-          }}
         >
           {/* File Upload Handler */}
           <FileUploadHandler
@@ -235,7 +230,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             size="sm"
             variant="ghost"
             onClick={handleAttachmentClick}
-            className="hidden sm:flex text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8"
+            className="hidden sm:flex text-muted-foreground/40 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8"
             disabled={isLoading}
           >
             <Paperclip className="h-4 w-4" />
@@ -267,46 +262,23 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
           </div>
 
           {/* Send Button */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <Button
+            type="submit"
+            size="sm"
+            variant="ghost"
+            disabled={!message.trim() || isLoading}
+            className="text-muted-foreground hover:text-foreground hover:bg-transparent p-2 h-9 w-9 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           >
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!message.trim() || isLoading}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 p-2 h-9 w-9 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
-            >
-              {isLoading ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="w-4 h-4 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full"
-                />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </motion.div>
-        </motion.div>
-
-        {/* Helper Text - Cleaner */}
-        <div className="flex items-center justify-between mt-2 px-1">
-          <span className="text-xs text-muted-foreground/50">
-            Enter to send · Shift+Enter for new line
-          </span>
-          <AnimatePresence>
-            {message.length > 100 && (
-              <motion.span 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-xs text-muted-foreground/50"
-              >
-                {message.length} characters
-              </motion.span>
+            {isLoading ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-4 h-4 border-2 border-muted-foreground/20 border-t-muted-foreground rounded-full"
+              />
+            ) : (
+              <Send className="h-4 w-4" />
             )}
-          </AnimatePresence>
+          </Button>
         </div>
       </form>
     </motion.div>

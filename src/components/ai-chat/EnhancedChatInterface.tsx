@@ -530,7 +530,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         // Left padding only on desktop when sidebar is open (sidebars overlay on mobile/tablet)
         showSidebar && isDesktop && "lg:pl-80"
       )}>
-        <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-4 py-3">
           {/* Context Indicator */}
           {showContextIndicator && (
             <div className="mb-3">
@@ -543,16 +543,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             </div>
           )}
           
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <ContextAwareMessageInput 
-                onSendMessage={handleSendMessage} 
-                isLoading={isLoading} 
-                placeholder={messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
-              />
-            </div>
-            <GlobalApiStatus variant="compact" />
-          </div>
+          <ContextAwareMessageInput 
+            onSendMessage={handleSendMessage} 
+            isLoading={isLoading} 
+            placeholder={messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
+          />
         </div>
       </div>
     </div>;
