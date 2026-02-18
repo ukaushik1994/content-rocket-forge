@@ -1,115 +1,116 @@
 
 
-# Complete Email Builder with Drag-and-Drop
+# Complete Email Builder -- Gap Analysis and Enhancement Plan
 
-## What Exists Today
+## What Already Exists (Fully Built)
 
-The current email template editor is a raw HTML textarea with 5 formatting buttons (Bold, Italic, Heading, Link, Image), variable insertion, and an AI writer. Users must manually write HTML to build emails. There is no visual drag-and-drop, no content blocks, no layout system, and no mobile preview.
+The visual email builder is already implemented with:
+- 10 block types (Header, Text, Image, Button, Divider, Spacer, Columns, Social, Footer, Video)
+- Drag-and-drop via @dnd-kit with sortable reordering
+- Block palette (left sidebar) with categories
+- Block inspector (right sidebar) with full property editors
+- Desktop/mobile preview toggle
+- Undo/redo with 50-entry history and keyboard shortcuts (Cmd+Z)
+- 5 starter templates (Welcome, Newsletter, Promotional, Announcement, Event)
+- Table-based HTML export for email client compatibility
+- Template name and subject line editing in toolbar
+- Save to database with metadata persistence
 
-## What We're Building
+## What's Missing for a "Complete" Builder
 
-A full visual email builder that replaces the existing code-only editor with a 3-mode system: **Visual Builder** (drag-and-drop blocks), **Code Editor** (existing HTML editor, preserved), and **Preview** (desktop/mobile toggle). The visual builder uses `@dnd-kit` which is already installed in the project.
+After reviewing every file, here are the gaps:
 
----
+### 1. No Drag Overlay (blocks disappear during drag)
+When dragging a block on the canvas, the original block goes to 50% opacity but there's no visual ghost/overlay following the cursor. This makes drag feel broken. Need a `DragOverlay` component from @dnd-kit.
 
-## Architecture
+### 2. Palette-to-Canvas Drop Doesn't Insert at Position
+Dragging from the palette calls `builder.addBlock(type)` which always appends to the end. It ignores WHERE you drop it on the canvas. The drop should insert at the hovered position.
 
-The email builder will be a new full-screen dialog that opens when creating/editing templates. It contains:
+### 3. No Inline Text Editing
+Text and Header blocks require using the inspector panel to edit content. Users expect to click on text directly on the canvas and type. Add inline contentEditable for text/header blocks.
 
-1. **Left Sidebar** -- Block palette (draggable content blocks)
-2. **Center Canvas** -- Drop zone where blocks are arranged vertically
-3. **Right Inspector** -- Settings panel for the selected block
-4. **Top Toolbar** -- Save, undo, preview mode toggle, device preview, AI writer
+### 4. No Block Move Buttons (Up/Down Arrows)
+The only way to reorder is drag. For accessibility and precision, blocks should have up/down arrow buttons in the toolbar overlay.
 
-### Content Block Types
+### 5. Missing "Code" Mode (HTML Editor)
+The dialog only has "Build" and "Preview" modes. The plan specified a 3-mode system including a Code editor so advanced users can hand-edit the generated HTML.
 
-| Block | Description | Configurable Properties |
-|-------|-------------|------------------------|
-| **Header** | Logo + heading text | Text, alignment, background color, logo URL |
-| **Text** | Rich paragraph | Content (inline editing), font size, color, alignment |
-| **Image** | Single image | URL, alt text, width, link URL, alignment |
-| **Button** | CTA button | Text, URL, color, border radius, alignment |
-| **Divider** | Horizontal line | Color, thickness, margin |
-| **Spacer** | Vertical spacing | Height (px) |
-| **Columns** | 2 or 3 column layout | Column count, content per column |
-| **Social Links** | Social media icons | Which platforms, URLs, icon style |
-| **Footer** | Unsubscribe + address | Company name, address, unsubscribe text |
-| **Video** | Video thumbnail with play | Thumbnail URL, video URL |
+### 6. No Global Email Styles Panel
+There's no way to set global email background color, content width, or default font. These are hardcoded in the HTML exporter.
 
-### Data Model (In-Memory, No DB Changes)
-
-Each block is stored as a JSON object:
-
-```
-{
-  id: string,          // uuid
-  type: 'header' | 'text' | 'button' | ...,
-  props: Record<string, any>,  // block-specific config
-  order: number
-}
-```
-
-The block array is converted to email-safe HTML on save (using table-based layout for email client compatibility). The existing `body_html` column stores the final output -- no schema changes needed.
+### 7. Block JSON Not Persisted for Round-Trip Editing
+The save function stores `__builder_blocks__` in the variables array as a flag, but never actually stores the block JSON. When reopening a template built with the visual builder, the blocks are lost -- it can't round-trip.
 
 ---
 
-## File Plan
+## Implementation Plan
 
-### New Files
+### File: `src/components/engage/email/builder/EmailBuilderDialog.tsx`
+- Add `DragOverlay` from @dnd-kit showing a miniature preview of the dragged block
+- Add a "Code" mode tab between Build and Preview that shows the generated HTML in a read/write textarea
+- Track the over-index during drag for positional insertion from palette
 
-| File | Purpose |
-|------|---------|
-| `src/components/engage/email/builder/EmailBuilderDialog.tsx` | Full-screen dialog shell with toolbar, 3-panel layout |
-| `src/components/engage/email/builder/BlockPalette.tsx` | Left sidebar with draggable block types |
-| `src/components/engage/email/builder/BuilderCanvas.tsx` | Center drop zone with sortable blocks using `@dnd-kit/sortable` |
-| `src/components/engage/email/builder/BlockRenderer.tsx` | Renders each block type visually on the canvas |
-| `src/components/engage/email/builder/BlockInspector.tsx` | Right panel with property editors for selected block |
-| `src/components/engage/email/builder/blocks/` | Individual block config components (HeaderBlock, TextBlock, ButtonBlock, etc.) |
-| `src/components/engage/email/builder/useEmailBuilder.ts` | Hook managing block state, undo/redo stack, selection, HTML export |
-| `src/components/engage/email/builder/htmlExporter.ts` | Converts block JSON array to email-compatible HTML (table-based) |
-| `src/components/engage/email/builder/blockDefinitions.ts` | Block type registry with default props, icons, labels |
-| `src/components/engage/email/builder/EmailBuilderPreview.tsx` | Desktop/mobile preview with device frame toggle |
+### File: `src/components/engage/email/builder/BuilderCanvas.tsx`
+- Accept `onDragOver` info to show a blue insertion line between blocks where a new block would land
+- Add drop position indicator (animated blue line)
 
-### Modified Files
+### File: `src/components/engage/email/builder/BlockRenderer.tsx`
+- Add Up/Down arrow buttons to the floating toolbar
+- Add inline `contentEditable` for text and header block content
+- Pass `onMoveUp` and `onMoveDown` callbacks
 
-| File | Change |
+### File: `src/components/engage/email/builder/useEmailBuilder.ts`
+- Add `moveBlockUp(id)` and `moveBlockDown(id)` convenience methods
+
+### File: `src/components/engage/email/builder/GlobalStylesPanel.tsx` (NEW)
+- A collapsible section at the top of the inspector when no block is selected
+- Controls: email background color, content area width (500-700px), default font family, content background color
+
+### File: `src/components/engage/email/builder/htmlExporter.ts`
+- Accept global styles config and use them in the wrapper HTML instead of hardcoded values
+
+### File: `src/components/engage/email/templates/TemplatesList.tsx`
+- Store block JSON in the template's `variables` field (as a JSON-encoded string entry) on save
+- Parse it back when opening the visual builder for an existing template
+- This enables round-trip editing: Visual Builder saves blocks, and reopening restores them
+
+---
+
+## Technical Details
+
+### DragOverlay Implementation
+```text
+DndContext
+  +-- DragOverlay dropAnimation={...}>
+        <BlockRenderer block={activeBlock} isSelected={false} ... />
+      </DragOverlay>
+```
+Uses `activeDragId` (already tracked) to render a floating preview.
+
+### Round-Trip Block Persistence
+On save: store `JSON.stringify(blocks)` as a special entry in the `variables` JSONB field with key `_builder_blocks`.
+On load: check if `variables._builder_blocks` exists, parse it, and pass as `initialBlocks` to the builder.
+
+### Inline Editing
+For `header` and `text` blocks, wrap the text content in a `contentEditable` div. On blur, call `onUpdate` with the new text. Suppress the drag handle during editing to avoid conflicts.
+
+### Global Styles Data Flow
+```text
+useEmailBuilder stores globalStyles: { bgColor, contentWidth, fontFamily }
+  --> passed to exportBlocksToHtml(blocks, globalStyles)
+  --> passed to GlobalStylesPanel for editing when no block selected
+```
+
+## Files Summary
+
+| File | Action |
 |------|--------|
-| `src/components/engage/email/templates/TemplatesList.tsx` | Add "Visual Builder" button alongside existing editor; wire up `EmailBuilderDialog` |
-
----
-
-## UX Flow
-
-1. User clicks **"New Template"** or edits an existing one
-2. A mode selector appears: **"Visual Builder"** or **"Code Editor"**
-   - Code Editor = the existing dialog (unchanged)
-   - Visual Builder = opens the new `EmailBuilderDialog`
-3. In the Visual Builder:
-   - Left sidebar shows block categories (Content, Layout, Social)
-   - User drags a block from the palette onto the canvas
-   - Blocks snap into vertical order (reorderable via drag handles)
-   - Clicking a block selects it and opens its inspector on the right
-   - Inline text editing for Text and Header blocks
-   - Top toolbar: Undo/Redo, Device Preview (desktop 600px / mobile 320px), AI Writer, Save
-4. On save, the block array is exported to HTML and stored in `body_html`
-5. When editing an existing template that was built with the visual builder, the block JSON is stored in the template's existing `variables` field as a special entry, allowing round-trip editing
-
-## Design Language
-
-- Same `bg-card border-border/50` panels as the rest of Engage
-- Block palette items: `bg-muted/30 hover:bg-muted/50` with subtle borders
-- Selected block: `ring-2 ring-primary` outline
-- Canvas background: `bg-white` (email preview context) with centered 600px max-width
-- Inspector: standard `Label` + `Input` / `Select` components
-- All animations: framer-motion consistent with existing Engage patterns
-- Drag overlay: slight scale + shadow during drag
-
-## Technical Notes
-
-- **@dnd-kit** is already installed (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`) and used in `CompetitiveAnalysisTab.tsx`
-- HTML export uses `<table>` layout for maximum email client compatibility (Outlook, Gmail, Apple Mail)
-- The builder stores block JSON in a metadata field for round-trip editing, but the final output is always pure HTML in `body_html`
-- Undo/redo uses a simple state history stack (max 50 entries)
-- No new database tables or columns required
-- No new dependencies needed
+| `EmailBuilderDialog.tsx` | Add DragOverlay, Code mode, positional palette drops |
+| `BuilderCanvas.tsx` | Drop position indicator line |
+| `BlockRenderer.tsx` | Inline editing, up/down move buttons |
+| `useEmailBuilder.ts` | moveBlockUp/Down, globalStyles state |
+| `htmlExporter.ts` | Accept and apply global styles |
+| `GlobalStylesPanel.tsx` | NEW -- global email style controls |
+| `BlockInspector.tsx` | Show GlobalStylesPanel when no block selected |
+| `TemplatesList.tsx` | Round-trip block JSON persistence |
 
