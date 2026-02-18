@@ -13,18 +13,25 @@ interface BuilderCanvasProps {
   onSelectBlock: (id: string) => void;
   onDeleteBlock: (id: string) => void;
   onDuplicateBlock: (id: string) => void;
+  onMoveBlockUp: (id: string) => void;
+  onMoveBlockDown: (id: string) => void;
+  onInlineEdit: (id: string, props: Record<string, any>) => void;
   previewWidth: number;
+  overIndex: number | null;
+  totalBlocks: number;
 }
 
-function SortableBlock({ block, isSelected, onSelect, onDelete, onDuplicate }: {
-  block: EmailBlock; isSelected: boolean; onSelect: () => void;
-  onDelete: () => void; onDuplicate: () => void;
+function SortableBlock({ block, isSelected, isFirst, isLast, onSelect, onDelete, onDuplicate, onMoveUp, onMoveDown, onInlineEdit }: {
+  block: EmailBlock; isSelected: boolean; isFirst: boolean; isLast: boolean;
+  onSelect: () => void; onDelete: () => void; onDuplicate: () => void;
+  onMoveUp: () => void; onMoveDown: () => void;
+  onInlineEdit: (props: Record<string, any>) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.3 : 1,
   };
 
   return (
@@ -32,9 +39,14 @@ function SortableBlock({ block, isSelected, onSelect, onDelete, onDuplicate }: {
       <BlockRenderer
         block={block}
         isSelected={isSelected}
+        isFirst={isFirst}
+        isLast={isLast}
         onSelect={onSelect}
         onDelete={onDelete}
         onDuplicate={onDuplicate}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        onInlineEdit={onInlineEdit}
         dragHandleProps={listeners}
       />
     </div>
@@ -42,7 +54,8 @@ function SortableBlock({ block, isSelected, onSelect, onDelete, onDuplicate }: {
 }
 
 export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
-  blocks, selectedBlockId, onSelectBlock, onDeleteBlock, onDuplicateBlock, previewWidth,
+  blocks, selectedBlockId, onSelectBlock, onDeleteBlock, onDuplicateBlock,
+  onMoveBlockUp, onMoveBlockDown, onInlineEdit, previewWidth, overIndex, totalBlocks,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: 'builder-canvas' });
 
@@ -69,16 +82,30 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
         ) : (
           <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-0">
-              {blocks.map((block) => (
-                <SortableBlock
-                  key={block.id}
-                  block={block}
-                  isSelected={block.id === selectedBlockId}
-                  onSelect={() => onSelectBlock(block.id)}
-                  onDelete={() => onDeleteBlock(block.id)}
-                  onDuplicate={() => onDuplicateBlock(block.id)}
-                />
+              {blocks.map((block, idx) => (
+                <React.Fragment key={block.id}>
+                  {/* Drop position indicator */}
+                  {overIndex === idx && (
+                    <div className="h-0.5 bg-primary mx-4 rounded-full shadow-[0_0_8px_hsl(var(--primary)/0.5)] transition-all" />
+                  )}
+                  <SortableBlock
+                    block={block}
+                    isSelected={block.id === selectedBlockId}
+                    isFirst={idx === 0}
+                    isLast={idx === blocks.length - 1}
+                    onSelect={() => onSelectBlock(block.id)}
+                    onDelete={() => onDeleteBlock(block.id)}
+                    onDuplicate={() => onDuplicateBlock(block.id)}
+                    onMoveUp={() => onMoveBlockUp(block.id)}
+                    onMoveDown={() => onMoveBlockDown(block.id)}
+                    onInlineEdit={(props) => onInlineEdit(block.id, props)}
+                  />
+                </React.Fragment>
               ))}
+              {/* Drop indicator at end */}
+              {overIndex !== null && overIndex >= blocks.length && (
+                <div className="h-0.5 bg-primary mx-4 rounded-full shadow-[0_0_8px_hsl(var(--primary)/0.5)] transition-all" />
+              )}
             </div>
           </SortableContext>
         )}

@@ -1,5 +1,19 @@
 import { EmailBlock } from './blockDefinitions';
 
+export interface GlobalStyles {
+  bgColor: string;
+  contentBgColor: string;
+  contentWidth: number;
+  fontFamily: string;
+}
+
+export const DEFAULT_GLOBAL_STYLES: GlobalStyles = {
+  bgColor: '#f4f4f5',
+  contentBgColor: '#ffffff',
+  contentWidth: 600,
+  fontFamily: 'Arial, sans-serif',
+};
+
 function esc(s: string) {
   return s || '';
 }
@@ -113,7 +127,7 @@ function renderBlock(block: EmailBlock): string {
   }
 }
 
-export function exportBlocksToHtml(blocks: EmailBlock[]): string {
+export function exportBlocksToHtml(blocks: EmailBlock[], styles: GlobalStyles = DEFAULT_GLOBAL_STYLES): string {
   const sorted = [...blocks].sort((a, b) => a.order - b.order);
   const body = sorted.map(renderBlock).join('\n');
 
@@ -124,10 +138,10 @@ export function exportBlocksToHtml(blocks: EmailBlock[]): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Email</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;">
+<body style="margin:0;padding:0;background-color:${styles.bgColor};font-family:${styles.fontFamily};">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${styles.bgColor};">
   <tr><td align="center" style="padding:24px 0;">
-    <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;max-width:600px;width:100%;">
+    <table width="${styles.contentWidth}" cellpadding="0" cellspacing="0" border="0" style="background-color:${styles.contentBgColor};max-width:${styles.contentWidth}px;width:100%;">
       <tr><td>
 ${body}
       </td></tr>

@@ -2,9 +2,10 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { Textarea } from '@/components/ui/textarea';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverEvent, DragOverlay } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Undo2, Redo2, Monitor, Smartphone, Save, Eye, Paintbrush, X, FileText, Mail } from 'lucide-react';
+import { Undo2, Redo2, Monitor, Smartphone, Save, Eye, Paintbrush, X, FileText, Mail, Code } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEmailBuilder } from './useEmailBuilder';
 import { BlockPalette } from './BlockPalette';
@@ -12,7 +13,8 @@ import { BuilderCanvas } from './BuilderCanvas';
 import { BlockInspector } from './BlockInspector';
 import { EmailBuilderPreview } from './EmailBuilderPreview';
 import { StarterTemplatesPanel } from './StarterTemplatesPanel';
-import { EmailBlock, BlockType } from './blockDefinitions';
+import { BlockRenderer } from './BlockRenderer';
+import { EmailBlock, BlockType, getBlockDef, createBlock } from './blockDefinitions';
 
 interface EmailBuilderDialogProps {
   open: boolean;
@@ -27,12 +29,14 @@ interface EmailBuilderDialogProps {
 export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
   open, onOpenChange, initialBlocks, onSave, templateName, templateSubject,
 }) => {
-  const [mode, setMode] = useState<'visual' | 'preview'>('visual');
+  const [mode, setMode] = useState<'visual' | 'code' | 'preview'>('visual');
   const [previewWidth, setPreviewWidth] = useState(600);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
   const [name, setName] = useState(templateName || '');
   const [subject, setSubject] = useState(templateSubject || '');
   const [showStarters, setShowStarters] = useState(false);
+  const [codeHtml, setCodeHtml] = useState('');
 
   const builder = useEmailBuilder(initialBlocks || []);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -52,17 +56,44 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
     }
   }, [open, templateName, templateSubject]);
 
+  // Sync code HTML when switching to code mode
+  useEffect(() => {
+    if (mode === 'code') {
+      setCodeHtml(builder.exportHtml());
+    }
+  }, [mode]);
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveDragId(String(event.active.id));
   }, []);
 
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { over } = event;
+    if (over && over.id !== 'builder-canvas') {
+      const idx = builder.blocks.findIndex(b => b.id === over.id);
+      setOverIndex(idx >= 0 ? idx : null);
+    } else if (over?.id === 'builder-canvas') {
+      setOverIndex(builder.blocks.length);
+    } else {
+      setOverIndex(null);
+    }
+  }, [builder.blocks]);
+
   const handleDragEnd = useCallback((event: DragEndEvent) => {
-    setActiveDragId(null);
     const { active, over } = event;
+    setActiveDragId(null);
+    setOverIndex(null);
     if (!over) return;
+
     const data = active.data.current;
     if (data?.fromPalette) {
-      builder.addBlock(data.type as BlockType);
+      // Insert at hovered position instead of always at end
+      let insertAt = builder.blocks.length;
+      if (over.id !== 'builder-canvas') {
+        const idx = builder.blocks.findIndex(b => b.id === over.id);
+        if (idx >= 0) insertAt = idx;
+      }
+      builder.addBlock(data.type as BlockType, insertAt);
       return;
     }
     if (active.id !== over.id) {
@@ -86,6 +117,16 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
     if (!name) setName(starterName);
     setShowStarters(false);
   }, [builder, name]);
+
+  // Get active block for drag overlay
+  const activeBlock = activeDragId
+    ? builder.blocks.find(b => b.id === activeDragId) ||
+      // If from palette, create a temporary preview block
+      (activeDragId.startsWith('palette-') ? (() => {
+        const type = activeDragId.replace('palette-', '') as BlockType;
+        return createBlock(type, 0);
+      })() : null)
+    : null;
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -135,13 +176,19 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
-              {/* Mode Toggle */}
+              {/* Mode Toggle - 3 modes */}
               <div className="flex items-center bg-muted/30 rounded-lg p-0.5 mr-2">
                 <button
                   onClick={() => setMode('visual')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${mode === 'visual' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   <Paintbrush className="h-3.5 w-3.5" /> Build
+                </button>
+                <button
+                  onClick={() => setMode('code')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${mode === 'code' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Code className="h-3.5 w-3.5" /> Code
                 </button>
                 <button
                   onClick={() => setMode('preview')}
@@ -189,7 +236,7 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
                 onSkip={() => setShowStarters(false)}
               />
             ) : mode === 'visual' ? (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
                 <BlockPalette onAddBlock={(type) => builder.addBlock(type)} />
                 <BuilderCanvas
                   blocks={builder.blocks}
@@ -197,14 +244,45 @@ export const EmailBuilderDialog: React.FC<EmailBuilderDialogProps> = ({
                   onSelectBlock={(id) => builder.setSelectedBlockId(id || null)}
                   onDeleteBlock={builder.removeBlock}
                   onDuplicateBlock={builder.duplicateBlock}
+                  onMoveBlockUp={builder.moveBlockUp}
+                  onMoveBlockDown={builder.moveBlockDown}
+                  onInlineEdit={(id, props) => builder.updateBlockProps(id, props)}
                   previewWidth={previewWidth}
+                  overIndex={overIndex}
+                  totalBlocks={builder.blocks.length}
                 />
                 <BlockInspector
                   block={builder.selectedBlock}
                   onUpdate={builder.updateBlockProps}
                   onDelete={builder.removeBlock}
+                  globalStyles={builder.globalStyles}
+                  onUpdateGlobalStyles={builder.setGlobalStyles}
                 />
+                {/* Drag Overlay */}
+                <DragOverlay dropAnimation={{ duration: 200, easing: 'ease' }}>
+                  {activeBlock ? (
+                    <div className="opacity-80 shadow-2xl rounded-md scale-95 pointer-events-none max-w-[400px]">
+                      <BlockRenderer
+                        block={activeBlock}
+                        isSelected={false}
+                        onSelect={() => {}}
+                        onDelete={() => {}}
+                        onDuplicate={() => {}}
+                      />
+                    </div>
+                  ) : null}
+                </DragOverlay>
               </DndContext>
+            ) : mode === 'code' ? (
+              <div className="flex-1 flex flex-col overflow-hidden p-4">
+                <p className="text-xs text-muted-foreground mb-2">Edit the generated HTML directly. Changes here are view-only and won't modify visual blocks.</p>
+                <Textarea
+                  value={codeHtml}
+                  onChange={e => setCodeHtml(e.target.value)}
+                  className="flex-1 font-mono text-xs resize-none"
+                  placeholder="HTML will appear here..."
+                />
+              </div>
             ) : (
               <EmailBuilderPreview html={builder.exportHtml()} />
             )}
