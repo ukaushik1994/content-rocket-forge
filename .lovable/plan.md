@@ -1,55 +1,65 @@
 
 
-# Delete Research Hub Page Completely
+# Replace Engage Sidebar with Top-Nav Dropdown
 
-## Scope
+## What Changes
 
-Remove the Research Hub page, its navigation entry, all routes, all dedicated components, and all references across the codebase.
+The Engage module currently uses a dedicated sidebar for navigating between Email, Contacts, Segments, etc. This will be replaced with a **dropdown menu on the "Engage" button** in the top navigation bar. Each item in the dropdown navigates to its own full-width standalone page (no sidebar).
 
-## Changes
+## Changes Overview
 
-### 1. Remove Nav Item (`src/components/layout/NavItems.tsx`)
-- Delete lines 151-157 (the Research Hub `NavItem` block)
+### 1. Convert the "Engage" NavItem to a Dropdown (NavItems.tsx)
+Replace the current simple `NavItem` link for "Engage" with a `DropdownMenu` component. The dropdown trigger shows "Engage" with a chevron icon. The menu items are:
+- Email -> `/engage/email`
+- Contacts -> `/engage/contacts`
+- Segments -> `/engage/segments`
+- Journeys -> `/engage/journeys`
+- Automations -> `/engage/automations`
+- Social -> `/engage/social`
+- Activity -> `/engage/activity`
 
-### 2. Remove Routes (`src/App.tsx`)
-- Delete the `/research/research-hub` route (line 153)
-- Delete the redirect routes that point to it:
-  - `/research/keyword-research` -> redirect to research-hub (line 155)
-  - `/research/answer-the-people` -> redirect to research-hub (line 156)
-  - `/research` -> redirect to research-hub (line 181)
+Each item will have its icon (same icons currently used in the sidebar). The trigger button will highlight when on any `/engage/*` route.
 
-### 3. Delete Page File
-- `src/pages/research/ResearchHub.tsx`
+### 2. Simplify EngageLayout (EngageLayout.tsx)
+- Remove the `EngageSidebar` import and rendering
+- Remove the sidebar flex layout (no more `flex` with sidebar + content)
+- Keep the `EngageBackground`, `WorkspaceProvider`, loading state, and breadcrumb
+- Content now renders full-width within a simple scrollable container
 
-### 4. Delete All Research Hub Components (entire folder)
-- `src/components/research/research-hub/ContentPipelineTab.tsx`
-- `src/components/research/research-hub/EnhancedContentGapsTab.tsx`
-- `src/components/research/research-hub/EnhancedPeopleQuestionsTab.tsx`
-- `src/components/research/research-hub/KeywordIntelligenceTab.tsx`
-- `src/components/research/research-hub/KeywordResearchTab.tsx`
-- `src/components/research/research-hub/KeywordSerpTab.tsx`
-- `src/components/research/research-hub/PeopleQuestionsTab.tsx`
-- `src/components/research/research-hub/ResearchDataExporter.tsx`
-- `src/components/research/research-hub/ResearchHubHero.tsx`
-- `src/components/research/research-hub/ResearchInsightsTab.tsx`
+### 3. Delete EngageSidebar (EngageSidebar.tsx)
+The sidebar component is no longer needed and will be deleted.
 
-### 5. Update References
-- `src/hooks/useEnhancedAIChatDB.ts`: Change navigation from `/research/research-hub` to `/research/content-strategy` (lines 474, 487)
-- `src/components/dashboard/SetupChecklist.tsx`: Change route from `/research/research-hub` to `/research/content-strategy` (line 81)
-- `src/components/ai-chat/ModernActionButtons.tsx`: Change navigation from `/research/research-hub` to `/research/content-strategy` (line 147)
-- `src/services/notificationIntegrations.ts`: Change URL from `/research/research-hub` to `/research/content-strategy` (line 119)
-- `src/App.tsx`: Remove the `ResearchHub` import
+## Technical Details
 
-### 6. Also Delete Legacy Pages That Redirected to Research Hub
-- `src/pages/research/KeywordResearch.tsx` (route already redirects to research-hub)
-- `src/pages/research/AnswerThePeople.tsx` (route already redirects to research-hub)
+### NavItems.tsx - Engage Dropdown
+Replace the single Engage `NavItem` (lines ~168-174) with a dropdown:
 
-## Summary
+```text
+DropdownMenu
+  DropdownMenuTrigger (styled like other nav items, with ChevronDown icon)
+    "Engage" + Send icon + chevron
+  DropdownMenuContent (solid bg-popover, high z-index)
+    DropdownMenuItem -> Link to /engage/email (Mail icon)
+    DropdownMenuItem -> Link to /engage/contacts (Users icon)
+    DropdownMenuItem -> Link to /engage/segments (Layers icon)
+    DropdownMenuItem -> Link to /engage/journeys (GitBranch icon)
+    DropdownMenuItem -> Link to /engage/automations (Zap icon)
+    DropdownMenuItem -> Link to /engage/social (Share2 icon)
+    DropdownMenuItem -> Link to /engage/activity (Activity icon)
+```
 
-| Action | Count |
-|--------|-------|
-| Files deleted | 13 (1 page + 10 components + 2 legacy pages) |
-| Files modified | 5 (NavItems, App.tsx, useEnhancedAIChatDB, SetupChecklist, ModernActionButtons, notificationIntegrations) |
+### EngageLayout.tsx - Simplified
+```text
+Before: PageLayout > flex container > [EngageSidebar | Content]
+After:  PageLayout > scrollable container > [Breadcrumb + Content]
+```
 
-All references that previously pointed to `/research/research-hub` will be redirected to `/research/content-strategy` (Strategy page) as the closest replacement.
+The background and workspace provider remain intact. Only the sidebar and its flex wrapper are removed.
 
+### Files Summary
+
+| File | Action |
+|------|--------|
+| `src/components/layout/NavItems.tsx` | Modify - replace Engage NavItem with dropdown |
+| `src/components/engage/EngageLayout.tsx` | Modify - remove sidebar, simplify layout |
+| `src/components/engage/EngageSidebar.tsx` | Delete |
