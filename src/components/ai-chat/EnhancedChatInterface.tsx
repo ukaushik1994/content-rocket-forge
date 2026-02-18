@@ -404,7 +404,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               <AnimatePresence>
                 {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-10">
                     {/* Welcome Hero - Clean and Minimal */}
-                    <motion.div className="text-center py-12" initial={{
+                    <motion.div className="text-center py-6 sm:py-8 lg:py-12" initial={{
                     opacity: 0,
                     y: 20
                   }} animate={{
@@ -448,7 +448,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       </motion.h2>
                       
                       <motion.p 
-                        className="text-muted-foreground max-w-lg mx-auto leading-relaxed text-sm" 
+                        className="text-muted-foreground max-w-sm sm:max-w-md lg:max-w-lg mx-auto leading-relaxed text-sm" 
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.4 }}

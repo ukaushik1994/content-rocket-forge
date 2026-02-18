@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, FileText, CheckCircle, Clock, Target, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,21 +93,21 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
   }, [summary]);
 
   const metrics = [
-    { label: 'Content', value: summary.totalContent, icon: FileText },
-    { label: 'Published', value: summary.published, icon: CheckCircle },
-    { label: 'In Review', value: summary.inReview, icon: Clock },
-    { label: 'SEO Score', value: `${summary.avgSeoScore}%`, icon: TrendingUp }
+    { label: 'Content', value: summary.totalContent },
+    { label: 'Published', value: summary.published },
+    { label: 'In Review', value: summary.inReview },
+    { label: 'SEO Score', value: `${summary.avgSeoScore}%` }
   ];
 
   if (isLoading) {
     return (
-      <Card className="bg-card border-border/50">
-        <CardContent className="p-6">
+      <Card className="bg-card border-border/50 shadow-none">
+        <CardContent className="p-5">
           <div className="animate-pulse space-y-4">
             <div className="h-4 bg-muted rounded w-1/3"></div>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-16 bg-muted rounded"></div>
+                <div key={i} className="h-14 bg-muted rounded"></div>
               ))}
             </div>
           </div>
@@ -123,9 +122,9 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="bg-card border-border/50">
-        <CardContent className="p-6">
-          <div className="space-y-5">
+      <Card className="bg-card border-border/50 shadow-none">
+        <CardContent className="p-5">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-medium text-foreground">
@@ -143,9 +142,6 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * index, duration: 0.2 }}
                   >
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <metric.icon className="h-3.5 w-3.5 text-primary" />
-                    </div>
                     <div className="text-xl font-bold text-foreground">{metric.value}</div>
                     <div className="text-xs text-muted-foreground">{metric.label}</div>
                   </motion.div>
@@ -155,22 +151,23 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
 
             {/* Contextual Nudge */}
             <motion.div 
-              className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/30"
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-muted/20 rounded-xl border border-border/30"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
               <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
+                <Target className="h-4 w-4 text-primary shrink-0" />
                 <span className="text-sm text-foreground">{contextualNudge.text}</span>
               </div>
               <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => onAction(contextualNudge.action)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="text-primary hover:text-primary/80 hover:bg-primary/5 shrink-0"
               >
-                <ArrowRight className="h-4 w-4 mr-1" />
                 {contextualNudge.buttonText}
+                <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </motion.div>
           </div>
