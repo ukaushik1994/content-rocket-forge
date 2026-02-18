@@ -227,9 +227,8 @@ export const ActivityLog = () => {
       ) : filtered.length === 0 ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
           <div className="relative h-20 w-20 mx-auto">
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-500/30 to-amber-500/30 blur-xl" />
-            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-white/[0.08] flex items-center justify-center">
-              <Activity className="h-9 w-9 text-orange-400" />
+           <div className="relative h-20 w-20 rounded-2xl bg-transparent border border-border/20 flex items-center justify-center">
+              <Activity className="h-9 w-9 text-muted-foreground" />
             </div>
           </div>
           <div className="space-y-1">
@@ -239,7 +238,7 @@ export const ActivityLog = () => {
         </motion.div>
       ) : (
         <div className="relative">
-          <div className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-primary/40 via-primary/20 to-transparent" />
+          <div className="absolute left-[19px] top-4 bottom-4 w-px bg-border/20" />
           <div className="space-y-1">
             {filtered.map((log: any, i: number) => {
               const Icon = channelIcons[log.channel] || Activity;
@@ -262,7 +261,7 @@ export const ActivityLog = () => {
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <Badge variant="outline" className="text-[10px]">{log.type}</Badge>
                       {contactName && (
-                        <span className="text-xs text-primary/80">→ {contactName}</span>
+                        <span className="text-xs text-foreground">→ {contactName}</span>
                       )}
                       <span className="text-[10px] text-muted-foreground">{format(new Date(log.created_at), 'MMM d, HH:mm')}</span>
                     </div>
