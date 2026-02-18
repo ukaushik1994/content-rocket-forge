@@ -1,97 +1,50 @@
 
 
-# Chat Area and Visualization Sidebar — Apple-Inspired Theme Alignment
+# Visualization Sidebar Sub-Components — Apple-Inspired Theme Alignment
 
-## What Needs to Change
+## Current Issues
 
-The chat message area and the right-side visualization sidebar still use the old visual language: gradient backgrounds on bubbles, `bg-card` with `shadow-sm`, `border-primary/20` accents, pulsing ring on typing indicator, and heavy header styling in the visualization sidebar. These need to match the flat, transparent, typography-first aesthetic already applied to the welcome screen, input bar, and left sidebar.
+The main `VisualizationSidebar.tsx` container was already flattened in the previous round, but the **internal interactive components** still use the old visual language:
+
+- **SegmentedControl**: Uses `bg-white/[0.04]`, `border-white/8`, and `shadow-sm` on the sliding indicator — too heavy
+- **PremiumChartTypeSelect**: Uses `bg-muted/30`, `border-border/50`, `focus:ring-1 ring-primary/30`, and `bg-primary/10` icon containers with `text-primary` — too colorful
+- **PremiumMetricCard**: Uses `bg-card/50`, `border-border/50` — too opaque for the transparent theme
+- **AISummaryCard**: Uses `bg-muted/30`, `border-border/30` — close but not matching; Sparkles icon uses `text-primary/60`
+- **ExportDropdown**: Uses default `variant="outline"` buttons which inherit heavier borders; includes a keyboard hints text row at the bottom that adds clutter
 
 ## Changes
 
-### 1. EnhancedMessageBubble.tsx — Flatten Message Bubbles
+### 1. SegmentedControl.tsx
+- Container: Change `bg-white/[0.04] border-white/8` to `bg-transparent border border-border/20`
+- Sliding indicator: Change `bg-white/10 shadow-sm shadow-black/10` to `bg-muted/30` with no shadow
+- Remove `backdrop-blur-sm` from container (unnecessary layer)
 
-**AI Avatar**
-- Change from `bg-card border border-primary/20 shadow-sm` to `bg-transparent border border-border/20` — no fill, no shadow
-- Bot icon: `text-muted-foreground` instead of `text-primary`
+### 2. PremiumChartTypeSelect.tsx
+- **Trigger**: Change from `bg-muted/30 border-border/50 hover:bg-muted/50 hover:border-border focus:ring-1 focus:ring-primary/30` to `bg-transparent border-border/20 hover:border-border/40 hover:bg-muted/20 focus:ring-0`
+- **Icon container in trigger**: Change from `bg-primary/10` with `text-primary` to no background, just `text-muted-foreground`
+- **Dropdown content**: Change from `bg-popover/95 backdrop-blur-xl border-border/50` to `bg-popover/90 backdrop-blur-md border-border/20`
+- **Option icon containers**: Change active state from `bg-primary/20 text-primary` to `bg-muted/40 text-foreground`; inactive stays `bg-muted text-muted-foreground` but lighten to `bg-muted/30`
+- **Separator**: Change from `bg-border/50` to `bg-border/10`
 
-**User Avatar**
-- Change from `bg-secondary/10 border border-secondary/20` to `bg-transparent border border-border/20`
+### 3. PremiumMetricCard.tsx
+- Card container: Change from `bg-card/50 border-border/50` to `bg-transparent border-border/20`
+- Keep the colored left-border (trend indicator) but it already looks fine at current opacity
 
-**AI Message Card**
-- Change from `bg-card border border-border/50 shadow-sm` to `bg-transparent border border-border/20` — no card fill, no shadow
-- Remove `shadow-sm` entirely
+### 4. AISummaryCard.tsx
+- Container: Change from `bg-muted/30 border-border/30` to `bg-transparent border border-border/20`
+- Sparkles icon: Change from `text-primary/60` to `text-muted-foreground`
 
-**User Message Card**
-- Change from `bg-primary/10 border border-primary/20` to `bg-muted/30 border border-border/20` — subtle, no primary color tint
-
-**Action Buttons (ModernActionButtons.tsx)**
-- Change outline buttons from `bg-background/50 hover:bg-primary/10 border-border/50 hover:border-primary/30` to `bg-transparent border-border/20 hover:border-border/40 hover:bg-muted/30 text-muted-foreground hover:text-foreground`
-
-### 2. EnhancedChatInterface.tsx — Flatten Typing Indicator
-
-**Typing avatar**
-- Remove `bg-card border border-primary/20 shadow-sm` — use `bg-transparent border border-border/20`
-- Brain icon: `text-muted-foreground` instead of `text-primary`
-- Remove the pulsing ring animation entirely
-
-**Typing card**
-- Change from `bg-card border-border/50 shadow-sm` to `bg-transparent border border-border/20`
-- Dots: change from `bg-primary/60` to `bg-muted-foreground/40`
-
-**Search button**
-- Already ghost — fine as-is
-
-### 3. VisualizationSidebar.tsx — Flatten the Right Sidebar
-
-**Container**
-- Change from `bg-background/98 backdrop-blur-xl border-l border-border/50` to `bg-background/90 backdrop-blur-md border-l border-border/10` (match left sidebar)
-
-**Header**
-- Icon container: change from `bg-muted/50` rounded-lg to no background — just the icon in `text-muted-foreground`
-- Title: keep as-is (already clean)
-- Close button: already ghost — fine
-- Badges: keep, already minimal
-- Remove `border-b border-border/50` — use `border-b border-border/10`
-
-**Chart containers**
-- Change from `bg-card/30 border border-border/30` to `bg-transparent border border-border/20`
-
-**Insight cards**
-- Change from `bg-white/[0.02] border-white/8` to `bg-transparent border border-border/20`
-- Keep the left-border color coding (trend/warning/opportunity) but reduce opacity
-
-**Deep dive prompt buttons**
-- Already outline ghost — just ensure `border-border/20` consistency
-
-**Backdrop (mobile)**
-- Keep `bg-black/40 backdrop-blur-sm` — functional, not decorative
+### 5. ExportDropdown.tsx
+- Remove the keyboard hints paragraph ("Esc to close / Tab to switch view") — this belongs in a tooltip, not persistent text
+- Buttons: Already `variant="outline"` which is fine, but ensure icon-only buttons use `border-border/20` for consistency
 
 ## Files Changed
 
 | File | What |
 |------|------|
-| `EnhancedMessageBubble.tsx` | Flatten bubbles: transparent backgrounds, remove shadows, muted avatars |
-| `ModernActionButtons.tsx` | Ghost-style action buttons, remove primary tints |
-| `EnhancedChatInterface.tsx` | Flatten typing indicator: remove pulse ring, transparent card, muted dots |
-| `VisualizationSidebar.tsx` | Flatten container, header, chart blocks, insight cards — match left sidebar transparency |
-
-## What Gets Removed
-- `shadow-sm` on all message cards and avatars
-- `bg-card` solid fills on bubbles and typing indicator
-- `bg-primary/10` tint on user messages
-- `border-primary/20` accent borders
-- `text-primary` on Bot icon (becomes muted)
-- Pulsing ring animation on typing avatar
-- `bg-primary/60` on typing dots
-- `bg-muted/50` icon container in visualization header
-- Heavy `border-border/50` dividers (all become `/10` or `/20`)
-
-## What Stays
-- Message content rendering and formatting
-- All functional behavior (copy, edit, delete, actions)
-- Chart rendering inside the sidebar (colors stay)
-- Responsive layout and sidebar positioning
-- Collapsible insights section
-- Deep dive prompts
-- Keyboard shortcuts
+| `SegmentedControl.tsx` | Transparent container, muted sliding indicator, remove shadow |
+| `PremiumChartTypeSelect.tsx` | Flatten trigger, remove primary tints from icons, lighten dropdown |
+| `PremiumMetricCard.tsx` | Transparent card background, thinner border |
+| `AISummaryCard.tsx` | Transparent background, muted sparkles icon |
+| `ExportDropdown.tsx` | Remove keyboard hints text, ensure consistent border opacity |
 
