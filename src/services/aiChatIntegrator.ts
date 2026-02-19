@@ -33,7 +33,7 @@ export class AIChatIntegrator {
       // Step 1: Use AI Proxy for intelligent routing
       const { data: proxyResponse, error: proxyError } = await supabase.functions.invoke('ai-proxy', {
         body: {
-          provider: 'openai',
+          service: 'openai',
           endpoint: 'chat',
           params: {
             model: 'gpt-5-2025-08-07',

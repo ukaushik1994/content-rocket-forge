@@ -221,6 +221,10 @@ export const analyzeKeywordSerp = async (
   provider: 'serp' | 'serpstack' = 'serp'
 ): Promise<SerpAnalysisResult | null> => {
   try {
+    if (!keyword || !keyword.trim()) {
+      console.warn('⚠️ Empty keyword provided for SERP analysis, skipping');
+      return null;
+    }
     console.log(`🎯 Analyzing ${provider.toUpperCase()} keyword: "${keyword}"${refresh ? ' (refresh requested)' : ''}`);
     
     // Clear any contaminated cache first
