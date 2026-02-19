@@ -1,84 +1,47 @@
 
 
-# Fix AI Chat: Enable Tool Execution in Streaming Mode
+# Landing Page Visual Polish — Implementation
 
-## Problem
+## What's Being Done
 
-The AI Chat currently uses two separate edge functions:
-- **`ai-streaming`**: Used for ALL chat messages (default). Has NO tools -- just a 4-line system prompt ("You are an AI content strategy assistant. Be helpful."). This is why the AI told you to "copy and paste" instead of saving the blog post.
-- **`enhanced-ai-chat`**: Has all 37 tools, rich system prompt, data context. Only used as a dead-code fallback that never triggers.
+The previously approved landing page cleanup that was never executed. This covers branding cleanup and content improvements across 5 files.
 
-Result: The AI can never take actions (save content, create contacts, send emails, etc.) because the streaming path has zero tool access.
+## Changes
 
-## Solution: Two-Phase Streaming with Tool Execution
+### 1. Remove "Investors" from Navbar
+**File: `src/components/landing/LandingNavbar.tsx` (line 29)**
+- Delete the `{ name: 'Investors', href: '/', isRoute: false, anchor: '#investors' }` entry from the `navItems` array
 
-Instead of rewriting the streaming function (which would be massive), we use a **post-stream tool detection** approach:
+### 2. Remove InvestorSection from Landing Page
+**File: `src/pages/Landing.tsx`**
+- Remove the import of `InvestorSection` (line 10)
+- Remove the `<section id="investors">` block (lines 239-241)
 
-### Phase 1: Detect Tool Intent After Streaming
+### 3. Clean Hero Text
+**File: `src/components/landing/LandingHero.tsx`**
+- Line 45: Change "Just tell your AI." to "Just tell Creaiter."
+- Line 64 (subtitle area): Change "all from one AI conversation" style wording to "all from one conversation"
 
-**File: `src/hooks/useUnifiedChatDB.ts`**
+### 4. Clean ManualToolsStrip Labels
+**File: `src/components/landing/ManualToolsStrip.tsx`**
+- Line 8: "AI Writer" becomes "Writer"
+- Line 32: "no AI required" becomes "always at your fingertips"
 
-After the streaming response completes, check if the user's message requested an action (save, create, delete, send, etc.). If so, make a secondary call to `enhanced-ai-chat` to execute the tool, then append/update the response with the tool result.
+### 5. Clean Chat Window Branding
+**File: `src/components/landing/AnimatedChatWindow.tsx`**
+- Remove `Sparkles` icon from the AI avatar — replace with a simple gradient circle
+- Remove any "creaiter.ai" label from the macOS title bar if present
 
-Flow:
-1. Stream text response via `ai-streaming` (fast, gives instant feedback)
-2. After stream completes, analyze if the user asked for a write action
-3. If yes, call `enhanced-ai-chat` with the conversation to execute tools
-4. Update the message with tool results (using ActionResultCard)
+### 6. Update Panel Descriptions
+**File: `src/pages/Landing.tsx`**
+- Content (line 189): "Writing, image generation, and video creation -- learning your brand voice with every piece."
+- Marketing (line 200): "Email campaigns, social publishing, and automations -- learning what converts."
+- Audience (line 211): "Unified profiles, smart segments, and real-time activity -- your audience, completely understood."
+- Analytics (line 222): "Performance dashboards, insights, and ROI tracking that connect content to revenue."
 
-### Phase 2: Enrich Streaming System Prompt
+## Technical Notes
 
-**File: `supabase/functions/ai-streaming/index.ts`**
-
-Update the minimal system prompt to include:
-- Awareness of available tools (so it says "I'll save that for you" instead of "copy and paste")
-- Instruction to format action requests as structured hints the frontend can detect
-- Context about the user's data (content count, etc.)
-
-The function will also receive a `context` parameter from the frontend with basic data counts so it can reference them.
-
-### Phase 3: Action Detection Logic
-
-**New file: `src/utils/actionIntentDetector.ts`**
-
-A lightweight utility that checks the user's message for action intent:
-- "save this" / "create a" / "delete" / "send" / "add contact" etc.
-- Returns the likely tool name and extracted parameters
-- Used by the hook to decide whether to make the secondary `enhanced-ai-chat` call
-
-## Implementation Details
-
-### `src/hooks/useUnifiedChatDB.ts` Changes
-- After streaming completes (line ~790), add action detection
-- If action detected, show a brief "Executing..." indicator
-- Call `enhanced-ai-chat` with the full conversation + action context
-- Parse tool results and update the message with ActionResultCard data
-- If tool returns navigation links or confirmation buttons, add them to the message
-
-### `supabase/functions/ai-streaming/index.ts` Changes
-- Replace the 4-line `buildStreamingSystemPrompt()` with a richer prompt that:
-  - Lists available actions the user can request
-  - Instructs the AI to acknowledge action requests confidently ("I'll save this as a draft for you")
-  - Uses markdown formatting properly
-- Accept optional `context` param with data counts
-
-### `src/utils/actionIntentDetector.ts` (New)
-- Pattern-based detection for write intents
-- Maps user phrases to tool names
-- Returns `{ detected: boolean, toolName: string, params: object }`
-
-## Files Modified
-
-| File | Change |
-|------|--------|
-| `src/hooks/useUnifiedChatDB.ts` | Add post-stream tool execution flow |
-| `supabase/functions/ai-streaming/index.ts` | Enrich system prompt with action awareness |
-| `src/utils/actionIntentDetector.ts` | **New** — detect write action intent from messages |
-
-## Why This Approach
-
-- Preserves fast streaming UX (no latency added for read-only queries)
-- Only adds a secondary call when the user explicitly requests an action
-- Leverages the fully-tested `enhanced-ai-chat` tool execution (37 tools, all working)
-- No need to rebuild tool-calling into the streaming function (would be 3000+ lines)
+- Pure text/import changes -- no new dependencies or components
+- The `InvestorSection.tsx` file itself stays in the codebase (unused) to avoid accidental breakage elsewhere; it simply won't be rendered
+- All changes are cosmetic/copy -- zero risk to functionality
 
