@@ -1,150 +1,122 @@
 
 
-# AI Chat Gap Fix -- Complete Patch
+# ChatGPT-Style Sidebar for AI Chat
 
-## What's Being Fixed
+## What We're Building
 
-4 categories of gaps identified across the AI Chat system:
+Replacing the current top navbar + floating sidebar toggle on the AI Chat page with a permanent left sidebar inspired by the ChatGPT layout. The navbar will be completely removed from the AI Chat page.
 
-### 1. Missing Cache Invalidation (tools.ts)
+## Sidebar Structure (Top to Bottom)
 
-The following write tools are missing from `WRITE_TOOL_CACHE_INVALIDATION`, meaning the UI won't refresh after they execute:
+```text
++----------------------------------+
+| [Logo]              [Collapse]   |
++----------------------------------+
+| [+] New Chat                     |
+| [Q] Search chats                 |
++----------------------------------+
+| Library (section label)          |
+|   Repository  (navigate /repo)   |
++----------------------------------+
+| Apps (section label)             |
+|   > Content (collapsible)        |
+|       Builder                    |
+|       Approval                   |
+|       Keywords                   |
+|       Strategy                   |
+|   > Marketing (collapsible)      |
+|       Campaigns                  |
+|       Email                      |
+|       Social                     |
+|       Automations                |
+|       Journeys                   |
+|   > Audience (collapsible)       |
+|       Contacts                   |
+|       Segments                   |
+|       Activity                   |
+|   Analytics                      |
++----------------------------------+
+| Chats (section label)            |
+|   conversation 1                 |
+|   conversation 2                 |
+|   conversation 3                 |
+|   ...                            |
+|   [Load More]                    |
++----------------------------------+
+| [User avatar] Name               |
+|   Settings / Sign Out            |
++----------------------------------+
+```
 
-| Tool | Should Invalidate |
-|------|------------------|
-| `publish_to_website` | `get_content_items` |
-| `create_social_post` | (no read tool yet, empty array) |
-| `schedule_social_from_repurpose` | (no read tool yet, empty array) |
-| `enroll_contacts_in_journey` | `get_engage_journeys` |
-| `send_quick_email` | (empty array) |
-| `trigger_content_gap_analysis` | `get_keywords`, `get_content_items` |
-| `start_content_builder` | (empty array) |
+## Key Behaviors
 
-### 2. Missing Confirmation Card Labels (ActionConfirmationCard.tsx)
-
-`TOOL_LABELS` only has 4 entries. The following destructive tools show raw snake_case names instead of human-readable labels:
-
-| Tool | Label to Add |
-|------|-------------|
-| `publish_to_website` | Publish to Website |
-| `create_social_post` | Post to Social Media |
-| `schedule_social_from_repurpose` | Schedule Social Posts |
-
-### 3. Missing Intent Detection Rules (actionIntentDetector.ts)
-
-These backend tools exist but have no intent detection patterns, so the chat can never route to them automatically:
-
-| Tool | Trigger Phrases to Add |
-|------|----------------------|
-| `trigger_content_gap_analysis` | "find content gaps", "what am I missing", "content gap analysis" |
-| `start_content_builder` | "open content builder", "start content builder", "guided content creation" |
-| `update_company_info` | "update company info", "change company name", "set company details" |
-| `update_competitor` | "update competitor", "edit competitor", "change competitor details" |
-
-### 4. Missing Delete/Cleanup Tools
-
-No delete tools exist for contacts, segments, campaigns, journeys, automations, or social posts. Adding the most critical ones:
-
-| New Tool | File | Purpose |
-|----------|------|---------|
-| `delete_contact` | engage-action-tools.ts | Remove a contact from CRM |
-| `delete_segment` | engage-action-tools.ts | Remove an audience segment |
-| `delete_email_campaign` | engage-action-tools.ts | Remove a draft campaign |
-| `delete_journey` | engage-action-tools.ts | Remove a draft journey |
-| `delete_automation` | engage-action-tools.ts | Remove an automation |
-| `delete_social_post` | engage-action-tools.ts | Remove a scheduled/draft social post |
-
----
+- Sidebar is always visible on desktop (collapsible to icon-only mini state)
+- On mobile, sidebar is a sheet overlay (swipe to close)
+- "Library" section has one item: Repository, which navigates to /repository
+- "Apps" section has collapsible groups mirroring current navbar dropdowns
+- "Chats" section replaces the old ChatHistorySidebar with the same conversation list
+- User profile + settings + sign out moves to sidebar footer
+- The Navbar component is NOT rendered on the /ai-chat page
 
 ## Technical Details
 
-### File 1: `supabase/functions/enhanced-ai-chat/tools.ts`
+### New Files
 
-Add 7 entries to `WRITE_TOOL_CACHE_INVALIDATION`:
+| File | Purpose |
+|------|---------|
+| `src/components/ai-chat/AIChatSidebar.tsx` | The new unified sidebar component combining navigation, library, apps, chats, and user profile |
 
-```
-publish_to_website: ['get_content_items'],
-create_social_post: [],
-schedule_social_from_repurpose: [],
-enroll_contacts_in_journey: ['get_engage_journeys'],
-send_quick_email: [],
-trigger_content_gap_analysis: ['get_keywords', 'get_content_items'],
-start_content_builder: [],
-```
+### Modified Files
 
-### File 2: `src/components/ai-chat/ActionConfirmationCard.tsx`
+| File | Change |
+|------|--------|
+| `src/pages/AIChat.tsx` | Remove `<Navbar />`, wrap content in `SidebarProvider`, render `AIChatSidebar` alongside `EnhancedChatInterface` |
+| `src/components/ai-chat/EnhancedChatInterface.tsx` | Remove the floating Menu toggle button (lines 310-326), remove `ChatHistorySidebar` rendering (lines 293-296), remove `showSidebar` state. The sidebar is now managed by the parent. Pass conversation props up. |
 
-Expand `TOOL_LABELS` with all destructive/confirmable tools:
+### AIChatSidebar.tsx Structure
 
-```
-publish_to_website: 'Publish to Website',
-create_social_post: 'Post to Social Media',
-schedule_social_from_repurpose: 'Schedule Social Posts',
-delete_contact: 'Delete Contact',
-delete_segment: 'Delete Segment',
-delete_email_campaign: 'Delete Email Campaign',
-delete_journey: 'Delete Journey',
-delete_automation: 'Delete Automation',
-delete_social_post: 'Delete Social Post',
-```
+Uses the existing shadcn `Sidebar`, `SidebarProvider`, `SidebarContent`, `SidebarGroup`, `SidebarGroupLabel`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton`, `SidebarMenuSub`, `SidebarMenuSubItem`, `SidebarMenuSubButton`, `SidebarFooter`, `SidebarHeader`, and `SidebarTrigger` components.
 
-### File 3: `src/utils/actionIntentDetector.ts`
+Sections:
+1. **Header**: CreAiterLogo + SidebarTrigger (collapse)
+2. **Actions**: New Chat button + Search chats input
+3. **Library group**: Single item "Repository" linking to /repository
+4. **Apps group**: Collapsible sub-menus for Content (5 items), Marketing (5 items), Audience (3 items), and a direct Analytics link -- all using the same routes from NavItems.tsx
+5. **Chats group**: ScrollArea with conversation list (reusing the existing conversation data and handlers from useEnhancedAIChatDB), pin/archive/delete actions
+6. **Footer**: User avatar, name, dropdown with Settings and Sign Out
 
-Add 4 missing intent rules for existing tools + 6 intent rules for new delete tools. Add all 6 delete tools to `DESTRUCTIVE_TOOLS`.
+### AIChat.tsx Layout Change
 
-New intent patterns:
-- `trigger_content_gap_analysis`: "find content gaps", "what am I missing", "gap analysis"
-- `start_content_builder`: "open content builder", "start content builder", "guided content"
-- `update_company_info`: "update company info", "change company name/details"
-- `update_competitor`: "update competitor", "edit competitor"
-- `delete_contact`: "delete contact", "remove contact"
-- `delete_segment`: "delete segment", "remove segment"
-- `delete_email_campaign`: "delete campaign", "remove email campaign"
-- `delete_journey`: "delete journey", "remove journey"
-- `delete_automation`: "delete automation", "remove automation"
-- `delete_social_post`: "delete social post", "remove social post"
+```text
+Before:
+  <Navbar />
+  <main>
+    <EnhancedChatInterface /> (contains its own sidebar toggle)
+  </main>
 
-### File 4: `supabase/functions/enhanced-ai-chat/engage-action-tools.ts`
-
-Add 6 new delete tool definitions and their execution handlers:
-
-Each delete tool follows the same pattern:
-1. Accept the item UUID
-2. Verify workspace ownership
-3. Delete from the appropriate table
-4. Return success/failure
-
-Add to `ENGAGE_ACTION_TOOL_NAMES` array.
-
-### File 5: `supabase/functions/enhanced-ai-chat/tools.ts` (cache section)
-
-Add cache invalidation entries for all 6 delete tools:
-
-```
-delete_contact: ['get_engage_contacts'],
-delete_segment: ['get_engage_segments'],
-delete_email_campaign: ['get_engage_email_campaigns'],
-delete_journey: ['get_engage_journeys'],
-delete_automation: ['get_engage_automations'],
-delete_social_post: [],
+After:
+  <SidebarProvider>
+    <AIChatSidebar ... />
+    <main>
+      <SidebarTrigger /> (top-left hamburger, always visible)
+      <EnhancedChatInterface /> (no sidebar logic)
+    </main>
+  </SidebarProvider>
 ```
 
-### File 6: `supabase/functions/enhanced-ai-chat/index.ts`
+### What Gets Removed
 
-Update the system prompt's WRITE tools list to include the 6 new delete tools in the Engage line.
+- Floating sidebar toggle button from EnhancedChatInterface (lines 310-326)
+- ChatHistorySidebar rendering from EnhancedChatInterface (lines 293-296)
+- `showSidebar` state from EnhancedChatInterface
+- `<Navbar />` from AIChat.tsx
+- The old `ChatSidebar.tsx` component (already unused, superseded by ChatHistorySidebar)
 
----
+### Props Flow
 
-## Summary of Changes
+AIChat.tsx will call `useEnhancedAIChatDB()` and pass conversation data down to both `AIChatSidebar` and `EnhancedChatInterface`. This avoids duplicate hook calls and keeps state in sync.
 
-| File | Lines Added (approx) |
-|------|---------------------|
-| `tools.ts` (cache invalidation) | ~15 |
-| `ActionConfirmationCard.tsx` (labels) | ~10 |
-| `actionIntentDetector.ts` (10 new rules + destructive set) | ~70 |
-| `engage-action-tools.ts` (6 delete tools) | ~120 |
-| `index.ts` (system prompt) | ~2 |
-| **Total** | **~217 lines** |
+### No Database or Edge Function Changes
 
-No database changes required. All tables already exist with proper RLS.
+This is a purely frontend layout change.
 
