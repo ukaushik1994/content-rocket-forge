@@ -11,14 +11,24 @@ export interface ActionIntent {
   toolName: string;
   confidence: 'high' | 'medium' | 'low';
   params: Record<string, any>;
+  requiresConfirmation?: boolean;
 }
 
 interface PatternRule {
   patterns: RegExp[];
   toolName: string;
   confidence: 'high' | 'medium';
+  requiresConfirmation?: boolean;
   extractParams?: (message: string, match: RegExpMatchArray) => Record<string, any>;
 }
+
+/** Tools that require explicit user confirmation before execution */
+const DESTRUCTIVE_TOOLS = new Set([
+  'delete_content_item',
+  'delete_solution',
+  'send_email_campaign',
+  'send_quick_email',
+]);
 
 const ACTION_RULES: PatternRule[] = [
   // Content creation & management
@@ -306,11 +316,13 @@ export function detectActionIntent(message: string): ActionIntent {
       const match = trimmed.match(pattern);
       if (match) {
         const params = rule.extractParams ? rule.extractParams(trimmed, match) : {};
+        const requiresConfirmation = DESTRUCTIVE_TOOLS.has(rule.toolName);
         return {
           detected: true,
           toolName: rule.toolName,
           confidence: rule.confidence,
           params,
+          requiresConfirmation,
         };
       }
     }

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ContextualAction } from '@/services/aiService';
 import { useNavigate } from 'react-router-dom';
+import { detectActionIntent } from '@/utils/actionIntentDetector';
 
 export interface AIConversation {
   id: string;
@@ -24,6 +25,12 @@ export const useEnhancedAIChatDB = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [pendingConfirmation, setPendingConfirmation] = useState<{
+    toolName: string;
+    originalMessage: string;
+    conversationId: string;
+    conversationHistory: Array<{ role: string; content: string }>;
+  } | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -225,6 +232,67 @@ export const useEnhancedAIChatDB = () => {
     }
   }, []);
 
+  // Execute tool action via enhanced-ai-chat
+  const executeToolAction = useCallback(async (
+    conversationForTools: Array<{ role: string; content: string }>,
+    conversationId: string,
+    toolName: string
+  ) => {
+    const executingId = `action-${Date.now()}`;
+    const executingMessage: EnhancedChatMessage = {
+      id: executingId,
+      role: 'assistant',
+      content: `⚙️ Executing: ${toolName.replace(/_/g, ' ')}...`,
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, executingMessage]);
+    setIsTyping(true);
+
+    try {
+      const { data: toolResult, error: toolError } = await supabase.functions.invoke('enhanced-ai-chat', {
+        body: {
+          conversationId,
+          messages: conversationForTools
+        }
+      });
+
+      if (toolError) throw toolError;
+
+      const toolContent = toolResult?.content || toolResult?.message || 'Action completed.';
+      const toolActions = toolResult?.actions || [];
+      const toolVisualData = toolResult?.visualData;
+
+      const actionResultMessage: EnhancedChatMessage = {
+        id: executingId,
+        role: 'assistant',
+        content: toolContent,
+        timestamp: new Date(),
+        actions: toolActions,
+        visualData: toolVisualData,
+      };
+
+      setMessages(prev =>
+        prev.map(m => m.id === executingId ? actionResultMessage : m)
+      );
+      setIsTyping(false);
+      await saveMessage(actionResultMessage, conversationId);
+    } catch (toolExecError: any) {
+      console.error('❌ Tool execution failed:', toolExecError);
+      const errorMessage: EnhancedChatMessage = {
+        id: executingId,
+        role: 'assistant',
+        content: `❌ Action failed: ${toolExecError.message || 'Could not execute the requested action.'}`,
+        timestamp: new Date(),
+        messageStatus: 'error',
+      };
+      setMessages(prev =>
+        prev.map(m => m.id === executingId ? errorMessage : m)
+      );
+      setIsTyping(false);
+    }
+  }, [saveMessage]);
+
   // Send message with streaming SSE support + fallback to blocking
   const sendMessage = useCallback(async (content: string, displayContent?: string) => {
     if (!user) {
@@ -233,6 +301,46 @@ export const useEnhancedAIChatDB = () => {
         description: "Please log in to use the AI assistant",
         variant: "destructive"
       });
+      return;
+    }
+
+    // Handle confirmation responses for destructive actions
+    const lowerContent = content.toLowerCase().trim();
+    if (pendingConfirmation && (lowerContent === 'confirm' || lowerContent === 'yes')) {
+      const { conversationHistory, conversationId: confConvId, toolName } = pendingConfirmation;
+      setPendingConfirmation(null);
+      
+      // Add user confirm message to chat
+      const confirmUserMsg: EnhancedChatMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: 'Confirmed ✓',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, confirmUserMsg]);
+      await saveMessage(confirmUserMsg, confConvId);
+
+      // Add CONFIRMED prefix to conversation history
+      const confirmedHistory = [
+        ...conversationHistory,
+        { role: 'user' as const, content: `CONFIRMED: Execute ${toolName}` }
+      ];
+      await executeToolAction(confirmedHistory, confConvId, toolName);
+      return;
+    }
+
+    if (pendingConfirmation && (lowerContent === 'cancel' || lowerContent === 'no')) {
+      setPendingConfirmation(null);
+      const cancelMsg: EnhancedChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: '🚫 Action cancelled.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, cancelMsg]);
+      if (activeConversation) {
+        await saveMessage(cancelMsg, activeConversation);
+      }
       return;
     }
 
@@ -370,6 +478,42 @@ export const useEnhancedAIChatDB = () => {
             prev.map(m => m.id === assistantId ? finalMessage : m)
           );
           await saveMessage(finalMessage, conversationId);
+
+          // ========== PHASE 2: Post-stream tool execution ==========
+          const actionIntent = detectActionIntent(content);
+          if (actionIntent.detected && actionIntent.confidence !== 'low') {
+            console.log('🔧 Action intent detected:', actionIntent.toolName, '- calling enhanced-ai-chat...');
+
+            const conversationForTools = [
+              ...messages.slice(-8).map(m => ({ role: m.role, content: m.content })),
+              { role: 'user' as const, content },
+              { role: 'assistant' as const, content: fullContent },
+              { role: 'user' as const, content: `Please execute the action I requested. Tool hint: ${actionIntent.toolName}` }
+            ];
+
+            // If destructive action, show confirmation instead of executing
+            if (actionIntent.requiresConfirmation) {
+              console.log('⚠️ Destructive action requires confirmation:', actionIntent.toolName);
+              setPendingConfirmation({
+                toolName: actionIntent.toolName,
+                originalMessage: content,
+                conversationId: conversationId!,
+                conversationHistory: conversationForTools,
+              });
+
+              const confirmMessage: EnhancedChatMessage = {
+                id: `confirm-${Date.now()}`,
+                role: 'assistant',
+                content: `⚠️ **Confirmation Required**\n\nI'm about to execute: **${actionIntent.toolName.replace(/_/g, ' ')}**\n\nThis is a destructive action. Please type **"confirm"** to proceed or **"cancel"** to abort.`,
+                timestamp: new Date(),
+              };
+              setMessages(prev => [...prev, confirmMessage]);
+              await saveMessage(confirmMessage, conversationId!);
+            } else {
+              // Non-destructive: execute immediately
+              await executeToolAction(conversationForTools, conversationId!, actionIntent.toolName);
+            }
+          }
         }
       } catch (streamError) {
         console.warn('Streaming failed, falling back to blocking call:', streamError);
@@ -428,7 +572,7 @@ export const useEnhancedAIChatDB = () => {
       setIsLoading(false);
       setIsTyping(false);
     }
-  }, [messages, toast, user, activeConversation, createConversation, saveMessage]);
+  }, [messages, toast, user, activeConversation, createConversation, saveMessage, pendingConfirmation, executeToolAction]);
 
   const handleAction = useCallback(async (action: ContextualAction) => {
     console.log('🎬 Handling action:', action);
@@ -920,6 +1064,7 @@ export const useEnhancedAIChatDB = () => {
     isLoading,
     isTyping,
     searchTerm,
+    pendingConfirmation,
     loadConversations,
     createConversation,
     deleteConversation,
