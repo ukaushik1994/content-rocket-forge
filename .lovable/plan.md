@@ -1,84 +1,60 @@
 
 
-# Fix: Content Wizard Sidebar Not Opening from Chat
+# Fix: Content Wizard Not Receiving Keyword from Chat
 
-## Root Cause
+## Problem
 
-The `launch_content_wizard` tool correctly returns `visualData: { type: 'content_wizard', keyword, ... }` in its tool result. However, this data gets lost because:
+When a user says "I want to create a blog about AI trends", the intent detector correctly extracts `{ keyword: "AI trends" }` via `extractParams`. However, this data is **never sent** to the backend. The tool hint message is just:
 
-1. The tool result is stringified and sent back to the AI for the second call
-2. The AI generates a text response ("Opening content wizard...") but does NOT include the `visualData` JSON block in its text
-3. The `parseResponseWithFallback` function only extracts `visualData` from JSON blocks inside the AI's text
-4. The fallback chart generator (`generateFallbackChartFromToolResults`) has no case for `launch_content_wizard`
-5. Result: `visualData` is always `undefined` for this tool, so the sidebar never opens with the wizard
+```
+"Please execute the action I requested. Tool hint: launch_content_wizard"
+```
+
+The AI then calls `launch_content_wizard` but has to guess the keyword from earlier conversation context -- often resulting in an empty or wrong keyword. This causes:
+- Error 1: `api-proxy` gets an empty keyword for SERP analysis
+- Error 2: Downstream `ai-proxy` calls fail when the wizard renders with no keyword
 
 ## Fix
 
-Add a **visualData promotion** step in `index.ts` (similar to the existing `promotedActions` pattern) that extracts `visualData` from tool results when the tool itself provides it.
+Include the extracted params directly in the tool hint message so the AI passes them to the tool call.
 
-### File: `supabase/functions/enhanced-ai-chat/index.ts`
+### File 1: `src/hooks/useUnifiedChatDB.ts` (~line 844)
 
-**Change 1** (~line 2067, inside the tool result promotion loop):
-
-Add logic to extract `visualData` from tool results alongside the existing action promotion:
-
+Change the tool hint from:
 ```
-let requestPromotedVisualData: any = null;
+`Please execute the action I requested. Tool hint: ${actionIntent.toolName}`
+```
+To:
+```
+`Please execute the action I requested. Tool hint: ${actionIntent.toolName}${actionIntent.params ? ` with params: ${JSON.stringify(actionIntent.params)}` : ''}`
+```
 
-// Inside the existing tool result loop:
-for (const result of toolResults) {
-  try {
-    const parsed = JSON.parse(result.content);
-    
-    // NEW: Promote visualData from tool results (e.g., launch_content_wizard)
-    if (parsed?.visualData && !requestPromotedVisualData) {
-      requestPromotedVisualData = parsed.visualData;
-      console.log('📊 Promoted visualData from tool result:', parsed.visualData.type);
-    }
-    
-    // ... existing action promotion logic ...
-  } catch (_e) { /* not JSON, skip */ }
+### File 2: `src/hooks/useEnhancedAIChatDB.ts` (~line 508)
+
+Same change as above -- this is the other chat hook that also sends tool hints.
+
+### File 3: `src/utils/actionIntentDetector.ts` (~line 375-378)
+
+The `extractParams` for `launch_content_wizard` currently returns empty `{}` when no topic preposition ("about/on/for") is found. Improve it to also try extracting the keyword from other common patterns (e.g., "create a blog on machine learning", "write an article titled X"):
+
+```typescript
+extractParams: (msg) => {
+  // Try "about/on/for [topic]"
+  const topicMatch = msg.match(/(?:about|on|for)\s+["']?(.+?)["']?\s*$/i);
+  if (topicMatch) return { keyword: topicMatch[1].trim() };
+  // Try extracting topic after content type word
+  const fallback = msg.match(/(?:blog|article|guide|content)\s+(?:about|on|for|titled|called)?\s*["']?(.+?)["']?\s*$/i);
+  if (fallback) return { keyword: fallback[1].trim() };
+  return {};
 }
-```
-
-**Change 2** (~line 2964, where fallback chart data is injected):
-
-Add the promoted visualData as highest priority:
-
-```
-// Promoted tool visualData takes priority (e.g., content_wizard)
-if (!visualData && requestPromotedVisualData) {
-  console.log('📊 Using promoted visualData from tool result');
-  visualData = requestPromotedVisualData;
-}
-
-// Existing fallback chart logic
-if (!visualData && requestFallbackChartData) {
-  ...
-}
-```
-
-**Change 3**: Ensure `content_wizard` type bypasses chart validation/auto-conversion (~line 2585):
-
-The auto-convert logic (`if (visualData && visualData.type !== 'chart'...`) would try to convert or strip the `content_wizard` type. Add an exclusion:
-
-```
-if (visualData && visualData.type !== 'chart' 
-    && visualData.type !== 'content_wizard'  // <-- NEW
-    && chartRequest.type !== 'table_explicit') {
 ```
 
 ## Summary
 
 | File | Change |
 |------|--------|
-| `index.ts` | Add `requestPromotedVisualData` variable + extraction in tool result loop + injection before fallback + bypass auto-conversion for `content_wizard` type |
+| `src/hooks/useUnifiedChatDB.ts` | Include `actionIntent.params` in tool hint message |
+| `src/hooks/useEnhancedAIChatDB.ts` | Same param inclusion in tool hint |
+| `src/utils/actionIntentDetector.ts` | Improve keyword extraction fallback |
 
-Total: ~10 lines changed in 1 file. No new files needed.
-
-After this fix, when a user says "create a blog about AI trends":
-1. Intent detector triggers `launch_content_wizard`
-2. Tool returns `visualData: { type: 'content_wizard', keyword: 'AI trends' }`
-3. **New**: visualData is promoted from tool result to response
-4. Frontend receives `visualData.type === 'content_wizard'`
-5. `VisualizationSidebar` renders `ContentWizardSidebar` with the 5-step wizard
+Total: ~5 lines changed across 3 files. This ensures the keyword always reaches the wizard, which then correctly calls the SERP API with the user's configured keys.
