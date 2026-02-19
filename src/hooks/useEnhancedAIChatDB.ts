@@ -308,6 +308,7 @@ export const useEnhancedAIChatDB = () => {
         const decoder = new TextDecoder();
         let fullContent = '';
         let buffer = '';
+        let firstToken = true;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -331,6 +332,10 @@ export const useEnhancedAIChatDB = () => {
                 const parsed = JSON.parse(data);
                 if (parsed.type === 'token' && parsed.content) {
                   fullContent += parsed.content;
+                  if (firstToken) {
+                    setIsTyping(false);
+                    firstToken = false;
+                  }
                   // Update the placeholder message progressively
                   setMessages(prev =>
                     prev.map(m =>
