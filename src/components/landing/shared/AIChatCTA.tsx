@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, ArrowRight, Sparkles } from 'lucide-react';
+import { MessageSquare, ArrowRight, Sparkles, User } from 'lucide-react';
 
 interface AIChatCTAProps {
   chatPrompt?: string;
@@ -18,6 +18,27 @@ export const AIChatCTA: React.FC<AIChatCTAProps> = ({
   accentColor = '#9b87f5',
 }) => {
   const navigate = useNavigate();
+  const [typedText, setTypedText] = useState('');
+  const [showResponse, setShowResponse] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      for (let i = 0; i <= chatPrompt.length; i++) {
+        if (cancelled) return;
+        setTypedText(chatPrompt.slice(0, i));
+        await new Promise(r => setTimeout(r, 25));
+      }
+      if (!cancelled) {
+        await new Promise(r => setTimeout(r, 500));
+        setShowResponse(true);
+      }
+    };
+
+    // Only start when in view - use a simple delay
+    const timeout = setTimeout(run, 1000);
+    return () => { cancelled = true; clearTimeout(timeout); };
+  }, [chatPrompt]);
 
   return (
     <section className="py-24 md:py-32 px-4">
@@ -52,15 +73,41 @@ export const AIChatCTA: React.FC<AIChatCTAProps> = ({
               <span className="text-muted-foreground">what you need.</span>
             </h2>
 
-            {/* Mock chat bubble */}
+            {/* Animated chat bubble */}
             <div className="max-w-2xl mx-auto mb-10">
-              <div className="flex items-start gap-3 justify-center">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-neon-blue shrink-0">
-                  <MessageSquare className="h-5 w-5 text-primary-foreground" />
+              <div className="space-y-4">
+                {/* User message */}
+                <div className="flex items-start gap-3 justify-end">
+                  <div className="rounded-2xl rounded-br-md bg-primary/15 border border-primary/20 px-5 py-3 text-left">
+                    <p className="text-muted-foreground text-base">
+                      {typedText}
+                      {typedText.length < chatPrompt.length && (
+                        <span className="inline-block w-0.5 h-4 bg-primary ml-0.5 animate-pulse" />
+                      )}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white/[0.08] shrink-0">
+                    <User className="h-4 w-4 text-foreground/60" />
+                  </div>
                 </div>
-                <div className="rounded-2xl rounded-tl-md bg-white/[0.06] border border-white/[0.08] px-6 py-4 text-left">
-                  <p className="text-muted-foreground text-lg italic">"{chatPrompt}"</p>
-                </div>
+
+                {/* AI response */}
+                {showResponse && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start gap-3 justify-start"
+                  >
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-neon-blue shrink-0">
+                      <Sparkles className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="rounded-2xl rounded-bl-md bg-white/[0.06] border border-white/[0.08] px-5 py-3 text-left">
+                      <p className="text-muted-foreground text-base">
+                        On it. I'll handle everything — you'll have it ready in minutes. ✨
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
               </div>
             </div>
 

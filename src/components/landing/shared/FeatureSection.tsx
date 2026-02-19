@@ -28,7 +28,7 @@ export const FeatureSection: React.FC<FeatureSectionProps> = ({
       transition={{ duration: 0.8 }}
       className="flex-1 space-y-6"
     >
-      <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-foreground">
+      <h2 className="text-3xl md:text-4xl lg:text-6xl font-bold leading-tight text-foreground">
         {headline}
       </h2>
       <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl">
@@ -62,7 +62,7 @@ export const FeatureSection: React.FC<FeatureSectionProps> = ({
     >
       {/* Glow behind mock UI */}
       <div
-        className="absolute -inset-8 rounded-3xl blur-3xl opacity-20 pointer-events-none"
+        className="absolute -inset-8 rounded-3xl blur-3xl opacity-15 pointer-events-none"
         style={{ background: accentColor }}
       />
       <div className="relative rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl overflow-hidden">
@@ -73,7 +73,7 @@ export const FeatureSection: React.FC<FeatureSectionProps> = ({
           <div className="w-3 h-3 rounded-full bg-green-500/80" />
           <span className="ml-3 text-xs text-muted-foreground/50 font-mono">creaiter.app</span>
         </div>
-        <div className="p-6 md:p-8">
+        <div className="p-6 md:p-8 min-h-[300px]">
           {mockUI}
         </div>
       </div>

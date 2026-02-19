@@ -15,7 +15,6 @@ import {
 /* ── Mock UIs ── */
 const DashboardMockUI = () => (
   <div className="space-y-4">
-    {/* Stat cards */}
     <div className="grid grid-cols-3 gap-3">
       {[
         { label: 'Total Views', value: '124.8K', change: '+23%', up: true, color: 'text-neon-blue' },
@@ -32,7 +31,6 @@ const DashboardMockUI = () => (
         </div>
       ))}
     </div>
-    {/* Chart mockup */}
     <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-foreground">Performance Trend</span>
@@ -85,7 +83,6 @@ const ROIMockUI = () => (
       <DollarSign className="h-4 w-4 text-green-400" />
       <span className="text-sm font-semibold text-foreground">Content → Revenue Attribution</span>
     </div>
-    {/* Funnel */}
     <div className="space-y-2">
       {[
         { stage: 'Blog Visitors', count: '45,200', width: '100%', color: 'from-neon-blue/30 to-neon-blue/10' },
@@ -104,7 +101,6 @@ const ROIMockUI = () => (
         </div>
       ))}
     </div>
-    {/* ROI metric */}
     <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-green-500/5 border border-green-500/15">
       <span className="text-sm text-foreground font-medium">Content ROI</span>
       <span className="text-2xl font-bold text-green-400">412%</span>

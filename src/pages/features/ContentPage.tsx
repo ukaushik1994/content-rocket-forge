@@ -15,19 +15,16 @@ import {
 /* ── Mock UIs ── */
 const WriterMockUI = () => (
   <div className="space-y-4">
-    {/* Title */}
     <div className="space-y-2">
       <div className="text-xs text-muted-foreground/50 font-mono uppercase tracking-wider">Blog Post</div>
       <div className="text-xl font-bold text-foreground">10 Sustainable Fashion Trends Reshaping 2025</div>
     </div>
-    {/* Editor lines */}
     <div className="space-y-2.5">
       <div className="h-3 rounded-full bg-foreground/10 w-full" />
       <div className="h-3 rounded-full bg-foreground/10 w-11/12" />
       <div className="h-3 rounded-full bg-foreground/8 w-9/12" />
       <div className="h-3 rounded-full bg-foreground/6 w-10/12" />
     </div>
-    {/* SERP Score */}
     <div className="flex items-center gap-4 pt-2">
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
         <TrendingUp className="h-3.5 w-3.5 text-green-400" />
@@ -42,7 +39,6 @@ const WriterMockUI = () => (
         <span className="text-xs font-semibold text-neon-blue">AI Optimized</span>
       </div>
     </div>
-    {/* Typing cursor animation */}
     <div className="flex items-center gap-1 pt-1">
       <Sparkles className="h-3 w-3 text-primary animate-pulse" />
       <span className="text-xs text-primary/70">AI writing...</span>
@@ -53,12 +49,10 @@ const WriterMockUI = () => (
 
 const ImageGenMockUI = () => (
   <div className="space-y-4">
-    {/* Prompt bar */}
     <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08]">
       <Sparkles className="h-4 w-4 text-neon-pink shrink-0" />
       <span className="text-sm text-muted-foreground">"A minimalist product photo of eco-friendly sneakers..."</span>
     </div>
-    {/* Image grid */}
     <div className="grid grid-cols-2 gap-3">
       {['from-primary/30 to-neon-pink/20', 'from-neon-blue/30 to-primary/20', 'from-neon-pink/30 to-neon-orange/20', 'from-neon-orange/20 to-neon-blue/30'].map((gradient, i) => (
         <div key={i} className={`aspect-square rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center border border-white/[0.06]`}>
@@ -66,15 +60,9 @@ const ImageGenMockUI = () => (
         </div>
       ))}
     </div>
-    {/* Style selector */}
     <div className="flex gap-2">
       {['Photorealistic', 'Illustration', 'Minimal'].map((style, i) => (
-        <span
-          key={style}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
-            i === 0 ? 'bg-neon-pink/15 border-neon-pink/30 text-neon-pink' : 'bg-white/[0.03] border-white/[0.08] text-muted-foreground'
-          }`}
-        >
+        <span key={style} className={`px-3 py-1.5 rounded-full text-xs font-medium border ${i === 0 ? 'bg-neon-pink/15 border-neon-pink/30 text-neon-pink' : 'bg-white/[0.03] border-white/[0.08] text-muted-foreground'}`}>
           {style}
         </span>
       ))}
@@ -84,18 +72,14 @@ const ImageGenMockUI = () => (
 
 const VideoGenMockUI = () => (
   <div className="space-y-4">
-    {/* Video preview */}
     <div className="relative aspect-video rounded-xl bg-gradient-to-br from-neon-orange/20 via-neon-pink/15 to-primary/20 border border-white/[0.06] flex items-center justify-center">
-      <div className="absolute inset-0 flex items-center justify-center">
-        <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center"
-        >
-          <Video className="h-7 w-7 text-foreground" />
-        </motion.div>
-      </div>
-      {/* Progress bar */}
+      <motion.div
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center"
+      >
+        <Video className="h-7 w-7 text-foreground" />
+      </motion.div>
       <div className="absolute bottom-3 left-3 right-3 h-1.5 rounded-full bg-white/10 overflow-hidden">
         <motion.div
           animate={{ width: ['0%', '65%'] }}
@@ -104,7 +88,6 @@ const VideoGenMockUI = () => (
         />
       </div>
     </div>
-    {/* Meta */}
     <div className="flex items-center gap-3">
       <span className="px-3 py-1.5 rounded-lg bg-neon-orange/10 border border-neon-orange/20 text-xs font-semibold text-neon-orange">4K</span>
       <span className="px-3 py-1.5 rounded-lg bg-neon-pink/10 border border-neon-pink/20 text-xs font-semibold text-neon-pink">00:45</span>
@@ -115,7 +98,6 @@ const VideoGenMockUI = () => (
 
 const StrategyMockUI = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    {/* Keyword Research */}
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3">
       <div className="flex items-center gap-2 mb-3">
         <Search className="h-4 w-4 text-primary" />
@@ -137,7 +119,6 @@ const StrategyMockUI = () => (
         </div>
       ))}
     </div>
-    {/* Content Calendar */}
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3">
       <div className="flex items-center gap-2 mb-3">
         <Calendar className="h-4 w-4 text-neon-pink" />
@@ -224,7 +205,7 @@ const ContentPage = () => {
                 transition={{ duration: 0.8 }}
                 className="text-center mb-16"
               >
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground">
+                <h2 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-6 text-foreground">
                   Strategy that drives
                   <br />
                   <span className="bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent">every piece of content.</span>
@@ -247,7 +228,6 @@ const ContentPage = () => {
                 </div>
               </motion.div>
 
-              {/* AI Strategy Coach */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
