@@ -1,40 +1,35 @@
 
-# Continue: AI Chat Polish and Confirmation UX Upgrade
 
-## What's Already Done
-The Universal Action Engine is fully wired: Phase 1 streams text, Phase 2 detects action intent and calls `enhanced-ai-chat` for tool execution. Destructive actions trigger a text-based confirmation prompt ("type confirm or cancel").
+# Phase 3: AI Chat Completion -- Inline Visualizations + Markdown Fix
 
-## What Needs Improvement
+## Current Status
+The Universal Action Engine is fully wired (streaming + Phase 2 tool execution, confirmation cards, capabilities discovery). However, two critical gaps remain that prevent the AI Chat from feeling "complete":
 
-### 1. Upgrade Confirmation Flow to Visual Buttons
-**Problem**: The current confirmation UX asks users to *type* "confirm" or "cancel" as a chat message. This is clunky and error-prone (typos, user confusion).
+1. **Tool result visualizations don't render inline** -- When `enhanced-ai-chat` returns charts, metrics, or dashboards, the data is saved on the message but never displayed in the chat bubble.
+2. **Markdown tables render as raw pipes** -- The `FormattedResponseRenderer` uses `react-markdown` but tables display as plain text instead of styled HTML tables.
 
-**Fix**: Replace the text-based confirmation with an inline card containing **Confirm** and **Cancel** buttons that directly trigger `executeToolAction` or dismiss.
+## Plan
 
-**Changes**:
-- Create `src/components/ai-chat/ActionConfirmationCard.tsx` -- a card component with tool name, warning icon, and two buttons
-- Modify `src/hooks/useEnhancedAIChatDB.ts`:
-  - Instead of adding a text confirmation message, set a special message with a `confirmationData` field containing the pending action details
-  - Remove the text-parsing logic for "confirm"/"cancel" at the top of `sendMessage`
-  - Add `handleConfirmAction` and `handleCancelAction` callbacks that execute or dismiss directly
-- Modify `src/components/ai-chat/EnhancedMessageBubble.tsx` to render `ActionConfirmationCard` when a message has `confirmationData`
+### Step 1: Render VisualData Inline in Message Bubbles
 
-### 2. Improve Quick Actions to Trigger Real Tools
-**Problem**: The welcome screen quick actions ("Write content", "Research keywords", etc.) send messages via `send:` prefix which goes through streaming, but since these are clear action intents, the Phase 2 detector should pick them up. We need to verify the prompts match the regex patterns in `actionIntentDetector.ts`.
+The `EnhancedMessageBubble` currently only renders SERP analysis inline. For all other visual data types (charts, metrics, workflows, campaign dashboards, queue status, etc.), the data exists on the message but is only pushed to the sidebar.
 
-**Fix**: Update the quick action prompts in `EnhancedQuickActions.tsx` to use phrasing that reliably triggers the action detector:
-- "Write content" prompt: change to "Create a new blog post" (matches `create_content_item`)
-- "Research keywords" prompt: keep as-is (matches `add_keywords` pattern)
-- "Draft an email" prompt: change to "Create a new email campaign" (matches `create_email_campaign`)
+**Change in `EnhancedMessageBubble.tsx`**:
+- After the normal message content card, add a `VisualDataRenderer` block that renders when `message.visualData` exists and type is NOT `serp_analysis` (which already renders separately).
+- Import `VisualDataRenderer` from `./VisualDataRenderer`.
+- This gives tool results (charts, metric cards, tables, campaign dashboards) a proper inline visualization right below the text.
 
-### 3. Add "What can you do?" Capability Summary
-**Problem**: Users don't know what actions the AI can take across modules.
+### Step 2: Fix Markdown Table Rendering
 
-**Fix**: Add a `/capabilities` slash command or a help card that lists grouped actions by module (Content, Keywords, Engage, Offerings, Campaigns).
+The `FormattedResponseRenderer` uses `react-markdown` but tables appear as raw pipe-separated text. This is likely because custom `components` overrides for `table`, `thead`, `tbody`, `tr`, `th`, `td` are either missing or broken.
 
-**Changes**:
-- Add capability detection in `sendMessage` -- if user types "what can you do" or "/help", show a formatted capabilities card instead of calling AI
-- Create `src/components/ai-chat/CapabilitiesCard.tsx` with grouped action lists and example prompts
+**Change in `FormattedResponseRenderer.tsx`**:
+- Add proper `components` prop to the `ReactMarkdown` renderer with styled `table`, `thead`, `tbody`, `tr`, `th`, `td` elements using Tailwind classes.
+- Ensure the table container has horizontal scroll for mobile.
+
+### Step 3: Action Buttons from Tool Results
+
+When `enhanced-ai-chat` returns `actions` array, these are saved on the message and rendered by `ModernActionButtons`. However, the `navigate:` prefix in action strings needs to work with the router. Verify `handleAction` in `useEnhancedAIChatDB.ts` handles all action prefixes (`navigate:`, `send:`, `workflow:`). This is already implemented -- just needs verification.
 
 ## Technical Details
 
@@ -42,49 +37,44 @@ The Universal Action Engine is fully wired: Phase 1 streams text, Phase 2 detect
 
 | File | Change |
 |------|--------|
-| `src/components/ai-chat/ActionConfirmationCard.tsx` | **NEW** -- Inline card with Confirm/Cancel buttons |
-| `src/hooks/useEnhancedAIChatDB.ts` | Replace text-based confirm/cancel with callback-based flow; add `/help` handler |
-| `src/components/ai-chat/EnhancedMessageBubble.tsx` | Render `ActionConfirmationCard` for confirmation messages |
-| `src/components/ai-chat/EnhancedQuickActions.tsx` | Update prompts to reliably trigger action detector |
-| `src/components/ai-chat/CapabilitiesCard.tsx` | **NEW** -- Grouped list of all available AI actions |
-| `src/types/enhancedChat.ts` | Add `confirmationData` field to `EnhancedChatMessage` type |
+| `src/components/ai-chat/EnhancedMessageBubble.tsx` | Add inline `VisualDataRenderer` for non-SERP visualData on assistant messages (~10 lines) |
+| `src/components/ai-chat/FormattedResponseRenderer.tsx` | Add styled `components` overrides for markdown tables in `ReactMarkdown` (~30 lines) |
 
-### ActionConfirmationCard Component
+### EnhancedMessageBubble.tsx -- New Block
 
-The card will display:
-- Warning icon with tool name (human-readable)
-- Brief description of what will happen
-- Two buttons: "Confirm" (primary/destructive style) and "Cancel" (ghost)
-- On Confirm: calls `executeToolAction` with the stored conversation history
-- On Cancel: removes the confirmation message and adds a "Cancelled" note
-- Buttons disable after click to prevent double-execution
-
-### Updated Confirmation Flow
+After the existing SERP data rendering block (around line 258), add:
 
 ```text
-User: "Delete the blog post about AI"
-  |
-  v
-Phase 1: Stream text response explaining what will be deleted
-  |
-  v
-Phase 2: detectActionIntent -> delete_content_item (requiresConfirmation: true)
-  |
-  v
-Show ActionConfirmationCard with [Confirm] [Cancel] buttons
-  |
-  v
-User clicks Confirm -> executeToolAction() -> ActionResultCard
+// Inline visualization for tool results (charts, metrics, dashboards)
+if message.visualData exists AND type !== 'serp_analysis':
+  render <VisualDataRenderer data={message.visualData} onAction={...} />
 ```
 
-### Capabilities Card Structure
+This ensures every tool result with visual data (charts, metric cards, campaign dashboards, queue status) renders beautifully inline in the chat.
 
-Groups:
-- **Content**: Create, update, delete, publish, generate full articles, submit/approve/reject
-- **Keywords**: Add/remove keywords, SERP analysis, topic clusters
-- **Email and Contacts**: Create contacts/segments, draft campaigns, send emails
-- **Offerings**: Create/update solutions, add competitors, competitor analysis
-- **Campaigns**: Trigger generation, retry failed content
-- **Cross-Module**: Promote to campaign, convert to email, repurpose for social
+### FormattedResponseRenderer.tsx -- Table Components
 
-Each group shows 1-2 example prompts the user can click to try.
+Add a `components` object to `ReactMarkdown` with:
+- `table`: Wrapped in a scrollable container with border
+- `thead`: With bottom border and background
+- `th`: With padding and font-weight
+- `td`: With padding and border
+- `tr`: With alternating row colors
+
+### What This Enables
+
+After these changes, the AI Chat will:
+- Show charts and metric cards inline when tools return visual data
+- Render markdown tables as proper styled HTML tables
+- Display campaign dashboards and queue status inline
+- Keep the sidebar auto-open behavior for expanded views
+- Handle all action button clicks (navigate, send message, workflow)
+
+### Testing Plan
+
+1. Ask "Show my content performance" -- should render inline chart + metrics
+2. Ask "Create a blog post about AI" -- should execute tool and show success card
+3. Ask the AI to compare things (triggers markdown tables) -- should render styled tables
+4. Type `/help` -- should show capabilities card
+5. Ask "Send an email to test@example.com" -- should show confirmation card
+
