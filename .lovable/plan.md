@@ -1,194 +1,177 @@
 
 
-# Landing Page Redesign — Separate Storytelling Pages per Category
+# Landing Page — Complete Storytelling Redesign
 
-## The Big Idea
+## Problem with Current State
+The landing page looks like a standard SaaS template: boxed cards, bullet lists, small mock UIs. It lacks visual drama, narrative flow, and the premium "Apple keynote" feeling. The AI Chat positioning is present but not emotionally compelling.
 
-Transform the landing experience from a single scrolling page into an Apple-style multi-page product showcase. Each category (Content, Marketing, Audience, Analytics) becomes its own dedicated route with cinematic storytelling, large typography, gradient art, and rich animated mock UIs. The hero landing page becomes a gateway that teases all categories and routes visitors into each story.
+## The New Narrative Arc
 
-The narrative thread: **"Your AI that creates, publishes, and grows your audience — while you sleep."**
+The story across the entire site is: **"Just tell your AI. It handles everything."**
 
----
-
-## New Route Structure
-
-| Route | Page | Purpose |
-|-------|------|---------|
-| `/` | Landing (gateway hero) | Teaser of all categories, funnels visitors into each |
-| `/features/content` | Content page | Deep storytelling for AI writing, image gen, video gen, SERP, strategy |
-| `/features/marketing` | Marketing page | Email, social, automations, journeys — full narrative |
-| `/features/audience` | Audience page | CRM, segments, activity feed storytelling |
-| `/features/analytics` | Analytics page | Dashboards, insights, ROI tracking |
-| Existing | `/auth`, investors, comparison | Stay as-is |
+Each page follows a cinematic scroll journey where the visitor *experiences* the product through animated mock conversations, not just reads about features.
 
 ---
 
-## Phase 1: Redesign the Landing Gateway (`/`)
+## Architecture (unchanged routes)
 
-The landing page becomes shorter and more cinematic — its job is to hook visitors and route them into category pages.
-
-**Structure:**
-1. **Hero** — Keep the headline "One Conversation. Every Content Operation." but make the AI Chat command card larger and more immersive. Add a typing animation simulating a real AI conversation.
-2. **Category Teaser Grid** — Replace the current small 4-card grid with 4 large, full-width alternating sections (left-right layout like Apple's product pages). Each section:
-   - Full-bleed background with category-colored gradient glow
-   - Large headline (e.g., "Create anything. Text. Images. Video.")
-   - 2-3 line description
-   - A glassmorphic mock UI preview (smaller version of what's on the full page)
-   - "Learn more" link that routes to `/features/content` etc.
-   - These are NOT deep — they're teasers. The real story is on the dedicated page.
-3. **AI Intelligence Showcase** — Keep (refined)
-4. **Comparison Table** — Keep
-5. **Investor Section** — Keep
-6. **Footer** — Keep
+- `/` — Gateway landing (complete rewrite)
+- `/features/content` — Content storytelling (complete rewrite)
+- `/features/marketing` — Marketing storytelling (complete rewrite)
+- `/features/audience` — Audience storytelling (complete rewrite)
+- `/features/analytics` — Analytics storytelling (complete rewrite)
 
 ---
 
-## Phase 2: Update Navbar
+## Phase 1: Complete Rewrite of Landing Gateway (`/`)
 
-The navbar links change behavior:
-- **Content**, **Marketing**, **Audience**, **Analytics** now navigate to their dedicated routes (`/features/content`, etc.) instead of scrolling to anchors
-- **Platform** scrolls to hero on the landing page
-- **Investors** scrolls to investor section on landing page
-- Each category page gets the same navbar, but with a "Back to Home" behavior for the logo click
-- Active nav item highlights based on current route
+### Section 1 — Cinematic Hero (full viewport)
 
----
+**No badge. No cards. Just impact.**
 
-## Phase 3: Create `/features/content` — Content Storytelling Page
+- Large centered headline in `text-6xl lg:text-8xl`:
+  - Line 1: "Just tell your AI."
+  - Line 2: (gradient `from-primary via-neon-blue to-neon-pink`): "It handles everything."
+- Below: a single-line subtitle in `text-xl text-muted-foreground`
+- Below: An animated **AI Chat conversation** that auto-types in real-time:
+  - A glassmorphic chat window (`bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] rounded-3xl`) taking ~60% width
+  - Shows a user message typing: "Create a blog post about sustainable fashion, generate hero images, and schedule it across all platforms"
+  - Then an AI response appears with typing animation: "Done. I've written a 2,400-word SEO-optimized post, generated 4 hero images, and scheduled it on LinkedIn, Twitter, and Instagram for optimal engagement times."
+  - Below the AI response: small action chips appear (View Post, See Images, Edit Schedule) in category colors
+- Two CTAs below the chat: "Start Free" (gradient) + "Watch Demo" (outline)
+- Background: Two large abstract gradient orbs (`blur-[180px]`) — one purple-blue top-left, one pink-orange bottom-right
 
-**Color: Purple (primary)**
+### Section 2 — "What can you ask?" (Scrolling Showcase)
 
-This page is a full cinematic journey through the Content suite. Each section is full-viewport or near-full, with large text and rich visuals.
+**Not a grid of cards. A flowing sequence of AI conversations.**
 
-**Section 1 — Hero (full viewport)**
-- Large headline: "Create Anything. Text. Images. Video." with gradient text
-- Subtitle: "Your AI writes, designs, and produces — learning your voice with every piece"
-- Background: Large abstract gradient orb (purple to blue, blurred)
-- CTA: "Start a conversation" (primary) + "Explore content tools" (secondary outline)
+4 cinematic panels, each taking near-full viewport, staggered with `whileInView` animations. Each panel shows a different AI conversation with a rich mock UI response.
 
-**Section 2 — AI Writer (alternating layout: text left, mock UI right)**
-- Headline: "Writing that outranks. Automatically."
-- Description about SERP-powered writing, competitor analysis, tone learning
-- Mock UI: Glassmorphic content editor with typing animation, SERP score badge, word count
-- Feature chips below: "SERP Analysis", "Competitor Research", "Tone Matching", "Auto-Optimization"
+**Panel 1 — Content (Purple)**
+- Left side: Large text `text-5xl`: "Write. Design. Produce."
+- Smaller description about AI Writer, Image Gen, Video Gen
+- Right side: Glassmorphic mock showing an AI chat where user says "Write me a product launch post" and AI responds with a content preview (editor mockup with typing animation, image thumbnails, SEO score badge)
+- Bottom: "Explore Content" link with arrow
 
-**Section 3 — Image Generation (text right, mock UI left)**
-- Headline: "From prompt to production-ready visuals"
-- Description about AI image generation, inpainting, variations, upscaling
-- Mock UI: Image generation interface showing a prompt input, 4 generated image thumbnails in a grid, style selector
-- Feature chips: "Text-to-Image", "Inpainting", "Upscaling", "Style Transfer"
+**Panel 2 — Marketing (Pink)**
+- Right side text (alternating): `text-5xl`: "Send. Publish. Automate."
+- Left side: Mock AI chat showing user asking "Launch my spring campaign" and AI responding with email preview, social calendar, and automation workflow nodes
+- Bottom: "Explore Marketing" link
 
-**Section 4 — Video Generation (text left, mock UI right)**
-- Headline: "Video content, without the production team"
-- Description about text-to-video, Runway ML, Kling AI integrations
-- Mock UI: Video timeline preview with play button, duration badge, resolution selector
+**Panel 3 — Audience (Blue)**
+- Left side text: `text-5xl`: "Know. Segment. Engage."
+- Right side: Mock AI chat showing user asking "Who are my most engaged contacts?" and AI responding with a contact card, segment visualization, engagement score ring
+- Bottom: "Explore Audience" link
 
-**Section 5 — Keyword Research + Strategy (full-width)**
-- Split into two glassmorphic cards side by side
-- Left card: Keyword Research with mock SERP results table
-- Right card: Content Strategy with mock calendar/pipeline view
-- Bottom: "AI Strategy Coach" highlight with Brain icon
+**Panel 4 — Analytics (Orange)**
+- Right side text: `text-5xl`: "Track. Learn. Grow."
+- Left side: Mock AI chat showing user asking "How did last month perform?" and AI responding with mini dashboard (stat cards + chart + AI insight)
+- Bottom: "Explore Analytics" link
 
-**Section 6 — AI Chat CTA (full-width glassmorphic banner)**
-- "Or just tell your AI what you need" + mock chat bubble showing "Write me a blog post about..."
-- Primary CTA: "Start a conversation" + Secondary: "Explore all content tools"
+Each panel:
+- Full-bleed category-colored gradient orb in the background (`opacity-20 blur-[160px]`)
+- The mock chat window has a subtle glow behind it matching the category color
+- `whileInView` fade-up animation with stagger
+- macOS-style window dots on mock UIs
 
----
+### Section 3 — "Or take full control" (Manual tools strip)
 
-## Phase 4: Create `/features/marketing` — Marketing Storytelling Page
+A single horizontal row showing 6-8 tool icons in glassmorphic circles with labels: AI Writer, Image Gen, Email Builder, Social Calendar, CRM, Analytics, Strategy Coach, Keyword Research. Scrollable on mobile. Reinforces that manual control exists alongside AI Chat.
 
-**Color: Pink (neon-pink)**
+### Section 4 — AI Intelligence Showcase (kept, existing component)
 
-**Section 1 — Hero**
-- Headline: "Marketing that publishes, sends, and follows up — while you sleep"
-- Gradient orb: pink to purple
-- CTAs: AI Chat primary + "Explore marketing tools" secondary
+### Section 5 — Comparison Table (kept, existing component)
 
-**Section 2 — Email Campaigns (alternating layout)**
-- Headline: "Emails that write themselves and send at the perfect time"
-- Mock UI: Email builder with drag-and-drop blocks, subject line AI suggestion, send time optimizer
-- Feature chips: "AI Subject Lines", "Visual Builder", "Send Time AI", "A/B Testing"
+### Section 6 — Investor Section (kept, existing component)
 
-**Section 3 — Social Publishing**
-- Headline: "One dashboard. Every platform. AI captions included."
-- Mock UI: Social calendar with multi-platform post previews (icons for Twitter, LinkedIn, Instagram), schedule grid
-- Feature chips: "Multi-Platform", "AI Captions", "Scheduling", "Analytics"
-
-**Section 4 — Automations + Journeys (full-width)**
-- Headline: "Build workflows that run your marketing on autopilot"
-- Mock UI: Visual workflow builder with nodes and connections (using simple SVG paths), trigger/action cards
-- Feature chips: "Visual Builder", "Smart Triggers", "A/B Paths", "Conversion Tracking"
-
-**Section 5 — AI Chat CTA banner**
+### Section 7 — Footer (kept)
 
 ---
 
-## Phase 5: Create `/features/audience` — Audience Storytelling Page
+## Phase 2: Rewrite Feature Pages
 
-**Color: Blue (neon-blue)**
+Each feature page follows the same cinematic pattern but goes deeper.
 
-**Section 1 — Hero**
-- Headline: "Know every contact. Reach the right ones. Automatically."
-- Gradient orb: blue to purple
+### Shared Layout for All Feature Pages
 
-**Section 2 — Contact CRM**
-- Headline: "Every interaction, one unified profile"
-- Mock UI: Contact card with engagement score ring, activity timeline, tags, custom fields
+1. **Hero** — Full viewport. Category-colored gradient orbs. Large headline + subtitle. AI Chat primary CTA + category secondary CTA.
+2. **3-5 Feature Deep-Dives** — Each is a near-full-viewport section with alternating left/right layout. Each features:
+   - `text-4xl lg:text-6xl` headline
+   - Rich description paragraph
+   - A **large** glassmorphic mock UI (not a small card — takes 50-60% of the section width)
+   - Feature chips below the mock UI
+   - Smooth `whileInView` entrance animations
+3. **AI Chat CTA Banner** — Every page ends with: "Or just tell your AI" + mock chat bubble + dual CTA
 
-**Section 3 — Smart Segments**
-- Headline: "Segments that build themselves with AI"
-- Mock UI: Rule builder with conditions (dropdowns, toggles), segment size counter, AI suggestion badge
+### Content Page (`/features/content`) — Purple
 
-**Section 4 — Activity Feed**
-- Headline: "See what your audience does, in real time"
-- Mock UI: Live activity timeline with event icons (email opened, link clicked, page visited)
+Hero headline: "Create Anything. Text. Images. Video."
 
-**Section 5 — AI Chat CTA banner**
+Deep-dives:
+1. **AI Writer** — Mock content editor with live typing, SERP score, word count, competitor analysis sidebar
+2. **Image Generation** — Mock showing prompt bar, 4-image grid with gradient placeholders, style selector pills
+3. **Video Generation** — Mock with video player (progress bar animation), resolution/duration badges
+4. **Keyword Research** — Mock SERP results table with volume bars, difficulty indicators
+5. **Content Strategy** — Mock calendar pipeline + AI Strategy Coach highlight
+
+### Marketing Page (`/features/marketing`) — Pink
+
+Hero headline: "Marketing that runs while you sleep."
+
+Deep-dives:
+1. **Email Campaigns** — Mock email builder with subject line AI, send time optimizer, A/B badge
+2. **Social Publishing** — Mock social calendar with platform icons, scheduled post previews
+3. **Automations** — Mock visual workflow builder with SVG node connections, trigger/action cards
+4. **Customer Journeys** — Mock journey map with branching paths and conversion tracking
+
+### Audience Page (`/features/audience`) — Blue
+
+Hero headline: "Know every contact. Reach the right ones."
+
+Deep-dives:
+1. **Contact CRM** — Mock contact profile card with engagement score ring, activity timeline
+2. **Smart Segments** — Mock rule builder with conditions, AI suggestion badge, segment counter
+3. **Activity Feed** — Mock real-time timeline with event icons and timestamps
+
+### Analytics Page (`/features/analytics`) — Orange
+
+Hero headline: "Data-driven decisions. Not guesswork."
+
+Deep-dives:
+1. **Performance Dashboards** — Mock full dashboard with stat cards, area chart, bar chart
+2. **Content Insights** — Mock performance table with scores, trend arrows, AI recommendations
+3. **ROI Tracking** — Mock attribution funnel visualization
 
 ---
 
-## Phase 6: Create `/features/analytics` — Analytics Storytelling Page
+## Phase 3: Update Shared Components
 
-**Color: Orange (neon-orange)**
+### Rewrite `FeaturePageHero.tsx`
+- Add abstract gradient orbs to background
+- Keep the dual CTA pattern (already exists)
+- Ensure `text-5xl lg:text-8xl` headline sizing
 
-**Section 1 — Hero**
-- Headline: "Data-driven decisions. Not guesswork."
-- Gradient orb: orange to pink
+### Rewrite `FeatureSection.tsx`
+- Make mock UI container LARGER (min-h-[400px])
+- Add stronger category-colored glow behind the mock (`blur-3xl opacity-20`)
+- Add feature chips display (using existing `FeatureChip.tsx`)
+- Ensure alternating direction works cleanly
 
-**Section 2 — Performance Dashboards**
-- Mock UI: Full dashboard with stat cards, area chart, bar chart (using simple styled divs or small Recharts)
+### Rewrite `AIChatCTA.tsx`
+- Make it more cinematic — larger chat bubble mock with typing animation
+- Stronger gradient glow
+- Dual CTA buttons
 
-**Section 3 — Content Insights**
-- Headline: "AI tells you what's working and what to fix"
-- Mock UI: Content performance table with scores, recommendations, trend arrows
+### New: `ConversationPanel.tsx` — for the gateway page
+- Props: headline, description, chatMessages[], mockUI, accentColor, direction, learnMoreRoute
+- Renders the full-viewport alternating panel with AI conversation mock
+- Used 4 times on the gateway landing page
 
-**Section 4 — ROI Tracking**
-- Headline: "Connect content to business outcomes"
-- Mock UI: Attribution funnel visualization
-
-**Section 5 — AI Chat CTA banner**
-
----
-
-## Phase 7: Shared Components
-
-### `FeaturePageHero` — Reusable hero for all 4 category pages
-- Props: headline, subtitle, gradient colors, badge text, badge icon
-- Full-viewport centered layout with abstract gradient orb background
-- Dual CTA: AI Chat primary + category secondary
-
-### `FeatureSection` — Reusable alternating section
-- Props: headline, description, features[], mockUI (React node), direction (left/right), color
-- Handles the left-text-right-visual / right-text-left-visual alternation
-- Glassmorphic container for mock UI with colored glow behind it
-
-### `AIChatCTA` — Reusable bottom banner for every page
-- Glassmorphic full-width card with chat bubble mock
-- "Start a conversation" primary + "Explore [category] tools" secondary
-- Category color accent
-
-### `FeatureChip` — Small pill showing a feature name
-- `bg-{color}/10 border border-{color}/20 text-{color} rounded-full px-3 py-1 text-xs`
+### New: `AnimatedChatWindow.tsx` — for the hero
+- Self-contained animated chat that auto-types user message and AI response
+- Glassmorphic container with macOS dots
+- Configurable messages and timing
+- Action chips appear after AI response
 
 ---
 
@@ -196,47 +179,48 @@ This page is a full cinematic journey through the Content suite. Each section is
 
 | File | Action |
 |------|--------|
-| `src/pages/Landing.tsx` | Modify — shorter gateway with category teasers |
-| `src/components/landing/LandingHero.tsx` | Modify — add typing animation to AI chat card |
-| `src/components/landing/LandingNavbar.tsx` | Modify — nav items route to `/features/*` |
-| `src/components/landing/ContentShowcase.tsx` | Remove (replaced by full page) |
-| `src/components/landing/MarketingShowcase.tsx` | Remove (replaced by full page) |
-| `src/components/landing/AudienceShowcase.tsx` | Remove (replaced by full page) |
-| `src/components/landing/AnalyticsShowcase.tsx` | Remove (replaced by full page) |
-| `src/pages/features/ContentPage.tsx` | **New** — full storytelling page |
-| `src/pages/features/MarketingPage.tsx` | **New** — full storytelling page |
-| `src/pages/features/AudiencePage.tsx` | **New** — full storytelling page |
-| `src/pages/features/AnalyticsPage.tsx` | **New** — full storytelling page |
-| `src/components/landing/shared/FeaturePageHero.tsx` | **New** — reusable hero |
-| `src/components/landing/shared/FeatureSection.tsx` | **New** — alternating section |
-| `src/components/landing/shared/AIChatCTA.tsx` | **New** — bottom CTA banner |
-| `src/components/landing/shared/FeatureChip.tsx` | **New** — feature pill |
-| `src/components/landing/CategoryTeaser.tsx` | **New** — teaser card for landing gateway |
-| `src/App.tsx` | Modify — add 4 new routes under `/features/*` |
+| `src/pages/Landing.tsx` | **Full rewrite** — new cinematic gateway |
+| `src/components/landing/LandingHero.tsx` | **Full rewrite** — cinematic hero with animated chat |
+| `src/components/landing/CategoryTeaser.tsx` | **Remove** (replaced by ConversationPanel) |
+| `src/components/landing/ConversationPanel.tsx` | **New** — full-viewport AI conversation showcase |
+| `src/components/landing/AnimatedChatWindow.tsx` | **New** — typing animation chat component |
+| `src/components/landing/ManualToolsStrip.tsx` | **New** — horizontal tools showcase |
+| `src/components/landing/shared/FeaturePageHero.tsx` | **Rewrite** — larger, more cinematic |
+| `src/components/landing/shared/FeatureSection.tsx` | **Rewrite** — bigger mock UIs, stronger glows |
+| `src/components/landing/shared/AIChatCTA.tsx` | **Rewrite** — animated chat bubble |
+| `src/pages/features/ContentPage.tsx` | **Rewrite** — richer mock UIs, more cinematic sections |
+| `src/pages/features/MarketingPage.tsx` | **Rewrite** — richer mock UIs |
+| `src/pages/features/AudiencePage.tsx` | **Rewrite** — richer mock UIs |
+| `src/pages/features/AnalyticsPage.tsx` | **Rewrite** — richer mock UIs |
 
-**Kept unchanged:** AIIntelligenceShowcase, ComparisonTable, InvestorSection, LandingFooter, AnimatedBackground
+**Kept unchanged:** LandingNavbar, AIIntelligenceShowcase, ComparisonTable, InvestorSection, LandingFooter, AnimatedBackground, App.tsx routes
 
 ---
 
-## Visual Design Principles
+## Visual Design Standards
 
-- **Full-viewport sections** with generous whitespace (Apple-style breathing room)
-- **Large typography**: Headlines at `text-5xl lg:text-7xl`, descriptions at `text-xl`
-- **Abstract gradient orbs**: Each page has 1-2 large blurred gradient shapes (`blur-3xl`) using category colors as background art
-- **Glassmorphic mock UIs**: `bg-white/[0.04] backdrop-blur-xl border border-{color}/20` with macOS-style window dots
-- **Smooth scroll animations**: `whileInView` with staggered delays, no scale bounces
-- **Color per category**: Purple (Content), Pink (Marketing), Blue (Audience), Orange (Analytics) — vibrant, not monotone
-- **AI Chat thread**: Every page ends with the same AI Chat CTA banner, reinforcing the "one conversation" narrative
+- **Full-viewport sections** with generous breathing room (`py-32 md:py-48`)
+- **Headlines**: `text-5xl lg:text-7xl xl:text-8xl`, tight leading
+- **Abstract gradient orbs**: 2 per section, `w-[500px] h-[500px] blur-[180px] opacity-20`, category-colored
+- **Mock UI containers**: `bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] rounded-3xl` with macOS dots, min 400px tall
+- **Category color glow behind mocks**: `absolute -inset-8 blur-3xl opacity-15` using category color
+- **Animations**: `whileInView` with `opacity: 0, y: 40` to `opacity: 1, y: 0`, staggered children
+- **No boxed card grids** — everything flows as full-width alternating sections
+- **Colors**: Purple (Content), Pink (Marketing), Blue (Audience), Orange (Analytics) — vibrant throughout
+- **AI Chat is always the hero**: Every section shows the product through the lens of an AI conversation
 
 ---
 
 ## Implementation Order
 
-1. Shared components (FeaturePageHero, FeatureSection, AIChatCTA, FeatureChip)
-2. ContentPage (most features to showcase)
-3. MarketingPage
-4. AudiencePage
-5. AnalyticsPage
-6. Update Landing gateway (remove old showcases, add teasers)
-7. Update Navbar + App.tsx routes
+1. `AnimatedChatWindow.tsx` + `ConversationPanel.tsx` (new shared components)
+2. `LandingHero.tsx` (full rewrite with animated chat)
+3. `ManualToolsStrip.tsx` (new)
+4. `Landing.tsx` (full rewrite using new components)
+5. `FeaturePageHero.tsx` + `FeatureSection.tsx` + `AIChatCTA.tsx` (rewrites)
+6. `ContentPage.tsx` (rewrite with richer mocks)
+7. `MarketingPage.tsx` (rewrite)
+8. `AudiencePage.tsx` (rewrite)
+9. `AnalyticsPage.tsx` (rewrite)
+10. Remove `CategoryTeaser.tsx`
 
