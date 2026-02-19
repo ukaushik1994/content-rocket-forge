@@ -338,6 +338,21 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   content_to_email: ['get_engage_email_campaigns'],
   campaign_content_to_engage: ['get_engage_email_campaigns'],
   repurpose_for_social: [],
+  // Publishing & social
+  publish_to_website: ['get_content_items'],
+  create_social_post: [],
+  schedule_social_from_repurpose: [],
+  enroll_contacts_in_journey: ['get_engage_journeys'],
+  send_quick_email: [],
+  trigger_content_gap_analysis: ['get_keywords', 'get_content_items'],
+  start_content_builder: [],
+  // Delete tools
+  delete_contact: ['get_engage_contacts'],
+  delete_segment: ['get_engage_segments'],
+  delete_email_campaign: ['get_engage_email_campaigns'],
+  delete_journey: ['get_engage_journeys'],
+  delete_automation: ['get_engage_automations'],
+  delete_social_post: [],
 };
 
 /**

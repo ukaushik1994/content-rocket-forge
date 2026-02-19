@@ -9,6 +9,15 @@ const TOOL_LABELS: Record<string, string> = {
   delete_solution: 'Delete Solution',
   send_email_campaign: 'Send Email Campaign',
   send_quick_email: 'Send Email',
+  publish_to_website: 'Publish to Website',
+  create_social_post: 'Post to Social Media',
+  schedule_social_from_repurpose: 'Schedule Social Posts',
+  delete_contact: 'Delete Contact',
+  delete_segment: 'Delete Segment',
+  delete_email_campaign: 'Delete Email Campaign',
+  delete_journey: 'Delete Journey',
+  delete_automation: 'Delete Automation',
+  delete_social_post: 'Delete Social Post',
 };
 
 interface ActionConfirmationCardProps {

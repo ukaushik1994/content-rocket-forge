@@ -237,6 +237,55 @@ export const ENGAGE_ACTION_TOOL_DEFINITIONS = [
         required: ["content", "platforms"]
       }
     }
+  },
+  // Delete tools
+  {
+    type: "function",
+    function: {
+      name: "delete_contact",
+      description: "Delete a contact from the CRM. Use when user says 'delete contact', 'remove contact'.",
+      parameters: { type: "object", properties: { contact_id: { type: "string", description: "UUID of the contact to delete" } }, required: ["contact_id"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_segment",
+      description: "Delete an audience segment. Use when user says 'delete segment', 'remove segment'.",
+      parameters: { type: "object", properties: { segment_id: { type: "string", description: "UUID of the segment to delete" } }, required: ["segment_id"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_email_campaign",
+      description: "Delete an email campaign. Use when user says 'delete campaign', 'remove email campaign'.",
+      parameters: { type: "object", properties: { campaign_id: { type: "string", description: "UUID of the campaign to delete" } }, required: ["campaign_id"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_journey",
+      description: "Delete a customer journey. Use when user says 'delete journey', 'remove journey'.",
+      parameters: { type: "object", properties: { journey_id: { type: "string", description: "UUID of the journey to delete" } }, required: ["journey_id"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_automation",
+      description: "Delete an automation rule. Use when user says 'delete automation', 'remove automation'.",
+      parameters: { type: "object", properties: { automation_id: { type: "string", description: "UUID of the automation to delete" } }, required: ["automation_id"] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_social_post",
+      description: "Delete a social media post. Use when user says 'delete social post', 'remove social post'.",
+      parameters: { type: "object", properties: { post_id: { type: "string", description: "UUID of the social post to delete" } }, required: ["post_id"] }
+    }
   }
 ];
 
@@ -245,7 +294,9 @@ export const ENGAGE_ACTION_TOOL_NAMES = [
   'create_segment', 'create_email_campaign', 'send_email_campaign',
   'create_journey', 'activate_journey', 'create_automation',
   'toggle_automation', 'enroll_contacts_in_journey', 'send_quick_email',
-  'create_social_post'
+  'create_social_post',
+  'delete_contact', 'delete_segment', 'delete_email_campaign',
+  'delete_journey', 'delete_automation', 'delete_social_post'
 ];
 
 export async function executeEngageActionTool(
@@ -554,6 +605,69 @@ export async function executeEngageActionTool(
             : `Created draft social post for ${platforms.join(', ')}`,
           item: { ...socialPost, platforms }
         };
+      }
+
+      case 'delete_contact': {
+        const { error } = await supabase.from('engage_contacts')
+          .delete()
+          .eq('id', toolArgs.contact_id)
+          .eq('workspace_id', workspaceId);
+        if (error) throw error;
+        return { success: true, message: `Deleted contact ${toolArgs.contact_id}` };
+      }
+
+      case 'delete_segment': {
+        // Delete memberships first
+        await supabase.from('engage_segment_memberships')
+          .delete()
+          .eq('segment_id', toolArgs.segment_id)
+          .eq('workspace_id', workspaceId);
+        const { error } = await supabase.from('engage_segments')
+          .delete()
+          .eq('id', toolArgs.segment_id)
+          .eq('workspace_id', workspaceId);
+        if (error) throw error;
+        return { success: true, message: `Deleted segment ${toolArgs.segment_id}` };
+      }
+
+      case 'delete_email_campaign': {
+        const { error } = await supabase.from('engage_email_campaigns')
+          .delete()
+          .eq('id', toolArgs.campaign_id)
+          .eq('workspace_id', workspaceId);
+        if (error) throw error;
+        return { success: true, message: `Deleted email campaign ${toolArgs.campaign_id}` };
+      }
+
+      case 'delete_journey': {
+        const { error } = await supabase.from('engage_journeys')
+          .delete()
+          .eq('id', toolArgs.journey_id)
+          .eq('workspace_id', workspaceId);
+        if (error) throw error;
+        return { success: true, message: `Deleted journey ${toolArgs.journey_id}` };
+      }
+
+      case 'delete_automation': {
+        const { error } = await supabase.from('engage_automations')
+          .delete()
+          .eq('id', toolArgs.automation_id)
+          .eq('workspace_id', workspaceId);
+        if (error) throw error;
+        return { success: true, message: `Deleted automation ${toolArgs.automation_id}` };
+      }
+
+      case 'delete_social_post': {
+        // Delete targets first
+        await supabase.from('social_post_targets')
+          .delete()
+          .eq('post_id', toolArgs.post_id);
+        const { error } = await supabase.from('social_posts')
+          .delete()
+          .eq('id', toolArgs.post_id)
+          .eq('workspace_id', workspaceId);
+        if (error) throw error;
+        return { success: true, message: `Deleted social post ${toolArgs.post_id}` };
       }
 
       default:
