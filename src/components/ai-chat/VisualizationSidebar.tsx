@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SidebarActionPanel } from './SidebarActionPanel';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { DataTable } from './DataTable';
 import { SegmentedControl } from './SegmentedControl';
@@ -1219,7 +1220,22 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </Collapsible>
                   )}
 
-                  {/* Deep Dive Prompts */}
+                  {/* 6. QUICK ACTIONS - Contextual module actions */}
+                  {onSendMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <SidebarActionPanel
+                        dataSource={dataInfo.source}
+                        onSendMessage={onSendMessage}
+                        onClose={onClose}
+                      />
+                    </motion.div>
+                  )}
+
+                  {/* 7. Deep Dive Prompts */}
                   {deepDivePrompts.length > 0 && onSendMessage && (
                     <div>
                       <h3 className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-3">

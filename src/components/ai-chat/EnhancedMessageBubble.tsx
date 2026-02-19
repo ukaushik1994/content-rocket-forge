@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Bot, User, RefreshCw, Search, FileText, HelpCircle, Users } from 'lucide-react';
@@ -13,6 +13,8 @@ import { FormattedResponseRenderer } from './FormattedResponseRenderer';
 import { Button } from '@/components/ui/button';
 import { ThinkingIndicator } from './ThinkingIndicator';
 import { MessageActions } from './MessageActions';
+import { ActionResultCard, parseActionResults } from './ActionResultCard';
+import { useNavigate } from 'react-router-dom';
 
 interface EnhancedMessageBubbleProps {
   message: EnhancedChatMessage;
@@ -42,6 +44,13 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   onDeleteMessage
 }) => {
   const [showTimestamp, setShowTimestamp] = useState(false);
+  const navigate = useNavigate();
+
+  // Detect action results in assistant messages
+  const actionResults = useMemo(() => {
+    if (message.role !== 'assistant') return [];
+    return parseActionResults(message.content);
+  }, [message.role, message.content]);
 
   // Delayed timestamp reveal
   React.useEffect(() => {
@@ -185,7 +194,19 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             </div>
           </Card>
 
-          {/* REMOVED: Inline visual data rendering - now handled by sidebar */}
+          {/* Action Result Cards - structured success/failure rendering */}
+          {!isUser && actionResults.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {actionResults.map((result, idx) => (
+                <ActionResultCard
+                  key={idx}
+                  result={result}
+                  onNavigate={(url) => navigate(url)}
+                  onFollowUp={(msg) => onSendMessage?.(msg)}
+                />
+              ))}
+            </div>
+          )}
           {/* SERP Data still renders inline as it's different from chart visualizations */}
           {message.visualData?.type === 'serp_analysis' && message.visualData.serpData && (
             <motion.div 

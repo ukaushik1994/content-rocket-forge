@@ -993,10 +993,44 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
     searchMessages,
     filterMessagesByType,
     
-    // Legacy compatibility
+    // Action handling with full support for confirm, navigate, and send
     handleAction: (action: any) => {
-      if (action.action === 'send_message' && action.data?.message) {
-        sendMessage(action.data.message);
+      const actionStr = action.action || '';
+      
+      // Handle confirm_action - send CONFIRMED prefix to bypass destructive guard
+      if (actionStr === 'confirm_action') {
+        const actionName = action.data?.action || action.data?.toolName || 'action';
+        const args = action.data?.args || action.data?.params || {};
+        const confirmMsg = `CONFIRMED: Execute ${actionName} with params: ${JSON.stringify(args)}`;
+        sendMessage(confirmMsg);
+        return;
+      }
+      
+      // Handle navigate action with data.url
+      if (actionStr === 'navigate' && action.data?.url) {
+        // Navigation is handled by ModernActionButtons directly via useNavigate
+        // This is a fallback for non-button triggered navigations
+        window.location.href = action.data.url;
+        return;
+      }
+      
+      // Handle navigate:/path prefix format
+      if (actionStr.startsWith('navigate:')) {
+        const path = actionStr.substring('navigate:'.length);
+        window.location.href = path;
+        return;
+      }
+      
+      // Handle send_message
+      if (actionStr === 'send_message' || actionStr === 'send-message') {
+        const msg = action.data?.message || action.data?.content;
+        if (msg) sendMessage(msg);
+        return;
+      }
+      
+      // Fallback: treat unknown actions as chat prompts
+      if (action.label) {
+        sendMessage(`Help me with: ${action.label}. ${action.description || ''}`);
       }
     },
     handleLegacyAction: (action: any) => {
