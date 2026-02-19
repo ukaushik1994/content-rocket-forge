@@ -85,14 +85,15 @@ export const WizardStepResearch: React.FC<WizardStepResearchProps> = ({
 
       const { data: aiResult } = await supabase.functions.invoke('ai-proxy', {
         body: {
+          service: provider.provider,
+          endpoint: 'chat',
           params: {
-            provider: provider.provider,
             model: provider.preferred_model || 'gpt-4',
             messages: [{
               role: 'user',
               content: `For the topic "${keyword}", generate research data in JSON format with these arrays: faqs (5 questions people ask), contentGaps (4 underserved topics), relatedKeywords (6 related search terms), serpHeadings (5 common article headings). Return ONLY valid JSON.`
             }],
-            maxTokens: 1000,
+            max_tokens: 1000,
           }
         }
       });

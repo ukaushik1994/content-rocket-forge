@@ -66,14 +66,15 @@ export const WizardStepOutline: React.FC<WizardStepOutlineProps> = ({
 
       const { data: aiResult } = await supabase.functions.invoke('ai-proxy', {
         body: {
+          service: provider.provider,
+          endpoint: 'chat',
           params: {
-            provider: provider.provider,
             model: provider.preferred_model || 'gpt-4',
             messages: [{
               role: 'user',
               content: `Create a detailed blog outline for "${keyword}". ${contextParts.join('. ')}. Return a JSON array of objects with "title" (string) and "level" (1 for H2, 2 for H3). Include 6-10 sections. Return ONLY valid JSON array.`
             }],
-            maxTokens: 800,
+            max_tokens: 800,
           }
         }
       });

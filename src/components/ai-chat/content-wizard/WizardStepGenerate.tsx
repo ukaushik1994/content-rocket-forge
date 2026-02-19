@@ -56,14 +56,15 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       const { data: aiResult } = await supabase.functions.invoke('ai-proxy', {
         body: {
+          service: provider.provider,
+          endpoint: 'chat',
           params: {
-            provider: provider.provider,
             model: provider.preferred_model || 'gpt-4',
             messages: [{
               role: 'user',
               content: `Generate an SEO meta title (under 60 chars) and meta description (under 160 chars) for a blog about "${wizardState.keyword}". Solution: ${wizardState.selectedSolution?.name || 'N/A'}. Return JSON: {"metaTitle": "...", "metaDescription": "..."}`
             }],
-            maxTokens: 200,
+            max_tokens: 200,
           }
         }
       });
@@ -99,8 +100,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       const { data: aiResult } = await supabase.functions.invoke('ai-proxy', {
         body: {
+          service: provider.provider,
+          endpoint: 'chat',
           params: {
-            provider: provider.provider,
             model: provider.preferred_model || 'gpt-4',
             messages: [
               {
@@ -112,7 +114,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                 content: `Write about "${wizardState.keyword}" for solution "${wizardState.selectedSolution?.name || 'our product'}".\n\nOutline:\n${outlineText}\n\nResearch context:\n${researchContext}\n\nSolution features: ${wizardState.selectedSolution?.features?.slice(0, 5).join(', ') || 'N/A'}`
               }
             ],
-            maxTokens: (wizardState.wordCount || 1500) * 3,
+            max_tokens: (wizardState.wordCount || 1500) * 3,
           }
         }
       });
