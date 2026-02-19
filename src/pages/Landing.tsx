@@ -5,15 +5,11 @@ import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { LandingHero } from '@/components/landing/LandingHero';
 import { ConversationPanel } from '@/components/landing/ConversationPanel';
 import { ManualToolsStrip } from '@/components/landing/ManualToolsStrip';
-import { AIIntelligenceShowcase } from '@/components/landing/AIIntelligenceShowcase';
-import { ComparisonTable } from '@/components/landing/ComparisonTable';
 import { InvestorSection } from '@/components/landing/InvestorSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import {
-  Sparkles, TrendingUp, FileText, Brain, Image,
-  Mail, Eye, MousePointerClick, Clock, Zap, GitBranch,
-  Users, Star, UserCircle, Activity, Tag,
-  BarChart3, ArrowUpRight, DollarSign
+  Sparkles, Image, Eye, MousePointerClick, Zap,
+  ArrowUpRight
 } from 'lucide-react';
 
 /* ── Conversation Mock UIs ── */
@@ -230,15 +226,7 @@ const Landing = () => {
 
           {/* Manual Tools Strip */}
           <ManualToolsStrip />
-          
-          <section id="ai-showcase" className="scroll-mt-16">
-            <AIIntelligenceShowcase />
-          </section>
-          
-          <section id="comparison" className="scroll-mt-16">
-            <ComparisonTable />
-          </section>
-          
+
           <section id="investors" className="scroll-mt-16">
             <InvestorSection />
           </section>

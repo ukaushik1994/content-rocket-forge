@@ -29,22 +29,40 @@ export const LandingHero = () => {
   const [isDemoOpen, setIsDemoOpen] = React.useState(false);
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-20 overflow-hidden">
-      {/* Abstract gradient orbs */}
-      <div className="absolute top-1/4 left-[15%] w-[600px] h-[600px] rounded-full blur-[180px] opacity-25 pointer-events-none bg-gradient-to-br from-primary to-neon-blue" />
-      <div className="absolute bottom-1/4 right-[15%] w-[500px] h-[500px] rounded-full blur-[160px] opacity-15 pointer-events-none bg-gradient-to-br from-neon-pink to-neon-orange" />
+    <section className="relative min-h-[100dvh] flex flex-col items-center justify-center px-4 pt-28 pb-20 overflow-hidden">
+      {/* Rich layered background */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Primary orb — top left */}
+        <div className="absolute top-[10%] left-[5%] w-[700px] h-[700px] rounded-full blur-[200px] opacity-[0.12] bg-[#9b87f5]" />
+        {/* Secondary orb — bottom right */}
+        <div className="absolute bottom-[5%] right-[5%] w-[600px] h-[600px] rounded-full blur-[180px] opacity-[0.08] bg-[#D946EF]" />
+        {/* Accent orb — center */}
+        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[500px] h-[300px] rounded-full blur-[160px] opacity-[0.06] bg-[#33C3F0]" />
+      </div>
 
       <div className="relative z-10 w-full max-w-5xl mx-auto text-center">
+        {/* Tiny label */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-6"
+        >
+          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium tracking-wide uppercase bg-primary/8 text-primary/80 border border-primary/10">
+            AI-Powered Content OS
+          </span>
+        </motion.div>
+
         {/* Headline */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-5xl md:text-6xl lg:text-8xl font-bold leading-[1.05] tracking-tight mb-6"
+          transition={{ duration: 0.8, delay: 0.1 }}
+          className="text-[2.75rem] sm:text-5xl md:text-6xl lg:text-[5.5rem] font-bold leading-[1.08] tracking-[-0.03em] mb-5"
         >
           Just tell your AI.
           <br />
-          <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-300% bg-clip-text text-transparent animate-gradient-shift">
+          <span className="bg-gradient-to-r from-[#9b87f5] via-[#33C3F0] to-[#D946EF] bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient-shift">
             It handles everything.
           </span>
         </motion.h1>
@@ -53,26 +71,27 @@ export const LandingHero = () => {
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-12"
+          transition={{ delay: 0.25, duration: 0.6 }}
+          className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-14 leading-relaxed"
         >
           Create content, run campaigns, manage audiences, and track performance — all from one AI conversation.
         </motion.p>
 
         {/* Animated Chat Window */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.8 }}
-          className="relative mb-12"
+          initial={{ opacity: 0, y: 50, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.4, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mb-14 max-w-3xl mx-auto"
         >
-          <div className="absolute -inset-6 bg-gradient-to-r from-primary/10 via-neon-blue/8 to-neon-pink/10 blur-3xl rounded-3xl pointer-events-none" />
+          {/* Glow behind chat */}
+          <div className="absolute -inset-10 bg-gradient-to-br from-[#9b87f5]/10 via-[#33C3F0]/5 to-[#D946EF]/10 blur-[60px] rounded-[40px] pointer-events-none" />
           <AnimatedChatWindow
             messages={heroMessages}
             actionChips={heroChips}
             typingSpeed={25}
             delayBetweenMessages={600}
-            className="relative"
+            className="relative shadow-2xl shadow-primary/5"
           />
         </motion.div>
 
@@ -80,24 +99,24 @@ export const LandingHero = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
+          transition={{ delay: 0.7, duration: 0.5 }}
+          className="flex flex-col sm:flex-row gap-3 justify-center"
         >
           <Button
             size="lg"
             onClick={() => navigate('/auth?mode=signup')}
-            className="text-lg px-8 py-6 bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 shadow-xl hover:shadow-neon-strong transition-all duration-300 group"
+            className="text-base px-8 py-6 bg-foreground text-background hover:bg-foreground/90 rounded-full font-semibold shadow-lg transition-all duration-300 group"
           >
             Start Free
-            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Button>
           <Button
             size="lg"
-            variant="outline"
+            variant="ghost"
             onClick={() => setIsDemoOpen(true)}
-            className="text-lg px-8 py-6 border-white/10 hover:border-white/20 hover:bg-white/5 backdrop-blur-sm"
+            className="text-base px-8 py-6 text-muted-foreground hover:text-foreground rounded-full font-medium"
           >
-            <Play className="mr-2 h-5 w-5" />
+            <Play className="mr-2 h-4 w-4" />
             Watch Demo
           </Button>
         </motion.div>
