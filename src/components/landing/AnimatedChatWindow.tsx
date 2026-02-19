@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Sparkles, User } from 'lucide-react';
+import { MessageSquare, User } from 'lucide-react';
 
 interface ChatMessage {
   role: 'user' | 'ai';
@@ -75,7 +75,7 @@ export const AnimatedChatWindow: React.FC<AnimatedChatWindowProps> = ({
         <div className="w-3 h-3 rounded-full bg-red-500/80" />
         <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
         <div className="w-3 h-3 rounded-full bg-green-500/80" />
-        <span className="ml-3 text-xs text-muted-foreground/50 font-mono">creaiter.ai</span>
+        <span className="ml-3 text-xs text-muted-foreground/50 font-mono">Creaiter</span>
       </div>
 
       {/* Chat area */}
@@ -90,9 +90,7 @@ export const AnimatedChatWindow: React.FC<AnimatedChatWindowProps> = ({
               className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'ai' && (
-                <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-neon-blue shrink-0 h-fit">
-                  <Sparkles className="h-4 w-4 text-primary-foreground" />
-                </div>
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-neon-blue shrink-0" />
               )}
               <div
                 className={`max-w-[85%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed ${

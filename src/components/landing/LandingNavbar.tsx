@@ -26,7 +26,7 @@ export const LandingNavbar = () => {
     { name: 'Marketing', href: '/features/marketing', isRoute: true },
     { name: 'Audience', href: '/features/audience', isRoute: true },
     { name: 'Analytics', href: '/features/analytics', isRoute: true },
-    { name: 'Investors', href: '/', isRoute: false, anchor: '#investors' },
+    
   ];
 
   const handleNavClick = (item: typeof navItems[0]) => {
