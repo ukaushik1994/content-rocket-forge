@@ -4,13 +4,11 @@
 
 ## What Changes
 
-The current sidebar footer hides Settings and Sign Out inside a dropdown menu triggered by clicking the user avatar. The ChatGPT reference shows these as **separate, always-visible items** stacked at the bottom of the sidebar.
+Replace the single dropdown footer in `AIChatSidebar.tsx` (lines 360-387) with three stacked, always-visible items: Notifications, Settings, and Profile row.
 
 ## New Footer Layout
 
 ```text
-+----------------------------------+
-| ... (rest of sidebar above) ...  |
 +----------------------------------+
 |  [Bell icon]  Notifications      |
 |  [Gear icon]  Settings           |
@@ -20,39 +18,21 @@ The current sidebar footer hides Settings and Sign Out inside a dropdown menu tr
 +----------------------------------+
 ```
 
-### When collapsed (icon-only):
-```text
-+------+
-| Bell |
-| Gear |
-| [AV] |
-+------+
-```
+When collapsed (icon-only): Bell, Gear, Avatar icons only.
 
-## Specific Changes
+## Changes
 
 ### File: `src/components/ai-chat/AIChatSidebar.tsx`
 
-**Footer section (lines 360-387)** -- Replace the single dropdown button with three distinct items:
+1. **Add `Bell` import** to the lucide-react import (line 7 area)
 
-1. **Notifications** -- A `SidebarMenuButton` with Bell icon that navigates to `/notification-settings` (or opens the settings modal on the notifications tab). Shows label text when expanded, icon-only when collapsed.
+2. **Replace footer section (lines 360-387)** with:
+   - `SidebarSeparator` or `border-t` divider
+   - **Notifications button**: `SidebarMenuButton` with `Bell` icon, calls `openSettings('notifications')`. Shows label when expanded, icon-only when collapsed.
+   - **Settings button**: `SidebarMenuButton` with `Settings` icon, calls `openSettings('api')`. Shows label when expanded, icon-only when collapsed.
+   - **Profile row**: Avatar + name + email. Small dropdown on click with just "Sign Out". When collapsed, shows only avatar.
 
-2. **Settings** -- A `SidebarMenuButton` with Gear icon that calls `openSettings('api')`. Shows label text when expanded, icon-only when collapsed.
+### No other files change. No database or edge function modifications.
 
-3. **Profile row** -- User avatar + name + email displayed as a row. Clicking opens a small dropdown with just "Sign Out". When collapsed, shows only the avatar icon.
-
-### Visual Treatment
-
-- Each footer item gets the same `SidebarMenuButton` styling as the rest of the sidebar for consistency
-- A `SidebarSeparator` above the footer section to visually separate from Chats
-- Items stack vertically with minimal spacing (gap-0.5)
-
-### Lines of Change
-
-| Area | Approx Lines |
-|------|-------------|
-| Footer rewrite | ~40 lines replaced |
-| Total | ~40 lines |
-
-No other files need changes. No database or edge function modifications.
+### Approximate scope: ~40 lines replaced in 1 file.
 
