@@ -441,7 +441,7 @@ You have access to specialized tools to fetch AND act on data. Use them smartly:
 - get_engage_contacts, get_engage_segments, get_engage_journeys, get_engage_automations, get_engage_email_campaigns
 
 **✏️ WRITE Tools (Take Actions):**
-Content: create_content_item, update_content_item, delete_content_item, generate_full_content, start_content_builder
+Content: create_content_item, update_content_item, delete_content_item, generate_full_content, start_content_builder, launch_content_wizard
 Approvals: submit_for_review, approve_content, reject_content
 Keywords: add_keywords, remove_keywords, trigger_serp_analysis, trigger_content_gap_analysis, create_topic_cluster
 Offerings: create_solution, update_solution, delete_solution, update_company_info, add_competitor, update_competitor, trigger_competitor_analysis

@@ -9,6 +9,7 @@ import { PremiumMetricCard } from './PremiumMetricCard';
 import { ExportDropdown } from './ExportDropdown';
 import { AISummaryCard } from './AISummaryCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ContentWizardSidebar } from './content-wizard/ContentWizardSidebar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -899,6 +900,19 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const qualityConfig = getQualityConfig(dataInfo.quality);
 
   const { isMobile, isTablet } = useResponsiveBreakpoint();
+
+  // Content Wizard mode - render wizard instead of charts
+  if (visualData?.type === 'content_wizard') {
+    return (
+      <ContentWizardSidebar
+        isOpen={isOpen}
+        onClose={onClose}
+        keyword={visualData.keyword || ''}
+        solutionId={visualData.solution_id}
+        contentType={visualData.content_type}
+      />
+    );
+  }
 
   return (
     <AnimatePresence>
