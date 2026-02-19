@@ -3,7 +3,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface ContainerProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 }
 
