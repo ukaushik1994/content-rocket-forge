@@ -54,7 +54,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         return;
       }
 
-      const { data: aiResult } = await supabase.functions.invoke('ai-proxy', {
+      const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-proxy', {
         body: {
           service: provider.provider,
           endpoint: 'chat',
@@ -69,11 +69,15 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         }
       });
 
+      if (aiError) throw new Error(aiError.message);
+
       const content = aiResult?.content || aiResult?.choices?.[0]?.message?.content || '';
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         onMetaChange(parsed.metaTitle || '', parsed.metaDescription || '');
+      } else {
+        onMetaChange(`${wizardState.keyword} - Complete Guide`, `Discover everything about ${wizardState.keyword}. Learn best practices, tips, and strategies.`);
       }
     } catch {
       onMetaChange(`${wizardState.keyword} - Complete Guide`, `Discover everything about ${wizardState.keyword}.`);
@@ -98,7 +102,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         wizardState.researchSelections.relatedKeywords.length ? `Keywords to incorporate: ${wizardState.researchSelections.relatedKeywords.join(', ')}` : '',
       ].filter(Boolean).join('\n');
 
-      const { data: aiResult } = await supabase.functions.invoke('ai-proxy', {
+      const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-proxy', {
         body: {
           service: provider.provider,
           endpoint: 'chat',
@@ -119,12 +123,14 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         }
       });
 
+      if (aiError) throw new Error(aiError.message);
+
       const generated = aiResult?.content || aiResult?.choices?.[0]?.message?.content || '';
       if (generated) {
         onContentGenerated(generated);
         toast.success('Content generated successfully!');
       } else {
-        toast.error('AI returned empty content. Try again.');
+        toast.error('AI returned empty content. Check your AI provider settings.');
       }
     } catch (err) {
       toast.error('Content generation failed. Check your AI provider settings.');

@@ -64,7 +64,7 @@ export const WizardStepOutline: React.FC<WizardStepOutlineProps> = ({
       if (researchSelections.relatedKeywords.length) contextParts.push(`Related keywords: ${researchSelections.relatedKeywords.join(', ')}`);
       if (researchSelections.serpHeadings.length) contextParts.push(`SERP headings for inspiration: ${researchSelections.serpHeadings.join('; ')}`);
 
-      const { data: aiResult } = await supabase.functions.invoke('ai-proxy', {
+      const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-proxy', {
         body: {
           service: provider.provider,
           endpoint: 'chat',
@@ -79,11 +79,22 @@ export const WizardStepOutline: React.FC<WizardStepOutlineProps> = ({
         }
       });
 
+      if (aiError) throw new Error(aiError.message);
+
       const content = aiResult?.content || aiResult?.choices?.[0]?.message?.content || '';
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         onOutlineChange(parsed.map((s: any) => ({ id: uuidv4(), title: s.title, level: s.level || 1 })));
+      } else {
+        onOutlineChange([
+          { id: uuidv4(), title: `Introduction to ${keyword}`, level: 1 },
+          { id: uuidv4(), title: `What is ${keyword}?`, level: 2 },
+          { id: uuidv4(), title: `Key Benefits and Use Cases`, level: 1 },
+          { id: uuidv4(), title: `How to Get Started`, level: 1 },
+          { id: uuidv4(), title: `Best Practices`, level: 2 },
+          { id: uuidv4(), title: `Conclusion`, level: 1 },
+        ]);
       }
     } catch {
       onOutlineChange([
