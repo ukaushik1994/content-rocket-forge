@@ -1,131 +1,150 @@
 
 
-# Universal Publishing Engine -- Complete Communication from AI Chat
+# AI Chat Gap Fix -- Complete Patch
 
-## Current State
+## What's Being Fixed
 
-The AI Chat can already do a lot, but has critical gaps that prevent true end-to-end communication:
+4 categories of gaps identified across the AI Chat system:
 
-| Channel | Create/Draft | Send/Publish | Gap |
-|---------|-------------|-------------|-----|
-| Blog Content | generate_full_content, create_content_item | -- | No tool to push to WordPress/Wix |
-| Email (Campaign) | create_email_campaign | send_email_campaign | Working end-to-end |
-| Email (Quick) | -- | send_quick_email | Working end-to-end |
-| Social Media | repurpose_for_social (AI generates text) | -- | Generated posts are returned in chat but never saved to `social_posts` table or scheduled |
-| Journeys | create_journey | activate_journey | Working end-to-end |
-| Automations | create_automation | toggle_automation | Working end-to-end |
+### 1. Missing Cache Invalidation (tools.ts)
 
-**Bottom line**: Email, Journeys, and Automations already work end-to-end. The two broken pipelines are **Website Publishing** and **Social Posting**.
+The following write tools are missing from `WRITE_TOOL_CACHE_INVALIDATION`, meaning the UI won't refresh after they execute:
 
----
+| Tool | Should Invalidate |
+|------|------------------|
+| `publish_to_website` | `get_content_items` |
+| `create_social_post` | (no read tool yet, empty array) |
+| `schedule_social_from_repurpose` | (no read tool yet, empty array) |
+| `enroll_contacts_in_journey` | `get_engage_journeys` |
+| `send_quick_email` | (empty array) |
+| `trigger_content_gap_analysis` | `get_keywords`, `get_content_items` |
+| `start_content_builder` | (empty array) |
 
-## Plan -- 3 New Tools + Intent Detection
+### 2. Missing Confirmation Card Labels (ActionConfirmationCard.tsx)
 
-### Tool 1: `publish_to_website`
-Push a saved content item to the user's connected WordPress or Wix site.
+`TOOL_LABELS` only has 4 entries. The following destructive tools show raw snake_case names instead of human-readable labels:
 
-- Looks up the content item by ID
-- Checks `website_connections` for an active provider
-- Calls the existing `publish-wordpress` or `publish-wix` edge function server-to-server
-- Updates content status to "published" and stores the live URL
-- Returns the URL in the result card
+| Tool | Label to Add |
+|------|-------------|
+| `publish_to_website` | Publish to Website |
+| `create_social_post` | Post to Social Media |
+| `schedule_social_from_repurpose` | Schedule Social Posts |
 
-**Trigger phrases**: "publish to my website", "push to WordPress", "post this on my blog", "publish this article"
-**Requires confirmation**: Yes (pushes to a live external site)
+### 3. Missing Intent Detection Rules (actionIntentDetector.ts)
 
-### Tool 2: `create_social_post`
-Create and optionally schedule a social media post directly (without needing to repurpose existing content first).
+These backend tools exist but have no intent detection patterns, so the chat can never route to them automatically:
 
-- Creates a record in `social_posts` table with content, media URLs, and target platforms
-- Creates entries in `social_post_targets` for each platform
-- Supports immediate posting or scheduled time
-- The existing `engage-social-poster` background job picks it up
+| Tool | Trigger Phrases to Add |
+|------|----------------------|
+| `trigger_content_gap_analysis` | "find content gaps", "what am I missing", "content gap analysis" |
+| `start_content_builder` | "open content builder", "start content builder", "guided content creation" |
+| `update_company_info` | "update company info", "change company name", "set company details" |
+| `update_competitor` | "update competitor", "edit competitor", "change competitor details" |
 
-**Trigger phrases**: "create a social post", "schedule a tweet", "post on LinkedIn", "write a social update"
-**Requires confirmation**: Yes for immediate posts, No for drafts
+### 4. Missing Delete/Cleanup Tools
 
-### Tool 3: `schedule_social_from_repurpose`
-Takes the output of `repurpose_for_social` (which currently just returns AI-generated text in chat) and actually saves + schedules it.
+No delete tools exist for contacts, segments, campaigns, journeys, automations, or social posts. Adding the most critical ones:
 
-- Accepts the generated posts array and a scheduled time
-- Creates `social_posts` and `social_post_targets` records for each platform
-- Links back to the source content item
-
-**Trigger phrases**: "schedule these social posts", "post these to social", "save and schedule the social posts"
-**Requires confirmation**: Yes
+| New Tool | File | Purpose |
+|----------|------|---------|
+| `delete_contact` | engage-action-tools.ts | Remove a contact from CRM |
+| `delete_segment` | engage-action-tools.ts | Remove an audience segment |
+| `delete_email_campaign` | engage-action-tools.ts | Remove a draft campaign |
+| `delete_journey` | engage-action-tools.ts | Remove a draft journey |
+| `delete_automation` | engage-action-tools.ts | Remove an automation |
+| `delete_social_post` | engage-action-tools.ts | Remove a scheduled/draft social post |
 
 ---
 
 ## Technical Details
 
-### File Changes
+### File 1: `supabase/functions/enhanced-ai-chat/tools.ts`
 
-| File | Change |
-|---------|--------|
-| `supabase/functions/enhanced-ai-chat/cross-module-tools.ts` | Add `publish_to_website` tool definition + execution (~50 lines). Add `schedule_social_from_repurpose` tool definition + execution (~40 lines). Add both to `CROSS_MODULE_TOOL_NAMES`. |
-| `supabase/functions/enhanced-ai-chat/engage-action-tools.ts` | Add `create_social_post` tool definition + execution (~50 lines). Add to `ENGAGE_ACTION_TOOL_NAMES`. |
-| `src/utils/actionIntentDetector.ts` | Add 3 new intent rules for publish, social post creation, and social scheduling (~25 lines). Add `publish_to_website`, `create_social_post`, `schedule_social_from_repurpose` to `DESTRUCTIVE_TOOLS` set. |
-| `supabase/functions/enhanced-ai-chat/index.ts` | Update the system prompt's tool list to include the 3 new tools. |
+Add 7 entries to `WRITE_TOOL_CACHE_INVALIDATION`:
 
-### publish_to_website Execution Logic
-
-```text
-1. Fetch content_items by ID + user_id
-2. Query website_connections for active connection
-3. If none -> return error with "Go to Settings > Publishing"
-4. Call publish-wordpress or publish-wix via fetch() with SERVICE_ROLE_KEY
-5. On success -> update content_items.status = 'published', store URL in metadata
-6. Return { success, url, provider }
+```
+publish_to_website: ['get_content_items'],
+create_social_post: [],
+schedule_social_from_repurpose: [],
+enroll_contacts_in_journey: ['get_engage_journeys'],
+send_quick_email: [],
+trigger_content_gap_analysis: ['get_keywords', 'get_content_items'],
+start_content_builder: [],
 ```
 
-### create_social_post Execution Logic
+### File 2: `src/components/ai-chat/ActionConfirmationCard.tsx`
 
-```text
-1. Get user's engage workspace_id
-2. Insert into social_posts (content, media_urls, scheduled_at, status)
-3. For each platform -> insert into social_post_targets
-4. If scheduled_at is null and status = 'scheduled' -> engage-social-poster picks it up
-5. Return { success, post_id, platforms, scheduled_at }
+Expand `TOOL_LABELS` with all destructive/confirmable tools:
+
+```
+publish_to_website: 'Publish to Website',
+create_social_post: 'Post to Social Media',
+schedule_social_from_repurpose: 'Schedule Social Posts',
+delete_contact: 'Delete Contact',
+delete_segment: 'Delete Segment',
+delete_email_campaign: 'Delete Email Campaign',
+delete_journey: 'Delete Journey',
+delete_automation: 'Delete Automation',
+delete_social_post: 'Delete Social Post',
 ```
 
-### Updated Intent Detection Rules
+### File 3: `src/utils/actionIntentDetector.ts`
 
-```text
-publish_to_website:
-  "publish to website/blog", "push to wordpress/wix", "post on my site"
-  requiresConfirmation: true
+Add 4 missing intent rules for existing tools + 6 intent rules for new delete tools. Add all 6 delete tools to `DESTRUCTIVE_TOOLS`.
 
-create_social_post:
-  "create social post", "schedule tweet", "post on linkedin/twitter/facebook"
-  requiresConfirmation: true (for non-draft)
+New intent patterns:
+- `trigger_content_gap_analysis`: "find content gaps", "what am I missing", "gap analysis"
+- `start_content_builder`: "open content builder", "start content builder", "guided content"
+- `update_company_info`: "update company info", "change company name/details"
+- `update_competitor`: "update competitor", "edit competitor"
+- `delete_contact`: "delete contact", "remove contact"
+- `delete_segment`: "delete segment", "remove segment"
+- `delete_email_campaign`: "delete campaign", "remove email campaign"
+- `delete_journey`: "delete journey", "remove journey"
+- `delete_automation`: "delete automation", "remove automation"
+- `delete_social_post`: "delete social post", "remove social post"
 
-schedule_social_from_repurpose:
-  "schedule these social posts", "post these to social", "save the social posts"
-  requiresConfirmation: true
+### File 4: `supabase/functions/enhanced-ai-chat/engage-action-tools.ts`
+
+Add 6 new delete tool definitions and their execution handlers:
+
+Each delete tool follows the same pattern:
+1. Accept the item UUID
+2. Verify workspace ownership
+3. Delete from the appropriate table
+4. Return success/failure
+
+Add to `ENGAGE_ACTION_TOOL_NAMES` array.
+
+### File 5: `supabase/functions/enhanced-ai-chat/tools.ts` (cache section)
+
+Add cache invalidation entries for all 6 delete tools:
+
+```
+delete_contact: ['get_engage_contacts'],
+delete_segment: ['get_engage_segments'],
+delete_email_campaign: ['get_engage_email_campaigns'],
+delete_journey: ['get_engage_journeys'],
+delete_automation: ['get_engage_automations'],
+delete_social_post: [],
 ```
 
-### Complete End-to-End Flows After This Change
+### File 6: `supabase/functions/enhanced-ai-chat/index.ts`
 
-**Blog to Website**:
-User: "Write a blog post about AI trends" -> generate_full_content -> saved as draft
-User: "Publish it to my website" -> Confirmation Card -> publish_to_website -> live URL returned
+Update the system prompt's WRITE tools list to include the 6 new delete tools in the Engage line.
 
-**Content to Social**:
-User: "Repurpose my latest article for Twitter and LinkedIn" -> repurpose_for_social -> AI text returned
-User: "Schedule these for tomorrow" -> Confirmation Card -> schedule_social_from_repurpose -> scheduled
+---
 
-**Direct Social Post**:
-User: "Post on LinkedIn: Excited to announce our new product launch!" -> Confirmation Card -> create_social_post -> posted/scheduled
+## Summary of Changes
 
-**Email Campaign**:
-User: "Create an email campaign for our VIP segment" -> create_email_campaign -> draft created
-User: "Send it now" -> Confirmation Card -> send_email_campaign -> sending
+| File | Lines Added (approx) |
+|------|---------------------|
+| `tools.ts` (cache invalidation) | ~15 |
+| `ActionConfirmationCard.tsx` (labels) | ~10 |
+| `actionIntentDetector.ts` (10 new rules + destructive set) | ~70 |
+| `engage-action-tools.ts` (6 delete tools) | ~120 |
+| `index.ts` (system prompt) | ~2 |
+| **Total** | **~217 lines** |
 
-**Quick Email**:
-User: "Send an email to john@example.com about the meeting" -> Confirmation Card -> send_quick_email -> sent
-
-All 5 communication channels will be fully operational from a single chat interface.
-
-### No Database Changes Required
-All tables (`social_posts`, `social_post_targets`, `website_connections`, `content_items`, `email_campaigns`, `email_messages`) already exist. The edge functions (`publish-wordpress`, `publish-wix`, `engage-social-poster`, `engage-email-send`) are already deployed. This plan only wires them into the AI Chat tool system.
+No database changes required. All tables already exist with proper RLS.
 
