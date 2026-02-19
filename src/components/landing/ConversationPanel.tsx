@@ -26,69 +26,64 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  return (
-    <section className="py-20 md:py-32 px-4 relative">
-      {/* Subtle accent orb */}
+  const textContent = (
+    <motion.div
+      initial={{ opacity: 0, x: direction === 'left' ? -40 : 40 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.8 }}
+      className="flex-1 space-y-6"
+    >
+      <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-foreground">
+        {headline}
+      </h2>
+      <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-lg">
+        {description}
+      </p>
+      <button
+        onClick={() => navigate(learnMoreRoute)}
+        className="inline-flex items-center gap-2 text-lg font-medium group transition-colors"
+        style={{ color: accentColor }}
+      >
+        {learnMoreLabel}
+        <ArrowRight className="h-5 w-5 group-hover:translate-x-1.5 transition-transform" />
+      </button>
+    </motion.div>
+  );
+
+  const visualContent = (
+    <motion.div
+      initial={{ opacity: 0, x: direction === 'left' ? 40 : -40 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.8, delay: 0.15 }}
+      className="flex-1 relative"
+    >
+      {/* Category glow */}
       <div
-        className="absolute w-[500px] h-[500px] rounded-full blur-[200px] opacity-[0.06] pointer-events-none"
-        style={{
-          background: accentColor,
-          top: '20%',
-          ...(direction === 'left' ? { right: '10%' } : { left: '10%' }),
-        }}
+        className="absolute -inset-8 rounded-3xl blur-[100px] opacity-20 pointer-events-none"
+        style={{ background: accentColor }}
       />
+      <div className="relative rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl overflow-hidden">
+        {/* macOS dots */}
+        <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06]">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+          <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+          <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+        </div>
+        <div className="p-6 md:p-8">
+          {mockUI}
+        </div>
+      </div>
+    </motion.div>
+  );
 
-      <div className="max-w-6xl mx-auto">
+  return (
+    <section className="py-24 md:py-32 px-4">
+      <div className="max-w-7xl mx-auto">
         <div className={`flex flex-col ${direction === 'left' ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-12 lg:gap-20 items-center`}>
-          {/* Text */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-1 space-y-5"
-          >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-bold leading-[1.1] tracking-[-0.02em] text-foreground">
-              {headline}
-            </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-md">
-              {description}
-            </p>
-            <button
-              onClick={() => navigate(learnMoreRoute)}
-              className="inline-flex items-center gap-2 text-sm font-medium group transition-all duration-300 hover:gap-3"
-              style={{ color: accentColor }}
-            >
-              {learnMoreLabel}
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </button>
-          </motion.div>
-
-          {/* Mock UI */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-1 relative w-full"
-          >
-            {/* Glow */}
-            <div
-              className="absolute -inset-6 rounded-3xl blur-[80px] opacity-[0.08] pointer-events-none"
-              style={{ background: accentColor }}
-            />
-            <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl overflow-hidden">
-              {/* Minimal window dots */}
-              <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/[0.04]">
-                <div className="w-2 h-2 rounded-full bg-white/10" />
-                <div className="w-2 h-2 rounded-full bg-white/10" />
-                <div className="w-2 h-2 rounded-full bg-white/10" />
-              </div>
-              <div className="p-5 md:p-6">
-                {mockUI}
-              </div>
-            </div>
-          </motion.div>
+          {textContent}
+          {visualContent}
         </div>
       </div>
     </section>
