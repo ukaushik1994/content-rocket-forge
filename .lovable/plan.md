@@ -1,80 +1,131 @@
 
 
-# Phase 3: AI Chat Completion -- Inline Visualizations + Markdown Fix
+# Universal Publishing Engine -- Complete Communication from AI Chat
 
-## Current Status
-The Universal Action Engine is fully wired (streaming + Phase 2 tool execution, confirmation cards, capabilities discovery). However, two critical gaps remain that prevent the AI Chat from feeling "complete":
+## Current State
 
-1. **Tool result visualizations don't render inline** -- When `enhanced-ai-chat` returns charts, metrics, or dashboards, the data is saved on the message but never displayed in the chat bubble.
-2. **Markdown tables render as raw pipes** -- The `FormattedResponseRenderer` uses `react-markdown` but tables display as plain text instead of styled HTML tables.
+The AI Chat can already do a lot, but has critical gaps that prevent true end-to-end communication:
 
-## Plan
+| Channel | Create/Draft | Send/Publish | Gap |
+|---------|-------------|-------------|-----|
+| Blog Content | generate_full_content, create_content_item | -- | No tool to push to WordPress/Wix |
+| Email (Campaign) | create_email_campaign | send_email_campaign | Working end-to-end |
+| Email (Quick) | -- | send_quick_email | Working end-to-end |
+| Social Media | repurpose_for_social (AI generates text) | -- | Generated posts are returned in chat but never saved to `social_posts` table or scheduled |
+| Journeys | create_journey | activate_journey | Working end-to-end |
+| Automations | create_automation | toggle_automation | Working end-to-end |
 
-### Step 1: Render VisualData Inline in Message Bubbles
+**Bottom line**: Email, Journeys, and Automations already work end-to-end. The two broken pipelines are **Website Publishing** and **Social Posting**.
 
-The `EnhancedMessageBubble` currently only renders SERP analysis inline. For all other visual data types (charts, metrics, workflows, campaign dashboards, queue status, etc.), the data exists on the message but is only pushed to the sidebar.
+---
 
-**Change in `EnhancedMessageBubble.tsx`**:
-- After the normal message content card, add a `VisualDataRenderer` block that renders when `message.visualData` exists and type is NOT `serp_analysis` (which already renders separately).
-- Import `VisualDataRenderer` from `./VisualDataRenderer`.
-- This gives tool results (charts, metric cards, tables, campaign dashboards) a proper inline visualization right below the text.
+## Plan -- 3 New Tools + Intent Detection
 
-### Step 2: Fix Markdown Table Rendering
+### Tool 1: `publish_to_website`
+Push a saved content item to the user's connected WordPress or Wix site.
 
-The `FormattedResponseRenderer` uses `react-markdown` but tables appear as raw pipe-separated text. This is likely because custom `components` overrides for `table`, `thead`, `tbody`, `tr`, `th`, `td` are either missing or broken.
+- Looks up the content item by ID
+- Checks `website_connections` for an active provider
+- Calls the existing `publish-wordpress` or `publish-wix` edge function server-to-server
+- Updates content status to "published" and stores the live URL
+- Returns the URL in the result card
 
-**Change in `FormattedResponseRenderer.tsx`**:
-- Add proper `components` prop to the `ReactMarkdown` renderer with styled `table`, `thead`, `tbody`, `tr`, `th`, `td` elements using Tailwind classes.
-- Ensure the table container has horizontal scroll for mobile.
+**Trigger phrases**: "publish to my website", "push to WordPress", "post this on my blog", "publish this article"
+**Requires confirmation**: Yes (pushes to a live external site)
 
-### Step 3: Action Buttons from Tool Results
+### Tool 2: `create_social_post`
+Create and optionally schedule a social media post directly (without needing to repurpose existing content first).
 
-When `enhanced-ai-chat` returns `actions` array, these are saved on the message and rendered by `ModernActionButtons`. However, the `navigate:` prefix in action strings needs to work with the router. Verify `handleAction` in `useEnhancedAIChatDB.ts` handles all action prefixes (`navigate:`, `send:`, `workflow:`). This is already implemented -- just needs verification.
+- Creates a record in `social_posts` table with content, media URLs, and target platforms
+- Creates entries in `social_post_targets` for each platform
+- Supports immediate posting or scheduled time
+- The existing `engage-social-poster` background job picks it up
+
+**Trigger phrases**: "create a social post", "schedule a tweet", "post on LinkedIn", "write a social update"
+**Requires confirmation**: Yes for immediate posts, No for drafts
+
+### Tool 3: `schedule_social_from_repurpose`
+Takes the output of `repurpose_for_social` (which currently just returns AI-generated text in chat) and actually saves + schedules it.
+
+- Accepts the generated posts array and a scheduled time
+- Creates `social_posts` and `social_post_targets` records for each platform
+- Links back to the source content item
+
+**Trigger phrases**: "schedule these social posts", "post these to social", "save and schedule the social posts"
+**Requires confirmation**: Yes
+
+---
 
 ## Technical Details
 
 ### File Changes
 
 | File | Change |
-|------|--------|
-| `src/components/ai-chat/EnhancedMessageBubble.tsx` | Add inline `VisualDataRenderer` for non-SERP visualData on assistant messages (~10 lines) |
-| `src/components/ai-chat/FormattedResponseRenderer.tsx` | Add styled `components` overrides for markdown tables in `ReactMarkdown` (~30 lines) |
+|---------|--------|
+| `supabase/functions/enhanced-ai-chat/cross-module-tools.ts` | Add `publish_to_website` tool definition + execution (~50 lines). Add `schedule_social_from_repurpose` tool definition + execution (~40 lines). Add both to `CROSS_MODULE_TOOL_NAMES`. |
+| `supabase/functions/enhanced-ai-chat/engage-action-tools.ts` | Add `create_social_post` tool definition + execution (~50 lines). Add to `ENGAGE_ACTION_TOOL_NAMES`. |
+| `src/utils/actionIntentDetector.ts` | Add 3 new intent rules for publish, social post creation, and social scheduling (~25 lines). Add `publish_to_website`, `create_social_post`, `schedule_social_from_repurpose` to `DESTRUCTIVE_TOOLS` set. |
+| `supabase/functions/enhanced-ai-chat/index.ts` | Update the system prompt's tool list to include the 3 new tools. |
 
-### EnhancedMessageBubble.tsx -- New Block
-
-After the existing SERP data rendering block (around line 258), add:
+### publish_to_website Execution Logic
 
 ```text
-// Inline visualization for tool results (charts, metrics, dashboards)
-if message.visualData exists AND type !== 'serp_analysis':
-  render <VisualDataRenderer data={message.visualData} onAction={...} />
+1. Fetch content_items by ID + user_id
+2. Query website_connections for active connection
+3. If none -> return error with "Go to Settings > Publishing"
+4. Call publish-wordpress or publish-wix via fetch() with SERVICE_ROLE_KEY
+5. On success -> update content_items.status = 'published', store URL in metadata
+6. Return { success, url, provider }
 ```
 
-This ensures every tool result with visual data (charts, metric cards, campaign dashboards, queue status) renders beautifully inline in the chat.
+### create_social_post Execution Logic
 
-### FormattedResponseRenderer.tsx -- Table Components
+```text
+1. Get user's engage workspace_id
+2. Insert into social_posts (content, media_urls, scheduled_at, status)
+3. For each platform -> insert into social_post_targets
+4. If scheduled_at is null and status = 'scheduled' -> engage-social-poster picks it up
+5. Return { success, post_id, platforms, scheduled_at }
+```
 
-Add a `components` object to `ReactMarkdown` with:
-- `table`: Wrapped in a scrollable container with border
-- `thead`: With bottom border and background
-- `th`: With padding and font-weight
-- `td`: With padding and border
-- `tr`: With alternating row colors
+### Updated Intent Detection Rules
 
-### What This Enables
+```text
+publish_to_website:
+  "publish to website/blog", "push to wordpress/wix", "post on my site"
+  requiresConfirmation: true
 
-After these changes, the AI Chat will:
-- Show charts and metric cards inline when tools return visual data
-- Render markdown tables as proper styled HTML tables
-- Display campaign dashboards and queue status inline
-- Keep the sidebar auto-open behavior for expanded views
-- Handle all action button clicks (navigate, send message, workflow)
+create_social_post:
+  "create social post", "schedule tweet", "post on linkedin/twitter/facebook"
+  requiresConfirmation: true (for non-draft)
 
-### Testing Plan
+schedule_social_from_repurpose:
+  "schedule these social posts", "post these to social", "save the social posts"
+  requiresConfirmation: true
+```
 
-1. Ask "Show my content performance" -- should render inline chart + metrics
-2. Ask "Create a blog post about AI" -- should execute tool and show success card
-3. Ask the AI to compare things (triggers markdown tables) -- should render styled tables
-4. Type `/help` -- should show capabilities card
-5. Ask "Send an email to test@example.com" -- should show confirmation card
+### Complete End-to-End Flows After This Change
+
+**Blog to Website**:
+User: "Write a blog post about AI trends" -> generate_full_content -> saved as draft
+User: "Publish it to my website" -> Confirmation Card -> publish_to_website -> live URL returned
+
+**Content to Social**:
+User: "Repurpose my latest article for Twitter and LinkedIn" -> repurpose_for_social -> AI text returned
+User: "Schedule these for tomorrow" -> Confirmation Card -> schedule_social_from_repurpose -> scheduled
+
+**Direct Social Post**:
+User: "Post on LinkedIn: Excited to announce our new product launch!" -> Confirmation Card -> create_social_post -> posted/scheduled
+
+**Email Campaign**:
+User: "Create an email campaign for our VIP segment" -> create_email_campaign -> draft created
+User: "Send it now" -> Confirmation Card -> send_email_campaign -> sending
+
+**Quick Email**:
+User: "Send an email to john@example.com about the meeting" -> Confirmation Card -> send_quick_email -> sent
+
+All 5 communication channels will be fully operational from a single chat interface.
+
+### No Database Changes Required
+All tables (`social_posts`, `social_post_targets`, `website_connections`, `content_items`, `email_campaigns`, `email_messages`) already exist. The edge functions (`publish-wordpress`, `publish-wix`, `engage-social-poster`, `engage-email-send`) are already deployed. This plan only wires them into the AI Chat tool system.
 
