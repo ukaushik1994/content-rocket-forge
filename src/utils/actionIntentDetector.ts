@@ -28,6 +28,9 @@ const DESTRUCTIVE_TOOLS = new Set([
   'delete_solution',
   'send_email_campaign',
   'send_quick_email',
+  'publish_to_website',
+  'create_social_post',
+  'schedule_social_from_repurpose',
 ]);
 
 const ACTION_RULES: PatternRule[] = [
@@ -291,6 +294,44 @@ const ACTION_RULES: PatternRule[] = [
     ],
     toolName: 'repurpose_for_social',
     confidence: 'medium',
+  },
+
+  // Website Publishing
+  {
+    patterns: [
+      /\bpublish\s+(to|on)\s+(my\s+)?(website|blog|site|wordpress|wix)/i,
+      /\bpush\s+to\s+(wordpress|wix|my\s+site)/i,
+      /\bpost\s+(this|it)\s+(on|to)\s+my\s+(website|blog|site)/i,
+      /\bpublish\s+(this|the)\s+(article|blog|post|content)\s+(to|on)/i,
+      /\bput\s+(this|it)\s+on\s+my\s+(website|blog|site)/i,
+    ],
+    toolName: 'publish_to_website',
+    confidence: 'high',
+  },
+
+  // Direct Social Post Creation
+  {
+    patterns: [
+      /\b(create|write|make)\s+(a\s+)?social\s+(media\s+)?post/i,
+      /\bschedule\s+(a\s+)?(tweet|post)\b/i,
+      /\bpost\s+on\s+(linkedin|twitter|facebook|instagram|x)\b/i,
+      /\b(tweet|post)\s+(this|about|on)\b/i,
+      /\bwrite\s+(a\s+)?social\s+update/i,
+    ],
+    toolName: 'create_social_post',
+    confidence: 'high',
+  },
+
+  // Schedule repurposed social posts
+  {
+    patterns: [
+      /\bschedule\s+(these|the)\s+social\s+posts?/i,
+      /\bpost\s+(these|them)\s+to\s+social/i,
+      /\bsave\s+(and\s+)?(schedule\s+)?(the\s+)?social\s+posts?/i,
+      /\bschedule\s+(them|these)\s+(for|on|at)\b/i,
+    ],
+    toolName: 'schedule_social_from_repurpose',
+    confidence: 'high',
   },
 ];
 

@@ -219,6 +219,24 @@ export const ENGAGE_ACTION_TOOL_DEFINITIONS = [
         required: ["to_emails", "subject", "body_html"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_social_post",
+      description: "Create and optionally schedule a social media post directly. Use when user says 'create a social post', 'schedule a tweet', 'post on LinkedIn', 'write a social update', 'post on Twitter/Facebook/Instagram'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content: { type: "string", description: "The post content/text" },
+          platforms: { type: "array", items: { type: "string", enum: ["twitter", "linkedin", "facebook", "instagram"] }, description: "Target platforms" },
+          media_urls: { type: "array", items: { type: "string" }, description: "Media attachment URLs (optional)" },
+          scheduled_at: { type: "string", description: "ISO datetime to schedule. Null = save as draft." },
+          hashtags: { type: "array", items: { type: "string" }, description: "Hashtags to append" }
+        },
+        required: ["content", "platforms"]
+      }
+    }
   }
 ];
 
@@ -226,7 +244,8 @@ export const ENGAGE_ACTION_TOOL_NAMES = [
   'create_contact', 'update_contact', 'tag_contacts',
   'create_segment', 'create_email_campaign', 'send_email_campaign',
   'create_journey', 'activate_journey', 'create_automation',
-  'toggle_automation', 'enroll_contacts_in_journey', 'send_quick_email'
+  'toggle_automation', 'enroll_contacts_in_journey', 'send_quick_email',
+  'create_social_post'
 ];
 
 export async function executeEngageActionTool(
@@ -498,6 +517,43 @@ export async function executeEngageActionTool(
         }
 
         return { success: true, message: `Sent email to ${toolArgs.to_emails.length} recipient(s)` };
+      }
+
+      case 'create_social_post': {
+        const hashtags = toolArgs.hashtags || [];
+        const fullContent = hashtags.length > 0
+          ? `${toolArgs.content}\n\n${hashtags.map((h: string) => h.startsWith('#') ? h : `#${h}`).join(' ')}`
+          : toolArgs.content;
+
+        const platforms = toolArgs.platforms || ['twitter'];
+
+        // Insert social post
+        const { data: socialPost, error: postError } = await supabase.from('social_posts').insert({
+          workspace_id: workspaceId,
+          content: fullContent,
+          media_urls: toolArgs.media_urls || [],
+          scheduled_at: toolArgs.scheduled_at || null,
+          status: toolArgs.scheduled_at ? 'scheduled' : 'draft'
+        }).select('id, content, status, scheduled_at, created_at').single();
+
+        if (postError) throw postError;
+
+        // Insert target platforms
+        const targets = platforms.map((platform: string) => ({
+          post_id: socialPost.id,
+          platform,
+          status: toolArgs.scheduled_at ? 'pending' : 'draft'
+        }));
+
+        await supabase.from('social_post_targets').insert(targets);
+
+        return {
+          success: true,
+          message: toolArgs.scheduled_at
+            ? `Scheduled social post for ${platforms.join(', ')} at ${toolArgs.scheduled_at}`
+            : `Created draft social post for ${platforms.join(', ')}`,
+          item: { ...socialPost, platforms }
+        };
       }
 
       default:
