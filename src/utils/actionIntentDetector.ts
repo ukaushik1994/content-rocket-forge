@@ -31,6 +31,12 @@ const DESTRUCTIVE_TOOLS = new Set([
   'publish_to_website',
   'create_social_post',
   'schedule_social_from_repurpose',
+  'delete_contact',
+  'delete_segment',
+  'delete_email_campaign',
+  'delete_journey',
+  'delete_automation',
+  'delete_social_post',
 ]);
 
 const ACTION_RULES: PatternRule[] = [
@@ -331,6 +337,90 @@ const ACTION_RULES: PatternRule[] = [
       /\bschedule\s+(them|these)\s+(for|on|at)\b/i,
     ],
     toolName: 'schedule_social_from_repurpose',
+    confidence: 'high',
+  },
+
+  // Content gap analysis
+  {
+    patterns: [
+      /\b(find|identify|show)\s+(content\s+)?gaps/i,
+      /\bcontent\s+gap\s+(analysis|report)/i,
+      /\bwhat\s+(am\s+I|are\s+we)\s+missing/i,
+      /\bgap\s+analysis/i,
+    ],
+    toolName: 'trigger_content_gap_analysis',
+    confidence: 'high',
+  },
+
+  // Content builder
+  {
+    patterns: [
+      /\b(open|start|launch)\s+(the\s+)?content\s+builder/i,
+      /\bguided\s+content\s+(creation|builder)/i,
+    ],
+    toolName: 'start_content_builder',
+    confidence: 'high',
+  },
+
+  // Company info
+  {
+    patterns: [
+      /\b(update|change|set|edit)\s+(my\s+)?company\s+(info|name|details|information)/i,
+    ],
+    toolName: 'update_company_info',
+    confidence: 'high',
+  },
+
+  // Competitor update
+  {
+    patterns: [
+      /\b(update|edit|change)\s+(the\s+)?competitor/i,
+    ],
+    toolName: 'update_competitor',
+    confidence: 'high',
+  },
+
+  // Delete tools
+  {
+    patterns: [
+      /\b(delete|remove)\s+(the\s+)?contact/i,
+    ],
+    toolName: 'delete_contact',
+    confidence: 'high',
+  },
+  {
+    patterns: [
+      /\b(delete|remove)\s+(the\s+)?segment/i,
+    ],
+    toolName: 'delete_segment',
+    confidence: 'high',
+  },
+  {
+    patterns: [
+      /\b(delete|remove)\s+(the\s+)?(email\s+)?campaign/i,
+    ],
+    toolName: 'delete_email_campaign',
+    confidence: 'high',
+  },
+  {
+    patterns: [
+      /\b(delete|remove)\s+(the\s+)?journey/i,
+    ],
+    toolName: 'delete_journey',
+    confidence: 'high',
+  },
+  {
+    patterns: [
+      /\b(delete|remove)\s+(the\s+)?automation/i,
+    ],
+    toolName: 'delete_automation',
+    confidence: 'high',
+  },
+  {
+    patterns: [
+      /\b(delete|remove)\s+(the\s+)?social\s+post/i,
+    ],
+    toolName: 'delete_social_post',
     confidence: 'high',
   },
 ];
