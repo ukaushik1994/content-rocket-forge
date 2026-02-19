@@ -55,7 +55,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     searchConversations,
     clearSearch,
     editMessage,
-    deleteMessage
+    deleteMessage,
+    handleConfirmAction,
+    handleCancelAction
   } = useEnhancedAIChatDB();
 
   // Message search state
@@ -453,6 +455,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                           onExpandVisualization={handleExpandVisualization}
                           onEditMessage={editMessage}
                           onDeleteMessage={deleteMessage}
+                          onConfirmAction={handleConfirmAction}
+                          onCancelAction={handleCancelAction}
                         />
                       </div>
                     );

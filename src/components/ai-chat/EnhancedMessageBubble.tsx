@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { ThinkingIndicator } from './ThinkingIndicator';
 import { MessageActions } from './MessageActions';
 import { ActionResultCard, parseActionResults } from './ActionResultCard';
+import { ActionConfirmationCard } from './ActionConfirmationCard';
+import { CapabilitiesCard } from './CapabilitiesCard';
 import { useNavigate } from 'react-router-dom';
 
 interface EnhancedMessageBubbleProps {
@@ -28,6 +30,8 @@ interface EnhancedMessageBubbleProps {
   onExpandVisualization?: (visualData: any, chartConfig: ChartConfiguration) => void;
   onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
   onDeleteMessage?: (messageId: string) => Promise<void>;
+  onConfirmAction?: (confirmationMsgId: string) => void;
+  onCancelAction?: (confirmationMsgId: string) => void;
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
@@ -41,7 +45,9 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   isThinking = false,
   onExpandVisualization,
   onEditMessage,
-  onDeleteMessage
+  onDeleteMessage,
+  onConfirmAction,
+  onCancelAction
 }) => {
   const [showTimestamp, setShowTimestamp] = useState(false);
   const navigate = useNavigate();
@@ -158,41 +164,60 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             />
           )}
 
-          {/* Message Content - Premium Minimal Styling */}
-          <Card className={`relative ${
-             isUser 
-               ? 'bg-muted/30 text-foreground border border-border/20 ml-4' 
-               : 'bg-transparent border border-border/20 mr-4'
-           }`}>
-            <div className="px-6 py-4">
-              <div className={`text-sm leading-relaxed ${
-                isUser ? 'text-foreground' : 'text-foreground'
-              }`}>
-                {isUser ? (
-                  <div className="whitespace-pre-wrap break-words">
-                    {message.content}
-                  </div>
-                ) : (
-                  <FormattedResponseRenderer 
-                    content={message.content} 
-                    hasVisualData={!!message.visualData}
-                  />
-                )}
+          {/* Confirmation Card - rendered instead of normal message */}
+          {!isUser && message.confirmationData && (
+            <ActionConfirmationCard
+              toolName={message.confirmationData.toolName}
+              originalMessage={message.confirmationData.originalMessage}
+              onConfirm={() => onConfirmAction?.(message.id)}
+              onCancel={() => onCancelAction?.(message.id)}
+            />
+          )}
+
+          {/* Capabilities Card */}
+          {!isUser && message.content === '__CAPABILITIES_CARD__' && (
+            <Card className="bg-transparent border border-border/20 mr-4 p-4">
+              <CapabilitiesCard onTryExample={(ex) => onSendMessage?.(ex)} />
+            </Card>
+          )}
+
+          {/* Normal Message Content - Premium Minimal Styling */}
+          {!message.confirmationData && message.content !== '__CAPABILITIES_CARD__' && (
+            <Card className={`relative ${
+               isUser 
+                 ? 'bg-muted/30 text-foreground border border-border/20 ml-4' 
+                 : 'bg-transparent border border-border/20 mr-4'
+             }`}>
+              <div className="px-6 py-4">
+                <div className={`text-sm leading-relaxed ${
+                  isUser ? 'text-foreground' : 'text-foreground'
+                }`}>
+                  {isUser ? (
+                    <div className="whitespace-pre-wrap break-words">
+                      {message.content}
+                    </div>
+                  ) : (
+                    <FormattedResponseRenderer 
+                      content={message.content} 
+                      hasVisualData={!!message.visualData}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-            
-            {/* Message Actions (Edit/Delete/Copy) */}
-            <div className="absolute top-2 right-2">
-              <MessageActions
-                messageId={message.id}
-                content={message.content}
-                isUser={isUser}
-                timestamp={message.timestamp}
-                onEdit={onEditMessage}
-                onDelete={onDeleteMessage}
-              />
-            </div>
-          </Card>
+              
+              {/* Message Actions (Edit/Delete/Copy) */}
+              <div className="absolute top-2 right-2">
+                <MessageActions
+                  messageId={message.id}
+                  content={message.content}
+                  isUser={isUser}
+                  timestamp={message.timestamp}
+                  onEdit={onEditMessage}
+                  onDelete={onDeleteMessage}
+                />
+              </div>
+            </Card>
+          )}
 
           {/* Action Result Cards - structured success/failure rendering */}
           {!isUser && actionResults.length > 0 && (

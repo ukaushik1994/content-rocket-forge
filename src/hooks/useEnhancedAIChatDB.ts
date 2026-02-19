@@ -293,6 +293,33 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [saveMessage]);
 
+  // Handle confirmation button clicks (from ActionConfirmationCard)
+  const handleConfirmAction = useCallback(async (confirmationMsgId: string) => {
+    if (!pendingConfirmation) return;
+    const { conversationHistory, conversationId: confConvId, toolName } = pendingConfirmation;
+    setPendingConfirmation(null);
+
+    // Remove the confirmation card message
+    setMessages(prev => prev.filter(m => m.id !== confirmationMsgId));
+
+    const confirmedHistory = [
+      ...conversationHistory,
+      { role: 'user' as const, content: `CONFIRMED: Execute ${toolName}` }
+    ];
+    await executeToolAction(confirmedHistory, confConvId, toolName);
+  }, [pendingConfirmation, executeToolAction]);
+
+  const handleCancelAction = useCallback(async (confirmationMsgId: string) => {
+    setPendingConfirmation(null);
+    // Replace card with cancelled note
+    setMessages(prev =>
+      prev.map(m => m.id === confirmationMsgId
+        ? { ...m, content: '🚫 Action cancelled.', confirmationData: undefined }
+        : m
+      )
+    );
+  }, []);
+
   // Send message with streaming SSE support + fallback to blocking
   const sendMessage = useCallback(async (content: string, displayContent?: string) => {
     if (!user) {
@@ -304,43 +331,33 @@ export const useEnhancedAIChatDB = () => {
       return;
     }
 
-    // Handle confirmation responses for destructive actions
-    const lowerContent = content.toLowerCase().trim();
-    if (pendingConfirmation && (lowerContent === 'confirm' || lowerContent === 'yes')) {
-      const { conversationHistory, conversationId: confConvId, toolName } = pendingConfirmation;
-      setPendingConfirmation(null);
-      
-      // Add user confirm message to chat
-      const confirmUserMsg: EnhancedChatMessage = {
+    // Handle /help command
+    const trimmedLower = content.trim().toLowerCase();
+    if (trimmedLower === '/help' || trimmedLower === 'what can you do' || trimmedLower === 'what can you do?') {
+      // Create conversation if needed
+      let conversationId = activeConversation;
+      if (!conversationId) {
+        conversationId = await createConversation('Capabilities');
+        if (!conversationId) return;
+      }
+
+      const userMsg: EnhancedChatMessage = {
         id: `user-${Date.now()}`,
         role: 'user',
-        content: 'Confirmed ✓',
+        content: displayContent || content,
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, confirmUserMsg]);
-      await saveMessage(confirmUserMsg, confConvId);
+      setMessages(prev => [...prev, userMsg]);
+      await saveMessage(userMsg, conversationId);
 
-      // Add CONFIRMED prefix to conversation history
-      const confirmedHistory = [
-        ...conversationHistory,
-        { role: 'user' as const, content: `CONFIRMED: Execute ${toolName}` }
-      ];
-      await executeToolAction(confirmedHistory, confConvId, toolName);
-      return;
-    }
-
-    if (pendingConfirmation && (lowerContent === 'cancel' || lowerContent === 'no')) {
-      setPendingConfirmation(null);
-      const cancelMsg: EnhancedChatMessage = {
-        id: `assistant-${Date.now()}`,
+      const helpMsg: EnhancedChatMessage = {
+        id: `help-${Date.now()}`,
         role: 'assistant',
-        content: '🚫 Action cancelled.',
+        content: '__CAPABILITIES_CARD__',
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, cancelMsg]);
-      if (activeConversation) {
-        await saveMessage(cancelMsg, activeConversation);
-      }
+      setMessages(prev => [...prev, helpMsg]);
+      await saveMessage(helpMsg, conversationId);
       return;
     }
 
@@ -504,11 +521,14 @@ export const useEnhancedAIChatDB = () => {
               const confirmMessage: EnhancedChatMessage = {
                 id: `confirm-${Date.now()}`,
                 role: 'assistant',
-                content: `⚠️ **Confirmation Required**\n\nI'm about to execute: **${actionIntent.toolName.replace(/_/g, ' ')}**\n\nThis is a destructive action. Please type **"confirm"** to proceed or **"cancel"** to abort.`,
+                content: '',
                 timestamp: new Date(),
+                confirmationData: {
+                  toolName: actionIntent.toolName,
+                  originalMessage: content,
+                },
               };
               setMessages(prev => [...prev, confirmMessage]);
-              await saveMessage(confirmMessage, conversationId!);
             } else {
               // Non-destructive: execute immediately
               await executeToolAction(conversationForTools, conversationId!, actionIntent.toolName);
@@ -572,7 +592,7 @@ export const useEnhancedAIChatDB = () => {
       setIsLoading(false);
       setIsTyping(false);
     }
-  }, [messages, toast, user, activeConversation, createConversation, saveMessage, pendingConfirmation, executeToolAction]);
+  }, [messages, toast, user, activeConversation, createConversation, saveMessage, executeToolAction]);
 
   const handleAction = useCallback(async (action: ContextualAction) => {
     console.log('🎬 Handling action:', action);
@@ -1081,6 +1101,8 @@ export const useEnhancedAIChatDB = () => {
     searchConversations,
     clearSearch,
     editMessage,
-    deleteMessage
+    deleteMessage,
+    handleConfirmAction,
+    handleCancelAction
   };
 };

@@ -268,4 +268,8 @@ export interface EnhancedChatMessage {
     sources?: string[];
     actionResults?: any;
   };
+  confirmationData?: {
+    toolName: string;
+    originalMessage: string;
+  };
 }
