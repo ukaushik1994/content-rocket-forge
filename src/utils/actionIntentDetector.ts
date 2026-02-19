@@ -373,8 +373,13 @@ const ACTION_RULES: PatternRule[] = [
     toolName: 'launch_content_wizard',
     confidence: 'high',
     extractParams: (msg) => {
+      // Try "about/on/for [topic]"
       const topicMatch = msg.match(/(?:about|on|for)\s+["']?(.+?)["']?\s*$/i);
-      return topicMatch ? { keyword: topicMatch[1].trim() } : {};
+      if (topicMatch) return { keyword: topicMatch[1].trim() };
+      // Try extracting topic after content type word
+      const fallback = msg.match(/(?:blog|article|guide|content)\s+(?:about|on|for|titled|called)?\s*["']?(.+?)["']?\s*$/i);
+      if (fallback) return { keyword: fallback[1].trim() };
+      return {};
     }
   },
 

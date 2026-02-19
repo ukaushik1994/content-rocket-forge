@@ -841,7 +841,7 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
                 ...state.messages.map(msg => ({ role: msg.role, content: msg.content })),
                 { role: 'user' as const, content },
                 { role: 'assistant' as const, content: fullContent },
-                { role: 'user' as const, content: `Please execute the action I requested. Tool hint: ${actionIntent.toolName}` }
+                { role: 'user' as const, content: `Please execute the action I requested. Tool hint: ${actionIntent.toolName}${actionIntent.params && Object.keys(actionIntent.params).length > 0 ? ` with params: ${JSON.stringify(actionIntent.params)}` : ''}` }
               ];
 
               const { data: toolResult, error: toolError } = await supabase.functions.invoke('enhanced-ai-chat', {

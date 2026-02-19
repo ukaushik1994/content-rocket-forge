@@ -505,7 +505,7 @@ export const useEnhancedAIChatDB = () => {
               ...messages.slice(-8).map(m => ({ role: m.role, content: m.content })),
               { role: 'user' as const, content },
               { role: 'assistant' as const, content: fullContent },
-              { role: 'user' as const, content: `Please execute the action I requested. Tool hint: ${actionIntent.toolName}` }
+              { role: 'user' as const, content: `Please execute the action I requested. Tool hint: ${actionIntent.toolName}${actionIntent.params && Object.keys(actionIntent.params).length > 0 ? ` with params: ${JSON.stringify(actionIntent.params)}` : ''}` }
             ];
 
             // If destructive action, show confirmation instead of executing
