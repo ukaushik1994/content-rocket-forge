@@ -16,29 +16,29 @@ export const LandingFooter = () => {
       <Container>
         {/* Main Footer Content */}
         <div className="max-w-2xl mx-auto text-center mb-12">
-          <motion.div initial={{
-            opacity: 0,
-            y: 20
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.8
-          }} viewport={{
-            once: true
-          }}>
-              <CreAiterLogo showText className="mb-6 mx-auto" />
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                Empowering creators worldwide with self-learning AI that gets smarter with every post. 
-                Transform your content strategy with an engine that learns from YOUR results and YOUR audience.
-              </p>
-              
-              <Button onClick={() => navigate('/auth?mode=signup')} className="bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 neon-glow">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Start Creating
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </motion.div>
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         </div>
 
         {/* Newsletter Signup */}
