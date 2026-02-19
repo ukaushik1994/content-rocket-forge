@@ -1997,6 +1997,7 @@ serve(async (req) => {
 
     let requestPromotedActions: any[] = [];
     let requestFallbackChartData: any = null;
+    let requestPromotedVisualData: any = null;
 
     if (toolCalls && toolCalls.length > 0) {
       console.log(`🔧 AI requested ${toolCalls.length} tool calls`);
@@ -2087,6 +2088,11 @@ serve(async (req) => {
               action: 'confirm_action',
               data: { action: parsed.action, args: parsed.args || {} }
             });
+          }
+          // Promote visualData from tool results (e.g., launch_content_wizard)
+          if (parsed?.visualData && !requestPromotedVisualData) {
+            requestPromotedVisualData = parsed.visualData;
+            console.log('📊 Promoted visualData from tool result:', parsed.visualData.type);
           }
         } catch (_e) { /* not JSON, skip */ }
       }
@@ -2582,7 +2588,7 @@ serve(async (req) => {
     }
     
     // AUTO-CONVERT TO CHARTS (unless user explicitly asked for table)
-    if (visualData && visualData.type !== 'chart' && chartRequest.type !== 'table_explicit') {
+    if (visualData && visualData.type !== 'chart' && visualData.type !== 'content_wizard' && chartRequest.type !== 'table_explicit') {
       console.log(`📊 Auto-converting ${visualData.type} to chart (default behavior)...`);
       
       // Try metrics to chart conversion
@@ -2961,6 +2967,12 @@ serve(async (req) => {
     // =============================================================================
     // FIX: USE FALLBACK CHART DATA IF AI DIDN'T GENERATE VISUALDATA
     // =============================================================================
+    // Promoted tool visualData takes priority (e.g., content_wizard)
+    if (!visualData && requestPromotedVisualData) {
+      console.log('📊 Using promoted visualData from tool result');
+      visualData = requestPromotedVisualData;
+    }
+    
     if (!visualData && requestFallbackChartData) {
       console.log('📊 AI response lacks visualData - injecting fallback chart from tool results');
       visualData = requestFallbackChartData;
