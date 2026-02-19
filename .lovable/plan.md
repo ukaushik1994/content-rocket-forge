@@ -1,47 +1,69 @@
 
-# Fix: Streaming Text Flashing + "Processing" Overlap
+# Fix: Apply firstToken Fix to the Correct Hook
 
 ## Root Cause
 
-When the user sends a message, `isTyping` is set to `true` (line 649 in `useUnifiedChatDB.ts`). This triggers the "Thinking..." indicator in the UI. As streaming tokens arrive (lines 764-774), the message content updates progressively -- but `isTyping` is never turned off until the stream is fully complete (line 808). This means for the entire duration of streaming, **both the growing text bubble and the "Thinking..." card are visible simultaneously**, causing the visual flashing.
+The `/ai-chat` page uses `EnhancedChatInterface.tsx`, which calls `useEnhancedAIChatDB.ts` -- NOT `useUnifiedChatDB.ts`. The previous fix was applied to the wrong hook.
+
+In `useEnhancedAIChatDB.ts`:
+- Line 247: `setIsTyping(true)` when message is sent
+- Lines 332-341: Tokens arrive and update message content, but `isTyping` stays `true`
+- Line 424: `setIsTyping(false)` only in the `finally` block after everything completes
+
+This means the "Thinking..." card and the growing text bubble render simultaneously for the entire stream duration.
 
 ## Fix
 
-**File: `src/hooks/useUnifiedChatDB.ts`**
+**File: `src/hooks/useEnhancedAIChatDB.ts`**
 
-Inside the token processing loop (around line 763), set `isTyping: false` on the very first token received. This makes the "Thinking..." indicator disappear the instant real text starts appearing.
+Same pattern as the previous fix, but applied to the correct file:
+
+1. Add a `let firstToken = true;` flag before the streaming loop (around line 305)
+2. Inside the token handler (line 332-341), call `setIsTyping(false)` on the first token received
+3. Set `firstToken = false` after the first update
+
+The token handler block (lines 332-341) changes from:
 
 ```
-// Before the streaming loop, add a flag
-let firstToken = true;
-
-// Inside the token handler (line 763-774):
 if (parsed.type === 'token' && parsed.content) {
   fullContent += parsed.content;
-
-  setState(prev => ({
-    ...prev,
-    isTyping: firstToken ? false : prev.isTyping,  // Kill typing indicator on first token
-    messages: prev.messages.map(msg =>
-      msg.id === aiMessageId
-        ? { ...msg, content: fullContent }
-        : msg
+  setMessages(prev =>
+    prev.map(m =>
+      m.id === assistantId
+        ? { ...m, content: fullContent }
+        : m
     )
-  }));
-  firstToken = false;
+  );
 }
 ```
 
-This is a single-line change inside one setState call. No new files, no new components.
+To:
 
-## What Changes
-
-- "Thinking..." shows only during the brief pause before the AI starts responding (typically under 1 second)
-- Once the first word appears, "Thinking..." disappears and only the growing text bubble remains
-- No more dual-rendering / flashing
+```
+if (parsed.type === 'token' && parsed.content) {
+  fullContent += parsed.content;
+  if (firstToken) {
+    setIsTyping(false);
+    firstToken = false;
+  }
+  setMessages(prev =>
+    prev.map(m =>
+      m.id === assistantId
+        ? { ...m, content: fullContent }
+        : m
+    )
+  );
+}
+```
 
 ## Files Modified
 
 | File | Change |
 |------|--------|
-| `src/hooks/useUnifiedChatDB.ts` | Add `firstToken` flag; set `isTyping: false` on first streamed token |
+| `src/hooks/useEnhancedAIChatDB.ts` | Add `firstToken` flag; call `setIsTyping(false)` on first streamed token |
+
+## Result
+
+- "Thinking..." appears only during the brief wait before the AI starts responding
+- Disappears the instant the first word streams in
+- No more flashing or dual-rendering
