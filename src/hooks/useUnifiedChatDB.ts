@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 import { supabase } from '@/integrations/supabase/client';
 import { parseVisualDataFromContent, mergeVisualData } from '@/utils/visualDataParser';
+import { detectActionIntent } from '@/utils/actionIntentDetector';
 
 export interface AIChatConversation {
   id: string;
@@ -809,6 +810,91 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
 
           await saveMessageToDB(finalMessage, targetConversationId);
           currentMessageRef.current = null;
+
+          // ========== PHASE 2: Post-stream tool execution ==========
+          const actionIntent = detectActionIntent(content);
+          if (actionIntent.detected && actionIntent.confidence !== 'low') {
+            console.log('🔧 Action intent detected:', actionIntent.toolName, '- calling enhanced-ai-chat...');
+            
+            // Show executing indicator
+            const executingMessage: EnhancedChatMessage = {
+              id: `action-${Date.now()}`,
+              role: 'assistant',
+              content: `⚙️ Executing: ${actionIntent.toolName.replace(/_/g, ' ')}...`,
+              timestamp: new Date(),
+              isStreaming: true,
+              messageStatus: 'sending'
+            };
+
+            setState(prev => ({
+              ...prev,
+              messages: [...prev.messages, executingMessage],
+              isTyping: true
+            }));
+
+            try {
+              // Build conversation for enhanced-ai-chat including the streaming response
+              const conversationForTools = [
+                ...state.messages.map(msg => ({ role: msg.role, content: msg.content })),
+                { role: 'user' as const, content },
+                { role: 'assistant' as const, content: fullContent },
+                { role: 'user' as const, content: `Please execute the action I requested. Tool hint: ${actionIntent.toolName}` }
+              ];
+
+              const { data: toolResult, error: toolError } = await supabase.functions.invoke('enhanced-ai-chat', {
+                body: {
+                  conversationId: targetConversationId,
+                  messages: conversationForTools
+                }
+              });
+
+              if (toolError) throw toolError;
+
+              const toolContent = toolResult?.content || toolResult?.message || 'Action completed.';
+              const toolActions = toolResult?.actions || [];
+              const toolVisualData = toolResult?.visualData;
+
+              const actionResultMessage: EnhancedChatMessage = {
+                id: executingMessage.id,
+                role: 'assistant',
+                content: toolContent,
+                timestamp: new Date(),
+                isStreaming: false,
+                actions: toolActions,
+                visualData: toolVisualData,
+                messageStatus: 'sent'
+              };
+
+              setState(prev => ({
+                ...prev,
+                messages: prev.messages.map(msg =>
+                  msg.id === executingMessage.id ? actionResultMessage : msg
+                ),
+                isTyping: false
+              }));
+
+              await saveMessageToDB(actionResultMessage, targetConversationId);
+            } catch (toolExecError: any) {
+              console.error('❌ Tool execution failed:', toolExecError);
+              
+              const errorMessage: EnhancedChatMessage = {
+                id: executingMessage.id,
+                role: 'assistant',
+                content: `❌ Action failed: ${toolExecError.message || 'Could not execute the requested action.'}`,
+                timestamp: new Date(),
+                isStreaming: false,
+                messageStatus: 'error'
+              };
+
+              setState(prev => ({
+                ...prev,
+                messages: prev.messages.map(msg =>
+                  msg.id === executingMessage.id ? errorMessage : msg
+                ),
+                isTyping: false
+              }));
+            }
+          }
           
         } else {
           // Fallback: non-streaming JSON response
