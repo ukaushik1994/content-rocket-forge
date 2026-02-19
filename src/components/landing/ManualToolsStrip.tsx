@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 const tools = [
-  { label: 'AI Writer', icon: PenTool, color: 'text-primary' },
+  { label: 'Writer', icon: PenTool, color: 'text-primary' },
   { label: 'Image Gen', icon: Image, color: 'text-neon-pink' },
   { label: 'Email Builder', icon: Mail, color: 'text-neon-pink' },
   { label: 'Social Calendar', icon: Calendar, color: 'text-neon-blue' },
@@ -28,7 +28,7 @@ export const ManualToolsStrip: React.FC = () => (
           Or take full control.
         </h3>
         <p className="text-muted-foreground text-lg mb-12">
-          Every tool is also available manually — no AI required.
+          Every tool is also available manually — always at your fingertips.
         </p>
       </motion.div>
 

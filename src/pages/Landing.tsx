@@ -7,7 +7,7 @@ import { ConversationPanel } from '@/components/landing/ConversationPanel';
 import { ManualToolsStrip } from '@/components/landing/ManualToolsStrip';
 
 import { ComparisonTable } from '@/components/landing/ComparisonTable';
-import { InvestorSection } from '@/components/landing/InvestorSection';
+
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import {
   Sparkles, TrendingUp, FileText, Brain, Image,
@@ -186,7 +186,7 @@ const Landing = () => {
           {/* Cinematic Conversation Panels */}
           <ConversationPanel
             headline="Write. Design. Produce."
-            description="AI-powered writing, image generation, and video creation — all learning your brand voice with every piece."
+            description="Writing, image generation, and video creation — learning your brand voice with every piece."
             mockUI={<ContentConversationMock />}
             accentColor="#9b87f5"
             direction="left"
@@ -197,7 +197,7 @@ const Landing = () => {
 
           <ConversationPanel
             headline="Send. Publish. Automate."
-            description="Email campaigns, social publishing, and automations — powered by AI that learns what converts."
+            description="Email campaigns, social publishing, and automations — learning what converts."
             mockUI={<MarketingConversationMock />}
             accentColor="#D946EF"
             direction="right"
@@ -208,7 +208,7 @@ const Landing = () => {
 
           <ConversationPanel
             headline="Know. Segment. Engage."
-            description="Unified profiles, AI-powered segments, and real-time activity — your audience, completely understood."
+            description="Unified profiles, smart segments, and real-time activity — your audience, completely understood."
             mockUI={<AudienceConversationMock />}
             accentColor="#33C3F0"
             direction="left"
@@ -219,7 +219,7 @@ const Landing = () => {
 
           <ConversationPanel
             headline="Track. Learn. Grow."
-            description="Performance dashboards, AI insights, and ROI tracking that connect content to revenue."
+            description="Performance dashboards, insights, and ROI tracking that connect content to revenue."
             mockUI={<AnalyticsConversationMock />}
             accentColor="#F97316"
             direction="right"
@@ -236,9 +236,6 @@ const Landing = () => {
             <ComparisonTable />
           </section>
           
-          <section id="investors" className="scroll-mt-16">
-            <InvestorSection />
-          </section>
         </main>
         
         <LandingFooter />

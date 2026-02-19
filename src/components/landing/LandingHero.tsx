@@ -42,7 +42,7 @@ export const LandingHero = () => {
           transition={{ duration: 0.8 }}
           className="text-5xl md:text-6xl lg:text-8xl font-bold leading-[1.05] tracking-tight mb-6"
         >
-          Just tell your AI.
+          Just tell Creaiter.
           <br />
           <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-300% bg-clip-text text-transparent animate-gradient-shift">
             It handles everything.
@@ -56,7 +56,7 @@ export const LandingHero = () => {
           transition={{ delay: 0.2, duration: 0.6 }}
           className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-12"
         >
-          Create content, run campaigns, manage audiences, and track performance — all from one AI conversation.
+          Create content, run campaigns, manage audiences, and track performance — all from one conversation.
         </motion.p>
 
         {/* Animated Chat Window */}
