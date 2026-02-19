@@ -737,6 +737,7 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
           const decoder = new TextDecoder();
           let fullContent = '';
           let buffer = '';
+          let firstToken = true;
 
           while (true) {
             const { done, value } = await reader.read();
@@ -766,12 +767,14 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
                     // Update the message content progressively
                     setState(prev => ({
                       ...prev,
+                      isTyping: firstToken ? false : prev.isTyping,
                       messages: prev.messages.map(msg => 
                         msg.id === aiMessageId 
                           ? { ...msg, content: fullContent }
                           : msg
                       )
                     }));
+                    firstToken = false;
                   } else if (parsed.type === 'complete') {
                     if (parsed.content) fullContent = parsed.content;
                     console.log('✅ Stream complete:', fullContent.length, 'chars');
