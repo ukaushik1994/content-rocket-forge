@@ -1,47 +1,47 @@
 
+# Fix: Streaming Text Flashing + "Processing" Overlap
 
-# Landing Page Visual Polish — Implementation
+## Root Cause
 
-## What's Being Done
+When the user sends a message, `isTyping` is set to `true` (line 649 in `useUnifiedChatDB.ts`). This triggers the "Thinking..." indicator in the UI. As streaming tokens arrive (lines 764-774), the message content updates progressively -- but `isTyping` is never turned off until the stream is fully complete (line 808). This means for the entire duration of streaming, **both the growing text bubble and the "Thinking..." card are visible simultaneously**, causing the visual flashing.
 
-The previously approved landing page cleanup that was never executed. This covers branding cleanup and content improvements across 5 files.
+## Fix
 
-## Changes
+**File: `src/hooks/useUnifiedChatDB.ts`**
 
-### 1. Remove "Investors" from Navbar
-**File: `src/components/landing/LandingNavbar.tsx` (line 29)**
-- Delete the `{ name: 'Investors', href: '/', isRoute: false, anchor: '#investors' }` entry from the `navItems` array
+Inside the token processing loop (around line 763), set `isTyping: false` on the very first token received. This makes the "Thinking..." indicator disappear the instant real text starts appearing.
 
-### 2. Remove InvestorSection from Landing Page
-**File: `src/pages/Landing.tsx`**
-- Remove the import of `InvestorSection` (line 10)
-- Remove the `<section id="investors">` block (lines 239-241)
+```
+// Before the streaming loop, add a flag
+let firstToken = true;
 
-### 3. Clean Hero Text
-**File: `src/components/landing/LandingHero.tsx`**
-- Line 45: Change "Just tell your AI." to "Just tell Creaiter."
-- Line 64 (subtitle area): Change "all from one AI conversation" style wording to "all from one conversation"
+// Inside the token handler (line 763-774):
+if (parsed.type === 'token' && parsed.content) {
+  fullContent += parsed.content;
 
-### 4. Clean ManualToolsStrip Labels
-**File: `src/components/landing/ManualToolsStrip.tsx`**
-- Line 8: "AI Writer" becomes "Writer"
-- Line 32: "no AI required" becomes "always at your fingertips"
+  setState(prev => ({
+    ...prev,
+    isTyping: firstToken ? false : prev.isTyping,  // Kill typing indicator on first token
+    messages: prev.messages.map(msg =>
+      msg.id === aiMessageId
+        ? { ...msg, content: fullContent }
+        : msg
+    )
+  }));
+  firstToken = false;
+}
+```
 
-### 5. Clean Chat Window Branding
-**File: `src/components/landing/AnimatedChatWindow.tsx`**
-- Remove `Sparkles` icon from the AI avatar — replace with a simple gradient circle
-- Remove any "creaiter.ai" label from the macOS title bar if present
+This is a single-line change inside one setState call. No new files, no new components.
 
-### 6. Update Panel Descriptions
-**File: `src/pages/Landing.tsx`**
-- Content (line 189): "Writing, image generation, and video creation -- learning your brand voice with every piece."
-- Marketing (line 200): "Email campaigns, social publishing, and automations -- learning what converts."
-- Audience (line 211): "Unified profiles, smart segments, and real-time activity -- your audience, completely understood."
-- Analytics (line 222): "Performance dashboards, insights, and ROI tracking that connect content to revenue."
+## What Changes
 
-## Technical Notes
+- "Thinking..." shows only during the brief pause before the AI starts responding (typically under 1 second)
+- Once the first word appears, "Thinking..." disappears and only the growing text bubble remains
+- No more dual-rendering / flashing
 
-- Pure text/import changes -- no new dependencies or components
-- The `InvestorSection.tsx` file itself stays in the codebase (unused) to avoid accidental breakage elsewhere; it simply won't be rendered
-- All changes are cosmetic/copy -- zero risk to functionality
+## Files Modified
 
+| File | Change |
+|------|--------|
+| `src/hooks/useUnifiedChatDB.ts` | Add `firstToken` flag; set `isTyping: false` on first streamed token |
