@@ -16,58 +16,58 @@ export const LandingFooter = () => {
       <Container>
         {/* Main Footer Content */}
         <div className="max-w-2xl mx-auto text-center mb-12">
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.8
+        }} viewport={{
+          once: true
+        }}>
+              <CreAiterLogo showText className="mb-6 mx-auto" />
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                Empowering creators worldwide with self-learning AI that gets smarter with every post. 
+                Transform your content strategy with an engine that learns from YOUR results and YOUR audience.
+              </p>
+              
+              <Button onClick={() => navigate('/auth?mode=signup')} className="bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 neon-glow">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Start Creating
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </motion.div>
         </div>
 
         {/* Newsletter Signup */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} whileInView={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.8,
-        delay: 0.4
-      }} viewport={{
-        once: true
-      }} className="glass-card p-8 rounded-2xl mb-12">
-          <div className="text-center max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold mb-4">Be Among the First Creators with Self-Learning AI</h3>
-            <p className="text-muted-foreground mb-6">
-              Get exclusive insights on how to train your AI engine for maximum content performance. 
-              Tips on leveraging the learning loop to 10x your results.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input type="email" placeholder="Enter your email" className="flex-1 px-4 py-3 rounded-lg bg-background/50 border border-border/50 focus:border-primary focus:outline-none" />
-              <Button className="bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90">
-                Subscribe
-              </Button>
-            </div>
-          </div>
-        </motion.div>
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         {/* Bottom Bar */}
         <motion.div initial={{
