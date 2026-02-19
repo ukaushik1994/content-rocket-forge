@@ -362,6 +362,22 @@ const ACTION_RULES: PatternRule[] = [
     confidence: 'high',
   },
 
+  // Content wizard (chat sidebar)
+  {
+    patterns: [
+      /\b(i\s+want\s+to\s+)?(create|write|build|make)\s+(a\s+)?(new\s+)?(blog|article|guide|content)\s+(about|on|for)\b/i,
+      /\b(help\s+me\s+)?(create|write|build)\s+(a\s+)?(blog|article|guide)\b/i,
+      /\bcreate\s+(a\s+)?blog\b/i,
+      /\bwrite\s+(an?\s+)?article\b/i,
+    ],
+    toolName: 'launch_content_wizard',
+    confidence: 'high',
+    extractParams: (msg) => {
+      const topicMatch = msg.match(/(?:about|on|for)\s+["']?(.+?)["']?\s*$/i);
+      return topicMatch ? { keyword: topicMatch[1].trim() } : {};
+    }
+  },
+
   // Company info
   {
     patterns: [

@@ -141,13 +141,29 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
         required: ["keyword"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "launch_content_wizard",
+      description: "Launch the interactive content creation wizard in the sidebar. Use when user says 'I want to create a blog', 'write an article about X', 'build content about X', or similar content creation requests that benefit from guided step-by-step creation.",
+      parameters: {
+        type: "object",
+        properties: {
+          keyword: { type: "string", description: "The topic/keyword for the content" },
+          solution_id: { type: "string", description: "Optional solution ID to pre-select" },
+          content_type: { type: "string", enum: ["blog", "article", "guide"], default: "blog", description: "Type of content to create" }
+        },
+        required: ["keyword"]
+      }
+    }
   }
 ];
 
 export const CONTENT_ACTION_TOOL_NAMES = [
   'create_content_item', 'update_content_item', 'delete_content_item',
   'submit_for_review', 'approve_content', 'reject_content',
-  'generate_full_content', 'start_content_builder'
+  'generate_full_content', 'start_content_builder', 'launch_content_wizard'
 ];
 
 export async function executeContentActionTool(
@@ -367,6 +383,19 @@ export async function executeContentActionTool(
               solution_id: toolArgs.solution_id,
               suggested_title: toolArgs.suggested_title
             }
+          }
+        };
+      }
+
+      case 'launch_content_wizard': {
+        return {
+          success: true,
+          message: `Opening content wizard for "${toolArgs.keyword}"`,
+          visualData: {
+            type: 'content_wizard',
+            keyword: toolArgs.keyword,
+            solution_id: toolArgs.solution_id || null,
+            content_type: toolArgs.content_type || 'blog'
           }
         };
       }
