@@ -16,6 +16,7 @@ import { MessageActions } from './MessageActions';
 import { ActionResultCard, parseActionResults } from './ActionResultCard';
 import { ActionConfirmationCard } from './ActionConfirmationCard';
 import { CapabilitiesCard } from './CapabilitiesCard';
+import { VisualDataRenderer } from './VisualDataRenderer';
 import { useNavigate } from 'react-router-dom';
 
 interface EnhancedMessageBubbleProps {
@@ -253,6 +254,36 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                     }
                   });
                 }}
+              />
+            </motion.div>
+          )}
+
+          {/* Inline visualization for tool results (charts, metrics, dashboards) */}
+          {!isUser && message.visualData && message.visualData.type !== 'serp_analysis' && (
+            <motion.div 
+              className="mt-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.3 }}
+            >
+              <VisualDataRenderer 
+                data={message.visualData} 
+                onAction={(action, data) => {
+                  if (action.startsWith('navigate:')) {
+                    navigate(action.replace('navigate:', ''));
+                  } else if (action.startsWith('send:')) {
+                    onSendMessage?.(action.replace('send:', ''));
+                  } else {
+                    onAction?.({
+                      id: `visual-action-${Date.now()}`,
+                      type: 'button',
+                      label: action,
+                      action,
+                      data
+                    });
+                  }
+                }}
+                onExpandVisualization={onExpandVisualization}
               />
             </motion.div>
           )}
