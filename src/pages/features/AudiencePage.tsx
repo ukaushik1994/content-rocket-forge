@@ -15,17 +15,13 @@ import {
 /* ── Mock UIs ── */
 const ContactCRMMockUI = () => (
   <div className="space-y-4">
-    {/* Contact header */}
     <div className="flex items-center gap-4">
-      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-neon-blue to-primary flex items-center justify-center text-lg font-bold text-primary-foreground">
-        SK
-      </div>
+      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-neon-blue to-primary flex items-center justify-center text-lg font-bold text-primary-foreground">SK</div>
       <div>
         <div className="text-base font-semibold text-foreground">Sarah Kim</div>
         <div className="text-xs text-muted-foreground">sarah@example.com · San Francisco</div>
       </div>
       <div className="ml-auto">
-        {/* Engagement score ring */}
         <div className="relative w-12 h-12">
           <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
             <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="3" fill="none" className="text-white/10" />
@@ -35,15 +31,11 @@ const ContactCRMMockUI = () => (
         </div>
       </div>
     </div>
-    {/* Tags */}
     <div className="flex flex-wrap gap-2">
       {['VIP', 'Newsletter', 'Eco-Conscious', 'Repeat Buyer'].map((tag) => (
-        <span key={tag} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-neon-blue/10 border border-neon-blue/20 text-neon-blue">
-          {tag}
-        </span>
+        <span key={tag} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-neon-blue/10 border border-neon-blue/20 text-neon-blue">{tag}</span>
       ))}
     </div>
-    {/* Activity timeline */}
     <div className="space-y-2.5 pt-2">
       {[
         { icon: Mail, text: 'Opened "Spring Collection" email', time: '2h ago', color: 'text-neon-pink' },
@@ -62,12 +54,10 @@ const ContactCRMMockUI = () => (
 
 const SegmentsMockUI = () => (
   <div className="space-y-4">
-    {/* Segment builder */}
     <div className="flex items-center gap-2 mb-2">
       <Filter className="h-4 w-4 text-primary" />
       <span className="text-sm font-semibold text-foreground">Smart Segment Builder</span>
     </div>
-    {/* Rules */}
     <div className="space-y-2">
       {[
         { field: 'Engagement Score', op: 'greater than', value: '70' },
@@ -82,7 +72,6 @@ const SegmentsMockUI = () => (
         </div>
       ))}
     </div>
-    {/* Result */}
     <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-primary/5 border border-primary/15">
       <div className="flex items-center gap-2">
         <Users className="h-4 w-4 text-primary" />

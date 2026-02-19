@@ -37,11 +37,11 @@ export const FeaturePageHero: React.FC<FeaturePageHeroProps> = ({
     <section className="relative min-h-screen flex items-center justify-center px-4 pt-24 pb-20 overflow-hidden">
       {/* Abstract gradient orbs */}
       <div
-        className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full blur-[180px] opacity-30 pointer-events-none"
+        className="absolute top-1/4 left-[20%] w-[600px] h-[600px] rounded-full blur-[180px] opacity-25 pointer-events-none"
         style={{ background: orbColorA }}
       />
       <div
-        className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full blur-[160px] opacity-20 pointer-events-none"
+        className="absolute bottom-1/4 right-[20%] w-[500px] h-[500px] rounded-full blur-[160px] opacity-15 pointer-events-none"
         style={{ background: orbColorB }}
       />
 
@@ -52,9 +52,10 @@ export const FeaturePageHero: React.FC<FeaturePageHeroProps> = ({
           animate={{ opacity: 1, y: 0 }}
           className="flex justify-center mb-8"
         >
-          <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-medium backdrop-blur-md`}
+          <div
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-medium backdrop-blur-md"
             style={{
-              background: `linear-gradient(135deg, ${orbColorA}15, ${orbColorB}10)`,
+              background: `${orbColorA}15`,
               borderColor: `${orbColorA}30`,
               color: orbColorA,
             }}
