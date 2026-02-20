@@ -1,82 +1,58 @@
 
 
-# Fix: Content Wizard Steps 3-5 Failing (Outline Empty, Generate Errors)
+# Fix Plan: Content Wizard Bugs (3 Issues)
 
-## Test Results Summary
+## Bug 1: Content Gaps and Headings show `[object Object]` (Step 2)
 
-| Step | Status | Notes |
-|------|--------|-------|
-| 1. Solution | PASS | Solutions load, selection works |
-| 2. Research | PASS | SERP data loads correctly with "AI trends" keyword, FAQs and Content Gaps populated |
-| 3. Outline | FAIL | Empty outline -- AI call returns 500 "Unauthorized", but no fallback is shown |
-| 4. Words (Meta) | NOT TESTED | Same AI call pattern, likely same failure |
-| 5. Generate | NOT TESTED | Same AI call pattern, likely same failure |
+**File**: `src/components/ai-chat/content-wizard/WizardStepResearch.tsx`
 
-## Root Cause
+**Lines 53 and 55** use `String(g)` and `String(h)` on SERP objects that have properties like `.topic`, `.description`, `.text`, `.title`. This produces `[object Object]`.
 
-Two separate issues:
+**Fix**: Extract the correct property from the object:
+- Line 53 (contentGaps): Change `String(g)` to `(g as any).topic || (g as any).description || (g as any).content || JSON.stringify(g)`
+- Line 55 (serpHeadings): Change `String(h)` to `(h as any).text || (h as any).title || (h as any).heading || JSON.stringify(h)`
 
-### Issue A: Silent failure when AI returns error (Code Bug)
+---
 
-In `WizardStepOutline.tsx` line 67-87, when `supabase.functions.invoke()` returns a 500 error:
-- `data` (aliased as `aiResult`) is `null`
-- No exception is thrown (Supabase SDK doesn't throw on HTTP errors)
-- `content` resolves to `''`, `jsonMatch` is `null`
-- Code falls through without setting any outline
-- The catch block never fires
+## Bug 2: No fallback content when AI generation fails (Step 5)
 
-The same pattern exists in `WizardStepGenerate.tsx`.
+**File**: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
 
-### Issue B: OpenAI API key "Unauthorized" 
+When AI returns an error or empty content (lines 93-96, 132-134, 135-137), the user is stuck -- no content is generated so the Save button never appears.
 
-The `ai-proxy` successfully retrieves the user's API key via `getApiKey()` but OpenAI rejects it. This is likely a user configuration issue (expired/invalid key), but our code should gracefully handle it.
+**Fix**:
+- In `generateContent()`, when provider is missing (line 93-96) OR AI returns empty (line 132-134) OR catch fires (line 135-137), generate fallback HTML from the outline:
+```
+const fallback = wizardState.outline.map(s =>
+  `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here.</p>`
+).join('\n\n');
+onContentGenerated(fallback);
+toast.warning('AI unavailable. A draft outline has been created for you to edit.');
+```
+- This ensures the Save button always appears.
 
-## Fix
+---
 
-### File 1: `src/components/ai-chat/content-wizard/WizardStepOutline.tsx`
+## Bug 3: "Unsupported Visualization Type" card in chat
 
-Add a fallback when the AI response is null/empty after the JSON parse attempt:
+**File**: `src/components/ai-chat/VisualDataRenderer.tsx`
 
-```typescript
-// After line 87 (after the jsonMatch if-block), add an else:
-} else {
-  // AI failed or returned empty - use fallback outline
-  onOutlineChange([
-    { id: uuidv4(), title: `Introduction to ${keyword}`, level: 1 },
-    { id: uuidv4(), title: `What is ${keyword}?`, level: 2 },
-    { id: uuidv4(), title: `Key Benefits and Use Cases`, level: 1 },
-    { id: uuidv4(), title: `How to Get Started`, level: 1 },
-    { id: uuidv4(), title: `Best Practices`, level: 2 },
-    { id: uuidv4(), title: `Conclusion`, level: 1 },
-  ]);
-}
+Line 136 lists valid types but does not include `content_wizard`. When the AI returns `type: "content_wizard"`, the renderer shows an error card even though the sidebar handles this type separately.
+
+**Fix**: Add `'content_wizard'` to the `validTypes` array on line 136, and add an early return for it before the validation block (since it's handled by the sidebar, no inline card is needed):
+```
+if (data.type === 'content_wizard') return null;
 ```
 
-Also check for the `error` return from `supabase.functions.invoke`:
-
-Change line 67 from:
-```typescript
-const { data: aiResult } = await supabase.functions.invoke(...)
-```
-To:
-```typescript
-const { data: aiResult, error: aiError } = await supabase.functions.invoke(...)
-if (aiError) throw new Error(aiError.message);
-```
-
-### File 2: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
-
-Apply the same error handling pattern:
-- Check for `error` from `supabase.functions.invoke` in `generateMeta()` and `generateContent()` 
-- Add fallback when AI response is null/empty
-- Show a toast notification when AI fails so the user knows what happened
+---
 
 ## Summary
 
-| File | Change |
-|------|--------|
-| `WizardStepOutline.tsx` | Add error checking from invoke + fallback outline when AI response is empty |
-| `WizardStepGenerate.tsx` | Same error handling + fallback meta/content generation |
+| # | Bug | File | Lines | Change |
+|---|-----|------|-------|--------|
+| 1 | `[object Object]` in Research | `WizardStepResearch.tsx` | 53, 55 | Extract `.topic`/`.text` from SERP objects |
+| 2 | No fallback content on AI fail | `WizardStepGenerate.tsx` | 93-96, 132-137 | Generate HTML draft from outline |
+| 3 | "Unsupported Visualization" card | `VisualDataRenderer.tsx` | 136 | Return `null` for `content_wizard` type |
 
-This ensures the wizard always progresses through all 5 steps even when the AI provider is misconfigured or temporarily unavailable, using sensible default content that the user can edit manually.
+3 files, ~15 lines changed total.
 
