@@ -1,18 +1,101 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText } from 'lucide-react';
+import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText, Send, Bold, Italic, Heading1, Heading2, Heading3, Link, List } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import DOMPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
+import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
+import { extractTitleFromContent } from '@/utils/content/extractTitle';
+import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
 import type { WizardState } from './ContentWizardSidebar';
+
+// --- GAP 1 FIX: Map wizard format IDs to valid DB enum values ---
+const FORMAT_TO_DB_ENUM: Record<string, string> = {
+  'blog': 'blog',
+  'social-linkedin': 'social',
+  'social-twitter': 'social',
+  'email': 'email',
+  'landing-page': 'landing_page',
+  'script': 'video_script',
+};
+
+// --- GAP 6 FIX: Title sanitization (same logic as Content Builder) ---
+const AI_PREAMBLE_PATTERNS = [
+  /^here\s+are/i,
+  /^sure[,!]/i,
+  /^i['']ll/i,
+  /^let\s+me/i,
+  /^certainly/i,
+  /^of\s+course/i,
+  /^great[,!]/i,
+  /^absolutely/i,
+  /^\d+\s+(unique|creative|compelling|engaging)/i,
+];
+
+function sanitizeTitle(
+  contentTitle: string | null | undefined,
+  metaTitle: string | null | undefined,
+  mainKeyword: string | null | undefined,
+  content: string | null | undefined
+): string {
+  if (contentTitle) {
+    const isAIPreamble = contentTitle.length > 100 ||
+      AI_PREAMBLE_PATTERNS.some(p => p.test(contentTitle));
+    if (!isAIPreamble) return contentTitle.substring(0, 120);
+  }
+  if (metaTitle && metaTitle.length <= 120) return metaTitle;
+  if (content) {
+    const h1Match = content.match(/^#\s+(.+)$/m);
+    if (h1Match && h1Match[1].length <= 120) return h1Match[1];
+  }
+  return mainKeyword || 'Untitled Content';
+}
+
+// --- GAP 2 FIX: Lightweight SEO score calculation ---
+function calculateSeoScore(
+  content: string,
+  keyword: string,
+  metaTitle: string,
+  metaDescription: string
+): number {
+  let score = 0;
+  const lowerContent = content.toLowerCase();
+  const lowerKeyword = keyword.toLowerCase();
+
+  // Keyword in title area (first heading or first line)
+  const firstLine = content.split('\n').find(l => l.trim())?.toLowerCase() || '';
+  if (firstLine.includes(lowerKeyword)) score += 20;
+
+  // Keyword in first 200 chars
+  if (lowerContent.substring(0, 200).includes(lowerKeyword)) score += 15;
+
+  // Meta title length 50-60 chars
+  if (metaTitle.length >= 50 && metaTitle.length <= 60) score += 15;
+  else if (metaTitle.length >= 30 && metaTitle.length <= 70) score += 8;
+
+  // Meta description length 120-160 chars
+  if (metaDescription.length >= 120 && metaDescription.length <= 160) score += 15;
+  else if (metaDescription.length >= 80 && metaDescription.length <= 200) score += 8;
+
+  // Has H2 headings
+  if (/^## /m.test(content)) score += 15;
+
+  // Word count > 800
+  const wordCount = content.split(/\s+/).filter(Boolean).length;
+  if (wordCount > 800) score += 10;
+
+  // Has lists or bold formatting
+  if (/^[-*+] /m.test(content) || /\*\*.+?\*\*/m.test(content)) score += 10;
+
+  return Math.min(score, 100);
+}
 
 interface WizardStepGenerateProps {
   wizardState: WizardState;
@@ -36,10 +119,12 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [savedStatus, setSavedStatus] = useState<'draft' | 'published'>('draft');
   const [editorTab, setEditorTab] = useState<string>('preview');
   const [editableContent, setEditableContent] = useState('');
   const [companyContext, setCompanyContext] = useState<any>(null);
   const [brandContext, setBrandContext] = useState<any>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load company & brand context on mount
   useEffect(() => {
@@ -221,14 +306,83 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     toast.success('Content copied to clipboard!');
   };
 
-  const saveAsDraft = async () => {
+  // --- GAP 9 FIX: Insert markdown formatting at cursor position ---
+  const insertFormatting = (prefix: string, suffix: string = '') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = editableContent.substring(start, end) || 'text';
+    const newContent =
+      editableContent.substring(0, start) +
+      prefix + selectedText + suffix +
+      editableContent.substring(end);
+
+    setEditableContent(newContent);
+    onContentGenerated(newContent);
+
+    // Restore cursor position after the inserted text
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + prefix.length + selectedText.length + suffix.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  // --- Core save logic (shared by draft & publish) ---
+  const saveContent = async (status: 'draft' | 'published') => {
     if (!user) { toast.error('Please log in first.'); return; }
     if (!wizardState.title.trim()) { toast.error('Please enter a title.'); return; }
     setIsSaving(true);
     try {
       const relatedKeywords = wizardState.researchSelections.relatedKeywords.slice(0, 5);
 
-      // Build comprehensive metadata matching Content Builder
+      // --- GAP 6: Sanitize title ---
+      const sanitizedTitle = sanitizeTitle(
+        wizardState.title.trim(),
+        wizardState.metaTitle,
+        wizardState.keyword,
+        contentToSave
+      );
+
+      // --- GAP 7: Auto-generate missing meta at save time ---
+      let finalMetaTitle = wizardState.metaTitle;
+      let finalMetaDescription = wizardState.metaDescription;
+
+      if (!finalMetaTitle) {
+        finalMetaTitle = extractTitleFromContent(contentToSave) || sanitizedTitle || wizardState.keyword;
+      }
+      if (!finalMetaDescription) {
+        const suggestions = generateMetaSuggestions(contentToSave, wizardState.keyword, sanitizedTitle);
+        finalMetaDescription = suggestions.metaDescription;
+      }
+
+      // --- GAP 1: Map content type to valid DB enum ---
+      const resolvedContentType = FORMAT_TO_DB_ENUM[wizardState.contentType] || 'blog';
+
+      // --- GAP 2: Calculate SEO score ---
+      const seoScore = calculateSeoScore(contentToSave, wizardState.keyword, finalMetaTitle, finalMetaDescription);
+
+      // --- GAP 5: Build document structure ---
+      const documentStructure = extractDocumentStructure(contentToSave);
+
+      // --- GAP 5: Build selection stats ---
+      const selectionStats = {
+        totalSelected:
+          wizardState.researchSelections.faqs.length +
+          wizardState.researchSelections.contentGaps.length +
+          wizardState.researchSelections.relatedKeywords.length +
+          wizardState.researchSelections.serpHeadings.length,
+        byType: {
+          questions: wizardState.researchSelections.faqs.length,
+          contentGaps: wizardState.researchSelections.contentGaps.length,
+          relatedSearches: wizardState.researchSelections.relatedKeywords.length,
+          headings: wizardState.researchSelections.serpHeadings.length,
+        },
+      };
+
+      // Build comprehensive metadata matching Content Builder shape
       const metadata: Record<string, any> = {
         generated_via: 'chat_wizard',
         keyword: wizardState.keyword,
@@ -240,8 +394,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         contentFormat: wizardState.contentType,
         contentIntent: wizardState.contentBrief.contentGoal || 'inform',
         outline: wizardState.outline,
-        metaTitle: wizardState.metaTitle,
-        metaDescription: wizardState.metaDescription,
+        metaTitle: finalMetaTitle,
+        metaDescription: finalMetaDescription,
         wordCount: wordCountNum,
         readingTime,
         word_count_mode: wizardState.wordCountMode,
@@ -258,7 +412,14 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         } : null,
         contentBrief: wizardState.contentBrief,
         researchSelections: wizardState.researchSelections,
+
+        // --- NEW: Metadata parity fields ---
+        seoScore,
+        documentStructure: documentStructure ? JSON.parse(JSON.stringify(documentStructure)) : null,
+        selectionStats,
+        lastOptimized: new Date().toISOString(),
         analysisTimestamp: new Date().toISOString(),
+        ...(status === 'published' && { publishedAt: new Date().toISOString() }),
       };
 
       // Add company/brand context to metadata if available
@@ -282,25 +443,22 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       const { data: existingContent } = await supabase
         .from('content_items')
         .select('id')
-        .eq('title', wizardState.title.trim())
+        .eq('title', sanitizedTitle)
         .eq('user_id', user.id)
         .eq('status', 'draft')
         .maybeSingle();
 
       let contentId: string;
 
-      // Use dynamic content type instead of hardcoding 'blog'
-      const resolvedContentType = (wizardState.contentType || 'blog') as any;
-
       const insertPayload = {
-        title: wizardState.title.trim(),
+        title: sanitizedTitle,
         content: contentToSave,
         user_id: user.id,
-        status: 'draft' as const,
-        content_type: resolvedContentType,
-        seo_score: 0,
-        meta_title: wizardState.metaTitle || null,
-        meta_description: wizardState.metaDescription || null,
+        status: status as any,
+        content_type: resolvedContentType as any,
+        seo_score: seoScore,
+        meta_title: finalMetaTitle || null,
+        meta_description: finalMetaDescription || null,
         solution_id: wizardState.selectedSolution?.id || null,
         keywords: { main: wizardState.keyword, secondary: relatedKeywords } as any,
         metadata: metadata as any,
@@ -311,6 +469,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           .from('content_items')
           .update({
             content: insertPayload.content,
+            status: insertPayload.status,
             content_type: insertPayload.content_type,
             meta_title: insertPayload.meta_title,
             meta_description: insertPayload.meta_description,
@@ -380,7 +539,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             primary_keyword: wizardState.keyword,
             used_faqs: [...new Set(usedFaqs)],
             used_headings: [...new Set(usedHeadings)],
-            used_titles: [wizardState.title.trim()],
+            used_titles: [sanitizedTitle],
           });
         }
       } catch (e) {
@@ -389,7 +548,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       setSaved(true);
       setSavedId(contentId);
-      toast.success(`Saved "${wizardState.title}" as draft!`);
+      setSavedStatus(status);
+      toast.success(`${status === 'published' ? 'Published' : 'Saved'} "${sanitizedTitle}" successfully!`);
     } catch (err) {
       console.error('Save failed:', err);
       toast.error('Failed to save. Please try again.');
@@ -412,8 +572,12 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           <CheckCircle2 className="w-7 h-7 text-primary" />
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground">Content Saved!</p>
-          <p className="text-xs text-muted-foreground mt-1">Your draft is in the Repository</p>
+          <p className="text-sm font-medium text-foreground">
+            Content {savedStatus === 'published' ? 'Published' : 'Saved'}!
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {savedStatus === 'published' ? 'Your content is live' : 'Your draft is in the Repository'}
+          </p>
         </div>
         <div className="flex flex-col gap-2 w-full max-w-[200px]">
           <Button size="sm" variant="outline" onClick={() => { navigate('/repository'); onClose(); }} className="text-xs gap-1 w-full">
@@ -516,7 +680,33 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                 </TabsContent>
 
                 <TabsContent value="write" className="mt-0">
+                  {/* --- GAP 5 FIX: Compact formatting toolbar --- */}
+                  <div className="flex items-center gap-0.5 mb-1.5 flex-wrap">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" title="Heading 1" onClick={() => insertFormatting('# ', '')}>
+                      <Heading1 className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" title="Heading 2" onClick={() => insertFormatting('## ', '')}>
+                      <Heading2 className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" title="Heading 3" onClick={() => insertFormatting('### ', '')}>
+                      <Heading3 className="w-3 h-3" />
+                    </Button>
+                    <div className="w-px h-4 bg-border mx-0.5" />
+                    <Button variant="ghost" size="icon" className="h-6 w-6" title="Bold" onClick={() => insertFormatting('**', '**')}>
+                      <Bold className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" title="Italic" onClick={() => insertFormatting('*', '*')}>
+                      <Italic className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" title="Link" onClick={() => insertFormatting('[', '](url)')}>
+                      <Link className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" title="List" onClick={() => insertFormatting('- ', '')}>
+                      <List className="w-3 h-3" />
+                    </Button>
+                  </div>
                   <Textarea
+                    ref={textareaRef}
                     value={editableContent}
                     onChange={(e) => {
                       setEditableContent(e.target.value);
@@ -530,16 +720,19 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             </div>
           </div>
 
-          {/* Save */}
+          {/* --- GAP 4 FIX: Save as Draft + Publish buttons --- */}
           <div className="flex gap-2">
-            <Button onClick={saveAsDraft} disabled={isSaving || !wizardState.title.trim()} className="flex-1 gap-2">
+            <Button onClick={() => saveContent('draft')} disabled={isSaving || !wizardState.title.trim()} className="flex-1 gap-2">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save as Draft
             </Button>
-            <Button variant="outline" onClick={generateContent} disabled={isGeneratingContent} className="gap-1 text-xs">
-              <Sparkles className="w-3 h-3" /> Regenerate
+            <Button variant="secondary" onClick={() => saveContent('published')} disabled={isSaving || !wizardState.title.trim()} className="gap-1 text-xs">
+              <Send className="w-3 h-3" /> Publish
             </Button>
           </div>
+          <Button variant="outline" onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-1 text-xs">
+            <Sparkles className="w-3 h-3" /> Regenerate
+          </Button>
         </>
       )}
     </div>
