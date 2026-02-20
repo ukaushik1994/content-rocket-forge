@@ -30,6 +30,7 @@ export const ProposalBrowserSidebar: React.FC<ProposalBrowserSidebarProps> = ({
 
   const handleSolutionSelect = useCallback(async (solutionIds: string[]) => {
     setIsGenerating(true);
+    setStep('proposals');
     try {
       const mappings = solutionIds.map(id => ({ solutionId: id, competitorId: null }));
       const result = await contentStrategyService.generateAIStrategy({
@@ -141,6 +142,7 @@ export const ProposalBrowserSidebar: React.FC<ProposalBrowserSidebarProps> = ({
                 <ProposalBrowseStep
                   proposals={proposals}
                   onUseProposal={handleUseProposal}
+                  isLoading={isGenerating}
                 />
               )}
             </div>
