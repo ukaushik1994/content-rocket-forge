@@ -18,6 +18,22 @@ import { getCorsHeaders } from "../shared/cors.ts";
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// Fast-path detection for content creation intents (should go to wizard, not stream full content)
+function isContentCreationIntent(query: string): boolean {
+  const q = query.toLowerCase().trim();
+  const patterns = [
+    /\b(create|write|draft|generate|make|build|craft|compose)\b.{0,20}\b(a\s+)?(blog|article|post|guide|tutorial|whitepaper|case\s*study|newsletter|email|content|piece|copy)\b/i,
+    /\b(blog|article|post|guide|tutorial|whitepaper|content)\b.{0,20}\b(about|on|for|regarding|covering)\b/i,
+    /\b(help\s+me\s+)?(create|write|start)\b.{0,10}\b(content|writing)\b/i,
+    /\b(new)\s+(blog|article|post|content)\b/i,
+  ];
+  return patterns.some(p => p.test(q));
+}
+
+function getWizardAcknowledgment(query: string): string {
+  return `I'll launch the **Content Wizard** to guide you through creating this. It'll help with research, outline, and full content generation — let me set that up! 🚀`;
+}
+
 // Fast-path detection for conversational responses
 function isSimpleGreeting(query: string): boolean {
   const q = query.toLowerCase().trim();
@@ -452,7 +468,7 @@ CAPABILITIES — You can execute these actions when the user asks:
 BEHAVIOR RULES:
 - When the user asks you to DO something (save, create, delete, send, etc.), acknowledge it confidently: "I'll save this as a draft for you" or "Creating the contact now..."
 - Do NOT tell the user to copy/paste or do things manually — you have tools to do it.
-- When generating content (blogs, articles), produce the full content in your response. The system will automatically save it.
+- When the user asks to CREATE or WRITE content (blog, article, guide), DO NOT write the full content. Instead, briefly acknowledge and say you'll use the Content Wizard to guide them through research, outline, and generation. Keep your response under 2 sentences.
 - Use markdown formatting for readability (headers, bold, lists).
 - Be conversational but action-oriented.
 - For read-only queries (show me, list, how many, analyze), provide data insights directly.
@@ -527,6 +543,42 @@ serve(async (req) => {
 
     // Get the latest user message
     const userQuery = messages?.[messages.length - 1]?.content || '';
+
+    // Fast path for content creation intents (wizard handles these)
+    if (isContentCreationIntent(userQuery)) {
+      console.log('⚡ Fast path: Content creation intent detected — deferring to wizard');
+      const wizardResponse = getWizardAcknowledgment(userQuery);
+      
+      const stream = new TransformStream();
+      const writer = stream.writable.getWriter();
+      const encoder = new TextEncoder();
+
+      (async () => {
+        try {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'start' })}\n\n`));
+          const words = wizardResponse.split(' ');
+          for (const word of words) {
+            const sseData = `data: ${JSON.stringify({ type: 'token', content: word + ' ' })}\n\n`;
+            await writer.write(encoder.encode(sseData));
+            await new Promise(r => setTimeout(r, 25));
+          }
+          const completeData = `data: ${JSON.stringify({ type: 'complete', content: wizardResponse })}\n\n`;
+          await writer.write(encoder.encode(completeData));
+          await writer.write(encoder.encode('data: [DONE]\n\n'));
+        } finally {
+          await writer.close();
+        }
+      })();
+
+      return new Response(stream.readable, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
 
     // Fast path for simple greetings
     if (isSimpleGreeting(userQuery)) {
