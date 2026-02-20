@@ -1,117 +1,115 @@
 
-# Content Wizard: Complete End-to-End Fix
 
-## Problems Identified
+# Content Wizard: Full Content Builder Alignment
 
-### 1. Merge Step 0 (Topic) and Step 1 (Solution) into a Single Step
-Currently the user goes through two separate steps for topic and solution. These should be one step where the user picks a solution AND enters/confirms the keyword.
+## Context
 
-### 2. No Title Field -- Save Fails
-The `content_items` table requires `title` (non-nullable). The wizard auto-generates a title from meta or content H1, but there is no explicit title input for the user. The Content Builder has a `contentTitle` field and a `SaveContentDialog` where the user sets the title before saving.
+After thorough analysis of both the Content Builder and Content Wizard codebases, and your answers:
+- Keep both interfaces for now (wizard + builder page)
+- Writing config (tone, audience, style) should auto-fill from solution data but remain editable
+- Derive tone/style from solution's `target_audience` field (no new DB columns needed)
 
-### 3. Insert Uses Non-Existent Columns
-The current `saveAsDraft()` passes `main_keyword` and `secondary_keywords` to the insert, but these columns do NOT exist on the `content_items` table. This causes the save to fail silently or throw. The Content Builder stores these in `metadata` JSON, not as top-level columns.
+## Current State Assessment
 
-### 4. Writing Config Should Come From Solution Data
-The Content Builder pulls writing tone/audience context from the solution's `target_audience`, `pain_points`, `features`, etc. The Wizard currently ignores this offering intelligence. When a solution is selected, the writing style and expertise level should be inferred from the solution data (e.g., if the target audience is "enterprise CTOs", set expertise to "expert" and style to "professional").
+The Content Wizard (`WizardStepGenerate.tsx`) already uses `generateAdvancedContent`, has proper keyword linking, reuse history, and DOMPurify sanitization. The save payload correctly avoids non-existent columns. The step merge (Topic + Solution) is done. Title field exists.
 
-### 5. `content_type` Enum Mismatch
-The wizard passes `wizardState.contentType` which defaults to `'blog'` but the valid enum values are: `article`, `blog`, `glossary`, `social_post`, `email`, `landing_page`. The `contentArticleType` field (`how-to`, `listicle`, etc.) is NOT the same as `content_type`. The wizard needs to distinguish between them.
+**The implementation from previous rounds is structurally complete.** The remaining issues are:
+
+## Remaining Issues to Fix
+
+### Issue 1: Solution Intelligence Not Fully Derived
+The `handleSolutionSelect` in `ContentWizardSidebar.tsx` already infers writing style and expertise from `targetAudience`, but it's basic. The Content Builder's `ContentWritingStep` uses `selectedSolution` data (features, pain points, use cases, target audience, case studies, pricing, market data, technical specs) extensively in the generation prompt. The Wizard already passes `selectedSolution` to `generateAdvancedContent`, which handles this -- so this is actually working.
+
+**However**, the solution data fetched in `WizardStepSolution.tsx` is incomplete. It only maps: `id, name, features, useCases, painPoints, targetAudience, description, category, logoUrl, externalUrl`. It's missing: `benefits, market_data, competitors, technical_specs, pricing_model, case_studies, unique_value_propositions, key_differentiators, positioning_statement, tags, short_description, metadata`. These are all used by `buildAdvancedContentPrompt()` in the generation service.
+
+**Fix**: Expand the solution mapping in `WizardStepSolution.tsx` to include all fields that `generateAdvancedContent` uses.
+
+### Issue 2: Config Step Shows No Indication of Solution-Derived Defaults
+When the user selects a solution and the writing style/expertise auto-fills, Step 3 (Config) shows the selectors but doesn't tell the user WHY those values were pre-selected. Need a small info badge like "Auto-set from GL Connect's audience" so the user knows they can change it.
+
+**Fix**: Add an info line in `WizardStepWordCount.tsx` showing which solution influenced the defaults.
+
+### Issue 3: Content Builder Saves `content_type` and `solution_id` Correctly
+The Wizard currently hardcodes `content_type: 'blog'`. The Content Builder uses `state.contentType` which can be `article`, `blog`, etc. The Wizard should pass the actual content type.
+
+**Fix**: Use `wizardState.contentType` (which defaults to `'blog'` from props) in the save payload -- this is already correct. No change needed.
+
+### Issue 4: Missing `keywords` JSONB Column Population
+The Content Builder's `useSaveContent` does NOT populate the `keywords` column directly -- it stores keyword data in `metadata` and links via `content_keywords` table. The Wizard currently sets `keywords: { main, secondary }` in the insert. This is actually fine since the column exists and accepts JSONB. No conflict.
+
+### Issue 5: The `solution_id` Foreign Key Constraint
+The Wizard passes `wizardState.selectedSolution?.id` as `solution_id`. This is a valid UUID from the `solutions` table, so no FK violation. This is correct.
 
 ---
 
-## Plan
+## Plan: 2 Files to Modify
 
-### File 1: `ContentWizardSidebar.tsx` -- Merge Steps 0+1, Add Title Field
+### File 1: `src/components/ai-chat/content-wizard/WizardStepSolution.tsx`
 
-**Changes:**
-- Reduce from 6 steps to 5: `Topic & Solution` (0), `Research` (1), `Outline` (2), `Config` (3), `Generate & Save` (4)
-- Add `title` field to `WizardState`
-- Move keyword input INTO the Solution step (show keyword input at top, solutions below)
-- Update `canProceed` logic: step 0 requires keyword length >= 2 AND a solution selected
-- Update all step references (goNext max, step indices)
+Expand the solution data mapping to include all fields used by the content generation service:
+- `benefits` (from `s.benefits`)
+- `marketData` (from `s.market_data`)
+- `technicalSpecs` (from `s.technical_specs`)
+- `caseStudies` (from `s.case_studies`)
+- `pricing` (from `s.pricing_model`)
+- `uniqueValuePropositions` (from `s.unique_value_propositions`)
+- `keyDifferentiators` (from `s.key_differentiators`)
+- `positioningStatement` (from `s.positioning_statement`)
+- `tags` (from `s.tags`)
+- `shortDescription` (from `s.short_description`)
+- `competitors` (from `s.competitors`)
 
-### File 2: `WizardStepSolution.tsx` -- Integrate Keyword Input
+This ensures `generateAdvancedContent` gets the full solution context, matching what the Content Builder provides.
 
-**Changes:**
-- Accept `keyword` and `onKeywordChange` props
-- Render keyword input at the top of the solution step
-- When a solution is selected, auto-suggest writing style and expertise from solution data (e.g., if target_audience contains "enterprise" or "professional", default to professional style)
-- Emit a callback with offering intelligence metadata
+### File 2: `src/components/ai-chat/content-wizard/WizardStepWordCount.tsx`
 
-### File 3: `WizardStepGenerate.tsx` -- Fix Save Logic + Add Title Input
+Add a small info badge at the top of the Config step showing: "Defaults set from [Solution Name]'s audience profile" when a solution has influenced the writing style/expertise selection. This makes it clear the values are auto-derived but editable.
 
-**Changes:**
-- Add an editable title input field (pre-filled from metaTitle or auto-extracted from content H1)
-- Remove `main_keyword` and `secondary_keywords` from the insert payload (these columns don't exist)
-- Store keywords in `metadata` JSON and in the `keywords` JSONB column
-- Set `content_type` to a valid enum value (default `'blog'`)
-- Remove `solution_id` if it's not a valid UUID from the solutions table (or keep it if valid)
-- Ensure the save actually works by matching the Content Builder's exact insert shape:
-  ```
-  { title, content, user_id, status, seo_score, meta_title, meta_description, 
-    metadata, content_type, solution_id, keywords }
-  ```
-- Keep keyword linking (keywords table + content_keywords table) as-is since that works
-- Keep reuse history as-is
+Accept `selectedSolutionName` as a new prop.
 
-### File 4: `WizardStepWordCount.tsx` -- Minor Label Updates
+### File 3: `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx`
 
-**Changes:**
-- Relabel step as "Writing Config" to match merged flow
-- No structural changes needed
+Pass `selectedSolutionName` to `WizardStepWordCount`.
 
 ---
 
 ## Technical Details
 
 ```text
+WizardStepSolution.tsx (line ~35-47):
+  Current mapping only includes 8 fields.
+  Add ~11 more fields from the solutions table columns:
+    benefits, marketData, technicalSpecs, caseStudies,
+    pricing, uniqueValuePropositions, keyDifferentiators,
+    positioningStatement, tags, shortDescription, competitors
+  
+  These map directly to what buildAdvancedContentPrompt() checks:
+    - config.selectedSolution.marketData
+    - config.selectedSolution.technicalSpecs
+    - config.selectedSolution.caseStudies
+    - config.selectedSolution.pricing
+    - config.selectedSolution.uniqueValuePropositions
+    - config.selectedSolution.keyDifferentiators
+
+WizardStepWordCount.tsx:
+  Add prop: selectedSolutionName?: string
+  Show info badge: "Defaults from {name}'s audience"
+
 ContentWizardSidebar.tsx:
-  - STEPS: [
-      { id: 0, label: 'Topic & Solution' },
-      { id: 1, label: 'Research' },
-      { id: 2, label: 'Outline' },
-      { id: 3, label: 'Config' },
-      { id: 4, label: 'Generate' },
-    ]
-  - WizardState: add `title: string`
-  - canProceed case 0: keyword.length >= 2 && selectedSolution
-  - All subsequent cases shift -1
-
-WizardStepSolution.tsx:
-  - Add keyword input at top
-  - Accept keyword/onKeywordChange props
-  - Auto-set writing defaults from solution.target_audience
-
-WizardStepGenerate.tsx:
-  - Add title Input field before meta fields
-  - Fix insert: remove main_keyword, secondary_keywords columns
-  - Use keywords JSONB column for keyword storage
-  - Ensure content_type is valid enum ('blog' default)
-  - Title is required before save (disable button if empty)
-
-Save payload (matching Content Builder):
-  {
-    title: wizardState.title,
-    content: wizardState.generatedContent,
-    user_id: user.id,
-    status: 'draft',
-    seo_score: 0,
-    meta_title: wizardState.metaTitle || null,
-    meta_description: wizardState.metaDescription || null,
-    content_type: 'blog',
-    solution_id: wizardState.selectedSolution?.id || null,
-    keywords: { main: wizardState.keyword, secondary: relatedKeywords },
-    metadata: { ...comprehensive metadata... }
-  }
+  Pass selectedSolutionName={wizardState.selectedSolution?.name}
+  to WizardStepWordCount
 ```
 
-## Result
+## What's Already Working (No Changes Needed)
 
-| Issue | Fix |
-|-------|-----|
-| Steps 0+1 separate | Merged into single "Topic & Solution" step |
-| No title input | Editable title field in Generate step |
-| Save fails (bad columns) | Removed non-existent columns from insert |
-| No offering intelligence | Solution data auto-sets writing style/expertise |
-| 6 steps too many | Reduced to 5 clean steps |
+- Generation uses `generateAdvancedContent` with full SERP integration
+- Save logic correctly inserts to `content_items` without non-existent columns
+- Keyword linking via `keywords` + `content_keywords` tables
+- Reuse history recording
+- DOMPurify sanitization on preview
+- "Continue Editing" button with sessionStorage handoff
+- Title field (mandatory before save)
+- Merged Topic + Solution step
+- Auto-inference of writing style/expertise from solution audience
+- Deduplication by title
+
