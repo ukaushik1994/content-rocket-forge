@@ -1,9 +1,13 @@
 import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, PenLine, BookOpen, Briefcase, GraduationCap, MessageCircle, Users, Lightbulb, BarChart3, ListChecks, FileText, Layers } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Sparkles, PenLine, BookOpen, Briefcase, GraduationCap, MessageCircle, Users, Lightbulb, BarChart3, ListChecks, FileText, Layers, Target, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
+import type { ContentBrief } from './ContentWizardSidebar';
 
 interface WizardStepWordCountProps {
   outline: OutlineSection[];
@@ -24,6 +28,10 @@ interface WizardStepWordCountProps {
   onExpertiseLevelChange: (level: 'beginner' | 'intermediate' | 'expert') => void;
   onContentArticleTypeChange: (type: 'general' | 'how-to' | 'listicle' | 'comprehensive') => void;
   selectedSolutionName?: string;
+  contentBrief: ContentBrief;
+  onContentBriefChange: (brief: ContentBrief) => void;
+  additionalInstructions: string;
+  onAdditionalInstructionsChange: (inst: string) => void;
 }
 
 const WRITING_STYLES = [
@@ -60,6 +68,10 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
   onExpertiseLevelChange,
   onContentArticleTypeChange,
   selectedSolutionName,
+  contentBrief,
+  onContentBriefChange,
+  additionalInstructions,
+  onAdditionalInstructionsChange,
 }) => {
   const aiEstimate = React.useMemo(() => {
     const sectionCount = outline.length;
@@ -75,6 +87,10 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
     }
   }, [wordCountMode, aiEstimate]);
 
+  const updateBrief = (field: keyof ContentBrief, value: string) => {
+    onContentBriefChange({ ...contentBrief, [field]: value });
+  };
+
   return (
     <div className="space-y-5">
       {selectedSolutionName && (
@@ -85,6 +101,84 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
           </p>
         </div>
       )}
+
+      {/* Content Brief Section */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+            <ListChecks className="w-3.5 h-3.5 text-primary" /> Content Brief
+          </h3>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Help tailor the content to your needs</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-1">
+            <Label className="text-[10px] flex items-center gap-1">
+              <Users className="h-2.5 w-2.5" /> Audience
+            </Label>
+            <Select value={contentBrief.targetAudience} onValueChange={(v) => updateBrief('targetAudience', v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="professionals">Professionals</SelectItem>
+                <SelectItem value="beginners">Beginners</SelectItem>
+                <SelectItem value="enterprise">Enterprise</SelectItem>
+                <SelectItem value="developers">Developers</SelectItem>
+                <SelectItem value="marketers">Marketers</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-[10px] flex items-center gap-1">
+              <Target className="h-2.5 w-2.5" /> Goal
+            </Label>
+            <Select value={contentBrief.contentGoal} onValueChange={(v) => updateBrief('contentGoal', v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="educate">Educate</SelectItem>
+                <SelectItem value="convert">Convert</SelectItem>
+                <SelectItem value="engage">Engage</SelectItem>
+                <SelectItem value="rank">Rank Higher</SelectItem>
+                <SelectItem value="authority">Build Authority</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-[10px] flex items-center gap-1">
+              <Palette className="h-2.5 w-2.5" /> Tone
+            </Label>
+            <Select value={contentBrief.tone} onValueChange={(v) => updateBrief('tone', v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="professional">Professional</SelectItem>
+                <SelectItem value="casual">Casual</SelectItem>
+                <SelectItem value="technical">Technical</SelectItem>
+                <SelectItem value="friendly">Friendly</SelectItem>
+                <SelectItem value="authoritative">Authoritative</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-[10px]">Specific points to include (optional)</Label>
+          <Textarea
+            value={contentBrief.specificPoints}
+            onChange={(e) => updateBrief('specificPoints', e.target.value)}
+            placeholder="Any specific topics, pain points, or angles..."
+            className="text-xs min-h-[50px] resize-none"
+            rows={2}
+          />
+        </div>
+      </div>
 
       {/* Writing Style */}
       <div>
@@ -135,7 +229,7 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Content Type */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Content Type</h3>
+        <h3 className="text-sm font-medium text-foreground">Article Type</h3>
         <div className="grid grid-cols-2 gap-2 mt-2">
           {CONTENT_TYPES.map(t => (
             <button
@@ -207,6 +301,18 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
             <p className="text-[10px] text-muted-foreground mt-1">AI recommended: ~{aiEstimate.toLocaleString()} words</p>
           </div>
         )}
+      </div>
+
+      {/* Additional Instructions */}
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium text-foreground">Additional Instructions (optional)</h3>
+        <Textarea
+          value={additionalInstructions}
+          onChange={(e) => onAdditionalInstructionsChange(e.target.value)}
+          placeholder="Any special instructions for the AI writer..."
+          className="text-xs min-h-[50px] resize-none"
+          rows={2}
+        />
       </div>
     </div>
   );
