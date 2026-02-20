@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ContextualAction } from '@/services/aiService';
 import { useNavigate } from 'react-router-dom';
-import { detectActionIntent } from '@/utils/actionIntentDetector';
+import { detectActionIntent, detectAIResponseIntent } from '@/utils/actionIntentDetector';
 
 export interface AIConversation {
   id: string;
@@ -499,7 +499,7 @@ export const useEnhancedAIChatDB = () => {
           // ========== PHASE 2: Post-stream tool execution ==========
           let actionIntent = detectActionIntent(content);
           if (!actionIntent.detected) {
-            actionIntent = detectActionIntent(fullContent);
+            actionIntent = detectAIResponseIntent(fullContent);
           }
           if (actionIntent.detected && actionIntent.confidence !== 'low') {
             console.log('🔧 Action intent detected:', actionIntent.toolName, '- calling enhanced-ai-chat...');

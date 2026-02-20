@@ -19,6 +19,7 @@ interface PatternRule {
   toolName: string;
   confidence: 'high' | 'medium';
   requiresConfirmation?: boolean;
+  aiResponseOnly?: boolean;
   extractParams?: (message: string, match: RegExpMatchArray) => Record<string, any> | null;
 }
 
@@ -395,14 +396,13 @@ const ACTION_RULES: PatternRule[] = [
     ],
     toolName: 'launch_content_wizard',
     confidence: 'high',
+    aiResponseOnly: true,
     extractParams: (msg) => {
-      // Extract keyword after "about/for/on" or from quotes
       const topicMatch = msg.match(/(?:about|for|on|topic[:\s]+)\s*["']?([^"'\n,.!?]{3,60})["']?/i);
       if (topicMatch) return { keyword: topicMatch[1].trim() };
-      // Try quoted text
       const quoted = msg.match(/["']([^"']{3,60})["']/);
       if (quoted) return { keyword: quoted[1].trim() };
-      return {};
+      return null;
     }
   },
 
@@ -487,11 +487,45 @@ export function detectActionIntent(message: string): ActionIntent {
   }
 
   for (const rule of ACTION_RULES) {
+    // Skip AI-response-only patterns when checking user messages
+    if (rule.aiResponseOnly) continue;
     for (const pattern of rule.patterns) {
       const match = trimmed.match(pattern);
       if (match) {
         const params = rule.extractParams ? rule.extractParams(trimmed, match) : {};
         // If extractParams returns null, the intent needs more info — skip it
+        if (params === null) continue;
+        const requiresConfirmation = DESTRUCTIVE_TOOLS.has(rule.toolName);
+        return {
+          detected: true,
+          toolName: rule.toolName,
+          confidence: rule.confidence,
+          params,
+          requiresConfirmation,
+        };
+      }
+    }
+  }
+
+  return { detected: false, toolName: '', confidence: 'low', params: {} };
+}
+
+/**
+ * Detects intent from AI response text only.
+ * Only checks rules flagged with aiResponseOnly: true.
+ */
+export function detectAIResponseIntent(aiResponse: string): ActionIntent {
+  const trimmed = aiResponse.trim();
+  if (trimmed.length < 10) {
+    return { detected: false, toolName: '', confidence: 'low', params: {} };
+  }
+
+  for (const rule of ACTION_RULES) {
+    if (!rule.aiResponseOnly) continue;
+    for (const pattern of rule.patterns) {
+      const match = trimmed.match(pattern);
+      if (match) {
+        const params = rule.extractParams ? rule.extractParams(trimmed, match) : {};
         if (params === null) continue;
         const requiresConfirmation = DESTRUCTIVE_TOOLS.has(rule.toolName);
         return {
