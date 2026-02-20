@@ -396,7 +396,9 @@ ${Array.isArray(sol.keyDifferentiators) && sol.keyDifferentiators.length > 0 ? `
     if (Array.isArray(sol.competitors) && sol.competitors.length > 0) {
       prompt += `\n**Competitive Landscape:**\n`;
       sol.competitors.forEach((c: any) => {
-        prompt += `- ${c.name}: Strengths: ${(c.strengths || []).join(', ')}; Weaknesses: ${(c.weaknesses || []).join(', ')}\n`;
+        const strengths = Array.isArray(c.strengths) ? c.strengths.join(', ') : String(c.strengths || 'N/A');
+        const weaknesses = Array.isArray(c.weaknesses) ? c.weaknesses.join(', ') : String(c.weaknesses || 'N/A');
+        prompt += `- ${c.name || 'Unknown'}: Strengths: ${strengths}; Weaknesses: ${weaknesses}\n`;
       });
     }
 
@@ -404,18 +406,26 @@ ${Array.isArray(sol.keyDifferentiators) && sol.keyDifferentiators.length > 0 ? `
     if (Array.isArray(sol.caseStudies) && sol.caseStudies.length > 0) {
       prompt += `\n**Case Studies:**\n`;
       sol.caseStudies.forEach((cs: any) => {
-        prompt += `- ${cs.company} (${cs.industry}): Challenge: ${cs.challenge}. Solution: ${cs.solution}. Results: ${(cs.results || []).join(', ')}`;
-        if (cs.testimonial) prompt += ` | Testimonial: "${cs.testimonial.quote}" — ${cs.testimonial.author}, ${cs.testimonial.position}`;
+        const resultsStr = Array.isArray(cs.results) 
+          ? cs.results.join(', ') 
+          : typeof cs.results === 'object' && cs.results 
+            ? Object.entries(cs.results).map(([k, v]) => `${k}: ${v}`).join(', ')
+            : String(cs.results || 'N/A');
+        prompt += `- ${cs.company || 'Client'} (${cs.industry || 'Industry'}): Challenge: ${cs.challenge || 'N/A'}. Solution: ${cs.solution || 'N/A'}. Results: ${resultsStr}`;
+        if (cs.testimonial && typeof cs.testimonial === 'object') prompt += ` | Testimonial: "${cs.testimonial.quote || ''}" — ${cs.testimonial.author || ''}, ${cs.testimonial.position || ''}`;
         prompt += `\n`;
       });
     }
 
     // Pricing
-    if (sol.pricing) {
+    if (sol.pricing && typeof sol.pricing === 'object') {
       prompt += `\n**Pricing:** Model: ${sol.pricing.model || 'N/A'}`;
       if (sol.pricing.startingPrice) prompt += `, Starting at: ${sol.pricing.startingPrice}`;
       if (Array.isArray(sol.pricing.tiers) && sol.pricing.tiers.length > 0) {
-        prompt += `\nTiers: ${sol.pricing.tiers.map((t: any) => `${t.name} (${t.price}): ${(t.features || []).join(', ')}`).join(' | ')}`;
+        prompt += `\nTiers: ${sol.pricing.tiers.map((t: any) => {
+          const tierFeatures = Array.isArray(t.features) ? t.features.join(', ') : String(t.features || 'N/A');
+          return `${t.name || 'Tier'} (${t.price || 'N/A'}): ${tierFeatures}`;
+        }).join(' | ')}`;
       }
       prompt += `\n`;
     }

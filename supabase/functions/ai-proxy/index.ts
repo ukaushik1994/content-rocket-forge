@@ -220,15 +220,20 @@ async function chatOpenAI(apiKey: string, params: any) {
     delete requestBody.temperature;
   } else {
     // Legacy models use max_tokens and support temperature
-    if (params.maxTokens || params.max_tokens) {
-      requestBody.max_tokens = params.maxTokens || params.max_tokens || 1000;
-    }
     requestBody.temperature = params.temperature || 0.7;
   }
+
+  // Store the desired max_tokens before cleanup
+  const legacyMaxTokens = params.maxTokens || params.max_tokens;
 
   // Clean up unused parameters
   delete requestBody.maxTokens;
   delete requestBody.max_tokens;
+
+  // Set max_tokens AFTER cleanup for legacy models
+  if (!isNewerModel && legacyMaxTokens) {
+    requestBody.max_tokens = legacyMaxTokens;
+  }
 
   const maxRetries = 3;
   
