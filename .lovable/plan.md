@@ -1,118 +1,99 @@
 
-# Fix: Content Wizard Not Saving SERP Metrics, Competitor Analysis, and Ranking Data to Repository
+# AI Chat: "Start from Scratch" vs "AI Proposals" Choice Flow
 
-## What's Missing
+## Overview
 
-When content is created via the **Content Wizard** (chat sidebar), it saves the article text and basic metadata but **skips all the rich SERP research data** that the Content Builder saves. This means Repository items created through the Wizard show blank sections for:
+When a user asks to create a blog/article in the AI Chat, instead of immediately launching the Content Wizard, we introduce a **choice step** rendered as two buttons below the AI's response. The user picks one of two paths:
 
-1. **SERP Metrics** (search volume, keyword difficulty, competition score, search intent)
-2. **Competitor Analysis** (who ranks, their word counts, content gaps)
-3. **Ranking Opportunities** (featured snippet chances, PAA targeting)
-4. **Solution Integration Metrics** (how well the product is woven into content)
-5. **SEO Improvement Suggestions** (actionable optimization recommendations)
+1. **Start from Scratch** -- Opens the existing Content Wizard sidebar (current behavior)
+2. **AI Proposals** -- Opens a new sidebar flow: select a solution, generate AI proposals, then pick one to start writing
 
-### Evidence from Database
+## How It Works
 
-Content Builder items have all these fields populated:
-- `has_serp_metrics: true`
-- `has_comprehensive_serp: true`
-- `has_selection_stats: true`
-
-Content Wizard items are missing them:
-- `has_serp_metrics: false`
-- `has_comprehensive_serp: false`
-
-## The Fix
-
-### File: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
-
-**In the `saveContent` function (around line 386-423)**, add the missing SERP and analysis fields to the metadata object. The Wizard already has `wizardState.researchSelections` with FAQs, content gaps, related keywords, and SERP headings -- we need to restructure this data into the same `comprehensiveSerpData` shape that the Repository's detail views expect.
-
-**Add after line 421 (after `analysisTimestamp`):**
-
-```typescript
-// Build comprehensiveSerpData from wizard research state
-comprehensiveSerpData: wizardState.serpData ? {
-  serpMetrics: {
-    searchVolume: wizardState.serpData.searchVolume || null,
-    keywordDifficulty: wizardState.serpData.keywordDifficulty || null,
-    competitionScore: wizardState.serpData.competition || null,
-    intent: wizardState.serpData.intent || 'informational',
-    totalResults: wizardState.serpData.totalResults || 0,
-    competitorAnalyzed: wizardState.serpData.topResults?.length || 0,
-  },
-  competitorAnalysis: {
-    topCompetitors: (wizardState.serpData.topResults || []).map(r => ({
-      title: r.title,
-      url: r.link,
-      position: r.position,
-      snippet: r.snippet,
-    })),
-  },
-  rankingOpportunities: {
-    featuredSnippet: wizardState.serpData.contentGaps?.some(g => 
-      g.opportunity?.toLowerCase().includes('featured')) || false,
-    paaTargets: wizardState.serpData.questions?.length || 0,
-    contentGaps: wizardState.serpData.contentGaps?.length || 0,
-  },
-  selectionStats: selectionStats, // already built above
-  analysisTimestamp: new Date().toISOString(),
-} : null,
-
-// Flatten for backward compatibility (Repository detail views check both paths)
-serpMetrics: wizardState.serpData ? {
-  searchVolume: wizardState.serpData.searchVolume || null,
-  keywordDifficulty: wizardState.serpData.keywordDifficulty || null,
-  competitionScore: wizardState.serpData.competition || null,
-  intent: wizardState.serpData.intent || 'informational',
-  totalResults: wizardState.serpData.totalResults || 0,
-} : null,
-rankingOpportunities: wizardState.serpData ? {
-  featuredSnippet: false,
-  paaTargets: wizardState.researchSelections.faqs.length,
-  contentGaps: wizardState.researchSelections.contentGaps.length,
-} : null,
-competitorAnalysis: wizardState.serpData?.topResults ? {
-  topCompetitors: wizardState.serpData.topResults.slice(0, 5).map(r => ({
-    title: r.title, url: r.link, position: r.position,
-  })),
-} : null,
-
-// Solution integration metrics (compute at save time)
-solutionIntegrationMetrics: wizardState.selectedSolution ? {
-  solutionMentions: (contentToSave.match(
-    new RegExp(wizardState.selectedSolution.name, 'gi')
-  ) || []).length,
-  featuresCovered: wizardState.selectedSolution.features?.filter(f =>
-    contentToSave.toLowerCase().includes(f.toLowerCase())
-  ).length || 0,
-  totalFeatures: wizardState.selectedSolution.features?.length || 0,
-  integrationScore: null, // Calculated on-demand in Repository
-} : null,
+```text
+User: "I want to create a blog about X"
+         |
+    AI responds with short acknowledgment
+    + two choice buttons rendered below the message
+         |
+   +-----+-----+
+   |             |
+ [Start from   [AI Proposals]
+  Scratch]       |
+   |             |
+   v             v
+ Content        Proposal
+ Wizard         Sidebar
+ (existing)     (new)
+                  |
+            1. Select Solution
+            2. Generate Proposals
+            3. Browse & Pick one
+            4. "Use This" --> launches
+               Content Wizard pre-filled
+               with proposal keyword + solution
 ```
 
-### Prerequisite: Verify `wizardState` has SERP data
+## Implementation Details
 
-We also need to check whether the Wizard's state type includes `serpData`. If the Wizard doesn't carry raw SERP data from the research step, we need to pass it through.
+### 1. New Component: `ContentCreationChoiceCard` (inline in chat)
 
-**File: `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx`** (or wherever `WizardState` is defined)
+A small component rendered inside the message bubble when the AI detects a content creation intent. Shows two styled buttons:
+- "Start from Scratch" (Pen icon) -- triggers `launch_content_wizard` with the extracted keyword
+- "Use AI Proposals" (Sparkles icon) -- triggers a new `launch_proposal_browser` visualization type
 
-Add `serpData` to the WizardState interface if missing, and ensure the research step populates it when SERP analysis runs.
+### 2. New Sidebar Component: `ProposalBrowserSidebar`
 
-## What This Achieves
+A sidebar panel (same position/animation as ContentWizardSidebar) with 3 steps:
 
-After this fix, every content item saved from the Wizard will have the same rich metadata as Content Builder items:
-- Repository detail modal will show SERP metrics (search volume, difficulty, competition)
-- Competitor analysis section will populate
-- Ranking opportunities will display
-- Solution integration metrics will track how well the product is mentioned
-- SEO improvement suggestions will be available
+- **Step 1: Select Solution** -- Reuses the existing solution selection UI (avatar grid from `SolutionSelectionModal`), adapted for sidebar layout
+- **Step 2: Generate & Browse Proposals** -- Calls `contentStrategyService.generateAIStrategy()` with the selected solution, then renders proposal cards (reusing `EnhancedAIProposalCard` styling). Each card has a "Use This" button
+- **Step 3: Transition** -- When user clicks "Use This" on a proposal, the sidebar switches to the Content Wizard pre-filled with the proposal's `primary_keyword`, `solution_id`, and `content_type`
 
-All existing Repository display components (`MetadataTabContent`, `SerpMetricsDisplay`, `SelectedItemsDisplay`, `MetadataAnalytics`) will work without changes because they already read from `metadata.serpMetrics`, `metadata.comprehensiveSerpData`, etc.
+### 3. Modified Intent Detection Flow
 
-## Technical Details
+**File: `src/utils/actionIntentDetector.ts`**
+- The existing `launch_content_wizard` intent remains but instead of directly launching the wizard, Phase 2 execution will now return a `content_creation_choice` visualization type that renders the choice card
 
-- **1 primary file changed**: `WizardStepGenerate.tsx` (save function metadata block)
-- **1 possible type update**: `WizardState` interface to include `serpData`
-- **0 Repository/display changes needed** -- existing components already handle both data paths
-- Uses the same `JSON.parse(JSON.stringify(...))` serialization pattern as the Content Builder to avoid Supabase JSONB issues
+**File: `src/hooks/useEnhancedAIChatDB.ts`**
+- When Phase 2 detects `launch_content_wizard`, the tool result from `enhanced-ai-chat` will include a `visualData` of type `content_creation_choice` with the extracted keyword. This shows the choice card instead of immediately opening the wizard
+
+### 4. Updated `VisualizationSidebar.tsx`
+
+Add handling for `proposal_browser` visualization type alongside the existing `content_wizard` type:
+
+```text
+if (visualData?.type === 'content_wizard') --> ContentWizardSidebar
+if (visualData?.type === 'proposal_browser') --> ProposalBrowserSidebar
+```
+
+### 5. Choice Card in Message Bubble
+
+**File: `src/components/ai-chat/EnhancedMessageBubble.tsx`**
+- Detect `content_creation_choice` in the message's `visualData` array
+- Render the `ContentCreationChoiceCard` inline below the message text
+- On "Start from Scratch" click: set visualData to `content_wizard` type (opens existing sidebar)
+- On "AI Proposals" click: set visualData to `proposal_browser` type (opens new sidebar)
+
+### 6. Edge Function Update
+
+**File: `supabase/functions/enhanced-ai-chat/index.ts`**
+- When `launch_content_wizard` tool is called, return `visualData` of type `content_creation_choice` instead of `content_wizard`, including the keyword. This triggers the choice card in the chat
+
+## Files to Create
+- `src/components/ai-chat/ContentCreationChoiceCard.tsx` -- The two-button choice UI
+- `src/components/ai-chat/proposal-browser/ProposalBrowserSidebar.tsx` -- Main sidebar container
+- `src/components/ai-chat/proposal-browser/ProposalSolutionStep.tsx` -- Solution selection step
+- `src/components/ai-chat/proposal-browser/ProposalBrowseStep.tsx` -- Generate & browse proposals
+
+## Files to Modify
+- `src/components/ai-chat/EnhancedMessageBubble.tsx` -- Render choice card for `content_creation_choice` visualData
+- `src/components/ai-chat/VisualizationSidebar.tsx` -- Handle `proposal_browser` type
+- `src/components/ai-chat/VisualDataRenderer.tsx` -- Suppress `content_creation_choice` and `proposal_browser` from inline rendering
+- `supabase/functions/enhanced-ai-chat/index.ts` -- Return `content_creation_choice` visualData type for content creation intents
+
+## Key Design Decisions
+- The choice buttons appear **below the user's message** as part of the AI response, not as a modal or popup
+- The Proposal Browser sidebar reuses existing services (`contentStrategyService.generateAIStrategy`) -- no new backend logic needed
+- When a user picks a proposal, it seamlessly transitions into the Content Wizard with pre-filled data (keyword, solution, content type) so the full writing flow is preserved
+- The existing "Start from Scratch" path remains unchanged -- same Content Wizard, same 5 steps
