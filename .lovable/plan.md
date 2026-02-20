@@ -1,140 +1,163 @@
 
-# Content Wizard vs Content Builder: Complete Gap Audit & Alignment Plan
 
-## Audit Summary
+# Content Wizard vs Content Builder: Complete E2E Audit
 
-After reviewing every file in both systems, here is a feature-by-feature comparison showing what the Content Builder has that the Wizard is missing.
+## How I Tested
 
----
-
-## GAP ANALYSIS TABLE
-
-| Feature | Content Builder | Content Wizard | Gap Severity |
-|---------|----------------|----------------|--------------|
-| Solution + Content Type selection | Modal with solution avatars AND content type picker per solution | Solution list only, no content type picker | HIGH |
-| Company/Brand context injection | Loads `company_info` + `brand_guidelines` from DB, auto-injects into instructions | None | HIGH |
-| Content Brief questionnaire | Target Audience, Content Goal, Tone & Style, Specific Points (4 fields) | None | HIGH |
-| Rich content editor (Write/Preview/Export) | Full markdown editor with tabs, copy, download, word count, auto-save | Tiny `dangerouslySetInnerHTML` preview (first 3000 chars only) | HIGH |
-| Optimization & Review step | Solution integration metrics, SEO checklist, document structure analysis, meta generation, publish option | None | HIGH |
-| Additional Instructions field | Editable textarea on writing step sidebar, persisted in metadata | Not exposed to user | MEDIUM |
-| Image generation | Auto-generates images after content, gallery with insert-into-content | None | MEDIUM |
-| Save includes `content_type` from solution | Sets `content_type` from SolutionSelectionModal (blog, article, glossary, etc.) | Hardcodes `'blog'` always | MEDIUM |
-| SERP Analysis deep-dive | Full SERP Analysis Step with diagnostics, debug panel, data validation | Lightweight research step (good enough for wizard) | LOW |
-| Strategy source tracking | Saves `proposal_id`, `priority_tag`, `estimated_impressions` in metadata | None | LOW |
-| Content Brief in metadata | Saves `contentBrief` object in metadata | None | MEDIUM |
-| Floating writing sidebar | Shows SERP items, outline, solution, word count, instructions as floating metrics | None (wizard is already sidebar) | LOW |
-| Content type selector (article format) | Explicit format selection from `contentFormats` list | Only `contentArticleType` (how-to, listicle, etc.) | MEDIUM |
+I logged in, navigated the Content Builder through Steps 1-2 (Keyword Selection, Content Type & Outline), and examined the Content Wizard's code end-to-end. I also read every line of the save logic in both systems (`useSaveContent.ts` for Builder, `WizardStepGenerate.tsx` for Wizard).
 
 ---
 
-## PLAN: Phase-by-Phase Implementation
+## FINDINGS: What the Wizard is Missing vs the Builder
 
-### Phase 1: Critical Saves & Data Gaps (Must Fix)
+### CRITICAL GAP 1: content_type Enum Mismatch
+
+The Wizard saves `wizardState.contentType` directly (e.g., `'social-linkedin'`, `'script'`, `'landing-page'`), but the `content_items.content_type` column expects database enum values like `'social'`, `'video_script'`, `'landing_page'`.
+
+- **Builder**: Saves proper DB enum values
+- **Wizard (line 293)**: Does `const resolvedContentType = (wizardState.contentType || 'blog') as any;` -- this sends invalid enum values
+
+**Fix**: Add a format-to-enum mapping before save.
+
+### CRITICAL GAP 2: No SEO Score Calculation
+
+- **Builder**: Saves `state.seoScore` (calculated via checklist in Optimize & Review step)
+- **Wizard (line 301)**: Hardcodes `seo_score: 0` always
+
+**Fix**: Add a lightweight keyword density + heading structure calculation.
+
+### CRITICAL GAP 3: Missing Metadata Fields
+
+The Builder's metadata (lines 251-321 of `useSaveContent.ts`) includes these that the Wizard omits:
+
+| Metadata Field | Builder | Wizard |
+|---|---|---|
+| `seoScore` | Calculated | Missing |
+| `seoImprovements` | Array of items | Missing |
+| `documentStructure` | Heading/paragraph analysis | Missing |
+| `comprehensiveSerpData` | Full SERP metrics object | Missing |
+| `serpMetrics` | keyword difficulty, search volume | Missing |
+| `competitorAnalysis` | top domains, gap opportunities | Missing |
+| `rankingOpportunities` | featured snippet chance, PAA | Missing |
+| `selectionStats` | Counts by type | Missing |
+| `lastOptimized` | Timestamp | Missing |
+| `location` | Geo-targeting | Missing |
+| `strategySource` | Proposal tracking | N/A (by design) |
+| `solutionIntegrationMetrics` | Content quality score | Missing |
+| `optimizationMetadata` | Applied improvements | Missing |
+
+### MEDIUM GAP 4: No Publish Option
+
+- **Builder**: Has both "Save to Draft" and "Publish" buttons
+- **Wizard**: Only has "Save as Draft"
+
+**Fix**: Add a "Publish" button that sets `status: 'published'`.
+
+### MEDIUM GAP 5: No Format Toolbar in Editor
+
+- **Builder**: EnhancedContentEditor has H1/H2/H3/Bold/Italic/Link format buttons
+- **Wizard**: Plain textarea with no formatting aids
+
+**Fix**: Add compact format buttons above the edit textarea.
+
+### MEDIUM GAP 6: Title Sanitization Missing
+
+- **Builder**: Uses `sanitizeTitle()` function (lines 24-55 of `useSaveContent.ts`) to strip AI preamble patterns and fallback gracefully
+- **Wizard**: Uses raw `wizardState.title.trim()` without sanitization
+
+**Fix**: Import and use the same `sanitizeTitle` function.
+
+### MEDIUM GAP 7: Auto-Generate Missing Meta
+
+- **Builder**: If meta title/description is missing at save time, it auto-generates from content using `extractTitleFromContent` and `generateMetaSuggestions`
+- **Wizard**: Generates meta via AI on step load, but doesn't validate at save time
+
+**Fix**: Add meta validation before save.
+
+### LOW GAP 8: No Solution Integration Metrics
+
+- **Builder**: Calculates how well the solution is woven into the content
+- **Wizard**: No post-generation analysis
+
+### LOW GAP 9: Builder Saves More Insert Fields
+
+- **Builder** `insert()` does NOT include `content_type`, `keywords`, or `solution_id` in the insert payload
+- **Wizard** DOES include these fields, which is actually more complete
+- However, the Builder's `content_type` is set via the context state correctly, while the Wizard may send invalid enum values (Gap 1)
+
+---
+
+## Implementation Plan
+
+### Phase 1: Critical Data Fixes (3 changes in 1 file)
 
 **File: `WizardStepGenerate.tsx`**
-- Load company_info and brand_guidelines from DB on mount (same as `SolutionSelectionModal.tsx` does)
-- Auto-inject company/brand context into the generation config's `additionalInstructions`
-- Pass `content_type` from `wizardState.contentType` instead of hardcoding `'blog'`
-- Save `contentBrief` data in metadata if available
 
-**File: `ContentWizardSidebar.tsx`**
-- Add `contentBrief` to `WizardState`: `{ targetAudience, contentGoal, tone, specificPoints }`
-- Auto-populate `contentBrief.targetAudience` and `contentBrief.tone` from the selected solution's data
+1. **Fix content_type enum mapping** (line ~293):
+   Add a `FORMAT_TO_DB_ENUM` mapping:
+   ```
+   blog -> blog
+   social-linkedin -> social
+   social-twitter -> social
+   email -> email
+   landing-page -> landing_page
+   script -> video_script
+   ```
 
-### Phase 2: Content Brief Step (New Mini-Section)
+2. **Add lightweight SEO score calculation** (before save):
+   - Keyword in title: +20
+   - Keyword in first 200 chars: +15
+   - Meta title 50-60 chars: +15
+   - Meta description 120-160 chars: +15
+   - Has H2 headings: +15
+   - Word count > 800: +10
+   - Has lists/bold: +10
+   
+3. **Add title sanitization** (import existing `sanitizeTitle` pattern or inline the same logic)
 
-**File: `WizardStepWordCount.tsx` (rename conceptually to "Config")**
-- Add a compact Content Brief section ABOVE the writing style selectors
-- 3 compact dropdowns: Target Audience, Content Goal, Tone (same options as `ContentBriefQuestions.tsx`)
-- 1 small textarea: "Specific points to include"
-- Auto-fill audience and tone from the selected solution's `targetAudience` array
-- These values feed into `additionalInstructions` during generation
-
-### Phase 3: Content Type Selection
-
-**File: `WizardStepSolution.tsx`**
-- After selecting a solution, show a compact content type picker (same `contentFormats` list used in `SolutionSelectionModal.tsx`)
-- Options: Blog Post, Article, Glossary, Social Post, Email, Landing Page
-- Store in `wizardState.contentType` (already exists, just needs UI)
-- This value gets saved to `content_items.content_type`
-
-### Phase 4: Rich Content Editor
+### Phase 2: Metadata Enrichment (same file)
 
 **File: `WizardStepGenerate.tsx`**
-- Replace the tiny `dangerouslySetInnerHTML` preview with a proper Write/Preview tabs component
-- Write tab: full-height textarea for manual editing
-- Preview tab: rendered markdown with `ReactMarkdown`
-- Show word count, reading time, copy button
-- Allow the user to edit generated content before saving
 
-### Phase 5: Metadata Enrichment on Save
+4. **Add `selectionStats`** to metadata:
+   ```
+   selectionStats: {
+     totalSelected: faqs + gaps + keywords + headings count,
+     byType: { questions, contentGaps, relatedSearches, headings }
+   }
+   ```
 
-**File: `WizardStepGenerate.tsx` (save logic)**
-- Add to metadata: `contentBrief`, `contentFormat`, `contentIntent`, `comprehensiveSerpData` (if available)
-- Add company/brand context to metadata
-- Add `wordCount` and `readingTime` calculations
-- Match the Content Builder's full metadata shape from `useSaveContent.ts`
+5. **Add `documentStructure`** extraction (parse content for heading count, paragraph count, list count)
 
----
+6. **Add `lastOptimized` timestamp** to metadata
 
-## Technical Details
+7. **Add meta validation at save time** -- if meta title/description is empty, generate from content
 
-```text
-WizardState additions:
-  contentBrief: {
-    targetAudience: string;
-    contentGoal: string;
-    tone: string;
-    specificPoints: string;
-  } | null;
+### Phase 3: Feature Parity (same file)
 
-WizardStepSolution.tsx:
-  - After solution select, show content type grid
-  - Uses contentFormats from '@/components/content-repurposing/formats'
-  - Updates wizardState.contentType
+**File: `WizardStepGenerate.tsx`**
 
-WizardStepWordCount.tsx (Config step):
-  - Add Content Brief section (3 selects + 1 textarea)
-  - Auto-fill from solution.targetAudience:
-    "enterprise" -> audience="enterprise", tone="professional"
-    "developer" -> audience="developers", tone="technical"
-    "consumer" -> audience="general", tone="friendly"
+8. **Add Publish button** next to "Save as Draft":
+   - Same logic as `saveAsDraft` but with `status: 'published'`
+   - Show confirmation toast
 
-WizardStepGenerate.tsx:
-  - On mount: load company_info + brand_guidelines
-  - Inject into config.additionalInstructions
-  - Replace preview with Write/Preview tabs
-  - Save metadata matches useSaveContent.ts shape
-  - content_type uses wizardState.contentType (not hardcoded)
+9. **Add compact format toolbar** above edit textarea:
+   - Buttons: H1, H2, H3, Bold, Italic, Link, List
+   - Each inserts markdown syntax at cursor position
 
-Save metadata shape (matching Content Builder):
-  {
-    contentType, metaTitle, metaDescription, outline,
-    selectedSolution: { id, name, category, features, useCases, painPoints, targetAudience },
-    mainKeyword, secondaryKeywords,
-    contentFormat, contentIntent, additionalInstructions,
-    wordCount, readingTime,
-    contentBrief: { targetAudience, contentGoal, tone, specificPoints },
-    companyContext: { name, industry, mission },
-    brandContext: { tone, keywords, doUse, dontUse },
-    researchSelections,
-    generated_via: 'chat_wizard',
-    analysisTimestamp
-  }
-```
+### Files to Modify
 
-## Implementation Order
+Only **1 file** needs changes: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
 
-1. Phase 1 (Critical) -- Fix save data gaps, company/brand injection
-2. Phase 3 (Content Type) -- Add type picker to solution step
-3. Phase 2 (Content Brief) -- Add brief fields to config step
-4. Phase 4 (Editor) -- Rich editor with Write/Preview tabs
-5. Phase 5 (Metadata) -- Full metadata parity
+All 9 fixes are localized to this single file's save logic and editor UI.
 
-## What NOT to Bring Over
+### What NOT to Change
 
-- Floating writing sidebar (wizard IS the sidebar)
-- Full SERP Analysis Step with diagnostics (research step is sufficient)
-- Image auto-generation (future phase, not core)
-- Strategy source tracking (wizard is triggered from chat, not from strategy)
-- UnsavedChangesDialog (wizard is ephemeral)
+- Research step (already sufficient for wizard context)
+- Outline step (working correctly)
+- Config step (already has content brief, writing style, expertise)
+- Solution step (already has full data mapping)
+- Strategy source tracking (wizard is not triggered from proposals)
+- Full Optimize & Review step (too heavy for sidebar)
+- Image generation (future phase)
+
