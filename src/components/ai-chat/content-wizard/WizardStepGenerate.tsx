@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
+import ReactMarkdown from 'react-markdown';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
 import type { WizardState } from './ContentWizardSidebar';
 
@@ -34,10 +36,35 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [editorTab, setEditorTab] = useState<string>('preview');
+  const [editableContent, setEditableContent] = useState('');
+  const [companyContext, setCompanyContext] = useState<any>(null);
+  const [brandContext, setBrandContext] = useState<any>(null);
+
+  // Load company & brand context on mount
+  useEffect(() => {
+    if (!user) return;
+    const loadContext = async () => {
+      const [companyRes, brandRes] = await Promise.all([
+        supabase.from('company_info').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('brand_guidelines').select('*').eq('user_id', user.id).maybeSingle(),
+      ]);
+      if (companyRes.data) setCompanyContext(companyRes.data);
+      if (brandRes.data) setBrandContext(brandRes.data);
+    };
+    loadContext();
+  }, [user]);
 
   useEffect(() => {
     if (!wizardState.metaTitle) generateMeta();
   }, []);
+
+  // Sync editable content with generated content
+  useEffect(() => {
+    if (wizardState.generatedContent && !editableContent) {
+      setEditableContent(wizardState.generatedContent);
+    }
+  }, [wizardState.generatedContent]);
 
   const getProvider = async () => {
     const { data } = await supabase.from('ai_service_providers')
@@ -96,6 +123,36 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     }
   };
 
+  // Build additional instructions from company/brand context + content brief
+  const buildAdditionalInstructions = (): string => {
+    const parts: string[] = [];
+
+    if (wizardState.additionalInstructions) {
+      parts.push(wizardState.additionalInstructions);
+    }
+
+    if (companyContext) {
+      parts.push(`Company: ${companyContext.name}${companyContext.industry ? ` (${companyContext.industry})` : ''}${companyContext.mission ? `. Mission: ${companyContext.mission}` : ''}`);
+    }
+
+    if (brandContext) {
+      const tone = Array.isArray(brandContext.tone) ? brandContext.tone.join(', ') : '';
+      const doUse = Array.isArray(brandContext.do_use) ? brandContext.do_use.join(', ') : '';
+      const dontUse = Array.isArray(brandContext.dont_use) ? brandContext.dont_use.join(', ') : '';
+      if (tone) parts.push(`Brand tone: ${tone}`);
+      if (doUse) parts.push(`DO use: ${doUse}`);
+      if (dontUse) parts.push(`DON'T use: ${dontUse}`);
+    }
+
+    const brief = wizardState.contentBrief;
+    if (brief.targetAudience) parts.push(`Target audience: ${brief.targetAudience}`);
+    if (brief.contentGoal) parts.push(`Content goal: ${brief.contentGoal}`);
+    if (brief.tone) parts.push(`Desired tone: ${brief.tone}`);
+    if (brief.specificPoints) parts.push(`Specific points: ${brief.specificPoints}`);
+
+    return parts.join('\n');
+  };
+
   const generateContent = async () => {
     setIsGeneratingContent(true);
     try {
@@ -122,7 +179,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         contentIntent: 'inform',
         serpSelections,
         selectedSolution: wizardState.selectedSolution,
-        additionalInstructions: '',
+        additionalInstructions: buildAdditionalInstructions(),
         includeStats: wizardState.includeStats,
         includeCaseStudies: wizardState.includeCaseStudies,
         includeFAQs: wizardState.includeFAQs,
@@ -132,12 +189,14 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       if (result) {
         onContentGenerated(result);
+        setEditableContent(result);
         toast.success('Content generated successfully!');
       } else {
         const fallback = wizardState.outline.map(s =>
           `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here.</p>`
         ).join('\n\n');
         onContentGenerated(fallback);
+        setEditableContent(fallback);
         toast.warning('AI returned empty content. A draft outline has been created.');
       }
     } catch (err) {
@@ -146,10 +205,20 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here.</p>`
       ).join('\n\n');
       onContentGenerated(fallback);
+      setEditableContent(fallback);
       toast.warning('AI generation failed. A draft outline has been created.');
     } finally {
       setIsGeneratingContent(false);
     }
+  };
+
+  const contentToSave = editableContent || wizardState.generatedContent;
+  const wordCountNum = contentToSave.split(/\s+/).filter(Boolean).length;
+  const readingTime = Math.ceil(wordCountNum / 200);
+
+  const copyContent = () => {
+    navigator.clipboard.writeText(contentToSave);
+    toast.success('Content copied to clipboard!');
   };
 
   const saveAsDraft = async () => {
@@ -168,21 +237,46 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         writingStyle: wizardState.writingStyle,
         expertiseLevel: wizardState.expertiseLevel,
         contentArticleType: wizardState.contentArticleType,
+        contentFormat: wizardState.contentType,
+        contentIntent: wizardState.contentBrief.contentGoal || 'inform',
         outline: wizardState.outline,
         metaTitle: wizardState.metaTitle,
         metaDescription: wizardState.metaDescription,
-        wordCount: wizardState.generatedContent.split(/\s+/).length,
-        readingTime: Math.ceil(wizardState.generatedContent.split(/\s+/).length / 200),
+        wordCount: wordCountNum,
+        readingTime,
         word_count_mode: wizardState.wordCountMode,
         outline_sections: wizardState.outline.length,
+        additionalInstructions: wizardState.additionalInstructions || undefined,
         selectedSolution: wizardState.selectedSolution ? {
           id: wizardState.selectedSolution.id,
           name: wizardState.selectedSolution.name,
           category: wizardState.selectedSolution.category,
           features: wizardState.selectedSolution.features,
+          useCases: wizardState.selectedSolution.useCases,
+          painPoints: wizardState.selectedSolution.painPoints,
+          targetAudience: wizardState.selectedSolution.targetAudience,
         } : null,
+        contentBrief: wizardState.contentBrief,
         researchSelections: wizardState.researchSelections,
+        analysisTimestamp: new Date().toISOString(),
       };
+
+      // Add company/brand context to metadata if available
+      if (companyContext) {
+        metadata.companyContext = {
+          name: companyContext.name,
+          industry: companyContext.industry,
+          mission: companyContext.mission,
+        };
+      }
+      if (brandContext) {
+        metadata.brandContext = {
+          tone: brandContext.tone,
+          keywords: brandContext.keywords,
+          doUse: brandContext.do_use,
+          dontUse: brandContext.dont_use,
+        };
+      }
 
       // Check for existing content to prevent duplicates
       const { data: existingContent } = await supabase
@@ -195,12 +289,15 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       let contentId: string;
 
+      // Use dynamic content type instead of hardcoding 'blog'
+      const resolvedContentType = (wizardState.contentType || 'blog') as any;
+
       const insertPayload = {
         title: wizardState.title.trim(),
-        content: wizardState.generatedContent,
+        content: contentToSave,
         user_id: user.id,
         status: 'draft' as const,
-        content_type: 'blog' as const,
+        content_type: resolvedContentType,
         seo_score: 0,
         meta_title: wizardState.metaTitle || null,
         meta_description: wizardState.metaDescription || null,
@@ -214,6 +311,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           .from('content_items')
           .update({
             content: insertPayload.content,
+            content_type: insertPayload.content_type,
             meta_title: insertPayload.meta_title,
             meta_description: insertPayload.meta_description,
             seo_score: insertPayload.seo_score,
@@ -383,19 +481,52 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         </Button>
       ) : (
         <>
-          {/* Content Preview - sanitized */}
+          {/* Rich Content Editor with Write/Preview tabs */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Preview</span>
-              <Badge variant="secondary" className="text-[10px]">
-                ~{wizardState.generatedContent.split(/\s+/).length} words
-              </Badge>
-            </div>
-            <div className="rounded-lg border border-border/20 bg-muted/20 max-h-[250px] overflow-auto p-3">
-              <div
-                className="prose prose-sm prose-invert max-w-none text-xs"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(wizardState.generatedContent.slice(0, 3000)) }}
-              />
+              <Tabs value={editorTab} onValueChange={setEditorTab} className="w-full">
+                <div className="flex items-center justify-between mb-2">
+                  <TabsList className="h-7">
+                    <TabsTrigger value="preview" className="text-[10px] px-2 py-1 h-6 gap-1">
+                      <FileText className="w-3 h-3" /> Preview
+                    </TabsTrigger>
+                    <TabsTrigger value="write" className="text-[10px] px-2 py-1 h-6 gap-1">
+                      <PenLine className="w-3 h-3" /> Edit
+                    </TabsTrigger>
+                  </TabsList>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-[10px] gap-1">
+                      {wordCountNum.toLocaleString()} words
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] gap-1">
+                      <Clock className="w-2.5 h-2.5" /> {readingTime} min
+                    </Badge>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyContent}>
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <TabsContent value="preview" className="mt-0">
+                  <div className="rounded-lg border border-border/20 bg-muted/20 max-h-[300px] overflow-auto p-3">
+                    <div className="prose prose-sm prose-invert max-w-none text-xs">
+                      <ReactMarkdown>{editableContent || contentToSave}</ReactMarkdown>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="write" className="mt-0">
+                  <Textarea
+                    value={editableContent}
+                    onChange={(e) => {
+                      setEditableContent(e.target.value);
+                      onContentGenerated(e.target.value);
+                    }}
+                    className="text-xs min-h-[300px] font-mono resize-none"
+                    placeholder="Edit your content here..."
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
 

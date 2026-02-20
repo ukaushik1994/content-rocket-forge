@@ -7,6 +7,8 @@ import { Loader2, Building2, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
+import { contentFormats } from '@/components/content-repurposing/formats';
+import { cn } from '@/lib/utils';
 
 interface WizardStepSolutionProps {
   selectedSolution: EnhancedSolution | null;
@@ -14,6 +16,8 @@ interface WizardStepSolutionProps {
   preSelectedId?: string | null;
   keyword: string;
   onKeywordChange: (keyword: string) => void;
+  contentType: string;
+  onContentTypeChange: (type: string) => void;
 }
 
 export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
@@ -22,6 +26,8 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
   preSelectedId,
   keyword,
   onKeywordChange,
+  contentType,
+  onContentTypeChange,
 }) => {
   const [solutions, setSolutions] = useState<EnhancedSolution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,6 +74,11 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
   }, []);
 
   const getInitials = (name: string) => name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
+
+  // Filter content formats for the wizard (most relevant ones)
+  const wizardFormats = contentFormats.filter(f => 
+    ['blog', 'social-linkedin', 'social-twitter', 'email', 'landing-page', 'script'].includes(f.id)
+  );
 
   return (
     <div className="space-y-5">
@@ -132,6 +143,34 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
             ))}
           </div>
         </TooltipProvider>
+      )}
+
+      {/* Content Type Picker */}
+      {selectedSolution && (
+        <div>
+          <h3 className="text-sm font-medium text-foreground">Content Format</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">What type of content are you creating?</p>
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            {wizardFormats.map(format => {
+              const Icon = format.icon;
+              return (
+                <button
+                  key={format.id}
+                  onClick={() => onContentTypeChange(format.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all cursor-pointer text-center",
+                    contentType === format.id
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border/30 hover:border-border/50 bg-muted/20"
+                  )}
+                >
+                  <Icon className={cn("w-4 h-4", contentType === format.id ? "text-primary" : "text-muted-foreground")} />
+                  <p className="text-[10px] font-medium text-foreground leading-tight">{format.name}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

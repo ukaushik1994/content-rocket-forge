@@ -21,6 +21,13 @@ interface ContentWizardSidebarProps {
   contentType?: string;
 }
 
+export interface ContentBrief {
+  targetAudience: string;
+  contentGoal: string;
+  tone: string;
+  specificPoints: string;
+}
+
 export interface WizardState {
   keyword: string;
   contentType: string;
@@ -44,6 +51,8 @@ export interface WizardState {
   metaTitle: string;
   metaDescription: string;
   generatedContent: string;
+  contentBrief: ContentBrief;
+  additionalInstructions: string;
 }
 
 const STEPS = [
@@ -80,6 +89,8 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     metaTitle: '',
     metaDescription: '',
     generatedContent: '',
+    contentBrief: { targetAudience: '', contentGoal: '', tone: '', specificPoints: '' },
+    additionalInstructions: '',
   });
 
   const { isMobile } = useResponsiveBreakpoint();
@@ -105,24 +116,29 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   const goNext = () => { if (currentStep < 4 && canProceed()) setCurrentStep(s => s + 1); };
   const goBack = () => { if (currentStep > 0) setCurrentStep(s => s - 1); };
 
-  // Auto-infer writing defaults from solution data
+  // Auto-infer writing defaults + content brief from solution data
   const handleSolutionSelect = useCallback((sol: EnhancedSolution) => {
     const updates: Partial<WizardState> = { selectedSolution: sol };
     
-    // Infer writing style and expertise from solution's target audience
     const audienceText = (sol.targetAudience || []).join(' ').toLowerCase();
+    
+    // Infer writing style, expertise, and content brief from audience
     if (audienceText.includes('enterprise') || audienceText.includes('executive') || audienceText.includes('cto') || audienceText.includes('ceo')) {
       updates.writingStyle = 'professional';
       updates.expertiseLevel = 'expert';
+      updates.contentBrief = { targetAudience: 'enterprise', contentGoal: 'convert', tone: 'professional', specificPoints: '' };
     } else if (audienceText.includes('developer') || audienceText.includes('engineer') || audienceText.includes('technical')) {
       updates.writingStyle = 'professional';
       updates.expertiseLevel = 'expert';
+      updates.contentBrief = { targetAudience: 'developers', contentGoal: 'educate', tone: 'technical', specificPoints: '' };
     } else if (audienceText.includes('beginner') || audienceText.includes('student') || audienceText.includes('consumer')) {
       updates.writingStyle = 'conversational';
       updates.expertiseLevel = 'beginner';
-    } else if (audienceText.includes('business') || audienceText.includes('professional') || audienceText.includes('manager')) {
+      updates.contentBrief = { targetAudience: 'beginners', contentGoal: 'educate', tone: 'friendly', specificPoints: '' };
+    } else if (audienceText.includes('business') || audienceText.includes('professional') || audienceText.includes('manager') || audienceText.includes('marketer')) {
       updates.writingStyle = 'professional';
       updates.expertiseLevel = 'intermediate';
+      updates.contentBrief = { targetAudience: 'professionals', contentGoal: 'authority', tone: 'professional', specificPoints: '' };
     }
     
     updateState(updates);
@@ -212,6 +228,8 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         preSelectedId={solutionId}
                         keyword={wizardState.keyword}
                         onKeywordChange={(kw) => updateState({ keyword: kw })}
+                        contentType={wizardState.contentType}
+                        onContentTypeChange={(ct) => updateState({ contentType: ct })}
                       />
                     )}
                     {currentStep === 1 && (
@@ -245,6 +263,10 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onExpertiseLevelChange={(l) => updateState({ expertiseLevel: l })}
                         onContentArticleTypeChange={(t) => updateState({ contentArticleType: t })}
                         selectedSolutionName={wizardState.selectedSolution?.name}
+                        contentBrief={wizardState.contentBrief}
+                        onContentBriefChange={(brief) => updateState({ contentBrief: brief })}
+                        additionalInstructions={wizardState.additionalInstructions}
+                        onAdditionalInstructionsChange={(inst) => updateState({ additionalInstructions: inst })}
                       />
                     )}
                     {currentStep === 4 && (
