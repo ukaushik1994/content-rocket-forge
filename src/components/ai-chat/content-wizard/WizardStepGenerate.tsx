@@ -420,6 +420,69 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         lastOptimized: new Date().toISOString(),
         analysisTimestamp: new Date().toISOString(),
         ...(status === 'published' && { publishedAt: new Date().toISOString() }),
+
+        // --- SERP Metrics & Comprehensive SERP Data ---
+        comprehensiveSerpData: wizardState.serpData ? JSON.parse(JSON.stringify({
+          serpMetrics: {
+            searchVolume: wizardState.serpData.searchVolume || null,
+            keywordDifficulty: wizardState.serpData.keywordDifficulty || null,
+            competitionScore: wizardState.serpData.competition || null,
+            intent: wizardState.serpData.intent || 'informational',
+            totalResults: wizardState.serpData.totalResults || 0,
+            competitorAnalyzed: (wizardState.serpData.topResults || []).length,
+          },
+          competitorAnalysis: {
+            topCompetitors: (wizardState.serpData.topResults || []).map((r: any) => ({
+              title: r.title,
+              url: r.link,
+              position: r.position,
+              snippet: r.snippet,
+            })),
+          },
+          rankingOpportunities: {
+            featuredSnippet: (wizardState.serpData.contentGaps || []).some((g: any) =>
+              (g.opportunity || '').toLowerCase().includes('featured')) || false,
+            paaTargets: (wizardState.serpData.peopleAlsoAsk || []).length,
+            contentGaps: (wizardState.serpData.contentGaps || []).length,
+          },
+          selectionStats,
+          analysisTimestamp: new Date().toISOString(),
+        })) : null,
+
+        // Flatten for backward compat (Repository detail views check both paths)
+        serpMetrics: wizardState.serpData ? {
+          searchVolume: wizardState.serpData.searchVolume || null,
+          keywordDifficulty: wizardState.serpData.keywordDifficulty || null,
+          competitionScore: wizardState.serpData.competition || null,
+          intent: wizardState.serpData.intent || 'informational',
+          totalResults: wizardState.serpData.totalResults || 0,
+        } : null,
+        rankingOpportunities: wizardState.serpData ? {
+          featuredSnippet: false,
+          paaTargets: wizardState.researchSelections.faqs.length,
+          contentGaps: wizardState.researchSelections.contentGaps.length,
+        } : null,
+        competitorAnalysis: (wizardState.serpData?.topResults) ? {
+          topCompetitors: wizardState.serpData.topResults.slice(0, 5).map((r: any) => ({
+            title: r.title, url: r.link, position: r.position,
+          })),
+        } : null,
+
+        // Solution integration metrics (compute at save time)
+        solutionIntegrationMetrics: wizardState.selectedSolution ? {
+          solutionMentions: (contentToSave.match(
+            new RegExp(wizardState.selectedSolution.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+          ) || []).length,
+          featuresCovered: Array.isArray(wizardState.selectedSolution.features) 
+            ? wizardState.selectedSolution.features.filter((f: string) =>
+                contentToSave.toLowerCase().includes(f.toLowerCase())
+              ).length 
+            : 0,
+          totalFeatures: Array.isArray(wizardState.selectedSolution.features)
+            ? wizardState.selectedSolution.features.length
+            : 0,
+          integrationScore: null,
+        } : null,
       };
 
       // Add company/brand context to metadata if available

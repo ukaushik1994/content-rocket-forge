@@ -19,6 +19,7 @@ interface WizardStepResearchProps {
   keyword: string;
   selections: ResearchSelections;
   onSelectionsChange: (selections: ResearchSelections) => void;
+  onSerpDataChange?: (serpData: any) => void;
 }
 
 interface ResearchData {
@@ -32,6 +33,7 @@ export const WizardStepResearch: React.FC<WizardStepResearchProps> = ({
   keyword,
   selections,
   onSelectionsChange,
+  onSerpDataChange,
 }) => {
   const [data, setData] = useState<ResearchData>({ faqs: [], contentGaps: [], relatedKeywords: [], serpHeadings: [] });
   const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +50,8 @@ export const WizardStepResearch: React.FC<WizardStepResearchProps> = ({
       const serpResult = await analyzeKeywordSerp(keyword);
       
       if (serpResult && serpResult.isGoogleData) {
+        // Store raw SERP data for comprehensive metadata persistence
+        onSerpDataChange?.(serpResult);
         setData({
           faqs: (serpResult.peopleAlsoAsk || []).map(q => ({ text: typeof q === 'string' ? q : (q as any).question || String(q), source: 'serp' as const })),
           contentGaps: (serpResult.contentGaps || []).map(g => ({ text: typeof g === 'string' ? g : (g as any).topic || (g as any).description || (g as any).content || JSON.stringify(g), source: 'serp' as const })),
