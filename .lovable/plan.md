@@ -1,38 +1,72 @@
 
 
-# Fix: AI Asks for Topic/Keyword Before Launching Content Wizard
+# Fix: Content Wizard Not Opening When User Provides Topic
 
-## Problem
-When a user says "create a blog" without specifying a topic, the wizard launches with an empty keyword, causing the Research step to return no SERP data.
+## Root Cause
 
-## Changes (2 files)
+The two-phase architecture has a gap:
 
-### 1. Edge Function Tool Description (enforces AI behavior)
-**File**: `supabase/functions/enhanced-ai-chat/content-action-tools.ts` (lines 148-158)
+- **Phase 1** (streaming via `ai-streaming`): Streams text only. Does NOT return `visualData`.
+- **Phase 2** (tool execution via `enhanced-ai-chat`): Returns `visualData` including `content_wizard`. But it ONLY runs when `detectActionIntent()` matches the **user's message**.
 
-Update the `launch_content_wizard` tool description and keyword property to make the AI ask for a topic or keyword first:
+When the user says "write a blog about AI in healthcare" in one message, the intent detector matches and Phase 2 fires correctly.
 
-- **Line 149 description** becomes:
-  `"Launch the interactive content creation wizard. The 'keyword' parameter is REQUIRED. If the user has NOT specified a clear topic, keyword, or title (e.g. they just say 'create a blog'), you MUST ask them: 'What topic or keyword would you like to write about?' BEFORE calling this tool. Once they provide a title or topic, extract the core keyword/phrase and pass it as the 'keyword' parameter. Never call with an empty or generic keyword."`
-- **Line 153 keyword description** becomes:
-  `"The main topic, keyword, or phrase the user wants to write about. Extract from their title or topic. REQUIRED - never leave empty."`
+But when the AI asks "What topic?" and the user replies with just "AI in healthcare", the intent detector finds no match (no "create/write/blog" keywords), so Phase 2 never fires. The wizard never opens.
 
-### 2. Client-side Intent Detector (prevents auto-launch without keyword)
-**File**: `src/utils/actionIntentDetector.ts` (lines 375-383)
+## Solution
 
-Update `extractParams` so that when no keyword is found, it returns `null` instead of `{}`. This prevents the client from auto-triggering the tool call, letting the AI conversation flow naturally to ask the user.
+Two changes needed:
 
-- **Line 382**: Change `return {};` to `return null;`
+### 1. Detect follow-up topic replies for the content wizard
+**File**: `src/utils/actionIntentDetector.ts`
 
-Then wherever intents are processed, skip intents where `extractParams` returns `null` (treat as "needs more info from user").
+Add a new mechanism: check the **AI's streamed response** (not just the user message) for signs the AI is launching the wizard. The AI response will contain phrases like "launching the content wizard" or "starting the content creation wizard" when it decides to invoke the tool.
 
-## Result
+Add a new exported function `detectToolCallInResponse(aiResponse: string)` that checks if the AI's streamed text indicates it's calling `launch_content_wizard`, and extracts the keyword from context.
 
-| User says | What happens |
+Alternatively (simpler and more reliable): modify the existing `detectActionIntent` to also accept the AI response as optional context, and add patterns that match the AI's response text for wizard launch signals.
+
+### 2. Pass AI response to intent detection in Phase 2
+**File**: `src/hooks/useEnhancedAIChatDB.ts`
+
+After streaming completes (around line 500), if `detectActionIntent(userMessage)` returns no match, also try `detectActionIntent` against the AI's streamed `fullContent` to catch cases where the AI indicates it's executing a tool.
+
+Update line 500 from:
+```
+const actionIntent = detectActionIntent(content);
+```
+To:
+```
+let actionIntent = detectActionIntent(content);
+if (!actionIntent.detected) {
+  actionIntent = detectActionIntent(fullContent);
+}
+```
+
+### 3. Add AI-response patterns for wizard launch
+**File**: `src/utils/actionIntentDetector.ts`
+
+Add new patterns that match typical AI response text when launching the wizard:
+- `/launching\s+(the\s+)?content\s+(creation\s+)?wizard/i`
+- `/starting\s+(the\s+)?content\s+wizard/i`
+- `/let me\s+(start|launch|open)\s+(the\s+)?content\s+wizard/i`
+- `/I'll\s+(launch|start|open)\s+(the\s+)?content\s+(creation\s+)?wizard/i`
+
+With `extractParams` pulling the keyword from the AI response text (e.g., after "about" or "for" or from quotes).
+
+## Expected Results
+
+| User Flow | What Happens |
 |-----------|-------------|
-| "Create a blog" | AI asks: "What topic or keyword would you like to write about?" |
-| "Write about AI in healthcare" | Keyword "AI in healthcare" extracted, wizard launches immediately |
-| "Blog about SEO strategies" | Keyword "SEO strategies" extracted, wizard launches immediately |
+| "Write a blog about SEO" (single message) | Intent matches user message directly, wizard opens with keyword "SEO" |
+| "Create a blog" then "AI in healthcare" (two messages) | AI response says "launching content wizard for AI in healthcare", intent matches AI response, wizard opens |
 
-2 files, ~5 lines changed.
+## Technical Summary
+
+| File | Change |
+|------|--------|
+| `src/utils/actionIntentDetector.ts` | Add AI-response patterns for wizard launch detection (~10 lines) |
+| `src/hooks/useEnhancedAIChatDB.ts` | Fallback to checking AI response if user message has no intent (~3 lines) |
+
+2 files, ~13 lines changed.
 
