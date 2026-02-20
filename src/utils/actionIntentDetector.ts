@@ -19,7 +19,7 @@ interface PatternRule {
   toolName: string;
   confidence: 'high' | 'medium';
   requiresConfirmation?: boolean;
-  extractParams?: (message: string, match: RegExpMatchArray) => Record<string, any>;
+  extractParams?: (message: string, match: RegExpMatchArray) => Record<string, any> | null;
 }
 
 /** Tools that require explicit user confirmation before execution */
@@ -379,7 +379,7 @@ const ACTION_RULES: PatternRule[] = [
       // Try extracting topic after content type word
       const fallback = msg.match(/(?:blog|article|guide|content)\s+(?:about|on|for|titled|called)?\s*["']?(.+?)["']?\s*$/i);
       if (fallback) return { keyword: fallback[1].trim() };
-      return {};
+      return null;
     }
   },
 
@@ -468,6 +468,8 @@ export function detectActionIntent(message: string): ActionIntent {
       const match = trimmed.match(pattern);
       if (match) {
         const params = rule.extractParams ? rule.extractParams(trimmed, match) : {};
+        // If extractParams returns null, the intent needs more info — skip it
+        if (params === null) continue;
         const requiresConfirmation = DESTRUCTIVE_TOOLS.has(rule.toolName);
         return {
           detected: true,

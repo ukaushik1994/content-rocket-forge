@@ -146,11 +146,11 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "launch_content_wizard",
-      description: "Launch the interactive content creation wizard in the sidebar. Use when user says 'I want to create a blog', 'write an article about X', 'build content about X', or similar content creation requests that benefit from guided step-by-step creation.",
+      description: "Launch the interactive content creation wizard. The 'keyword' parameter is REQUIRED. If the user has NOT specified a clear topic, keyword, or title (e.g. they just say 'create a blog'), you MUST ask them: 'What topic or keyword would you like to write about?' BEFORE calling this tool. Once they provide a title or topic, extract the core keyword/phrase and pass it as the 'keyword' parameter. Never call with an empty or generic keyword.",
       parameters: {
         type: "object",
         properties: {
-          keyword: { type: "string", description: "The topic/keyword for the content" },
+          keyword: { type: "string", description: "The main topic, keyword, or phrase the user wants to write about. Extract from their title or topic. REQUIRED - never leave empty." },
           solution_id: { type: "string", description: "Optional solution ID to pre-select" },
           content_type: { type: "string", enum: ["blog", "article", "guide"], default: "blog", description: "Type of content to create" }
         },
