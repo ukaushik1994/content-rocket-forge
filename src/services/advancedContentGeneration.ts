@@ -1,6 +1,6 @@
-import AIServiceController from './aiService/AIServiceController';
 import { SerpSelection } from '@/contexts/content-builder/types';
 import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ContentGenerationConfig {
   mainKeyword: string;
@@ -124,27 +124,60 @@ When incorporating SERP research data:
 
 Always start with the title as an H1 heading and follow the provided outline structure. Focus on creating content that readers will find genuinely useful and that search engines will recognize as high-quality.`;
 
-    // Generate content using AI service controller
-    console.log(`🚀 Advanced content generation with AI controller`);
-    const aiRequest = {
-      use_case: 'content_generation' as const,
-      input: prompt,
-      temperature: 0.7,
-      max_tokens: Math.max(2000, config.targetLength * 2)
-    };
-    
-    const chatResponse = await AIServiceController.generate(
-      aiRequest,
-      systemPrompt
-    );
-    
-    if (!chatResponse?.content) {
-      console.error('❌ AI service returned empty content');
-      console.log('Full response:', chatResponse);
-      return null;
+    // Get user's active AI provider directly
+    console.log(`🚀 Advanced content generation via direct ai-proxy`);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: provider, error: providerError } = await supabase
+      .from('ai_service_providers')
+      .select('provider, api_key, preferred_model')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (providerError || !provider) {
+      console.error('❌ No AI provider configured:', providerError);
+      throw new Error('No AI provider configured. Please set up an AI provider in Settings.');
     }
 
-    const generatedContent = chatResponse.content;
+    console.log(`🔌 Using provider: ${provider.provider} (${provider.preferred_model})`);
+
+    // Call ai-proxy directly for content generation (not enhanced-ai-chat)
+    const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'chat',
+        params: {
+          model: provider.preferred_model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: Math.max(4000, config.targetLength * 2),
+          temperature: 0.7,
+        },
+        apiKey: provider.api_key,
+      }
+    });
+
+    if (aiError) {
+      console.error('❌ ai-proxy returned error:', aiError);
+      throw new Error(`AI proxy error: ${aiError.message || 'Unknown error'}`);
+    }
+
+    // Extract content from ai-proxy response (OpenAI-compatible format)
+    const generatedContent = aiData?.choices?.[0]?.message?.content 
+      || aiData?.content 
+      || aiData?.text
+      || (typeof aiData === 'string' ? aiData : null);
+
+    if (!generatedContent) {
+      console.error('❌ AI service returned empty content. Full response:', JSON.stringify(aiData).slice(0, 500));
+      return null;
+    }
 
     console.log('✅ Content generated successfully:', {
       contentLength: generatedContent.length,
