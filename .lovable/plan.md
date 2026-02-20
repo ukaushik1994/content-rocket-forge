@@ -1,115 +1,140 @@
 
+# Content Wizard vs Content Builder: Complete Gap Audit & Alignment Plan
 
-# Content Wizard: Full Content Builder Alignment
+## Audit Summary
 
-## Context
-
-After thorough analysis of both the Content Builder and Content Wizard codebases, and your answers:
-- Keep both interfaces for now (wizard + builder page)
-- Writing config (tone, audience, style) should auto-fill from solution data but remain editable
-- Derive tone/style from solution's `target_audience` field (no new DB columns needed)
-
-## Current State Assessment
-
-The Content Wizard (`WizardStepGenerate.tsx`) already uses `generateAdvancedContent`, has proper keyword linking, reuse history, and DOMPurify sanitization. The save payload correctly avoids non-existent columns. The step merge (Topic + Solution) is done. Title field exists.
-
-**The implementation from previous rounds is structurally complete.** The remaining issues are:
-
-## Remaining Issues to Fix
-
-### Issue 1: Solution Intelligence Not Fully Derived
-The `handleSolutionSelect` in `ContentWizardSidebar.tsx` already infers writing style and expertise from `targetAudience`, but it's basic. The Content Builder's `ContentWritingStep` uses `selectedSolution` data (features, pain points, use cases, target audience, case studies, pricing, market data, technical specs) extensively in the generation prompt. The Wizard already passes `selectedSolution` to `generateAdvancedContent`, which handles this -- so this is actually working.
-
-**However**, the solution data fetched in `WizardStepSolution.tsx` is incomplete. It only maps: `id, name, features, useCases, painPoints, targetAudience, description, category, logoUrl, externalUrl`. It's missing: `benefits, market_data, competitors, technical_specs, pricing_model, case_studies, unique_value_propositions, key_differentiators, positioning_statement, tags, short_description, metadata`. These are all used by `buildAdvancedContentPrompt()` in the generation service.
-
-**Fix**: Expand the solution mapping in `WizardStepSolution.tsx` to include all fields that `generateAdvancedContent` uses.
-
-### Issue 2: Config Step Shows No Indication of Solution-Derived Defaults
-When the user selects a solution and the writing style/expertise auto-fills, Step 3 (Config) shows the selectors but doesn't tell the user WHY those values were pre-selected. Need a small info badge like "Auto-set from GL Connect's audience" so the user knows they can change it.
-
-**Fix**: Add an info line in `WizardStepWordCount.tsx` showing which solution influenced the defaults.
-
-### Issue 3: Content Builder Saves `content_type` and `solution_id` Correctly
-The Wizard currently hardcodes `content_type: 'blog'`. The Content Builder uses `state.contentType` which can be `article`, `blog`, etc. The Wizard should pass the actual content type.
-
-**Fix**: Use `wizardState.contentType` (which defaults to `'blog'` from props) in the save payload -- this is already correct. No change needed.
-
-### Issue 4: Missing `keywords` JSONB Column Population
-The Content Builder's `useSaveContent` does NOT populate the `keywords` column directly -- it stores keyword data in `metadata` and links via `content_keywords` table. The Wizard currently sets `keywords: { main, secondary }` in the insert. This is actually fine since the column exists and accepts JSONB. No conflict.
-
-### Issue 5: The `solution_id` Foreign Key Constraint
-The Wizard passes `wizardState.selectedSolution?.id` as `solution_id`. This is a valid UUID from the `solutions` table, so no FK violation. This is correct.
+After reviewing every file in both systems, here is a feature-by-feature comparison showing what the Content Builder has that the Wizard is missing.
 
 ---
 
-## Plan: 2 Files to Modify
+## GAP ANALYSIS TABLE
 
-### File 1: `src/components/ai-chat/content-wizard/WizardStepSolution.tsx`
+| Feature | Content Builder | Content Wizard | Gap Severity |
+|---------|----------------|----------------|--------------|
+| Solution + Content Type selection | Modal with solution avatars AND content type picker per solution | Solution list only, no content type picker | HIGH |
+| Company/Brand context injection | Loads `company_info` + `brand_guidelines` from DB, auto-injects into instructions | None | HIGH |
+| Content Brief questionnaire | Target Audience, Content Goal, Tone & Style, Specific Points (4 fields) | None | HIGH |
+| Rich content editor (Write/Preview/Export) | Full markdown editor with tabs, copy, download, word count, auto-save | Tiny `dangerouslySetInnerHTML` preview (first 3000 chars only) | HIGH |
+| Optimization & Review step | Solution integration metrics, SEO checklist, document structure analysis, meta generation, publish option | None | HIGH |
+| Additional Instructions field | Editable textarea on writing step sidebar, persisted in metadata | Not exposed to user | MEDIUM |
+| Image generation | Auto-generates images after content, gallery with insert-into-content | None | MEDIUM |
+| Save includes `content_type` from solution | Sets `content_type` from SolutionSelectionModal (blog, article, glossary, etc.) | Hardcodes `'blog'` always | MEDIUM |
+| SERP Analysis deep-dive | Full SERP Analysis Step with diagnostics, debug panel, data validation | Lightweight research step (good enough for wizard) | LOW |
+| Strategy source tracking | Saves `proposal_id`, `priority_tag`, `estimated_impressions` in metadata | None | LOW |
+| Content Brief in metadata | Saves `contentBrief` object in metadata | None | MEDIUM |
+| Floating writing sidebar | Shows SERP items, outline, solution, word count, instructions as floating metrics | None (wizard is already sidebar) | LOW |
+| Content type selector (article format) | Explicit format selection from `contentFormats` list | Only `contentArticleType` (how-to, listicle, etc.) | MEDIUM |
 
-Expand the solution data mapping to include all fields used by the content generation service:
-- `benefits` (from `s.benefits`)
-- `marketData` (from `s.market_data`)
-- `technicalSpecs` (from `s.technical_specs`)
-- `caseStudies` (from `s.case_studies`)
-- `pricing` (from `s.pricing_model`)
-- `uniqueValuePropositions` (from `s.unique_value_propositions`)
-- `keyDifferentiators` (from `s.key_differentiators`)
-- `positioningStatement` (from `s.positioning_statement`)
-- `tags` (from `s.tags`)
-- `shortDescription` (from `s.short_description`)
-- `competitors` (from `s.competitors`)
+---
 
-This ensures `generateAdvancedContent` gets the full solution context, matching what the Content Builder provides.
+## PLAN: Phase-by-Phase Implementation
 
-### File 2: `src/components/ai-chat/content-wizard/WizardStepWordCount.tsx`
+### Phase 1: Critical Saves & Data Gaps (Must Fix)
 
-Add a small info badge at the top of the Config step showing: "Defaults set from [Solution Name]'s audience profile" when a solution has influenced the writing style/expertise selection. This makes it clear the values are auto-derived but editable.
+**File: `WizardStepGenerate.tsx`**
+- Load company_info and brand_guidelines from DB on mount (same as `SolutionSelectionModal.tsx` does)
+- Auto-inject company/brand context into the generation config's `additionalInstructions`
+- Pass `content_type` from `wizardState.contentType` instead of hardcoding `'blog'`
+- Save `contentBrief` data in metadata if available
 
-Accept `selectedSolutionName` as a new prop.
+**File: `ContentWizardSidebar.tsx`**
+- Add `contentBrief` to `WizardState`: `{ targetAudience, contentGoal, tone, specificPoints }`
+- Auto-populate `contentBrief.targetAudience` and `contentBrief.tone` from the selected solution's data
 
-### File 3: `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx`
+### Phase 2: Content Brief Step (New Mini-Section)
 
-Pass `selectedSolutionName` to `WizardStepWordCount`.
+**File: `WizardStepWordCount.tsx` (rename conceptually to "Config")**
+- Add a compact Content Brief section ABOVE the writing style selectors
+- 3 compact dropdowns: Target Audience, Content Goal, Tone (same options as `ContentBriefQuestions.tsx`)
+- 1 small textarea: "Specific points to include"
+- Auto-fill audience and tone from the selected solution's `targetAudience` array
+- These values feed into `additionalInstructions` during generation
+
+### Phase 3: Content Type Selection
+
+**File: `WizardStepSolution.tsx`**
+- After selecting a solution, show a compact content type picker (same `contentFormats` list used in `SolutionSelectionModal.tsx`)
+- Options: Blog Post, Article, Glossary, Social Post, Email, Landing Page
+- Store in `wizardState.contentType` (already exists, just needs UI)
+- This value gets saved to `content_items.content_type`
+
+### Phase 4: Rich Content Editor
+
+**File: `WizardStepGenerate.tsx`**
+- Replace the tiny `dangerouslySetInnerHTML` preview with a proper Write/Preview tabs component
+- Write tab: full-height textarea for manual editing
+- Preview tab: rendered markdown with `ReactMarkdown`
+- Show word count, reading time, copy button
+- Allow the user to edit generated content before saving
+
+### Phase 5: Metadata Enrichment on Save
+
+**File: `WizardStepGenerate.tsx` (save logic)**
+- Add to metadata: `contentBrief`, `contentFormat`, `contentIntent`, `comprehensiveSerpData` (if available)
+- Add company/brand context to metadata
+- Add `wordCount` and `readingTime` calculations
+- Match the Content Builder's full metadata shape from `useSaveContent.ts`
 
 ---
 
 ## Technical Details
 
 ```text
-WizardStepSolution.tsx (line ~35-47):
-  Current mapping only includes 8 fields.
-  Add ~11 more fields from the solutions table columns:
-    benefits, marketData, technicalSpecs, caseStudies,
-    pricing, uniqueValuePropositions, keyDifferentiators,
-    positioningStatement, tags, shortDescription, competitors
-  
-  These map directly to what buildAdvancedContentPrompt() checks:
-    - config.selectedSolution.marketData
-    - config.selectedSolution.technicalSpecs
-    - config.selectedSolution.caseStudies
-    - config.selectedSolution.pricing
-    - config.selectedSolution.uniqueValuePropositions
-    - config.selectedSolution.keyDifferentiators
+WizardState additions:
+  contentBrief: {
+    targetAudience: string;
+    contentGoal: string;
+    tone: string;
+    specificPoints: string;
+  } | null;
 
-WizardStepWordCount.tsx:
-  Add prop: selectedSolutionName?: string
-  Show info badge: "Defaults from {name}'s audience"
+WizardStepSolution.tsx:
+  - After solution select, show content type grid
+  - Uses contentFormats from '@/components/content-repurposing/formats'
+  - Updates wizardState.contentType
 
-ContentWizardSidebar.tsx:
-  Pass selectedSolutionName={wizardState.selectedSolution?.name}
-  to WizardStepWordCount
+WizardStepWordCount.tsx (Config step):
+  - Add Content Brief section (3 selects + 1 textarea)
+  - Auto-fill from solution.targetAudience:
+    "enterprise" -> audience="enterprise", tone="professional"
+    "developer" -> audience="developers", tone="technical"
+    "consumer" -> audience="general", tone="friendly"
+
+WizardStepGenerate.tsx:
+  - On mount: load company_info + brand_guidelines
+  - Inject into config.additionalInstructions
+  - Replace preview with Write/Preview tabs
+  - Save metadata matches useSaveContent.ts shape
+  - content_type uses wizardState.contentType (not hardcoded)
+
+Save metadata shape (matching Content Builder):
+  {
+    contentType, metaTitle, metaDescription, outline,
+    selectedSolution: { id, name, category, features, useCases, painPoints, targetAudience },
+    mainKeyword, secondaryKeywords,
+    contentFormat, contentIntent, additionalInstructions,
+    wordCount, readingTime,
+    contentBrief: { targetAudience, contentGoal, tone, specificPoints },
+    companyContext: { name, industry, mission },
+    brandContext: { tone, keywords, doUse, dontUse },
+    researchSelections,
+    generated_via: 'chat_wizard',
+    analysisTimestamp
+  }
 ```
 
-## What's Already Working (No Changes Needed)
+## Implementation Order
 
-- Generation uses `generateAdvancedContent` with full SERP integration
-- Save logic correctly inserts to `content_items` without non-existent columns
-- Keyword linking via `keywords` + `content_keywords` tables
-- Reuse history recording
-- DOMPurify sanitization on preview
-- "Continue Editing" button with sessionStorage handoff
-- Title field (mandatory before save)
-- Merged Topic + Solution step
-- Auto-inference of writing style/expertise from solution audience
-- Deduplication by title
+1. Phase 1 (Critical) -- Fix save data gaps, company/brand injection
+2. Phase 3 (Content Type) -- Add type picker to solution step
+3. Phase 2 (Content Brief) -- Add brief fields to config step
+4. Phase 4 (Editor) -- Rich editor with Write/Preview tabs
+5. Phase 5 (Metadata) -- Full metadata parity
 
+## What NOT to Bring Over
+
+- Floating writing sidebar (wizard IS the sidebar)
+- Full SERP Analysis Step with diagnostics (research step is sufficient)
+- Image auto-generation (future phase, not core)
+- Strategy source tracking (wizard is triggered from chat, not from strategy)
+- UnsavedChangesDialog (wizard is ephemeral)
