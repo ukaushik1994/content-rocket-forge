@@ -69,7 +69,8 @@ export async function generateAdvancedContent(
     let prompt = buildAdvancedContentPrompt(config);
 
     // Optionally append solution-aware guidelines
-    if (config.selectedSolution && config.contentType && config.contentIntent) {
+    const effectiveContentType = config.contentType || 'general';
+    if (config.selectedSolution && effectiveContentType && config.contentIntent) {
       const targetKeywords = [
         config.mainKeyword,
         ...((config.secondaryKeywords || '').split(',').map(k => k.trim()).filter(Boolean))
@@ -159,7 +160,6 @@ Always start with the title as an H1 heading and follow the provided outline str
           max_tokens: Math.max(4000, config.targetLength * 2),
           temperature: 0.7,
         },
-        apiKey: provider.api_key,
       }
     });
 
@@ -168,8 +168,12 @@ Always start with the title as an H1 heading and follow the provided outline str
       throw new Error(`AI proxy error: ${aiError.message || 'Unknown error'}`);
     }
 
-    // Extract content from ai-proxy response (OpenAI-compatible format)
-    const generatedContent = aiData?.choices?.[0]?.message?.content 
+    console.log('🔍 ai-proxy raw response keys:', aiData ? Object.keys(aiData) : 'null');
+
+    // Extract content from ai-proxy response - handles nested { data: { choices: [...] } } structure
+    const generatedContent = aiData?.data?.choices?.[0]?.message?.content
+      || aiData?.choices?.[0]?.message?.content 
+      || aiData?.data?.content
       || aiData?.content 
       || aiData?.text
       || (typeof aiData === 'string' ? aiData : null);
@@ -368,52 +372,89 @@ ${secondaryKeywords}
 `;
   }
 
-  // Add solution integration
+  // Add solution integration - EXHAUSTIVE context
   if (selectedSolution) {
-    prompt += `**Solution Integration:**
-Solution: ${selectedSolution.name}
-Category: ${selectedSolution.category}
-Description: ${selectedSolution.description}
-Key Features: ${Array.isArray(selectedSolution.features) ? selectedSolution.features.slice(0,5).join(', ') : ''}
-Pain Points Addressed: ${Array.isArray(selectedSolution.painPoints) ? selectedSolution.painPoints.slice(0,3).join(', ') : ''}
-Target Audience: ${Array.isArray(selectedSolution.targetAudience) ? selectedSolution.targetAudience.join(', ') : ''}
-Use Cases: ${Array.isArray(selectedSolution.useCases) ? selectedSolution.useCases.slice(0,3).join(', ') : ''}`;
+    const sol = selectedSolution as any;
+    prompt += `**SOLUTION / OFFERING CONTEXT (use this throughout the content):**
+Name: ${sol.name}
+Category: ${sol.category || 'N/A'}
+Description: ${sol.description || ''}
+${sol.shortDescription ? `Short Description: ${sol.shortDescription}` : ''}
+${sol.positioningStatement ? `Positioning: ${sol.positioningStatement}` : ''}
 
-    if (selectedSolution.uniqueValuePropositions) {
-      prompt += `
-Value Propositions: ${selectedSolution.uniqueValuePropositions.slice(0,3).join(', ')}`;
+**All Features:** ${Array.isArray(sol.features) ? sol.features.join(', ') : 'N/A'}
+**All Pain Points Addressed:** ${Array.isArray(sol.painPoints) ? sol.painPoints.join(', ') : 'N/A'}
+**Target Audience:** ${Array.isArray(sol.targetAudience) ? sol.targetAudience.join(', ') : 'N/A'}
+**All Use Cases:** ${Array.isArray(sol.useCases) ? sol.useCases.join(', ') : 'N/A'}
+${Array.isArray(sol.benefits) && sol.benefits.length > 0 ? `**Benefits:** ${sol.benefits.join(', ')}` : ''}
+${Array.isArray(sol.integrations) && sol.integrations.length > 0 ? `**Integrations:** ${sol.integrations.join(', ')}` : ''}
+${Array.isArray(sol.uniqueValuePropositions) && sol.uniqueValuePropositions.length > 0 ? `**Value Propositions:** ${sol.uniqueValuePropositions.join(', ')}` : ''}
+${Array.isArray(sol.keyDifferentiators) && sol.keyDifferentiators.length > 0 ? `**Key Differentiators:** ${sol.keyDifferentiators.join(', ')}` : ''}
+`;
+
+    // Competitors
+    if (Array.isArray(sol.competitors) && sol.competitors.length > 0) {
+      prompt += `\n**Competitive Landscape:**\n`;
+      sol.competitors.forEach((c: any) => {
+        prompt += `- ${c.name}: Strengths: ${(c.strengths || []).join(', ')}; Weaknesses: ${(c.weaknesses || []).join(', ')}\n`;
+      });
     }
-    if (selectedSolution.keyDifferentiators) {
-      prompt += `
-Key Differentiators: ${selectedSolution.keyDifferentiators.slice(0,3).join(', ')}`;
+
+    // Case Studies
+    if (Array.isArray(sol.caseStudies) && sol.caseStudies.length > 0) {
+      prompt += `\n**Case Studies:**\n`;
+      sol.caseStudies.forEach((cs: any) => {
+        prompt += `- ${cs.company} (${cs.industry}): Challenge: ${cs.challenge}. Solution: ${cs.solution}. Results: ${(cs.results || []).join(', ')}`;
+        if (cs.testimonial) prompt += ` | Testimonial: "${cs.testimonial.quote}" — ${cs.testimonial.author}, ${cs.testimonial.position}`;
+        prompt += `\n`;
+      });
     }
-    if (selectedSolution.marketData) {
-      prompt += `
-Market Context: ${JSON.stringify(selectedSolution.marketData)}`;
+
+    // Pricing
+    if (sol.pricing) {
+      prompt += `\n**Pricing:** Model: ${sol.pricing.model || 'N/A'}`;
+      if (sol.pricing.startingPrice) prompt += `, Starting at: ${sol.pricing.startingPrice}`;
+      if (Array.isArray(sol.pricing.tiers) && sol.pricing.tiers.length > 0) {
+        prompt += `\nTiers: ${sol.pricing.tiers.map((t: any) => `${t.name} (${t.price}): ${(t.features || []).join(', ')}`).join(' | ')}`;
+      }
+      prompt += `\n`;
     }
-    if (selectedSolution.technicalSpecs) {
-      prompt += `
-Technical Capabilities: ${JSON.stringify(selectedSolution.technicalSpecs)}`;
+
+    // Technical Specs
+    if (sol.technicalSpecs) {
+      const ts = sol.technicalSpecs;
+      const parts: string[] = [];
+      if (Array.isArray(ts.supportedPlatforms) && ts.supportedPlatforms.length) parts.push(`Platforms: ${ts.supportedPlatforms.join(', ')}`);
+      if (Array.isArray(ts.apiCapabilities) && ts.apiCapabilities.length) parts.push(`API: ${ts.apiCapabilities.join(', ')}`);
+      if (Array.isArray(ts.securityFeatures) && ts.securityFeatures.length) parts.push(`Security: ${ts.securityFeatures.join(', ')}`);
+      if (ts.uptimeGuarantee) parts.push(`Uptime: ${ts.uptimeGuarantee}`);
+      if (parts.length > 0) prompt += `\n**Technical Specs:** ${parts.join(' | ')}\n`;
     }
-    if (selectedSolution.caseStudies && selectedSolution.caseStudies.length > 0) {
-      prompt += `
-Success Stories: ${selectedSolution.caseStudies.slice(0,2).map((cs: any) => `${cs.company} achieved: ${Array.isArray(cs.results) ? cs.results.join(', ') : ''}`).join('; ')}`;
+
+    // Metrics
+    if (sol.metrics) {
+      const m = sol.metrics;
+      const parts: string[] = [];
+      if (m.adoptionRate) parts.push(`Adoption: ${m.adoptionRate}`);
+      if (m.customerSatisfaction) parts.push(`Satisfaction: ${m.customerSatisfaction}`);
+      if (m.roi) parts.push(`ROI: ${m.roi}`);
+      if (m.implementationTime) parts.push(`Implementation: ${m.implementationTime}`);
+      if (parts.length > 0) prompt += `**Metrics:** ${parts.join(' | ')}\n`;
     }
-    if (selectedSolution.pricing) {
-      prompt += `
-Pricing Model: ${selectedSolution.pricing.model || ''}`;
+
+    // Market Data
+    if (sol.marketData) {
+      prompt += `**Market Data:** ${JSON.stringify(sol.marketData)}\n`;
     }
 
     prompt += `
-
 SOLUTION INTEGRATION REQUIREMENTS:
-- Naturally integrate the solution throughout the content
-- Address specific pain points the solution solves
-- Highlight relevant features and benefits
-- Include appropriate use cases as examples
-- Mention key differentiators when relevant
-- Reference market context or technical capabilities if applicable
-- End with a compelling call-to-action related to the solution
+- Naturally weave the offering's name, features, and benefits throughout the content
+- Address specific pain points the offering solves with concrete examples
+- Reference case studies and metrics as proof points
+- Use competitive positioning to highlight differentiators
+- Include pricing context where relevant
+- End with a compelling call-to-action related to the offering
 `;
   }
 
