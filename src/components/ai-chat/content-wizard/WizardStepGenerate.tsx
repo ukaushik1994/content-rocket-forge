@@ -16,6 +16,7 @@ interface WizardStepGenerateProps {
   wizardState: WizardState;
   onMetaChange: (title: string, description: string) => void;
   onContentGenerated: (content: string) => void;
+  onTitleChange: (title: string) => void;
   onClose: () => void;
 }
 
@@ -23,6 +24,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   wizardState,
   onMetaChange,
   onContentGenerated,
+  onTitleChange,
   onClose,
 }) => {
   const { user } = useAuth();
@@ -51,7 +53,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     try {
       const provider = await getProvider();
       if (!provider) {
-        onMetaChange(`${wizardState.keyword} - Complete Guide`, `Discover everything about ${wizardState.keyword}. Learn best practices, tips, and strategies.`);
+        const defaultTitle = `${wizardState.keyword} - Complete Guide`;
+        onMetaChange(defaultTitle, `Discover everything about ${wizardState.keyword}. Learn best practices, tips, and strategies.`);
+        if (!wizardState.title) onTitleChange(defaultTitle);
         return;
       }
 
@@ -77,11 +81,16 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         onMetaChange(parsed.metaTitle || '', parsed.metaDescription || '');
+        if (!wizardState.title) onTitleChange(parsed.metaTitle || `${wizardState.keyword} - Complete Guide`);
       } else {
-        onMetaChange(`${wizardState.keyword} - Complete Guide`, `Discover everything about ${wizardState.keyword}. Learn best practices, tips, and strategies.`);
+        const defaultTitle = `${wizardState.keyword} - Complete Guide`;
+        onMetaChange(defaultTitle, `Discover everything about ${wizardState.keyword}. Learn best practices, tips, and strategies.`);
+        if (!wizardState.title) onTitleChange(defaultTitle);
       }
     } catch {
-      onMetaChange(`${wizardState.keyword} - Complete Guide`, `Discover everything about ${wizardState.keyword}.`);
+      const defaultTitle = `${wizardState.keyword} - Complete Guide`;
+      onMetaChange(defaultTitle, `Discover everything about ${wizardState.keyword}.`);
+      if (!wizardState.title) onTitleChange(defaultTitle);
     } finally {
       setIsGeneratingMeta(false);
     }
@@ -90,10 +99,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   const generateContent = async () => {
     setIsGeneratingContent(true);
     try {
-      // Build outline text
       const outlineText = wizardState.outline.map(s => `${'#'.repeat(s.level + 1)} ${s.title}`).join('\n');
 
-      // Build SERP selections in the format expected by generateAdvancedContent
       const serpSelections = [
         ...wizardState.researchSelections.faqs.map(f => ({ type: 'question' as const, content: f, source: 'serp', selected: true })),
         ...wizardState.researchSelections.contentGaps.map(g => ({ type: 'contentGap' as const, content: g, source: 'serp', selected: true })),
@@ -105,7 +112,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       const config: ContentGenerationConfig = {
         mainKeyword: wizardState.keyword,
-        title: wizardState.metaTitle || `${wizardState.keyword} - Complete Guide`,
+        title: wizardState.title || wizardState.metaTitle || `${wizardState.keyword} - Complete Guide`,
         outline: outlineText,
         secondaryKeywords: wizardState.researchSelections.relatedKeywords.join(', '),
         writingStyle: wizardState.writingStyle,
@@ -127,20 +134,19 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         onContentGenerated(result);
         toast.success('Content generated successfully!');
       } else {
-        // Fallback
         const fallback = wizardState.outline.map(s =>
-          `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here. Consider addressing the key aspects of ${wizardState.keyword} related to this topic.</p>`
+          `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here.</p>`
         ).join('\n\n');
         onContentGenerated(fallback);
-        toast.warning('AI returned empty content. A draft outline has been created for you to edit.');
+        toast.warning('AI returned empty content. A draft outline has been created.');
       }
     } catch (err) {
       console.error('Content generation failed:', err);
       const fallback = wizardState.outline.map(s =>
-        `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here. Consider addressing the key aspects of ${wizardState.keyword} related to this topic.</p>`
+        `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here.</p>`
       ).join('\n\n');
       onContentGenerated(fallback);
-      toast.warning('AI generation failed. A draft outline has been created for you to edit.');
+      toast.warning('AI generation failed. A draft outline has been created.');
     } finally {
       setIsGeneratingContent(false);
     }
@@ -148,30 +154,27 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
   const saveAsDraft = async () => {
     if (!user) { toast.error('Please log in first.'); return; }
+    if (!wizardState.title.trim()) { toast.error('Please enter a title.'); return; }
     setIsSaving(true);
     try {
-      const titleMatch = wizardState.generatedContent.match(/<h[12][^>]*>(.*?)<\/h[12]>/i);
-      const autoTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '') : `${wizardState.keyword} - ${wizardState.contentType}`;
-      const finalTitle = wizardState.metaTitle || autoTitle;
+      const relatedKeywords = wizardState.researchSelections.relatedKeywords.slice(0, 5);
 
       // Build comprehensive metadata matching Content Builder
       const metadata: Record<string, any> = {
         generated_via: 'chat_wizard',
         keyword: wizardState.keyword,
-        contentType: wizardState.contentType,
-        solution_id: wizardState.selectedSolution?.id,
-        word_count_mode: wizardState.wordCountMode,
-        outline_sections: wizardState.outline.length,
+        mainKeyword: wizardState.keyword,
+        secondaryKeywords: relatedKeywords,
         writingStyle: wizardState.writingStyle,
         expertiseLevel: wizardState.expertiseLevel,
         contentArticleType: wizardState.contentArticleType,
         outline: wizardState.outline,
         metaTitle: wizardState.metaTitle,
         metaDescription: wizardState.metaDescription,
-        mainKeyword: wizardState.keyword,
-        secondaryKeywords: wizardState.researchSelections.relatedKeywords,
         wordCount: wizardState.generatedContent.split(/\s+/).length,
         readingTime: Math.ceil(wizardState.generatedContent.split(/\s+/).length / 200),
+        word_count_mode: wizardState.wordCountMode,
+        outline_sections: wizardState.outline.length,
         selectedSolution: wizardState.selectedSolution ? {
           id: wizardState.selectedSolution.id,
           name: wizardState.selectedSolution.name,
@@ -185,24 +188,38 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       const { data: existingContent } = await supabase
         .from('content_items')
         .select('id')
-        .eq('title', finalTitle)
+        .eq('title', wizardState.title.trim())
         .eq('user_id', user.id)
         .eq('status', 'draft')
         .maybeSingle();
 
       let contentId: string;
 
+      const insertPayload = {
+        title: wizardState.title.trim(),
+        content: wizardState.generatedContent,
+        user_id: user.id,
+        status: 'draft' as const,
+        content_type: 'blog' as const,
+        seo_score: 0,
+        meta_title: wizardState.metaTitle || null,
+        meta_description: wizardState.metaDescription || null,
+        solution_id: wizardState.selectedSolution?.id || null,
+        keywords: { main: wizardState.keyword, secondary: relatedKeywords } as any,
+        metadata: metadata as any,
+      };
+
       if (existingContent) {
-        // Update existing
         const { data, error } = await supabase
           .from('content_items')
           .update({
-            content: wizardState.generatedContent,
-            meta_title: wizardState.metaTitle || null,
-            meta_description: wizardState.metaDescription || null,
-            seo_score: 0,
-            metadata,
-            updated_at: new Date().toISOString(),
+            content: insertPayload.content,
+            meta_title: insertPayload.meta_title,
+            meta_description: insertPayload.meta_description,
+            seo_score: insertPayload.seo_score,
+            metadata: insertPayload.metadata,
+            keywords: insertPayload.keywords,
+            solution_id: insertPayload.solution_id,
           })
           .eq('id', existingContent.id)
           .select('id')
@@ -210,34 +227,17 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         if (error) throw error;
         contentId = data.id;
       } else {
-        // Insert new
         const { data, error } = await supabase
           .from('content_items')
-          .insert({
-            user_id: user.id,
-            title: finalTitle,
-            content: wizardState.generatedContent,
-            content_type: (wizardState.contentType || 'blog') as any,
-            main_keyword: wizardState.keyword,
-            secondary_keywords: wizardState.researchSelections.relatedKeywords.slice(0, 5),
-            status: 'draft' as any,
-            meta_title: wizardState.metaTitle || null,
-            meta_description: wizardState.metaDescription || null,
-            solution_id: wizardState.selectedSolution?.id || null,
-            seo_score: 0,
-            metadata,
-          } as any)
-          .select('id, title')
+          .insert(insertPayload)
+          .select('id')
           .single();
         if (error) throw error;
         contentId = data.id;
       }
 
       // Save keywords and link them
-      const allKeywords = [
-        wizardState.keyword,
-        ...wizardState.researchSelections.relatedKeywords.slice(0, 5),
-      ].filter(Boolean);
+      const allKeywords = [wizardState.keyword, ...relatedKeywords].filter(Boolean);
       const uniqueKeywords = [...new Set(allKeywords)];
 
       const keywordIds: string[] = [];
@@ -261,7 +261,6 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         }
       }
 
-      // Link keywords to content
       if (keywordIds.length > 0) {
         const contentKeywords = keywordIds.map(kid => ({
           content_id: contentId,
@@ -276,7 +275,6 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       try {
         const usedFaqs = wizardState.researchSelections.faqs;
         const usedHeadings = wizardState.researchSelections.serpHeadings;
-        const usedTitles = [finalTitle].filter(Boolean);
         if (usedFaqs.length + usedHeadings.length > 0) {
           await supabase.from('content_reuse_history').insert({
             user_id: user.id,
@@ -284,7 +282,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             primary_keyword: wizardState.keyword,
             used_faqs: [...new Set(usedFaqs)],
             used_headings: [...new Set(usedHeadings)],
-            used_titles: [...new Set(usedTitles)],
+            used_titles: [wizardState.title.trim()],
           });
         }
       } catch (e) {
@@ -293,7 +291,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       setSaved(true);
       setSavedId(contentId);
-      toast.success(`Saved "${finalTitle}" as draft!`);
+      toast.success(`Saved "${wizardState.title}" as draft!`);
     } catch (err) {
       console.error('Save failed:', err);
       toast.error('Failed to save. Please try again.');
@@ -304,7 +302,6 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
   const handleContinueEditing = () => {
     if (!savedId) return;
-    // Load into Content Builder via sessionStorage (matching existing pattern)
     sessionStorage.setItem('continueEditingContentId', savedId);
     navigate('/content');
     onClose();
@@ -337,7 +334,18 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-medium text-foreground">Generate & Save</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">Review meta info, generate, and save</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Set title, review meta, generate and save</p>
+      </div>
+
+      {/* Title Field */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-foreground">Title *</label>
+        <Input
+          value={wizardState.title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          placeholder="Enter content title..."
+          className="text-sm"
+        />
       </div>
 
       {/* Meta Fields */}
@@ -393,7 +401,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
           {/* Save */}
           <div className="flex gap-2">
-            <Button onClick={saveAsDraft} disabled={isSaving} className="flex-1 gap-2">
+            <Button onClick={saveAsDraft} disabled={isSaving || !wizardState.title.trim()} className="flex-1 gap-2">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save as Draft
             </Button>
