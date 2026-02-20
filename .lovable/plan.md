@@ -1,111 +1,117 @@
 
-# Content Wizard: End-to-End Fix Plan
+# Content Wizard: Complete End-to-End Fix
 
-## Issues Found (7 Total)
+## Problems Identified
 
-### Issue 1: Content Generation Uses Basic AI-Proxy Instead of Advanced Content Generation Service
-**Severity**: Critical -- this is why content quality is poor or generation fails
+### 1. Merge Step 0 (Topic) and Step 1 (Solution) into a Single Step
+Currently the user goes through two separate steps for topic and solution. These should be one step where the user picks a solution AND enters/confirms the keyword.
 
-The Content Builder uses `generateAdvancedContent()` from `src/services/advancedContentGeneration.ts`, which builds a sophisticated multi-section prompt with writing style, expertise level, SERP selections by type, solution-aware prompting, and content intent. The Wizard's `WizardStepGenerate.tsx` uses a basic single `ai-proxy` call with a minimal prompt -- no writing style, no expertise level, no content type intelligence, no structured SERP integration.
+### 2. No Title Field -- Save Fails
+The `content_items` table requires `title` (non-nullable). The wizard auto-generates a title from meta or content H1, but there is no explicit title input for the user. The Content Builder has a `contentTitle` field and a `SaveContentDialog` where the user sets the title before saving.
 
-**Fix**: Replace the inline `generateContent()` in `WizardStepGenerate.tsx` with a call to `generateAdvancedContent()` from the existing service, mapping the wizard state to a `ContentGenerationConfig` object.
+### 3. Insert Uses Non-Existent Columns
+The current `saveAsDraft()` passes `main_keyword` and `secondary_keywords` to the insert, but these columns do NOT exist on the `content_items` table. This causes the save to fail silently or throw. The Content Builder stores these in `metadata` JSON, not as top-level columns.
 
-### Issue 2: Save Only Goes to `content_items` -- Missing Keywords, Content-Keywords Links, Reuse History
-**Severity**: Critical -- saved content is missing keyword associations and metadata
+### 4. Writing Config Should Come From Solution Data
+The Content Builder pulls writing tone/audience context from the solution's `target_audience`, `pain_points`, `features`, etc. The Wizard currently ignores this offering intelligence. When a solution is selected, the writing style and expertise level should be inferred from the solution data (e.g., if the target audience is "enterprise CTOs", set expertise to "expert" and style to "professional").
 
-The Content Builder's `useSaveContent` hook saves to `content_items` AND also:
-- Saves keywords to the `keywords` table
-- Links them via `content_keywords` table
-- Records `content_reuse_history`
-- Includes comprehensive SERP metadata, solution integration metrics, strategy source tracking
-- De-duplicates content by title
-
-The Wizard's `saveAsDraft()` only does a basic `content_items.insert()` with minimal metadata. Keywords are put in `secondary_keywords` column but never linked properly.
-
-**Fix**: Rewrite `saveAsDraft()` in `WizardStepGenerate.tsx` to match the Content Builder's save logic -- save keywords, link them, include comprehensive metadata, and record reuse history.
-
-### Issue 3: Missing `main_keyword` and `secondary_keywords` Column Population
-**Severity**: Medium
-
-The wizard correctly sets `main_keyword` but puts `relatedKeywords` into `secondary_keywords`. The Content Builder also saves `content_type`, proper `meta_title`, `meta_description`, and `seo_score`. The wizard is missing `seo_score` entirely.
-
-**Fix**: Align the insert payload with the Content Builder's format.
-
-### Issue 4: No Content Brief / Writing Configuration Step
-**Severity**: Medium -- content quality gap
-
-The Content Builder has writing style selection (Conversational, Professional, Academic, etc.), expertise level, content type (how-to, listicle, comprehensive), and toggles for stats/case studies/FAQs. The Wizard jumps straight from word count to generate with no configuration.
-
-**Fix**: Add writing configuration options (style, expertise, content type) to the existing "Words" step (Step 4) since it has visual space. This keeps the step count at 6 while adding the missing controls.
-
-### Issue 5: Word Count Not Passed Correctly to Generation
-**Severity**: Medium
-
-When `wordCountMode === 'ai'`, the `wordCount` is set in state but the generation prompt uses `wizardState.wordCount || 1500`. If the AI estimate is e.g. 2400, it should use that, but the `max_tokens` calculation (`wordCount * 3`) may be insufficient for longer content.
-
-**Fix**: Ensure the AI-estimated word count is properly propagated and use appropriate `max_tokens` (at least `targetLength * 2` or 4000, whichever is higher).
-
-### Issue 6: Content Preview Uses `dangerouslySetInnerHTML` Without Sanitization
-**Severity**: Low (security)
-
-The Wizard preview renders HTML directly. The Content Builder uses DOMPurify for sanitization.
-
-**Fix**: Add DOMPurify sanitization to the preview in `WizardStepGenerate.tsx`.
-
-### Issue 7: No "Continue Editing in Content Builder" Option After Save
-**Severity**: Low (UX gap)
-
-The Content Builder workflow allows continuing editing. After the Wizard saves, the user can only go to Repository or close -- no option to open the newly created content in the full Content Builder for further refinement.
-
-**Fix**: Add a "Continue Editing" button that loads the saved content into the Content Builder via sessionStorage (matching the existing pattern).
+### 5. `content_type` Enum Mismatch
+The wizard passes `wizardState.contentType` which defaults to `'blog'` but the valid enum values are: `article`, `blog`, `glossary`, `social_post`, `email`, `landing_page`. The `contentArticleType` field (`how-to`, `listicle`, etc.) is NOT the same as `content_type`. The wizard needs to distinguish between them.
 
 ---
 
-## Files to Modify
+## Plan
 
-### 1. `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` (Major rewrite)
-- Replace `generateContent()` with call to `generateAdvancedContent()` service
-- Rewrite `saveAsDraft()` to match Content Builder save logic (keywords table, content_keywords links, comprehensive metadata, reuse history)
-- Add DOMPurify for content preview
-- Add "Continue Editing" button post-save
+### File 1: `ContentWizardSidebar.tsx` -- Merge Steps 0+1, Add Title Field
 
-### 2. `src/components/ai-chat/content-wizard/WizardStepWordCount.tsx` (Add writing config)
-- Add writing style selector (Conversational, Professional, Academic, Casual)
-- Add expertise level selector (Beginner, Intermediate, Expert)
-- Add content type selector (General, How-to, Listicle, Comprehensive)
-- Pass these values through wizard state
+**Changes:**
+- Reduce from 6 steps to 5: `Topic & Solution` (0), `Research` (1), `Outline` (2), `Config` (3), `Generate & Save` (4)
+- Add `title` field to `WizardState`
+- Move keyword input INTO the Solution step (show keyword input at top, solutions below)
+- Update `canProceed` logic: step 0 requires keyword length >= 2 AND a solution selected
+- Update all step references (goNext max, step indices)
 
-### 3. `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx` (State additions)
-- Add `writingStyle`, `expertiseLevel`, `contentArticleType` to `WizardState` interface
-- Add `includeStats`, `includeCaseStudies`, `includeFAQs` boolean flags
-- Pass new state to WizardStepWordCount and WizardStepGenerate
+### File 2: `WizardStepSolution.tsx` -- Integrate Keyword Input
+
+**Changes:**
+- Accept `keyword` and `onKeywordChange` props
+- Render keyword input at the top of the solution step
+- When a solution is selected, auto-suggest writing style and expertise from solution data (e.g., if target_audience contains "enterprise" or "professional", default to professional style)
+- Emit a callback with offering intelligence metadata
+
+### File 3: `WizardStepGenerate.tsx` -- Fix Save Logic + Add Title Input
+
+**Changes:**
+- Add an editable title input field (pre-filled from metaTitle or auto-extracted from content H1)
+- Remove `main_keyword` and `secondary_keywords` from the insert payload (these columns don't exist)
+- Store keywords in `metadata` JSON and in the `keywords` JSONB column
+- Set `content_type` to a valid enum value (default `'blog'`)
+- Remove `solution_id` if it's not a valid UUID from the solutions table (or keep it if valid)
+- Ensure the save actually works by matching the Content Builder's exact insert shape:
+  ```
+  { title, content, user_id, status, seo_score, meta_title, meta_description, 
+    metadata, content_type, solution_id, keywords }
+  ```
+- Keep keyword linking (keywords table + content_keywords table) as-is since that works
+- Keep reuse history as-is
+
+### File 4: `WizardStepWordCount.tsx` -- Minor Label Updates
+
+**Changes:**
+- Relabel step as "Writing Config" to match merged flow
+- No structural changes needed
 
 ---
 
-## Technical Implementation Summary
+## Technical Details
 
 ```text
-ContentWizardSidebar.tsx
-  - WizardState: add writingStyle, expertiseLevel, contentArticleType,
-    includeStats, includeCaseStudies, includeFAQs
-  - Pass new fields to WizardStepWordCount and WizardStepGenerate
+ContentWizardSidebar.tsx:
+  - STEPS: [
+      { id: 0, label: 'Topic & Solution' },
+      { id: 1, label: 'Research' },
+      { id: 2, label: 'Outline' },
+      { id: 3, label: 'Config' },
+      { id: 4, label: 'Generate' },
+    ]
+  - WizardState: add `title: string`
+  - canProceed case 0: keyword.length >= 2 && selectedSolution
+  - All subsequent cases shift -1
 
-WizardStepWordCount.tsx
-  - Add writing style radio group (4 options)
-  - Add expertise level radio group (3 options)
-  - Add content type selector (4 options)
-  - Report changes back to parent via new callback props
+WizardStepSolution.tsx:
+  - Add keyword input at top
+  - Accept keyword/onKeywordChange props
+  - Auto-set writing defaults from solution.target_audience
 
-WizardStepGenerate.tsx
-  - Import generateAdvancedContent, ContentGenerationConfig
-  - Import DOMPurify
-  - Map WizardState to ContentGenerationConfig and call generateAdvancedContent()
-  - Rewrite saveAsDraft():
-    * Save/upsert keywords to keywords table
-    * Link via content_keywords table
-    * Include comprehensive metadata (strategy source, solution, SERP data)
-    * Record content_reuse_history
-    * De-duplicate by title
-  - Add DOMPurify.sanitize() on preview
-  - Add "Continue Editing" button that loads into Content Builder via sessionStorage
+WizardStepGenerate.tsx:
+  - Add title Input field before meta fields
+  - Fix insert: remove main_keyword, secondary_keywords columns
+  - Use keywords JSONB column for keyword storage
+  - Ensure content_type is valid enum ('blog' default)
+  - Title is required before save (disable button if empty)
+
+Save payload (matching Content Builder):
+  {
+    title: wizardState.title,
+    content: wizardState.generatedContent,
+    user_id: user.id,
+    status: 'draft',
+    seo_score: 0,
+    meta_title: wizardState.metaTitle || null,
+    meta_description: wizardState.metaDescription || null,
+    content_type: 'blog',
+    solution_id: wizardState.selectedSolution?.id || null,
+    keywords: { main: wizardState.keyword, secondary: relatedKeywords },
+    metadata: { ...comprehensive metadata... }
+  }
 ```
+
+## Result
+
+| Issue | Fix |
+|-------|-----|
+| Steps 0+1 separate | Merged into single "Topic & Solution" step |
+| No title input | Editable title field in Generate step |
+| Save fails (bad columns) | Removed non-existent columns from insert |
+| No offering intelligence | Solution data auto-sets writing style/expertise |
+| 6 steps too many | Reduced to 5 clean steps |
