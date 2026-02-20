@@ -138,6 +138,19 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setSidebarInteracted(true); // Manual expand counts as interaction
   };
 
+  // Handle setting visualization from choice card (content_wizard or proposal_browser)
+  const handleSetVisualization = (visualData: any) => {
+    setVisualizationData({
+      visualData,
+      chartConfig: null,
+      title: visualData?.title,
+      description: visualData?.description
+    });
+    setShowVisualizationSidebar(true);
+    setSidebarInteracted(true);
+    setUserClosedSidebar(false);
+  };
+
   // AUTO-OPEN sidebar when AI response contains visual data
   // Respects user's explicit close intent (Issue #4 fix)
   useEffect(() => {
@@ -159,7 +172,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     const messagesWithVisualData = messages.filter(msg => 
       msg.role === 'assistant' && 
       msg.visualData && 
-      msg.visualData.type !== 'serp_analysis'
+      msg.visualData.type !== 'serp_analysis' &&
+      msg.visualData.type !== 'content_creation_choice' // Choice card renders inline, not in sidebar
     );
     
     const latestVisualization = messagesWithVisualData[messagesWithVisualData.length - 1];
@@ -457,6 +471,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                           onDeleteMessage={deleteMessage}
                           onConfirmAction={handleConfirmAction}
                           onCancelAction={handleCancelAction}
+                          onSetVisualization={handleSetVisualization}
                         />
                       </div>
                     );

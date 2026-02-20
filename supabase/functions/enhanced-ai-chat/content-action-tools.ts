@@ -390,9 +390,9 @@ export async function executeContentActionTool(
       case 'launch_content_wizard': {
         return {
           success: true,
-          message: `Opening content wizard for "${toolArgs.keyword}"`,
+          message: `Ready to create content about "${toolArgs.keyword}". Choose how you'd like to proceed.`,
           visualData: {
-            type: 'content_wizard',
+            type: 'content_creation_choice',
             keyword: toolArgs.keyword,
             solution_id: toolArgs.solution_id || null,
             content_type: toolArgs.content_type || 'blog'

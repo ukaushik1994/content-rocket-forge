@@ -133,7 +133,7 @@ export interface GeneratedVideoVisualData {
 }
 
 export interface VisualData {
-  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table' | 'multi_chart_analysis' | 'generated_image' | 'generated_images' | 'generated_video' | 'generated_videos' | 'queue_status' | 'campaign_dashboard' | 'content_wizard';
+  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table' | 'multi_chart_analysis' | 'generated_image' | 'generated_images' | 'generated_video' | 'generated_videos' | 'queue_status' | 'campaign_dashboard' | 'content_wizard' | 'content_creation_choice' | 'proposal_browser';
   
   // Generated image support
   generatedImage?: GeneratedImageVisualData;

@@ -17,6 +17,7 @@ import { ActionResultCard, parseActionResults } from './ActionResultCard';
 import { ActionConfirmationCard } from './ActionConfirmationCard';
 import { CapabilitiesCard } from './CapabilitiesCard';
 import { VisualDataRenderer } from './VisualDataRenderer';
+import { ContentCreationChoiceCard } from './ContentCreationChoiceCard';
 import { useNavigate } from 'react-router-dom';
 
 interface EnhancedMessageBubbleProps {
@@ -33,6 +34,7 @@ interface EnhancedMessageBubbleProps {
   onDeleteMessage?: (messageId: string) => Promise<void>;
   onConfirmAction?: (confirmationMsgId: string) => void;
   onCancelAction?: (confirmationMsgId: string) => void;
+  onSetVisualization?: (visualData: any) => void;
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
@@ -48,7 +50,8 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   onEditMessage,
   onDeleteMessage,
   onConfirmAction,
-  onCancelAction
+  onCancelAction,
+  onSetVisualization
 }) => {
   const [showTimestamp, setShowTimestamp] = useState(false);
   const navigate = useNavigate();
@@ -258,8 +261,29 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             </motion.div>
           )}
 
+          {/* Content creation choice card - inline two-button UI */}
+          {!isUser && message.visualData?.type === 'content_creation_choice' && onSetVisualization && (
+            <ContentCreationChoiceCard
+              keyword={(message.visualData as any).keyword || ''}
+              onStartFromScratch={() => {
+                onSetVisualization({
+                  type: 'content_wizard',
+                  keyword: (message.visualData as any).keyword || '',
+                  solution_id: (message.visualData as any).solution_id,
+                  content_type: (message.visualData as any).content_type
+                });
+              }}
+              onAIProposals={() => {
+                onSetVisualization({
+                  type: 'proposal_browser',
+                  keyword: (message.visualData as any).keyword || '',
+                });
+              }}
+            />
+          )}
+
           {/* Inline visualization for tool results (charts, metrics, dashboards) */}
-          {!isUser && message.visualData && message.visualData.type !== 'serp_analysis' && (
+          {!isUser && message.visualData && message.visualData.type !== 'serp_analysis' && message.visualData.type !== 'content_creation_choice' && (
             <motion.div 
               className="mt-3"
               initial={{ opacity: 0, y: 10 }}

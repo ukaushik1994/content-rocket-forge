@@ -10,6 +10,7 @@ import { ExportDropdown } from './ExportDropdown';
 import { AISummaryCard } from './AISummaryCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ContentWizardSidebar } from './content-wizard/ContentWizardSidebar';
+import { ProposalBrowserSidebar } from './proposal-browser/ProposalBrowserSidebar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -910,6 +911,17 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
         keyword={visualData.keyword || ''}
         solutionId={visualData.solution_id}
         contentType={visualData.content_type}
+      />
+    );
+  }
+
+  // Proposal Browser mode
+  if (visualData?.type === 'proposal_browser') {
+    return (
+      <ProposalBrowserSidebar
+        isOpen={isOpen}
+        onClose={onClose}
+        keyword={visualData.keyword || ''}
       />
     );
   }
