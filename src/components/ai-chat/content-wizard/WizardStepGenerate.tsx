@@ -91,7 +91,11 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     try {
       const provider = await getProvider();
       if (!provider) {
-        toast.error('No AI provider configured. Go to Settings to add your API key.');
+        toast.warning('No AI provider configured. Generating a draft outline for you to edit.');
+        const fallback = wizardState.outline.map(s =>
+          `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here. Consider addressing the key aspects of ${wizardState.keyword} related to this topic.</p>`
+        ).join('\n\n');
+        onContentGenerated(fallback);
         return;
       }
 
@@ -130,10 +134,18 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         onContentGenerated(generated);
         toast.success('Content generated successfully!');
       } else {
-        toast.error('AI returned empty content. Check your AI provider settings.');
+        const fallback = wizardState.outline.map(s =>
+          `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here. Consider addressing the key aspects of ${wizardState.keyword} related to this topic.</p>`
+        ).join('\n\n');
+        onContentGenerated(fallback);
+        toast.warning('AI returned empty content. A draft outline has been created for you to edit.');
       }
     } catch (err) {
-      toast.error('Content generation failed. Check your AI provider settings.');
+      const fallback = wizardState.outline.map(s =>
+        `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here. Consider addressing the key aspects of ${wizardState.keyword} related to this topic.</p>`
+      ).join('\n\n');
+      onContentGenerated(fallback);
+      toast.warning('AI generation failed. A draft outline has been created for you to edit.');
     } finally {
       setIsGeneratingContent(false);
     }

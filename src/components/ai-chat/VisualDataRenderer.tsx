@@ -132,8 +132,11 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, on
     );
   }
 
+  // Content wizard is handled by the sidebar, not inline
+  if (data.type === 'content_wizard') return null;
+
   // Validate type is one of the expected values
-  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis', 'multi_chart_analysis', 'generated_image', 'generated_images', 'generated_video', 'generated_videos', 'queue_status', 'campaign_dashboard'];
+  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis', 'multi_chart_analysis', 'generated_image', 'generated_images', 'generated_video', 'generated_videos', 'queue_status', 'campaign_dashboard', 'content_wizard'];
   if (!validTypes.includes(data.type)) {
     console.warn(`⚠️ Unknown visual data type: "${data.type}" - attempting graceful degradation`);
     
