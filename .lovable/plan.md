@@ -1,58 +1,38 @@
 
 
-# Fix Plan: Content Wizard Bugs (3 Issues)
+# Fix: AI Asks for Topic/Keyword Before Launching Content Wizard
 
-## Bug 1: Content Gaps and Headings show `[object Object]` (Step 2)
+## Problem
+When a user says "create a blog" without specifying a topic, the wizard launches with an empty keyword, causing the Research step to return no SERP data.
 
-**File**: `src/components/ai-chat/content-wizard/WizardStepResearch.tsx`
+## Changes (2 files)
 
-**Lines 53 and 55** use `String(g)` and `String(h)` on SERP objects that have properties like `.topic`, `.description`, `.text`, `.title`. This produces `[object Object]`.
+### 1. Edge Function Tool Description (enforces AI behavior)
+**File**: `supabase/functions/enhanced-ai-chat/content-action-tools.ts` (lines 148-158)
 
-**Fix**: Extract the correct property from the object:
-- Line 53 (contentGaps): Change `String(g)` to `(g as any).topic || (g as any).description || (g as any).content || JSON.stringify(g)`
-- Line 55 (serpHeadings): Change `String(h)` to `(h as any).text || (h as any).title || (h as any).heading || JSON.stringify(h)`
+Update the `launch_content_wizard` tool description and keyword property to make the AI ask for a topic or keyword first:
 
----
+- **Line 149 description** becomes:
+  `"Launch the interactive content creation wizard. The 'keyword' parameter is REQUIRED. If the user has NOT specified a clear topic, keyword, or title (e.g. they just say 'create a blog'), you MUST ask them: 'What topic or keyword would you like to write about?' BEFORE calling this tool. Once they provide a title or topic, extract the core keyword/phrase and pass it as the 'keyword' parameter. Never call with an empty or generic keyword."`
+- **Line 153 keyword description** becomes:
+  `"The main topic, keyword, or phrase the user wants to write about. Extract from their title or topic. REQUIRED - never leave empty."`
 
-## Bug 2: No fallback content when AI generation fails (Step 5)
+### 2. Client-side Intent Detector (prevents auto-launch without keyword)
+**File**: `src/utils/actionIntentDetector.ts` (lines 375-383)
 
-**File**: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+Update `extractParams` so that when no keyword is found, it returns `null` instead of `{}`. This prevents the client from auto-triggering the tool call, letting the AI conversation flow naturally to ask the user.
 
-When AI returns an error or empty content (lines 93-96, 132-134, 135-137), the user is stuck -- no content is generated so the Save button never appears.
+- **Line 382**: Change `return {};` to `return null;`
 
-**Fix**:
-- In `generateContent()`, when provider is missing (line 93-96) OR AI returns empty (line 132-134) OR catch fires (line 135-137), generate fallback HTML from the outline:
-```
-const fallback = wizardState.outline.map(s =>
-  `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here.</p>`
-).join('\n\n');
-onContentGenerated(fallback);
-toast.warning('AI unavailable. A draft outline has been created for you to edit.');
-```
-- This ensures the Save button always appears.
+Then wherever intents are processed, skip intents where `extractParams` returns `null` (treat as "needs more info from user").
 
----
+## Result
 
-## Bug 3: "Unsupported Visualization Type" card in chat
+| User says | What happens |
+|-----------|-------------|
+| "Create a blog" | AI asks: "What topic or keyword would you like to write about?" |
+| "Write about AI in healthcare" | Keyword "AI in healthcare" extracted, wizard launches immediately |
+| "Blog about SEO strategies" | Keyword "SEO strategies" extracted, wizard launches immediately |
 
-**File**: `src/components/ai-chat/VisualDataRenderer.tsx`
-
-Line 136 lists valid types but does not include `content_wizard`. When the AI returns `type: "content_wizard"`, the renderer shows an error card even though the sidebar handles this type separately.
-
-**Fix**: Add `'content_wizard'` to the `validTypes` array on line 136, and add an early return for it before the validation block (since it's handled by the sidebar, no inline card is needed):
-```
-if (data.type === 'content_wizard') return null;
-```
-
----
-
-## Summary
-
-| # | Bug | File | Lines | Change |
-|---|-----|------|-------|--------|
-| 1 | `[object Object]` in Research | `WizardStepResearch.tsx` | 53, 55 | Extract `.topic`/`.text` from SERP objects |
-| 2 | No fallback content on AI fail | `WizardStepGenerate.tsx` | 93-96, 132-137 | Generate HTML draft from outline |
-| 3 | "Unsupported Visualization" card | `VisualDataRenderer.tsx` | 136 | Return `null` for `content_wizard` type |
-
-3 files, ~15 lines changed total.
+2 files, ~5 lines changed.
 
