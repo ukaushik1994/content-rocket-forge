@@ -17,7 +17,7 @@ export class AISolutionIntegrationService {
     const { solution, contentType, contentIntent, targetKeywords, audience } = context;
     
     const solutionContext = this.buildSolutionContext(solution);
-    const audienceContext = audience || solution.targetAudience.join(', ');
+    const audienceContext = audience || (Array.isArray(solution.targetAudience) ? solution.targetAudience.join(', ') : String(solution.targetAudience || 'General audience'));
     
     return `${basePrompt}
 
@@ -32,11 +32,11 @@ CONTENT REQUIREMENTS:
 - Target Keywords: ${targetKeywords.join(', ')}
 
 INTEGRATION GUIDELINES:
-- Naturally incorporate the solution's value propositions: ${solution.uniqueValuePropositions?.join(', ') || 'N/A'}
-- Address relevant pain points: ${solution.painPoints.join(', ')}
-- Highlight applicable features: ${solution.features.slice(0, 3).join(', ')}
-- Use appropriate use cases as examples: ${solution.useCases.slice(0, 2).join(', ')}
-- Mention key differentiators when relevant: ${solution.keyDifferentiators?.join(', ') || 'N/A'}
+- Naturally incorporate the solution's value propositions: ${Array.isArray(solution.uniqueValuePropositions) ? solution.uniqueValuePropositions.join(', ') : 'N/A'}
+- Address relevant pain points: ${Array.isArray(solution.painPoints) ? solution.painPoints.join(', ') : String(solution.painPoints || 'N/A')}
+- Highlight applicable features: ${Array.isArray(solution.features) ? solution.features.slice(0, 3).join(', ') : String(solution.features || 'N/A')}
+- Use appropriate use cases as examples: ${Array.isArray(solution.useCases) ? solution.useCases.slice(0, 2).join(', ') : String(solution.useCases || 'N/A')}
+- Mention key differentiators when relevant: ${Array.isArray(solution.keyDifferentiators) ? solution.keyDifferentiators.join(', ') : 'N/A'}
 
 ${this.getContentTypeSpecificGuidelines(contentType, solution)}`;
   }
@@ -66,7 +66,7 @@ CATEGORY: ${solution.category}`;
     }
 
     if (solution.caseStudies && solution.caseStudies.length > 0) {
-      context += `\nCASE STUDIES: ${solution.caseStudies.map(cs => `${cs.company} - ${cs.results.join(', ')}`).join('; ')}`;
+      context += `\nCASE STUDIES: ${solution.caseStudies.map(cs => `${cs.company} - ${Array.isArray(cs.results) ? cs.results.join(', ') : typeof cs.results === 'object' && cs.results ? Object.entries(cs.results).map(([k, v]) => `${k}: ${v}`).join(', ') : String(cs.results || 'N/A')}`).join('; ')}`;
     }
 
     return context;
@@ -156,19 +156,19 @@ CATEGORY: ${solution.category}`;
     const specs = [];
     
     if (technicalSpecs.systemRequirements) {
-      specs.push(`System Requirements: ${technicalSpecs.systemRequirements.join(', ')}`);
+      specs.push(`System Requirements: ${Array.isArray(technicalSpecs.systemRequirements) ? technicalSpecs.systemRequirements.join(', ') : String(technicalSpecs.systemRequirements)}`);
     }
     
     if (technicalSpecs.supportedPlatforms) {
-      specs.push(`Platforms: ${technicalSpecs.supportedPlatforms.join(', ')}`);
+      specs.push(`Platforms: ${Array.isArray(technicalSpecs.supportedPlatforms) ? technicalSpecs.supportedPlatforms.join(', ') : String(technicalSpecs.supportedPlatforms)}`);
     }
     
     if (technicalSpecs.apiCapabilities) {
-      specs.push(`API: ${technicalSpecs.apiCapabilities.join(', ')}`);
+      specs.push(`API: ${Array.isArray(technicalSpecs.apiCapabilities) ? technicalSpecs.apiCapabilities.join(', ') : String(technicalSpecs.apiCapabilities)}`);
     }
     
     if (technicalSpecs.securityFeatures) {
-      specs.push(`Security: ${technicalSpecs.securityFeatures.join(', ')}`);
+      specs.push(`Security: ${Array.isArray(technicalSpecs.securityFeatures) ? technicalSpecs.securityFeatures.join(', ') : String(technicalSpecs.securityFeatures)}`);
     }
     
     return specs.join('; ');
@@ -231,48 +231,52 @@ CATEGORY: ${solution.category}`;
     }
     
     // Check for feature mentions
-    const mentionedFeatures = solution.features.filter(feature => 
+    const featuresArr = Array.isArray(solution.features) ? solution.features : [];
+    const mentionedFeatures = featuresArr.filter(feature => 
       content.toLowerCase().includes(feature.toLowerCase())
     );
     if (mentionedFeatures.length > 0) {
       score += 25;
       feedback.push(`Features mentioned: ${mentionedFeatures.join(', ')}`);
-    } else {
-      suggestions.push(`Include specific features like: ${solution.features.slice(0, 2).join(', ')}`);
+    } else if (featuresArr.length > 0) {
+      suggestions.push(`Include specific features like: ${featuresArr.slice(0, 2).join(', ')}`);
     }
     
     // Check for pain point coverage
-    const addressedPainPoints = solution.painPoints.filter(pain => 
+    const painPointsArr = Array.isArray(solution.painPoints) ? solution.painPoints : [];
+    const addressedPainPoints = painPointsArr.filter(pain => 
       content.toLowerCase().includes(pain.toLowerCase())
     );
     if (addressedPainPoints.length > 0) {
       score += 25;
       feedback.push(`Pain points addressed: ${addressedPainPoints.join(', ')}`);
-    } else {
-      suggestions.push(`Address pain points like: ${solution.painPoints.slice(0, 2).join(', ')}`);
+    } else if (painPointsArr.length > 0) {
+      suggestions.push(`Address pain points like: ${painPointsArr.slice(0, 2).join(', ')}`);
     }
     
     // Check for use case examples
-    const mentionedUseCases = solution.useCases.filter(useCase => 
+    const useCasesArr = Array.isArray(solution.useCases) ? solution.useCases : [];
+    const mentionedUseCases = useCasesArr.filter(useCase => 
       content.toLowerCase().includes(useCase.toLowerCase())
     );
     if (mentionedUseCases.length > 0) {
       score += 15;
       feedback.push(`Use cases covered: ${mentionedUseCases.join(', ')}`);
-    } else {
-      suggestions.push(`Include use case examples like: ${solution.useCases.slice(0, 2).join(', ')}`);
+    } else if (useCasesArr.length > 0) {
+      suggestions.push(`Include use case examples like: ${useCasesArr.slice(0, 2).join(', ')}`);
     }
     
     // Check for value proposition integration
-    if (solution.uniqueValuePropositions) {
-      const mentionedVPs = solution.uniqueValuePropositions.filter(vp => 
+    const vpsArr = Array.isArray(solution.uniqueValuePropositions) ? solution.uniqueValuePropositions : [];
+    if (vpsArr.length > 0) {
+      const mentionedVPs = vpsArr.filter(vp => 
         content.toLowerCase().includes(vp.toLowerCase())
       );
       if (mentionedVPs.length > 0) {
         score += 15;
         feedback.push(`Value propositions highlighted: ${mentionedVPs.join(', ')}`);
       } else {
-        suggestions.push(`Highlight value propositions: ${solution.uniqueValuePropositions.slice(0, 2).join(', ')}`);
+        suggestions.push(`Highlight value propositions: ${vpsArr.slice(0, 2).join(', ')}`);
       }
     }
     
