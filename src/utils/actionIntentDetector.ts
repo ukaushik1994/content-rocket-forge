@@ -383,6 +383,29 @@ const ACTION_RULES: PatternRule[] = [
     }
   },
 
+  // AI-response patterns: detect when the AI says it's launching the content wizard
+  {
+    patterns: [
+      /launching\s+(the\s+)?content\s+(creation\s+)?wizard/i,
+      /starting\s+(the\s+)?content\s+(creation\s+)?wizard/i,
+      /let\s+me\s+(start|launch|open)\s+(the\s+)?content\s+(creation\s+)?wizard/i,
+      /I'll\s+(launch|start|open)\s+(the\s+)?content\s+(creation\s+)?wizard/i,
+      /opening\s+(the\s+)?content\s+(creation\s+)?wizard/i,
+      /content\s+wizard\s+(is\s+)?(now\s+)?(ready|open|launch)/i,
+    ],
+    toolName: 'launch_content_wizard',
+    confidence: 'high',
+    extractParams: (msg) => {
+      // Extract keyword after "about/for/on" or from quotes
+      const topicMatch = msg.match(/(?:about|for|on|topic[:\s]+)\s*["']?([^"'\n,.!?]{3,60})["']?/i);
+      if (topicMatch) return { keyword: topicMatch[1].trim() };
+      // Try quoted text
+      const quoted = msg.match(/["']([^"']{3,60})["']/);
+      if (quoted) return { keyword: quoted[1].trim() };
+      return {};
+    }
+  },
+
   // Company info
   {
     patterns: [
