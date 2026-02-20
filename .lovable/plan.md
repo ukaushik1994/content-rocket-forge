@@ -1,72 +1,81 @@
 
-# Fix: Content Wizard Generation Crashes and Quality Issues
+# Fix: Content Generation Failing Due to max_tokens Overflow
 
-## Root Cause (from console logs)
+## The Problem
 
-The content generation is **crashing** before the AI call is ever made. The error:
+Despite your earlier note, the max_tokens issue is the ONLY error in the logs right now. Every single AI call is failing with:
 
 ```
-TypeError: (cs.results || []).join is not a function
+max_tokens is too large: 39000. This model supports at most 16384
 ```
 
-At `advancedContentGeneration.ts` line 407, `cs.results` is an **object** (e.g., `{ revenue: "+30%", efficiency: "2x" }`), not an array. Calling `.join()` on an object throws a TypeError, which crashes `buildAdvancedContentPrompt()`, which crashes `generateAdvancedContent()`, which triggers the catch block in `WizardStepGenerate` producing the "Write about X here" fallback.
+This blocks EVERYTHING -- the AI Chat, the Content Wizard outline generation, meta generation, and content generation. The blog cannot be generated because the entire AI pipeline is broken by this single bug.
 
-The AI proxy is working perfectly (logs show "OpenAI chat successful"). The prompt builder just never gets far enough to call it.
+## Root Cause
 
-## Additional Bugs Found
+In `supabase/functions/enhanced-ai-chat/index.ts` (line 1863-1871):
 
-### Bug 2: Meta generation uses wrong response path
-`WizardStepGenerate.tsx` line 191:
+```
+estimatedModelContext = 260000  (assumes LM Studio 260K model)
+outputTokenRatio = 0.15
+dynamicMaxTokens = min(max(260000 * 0.15, 30000), 100000) = 39000
+```
+
+This 39000 value is sent to `ai-proxy`, which passes it directly to OpenAI. OpenAI's `gpt-4o-mini` only supports 16384 completion tokens -- instant 400 error, 3 retries, all fail.
+
+## The Fix (2 edge functions)
+
+### File 1: `supabase/functions/ai-proxy/index.ts`
+**Add a model-aware safety clamp** after the existing max_tokens cleanup (around line 236). This is the gateway -- no matter what any caller sends, the proxy ensures it never exceeds the model's actual limit:
+
 ```typescript
-const content = aiResult?.content || aiResult?.choices?.[0]?.message?.content || '';
-```
-Missing `aiResult?.data?.choices` path. Meta title/description always falls back to generic defaults.
+// Model-aware safety clamp
+const MODEL_TOKEN_LIMITS: Record<string, number> = {
+  'gpt-4o': 16384,
+  'gpt-4o-mini': 16384,
+  'gpt-4-turbo': 4096,
+  'gpt-4': 8192,
+  'gpt-3.5-turbo': 4096,
+};
 
-### Bug 3: OpenAI max_tokens deleted for legacy models
-`ai-proxy/index.ts` line 224 sets `requestBody.max_tokens`, then line 231 unconditionally deletes it. Legacy OpenAI models (gpt-4, gpt-4-turbo) get no token limit, relying on API defaults which may truncate long content.
-
-## Fixes (3 files)
-
-### File 1: `src/services/advancedContentGeneration.ts`
-
-**A. Fix the crash (line 407)** -- Safely handle `cs.results` whether it's an array, object, string, or undefined:
-```typescript
-const resultsStr = Array.isArray(cs.results) 
-  ? cs.results.join(', ') 
-  : typeof cs.results === 'object' && cs.results 
-    ? Object.entries(cs.results).map(([k, v]) => `${k}: ${v}`).join(', ')
-    : String(cs.results || 'N/A');
-```
-
-**B. Add defensive guards for ALL solution fields** -- Every `.join()`, `.map()`, and property access in the solution context section needs a type guard to prevent similar crashes from unexpected data shapes (competitors, pricing tiers, technical specs, metrics, etc.).
-
-### File 2: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
-
-**Fix meta response path (line 191)** -- Add the `data.choices` nesting:
-```typescript
-const content = aiResult?.data?.choices?.[0]?.message?.content
-  || aiResult?.choices?.[0]?.message?.content
-  || aiResult?.content
-  || '';
-```
-
-### File 3: `supabase/functions/ai-proxy/index.ts`
-
-**Fix max_tokens deletion (lines 224-231)** -- For legacy models, set max_tokens AFTER the cleanup:
-```typescript
-// Clean up unused parameters first
-delete requestBody.maxTokens;
-delete requestBody.max_tokens;
-
-// Then set the correct token limit
-if (!isNewerModel && (params.maxTokens || params.max_tokens)) {
-  requestBody.max_tokens = params.maxTokens || params.max_tokens || 4000;
+if (requestBody.max_tokens) {
+  const limit = Object.entries(MODEL_TOKEN_LIMITS)
+    .find(([key]) => model.startsWith(key));
+  if (limit) {
+    requestBody.max_tokens = Math.min(requestBody.max_tokens, limit[1]);
+  }
 }
+```
+
+Similarly clamp `max_completion_tokens` for newer models.
+
+### File 2: `supabase/functions/enhanced-ai-chat/index.ts`
+**Fix the dynamic token calculation** (lines 1862-1871) to use a reasonable cap instead of assuming a 260K LM Studio model:
+
+Change from:
+```typescript
+const estimatedModelContext = 260000;
+const outputTokenRatio = 0.15;
+const dynamicMaxTokens = Math.min(
+  Math.max(Math.floor(estimatedModelContext * outputTokenRatio), 30000),
+  100000
+);
+// Result: 39000
+```
+
+To:
+```typescript
+const dynamicMaxTokens = Math.min(
+  Math.max(4096, Math.floor(totalTokens * 0.3)),
+  16000  // Safe cap for OpenAI models
+);
+// Result: 4096-16000 depending on context size
 ```
 
 ## Expected Result
 
-- No more crashes from malformed solution data
-- Meta title/description generated by AI (not generic fallbacks)
-- Full token budget sent to OpenAI for content generation
-- Complete 1000-2000+ word AI-written prose incorporating GL Connect's features, case studies, and competitive positioning
+- AI Chat responds again (no more 500 errors)
+- Content Wizard outline generates via AI (no more "AI generation failed" fallback)
+- Content Wizard Step 4 produces full 1000-2000+ word AI prose
+- Meta title/description generated by AI
+- All callers are protected by the ai-proxy safety clamp regardless of what they send
