@@ -1,98 +1,91 @@
 
 
-# Fix: Chat Pre-generating Content + Wizard Step 4 Fallback Template
+# Fix: Content Wizard Generation -- Full AI Prose + Offering Context
 
-## Two Issues Identified
+## Root Causes Found
 
-### Issue 1: Chat streams a full blog post BEFORE the wizard opens
-
-**What happens today:**
-1. User types "create a blog about AI marketing"
-2. Phase 1: `ai-streaming` edge function streams a complete blog post into the chat (the system prompt at line 455 says "When generating content, produce the full content in your response")
-3. Phase 2: After streaming finishes, intent detection triggers `launch_content_wizard` tool
-4. Wizard sidebar opens -- but user already sees a full blog in the chat
-
-**Root cause:** The `ai-streaming` system prompt (line 455) instructs the AI to "produce the full content in your response" for content creation requests. There's no awareness that certain intents should be handled by the wizard instead.
-
-**Fix: Add wizard-intent detection to `ai-streaming` edge function**
-
-File: `supabase/functions/ai-streaming/index.ts`
-
-- Add a content-creation intent detector (similar to the greeting fast-path) that catches messages like "create a blog", "write an article", etc.
-- When detected, stream a SHORT acknowledgment instead of full content: "I'll launch the Content Wizard to help you create this. Let me set that up..."
-- This prevents the AI from writing 2000 tokens of blog content that gets discarded when the wizard opens
-
-Additionally, update the system prompt (line 455) to add a rule:
+### Bug 1: Wrong response path (THE main bug causing fallback templates)
+In `src/services/advancedContentGeneration.ts` line 172, the content extraction path is:
 ```
-- When the user asks to CREATE or WRITE content (blog, article, guide), DO NOT write the full content. 
-  Instead, briefly acknowledge and say you'll use the Content Wizard to guide them through research, 
-  outline, and generation. Keep your response under 2 sentences.
+aiData?.choices?.[0]?.message?.content
 ```
+But the `ai-proxy` returns a NESTED structure:
+```json
+{ "success": true, "data": { "choices": [{ "message": { "content": "..." } }] }, "provider": "OpenAI" }
+```
+So the correct path is `aiData?.data?.choices?.[0]?.message?.content`. The current code always evaluates to `undefined`, which returns `null`, which triggers the "Write about X here" fallback in `WizardStepGenerate.tsx` line 280.
 
-### Issue 2: Step 4 generates fallback template instead of AI prose
+### Bug 2: Encrypted API key being sent
+Line 162 passes `apiKey: provider.api_key` -- this is the encrypted value from the DB. The `ai-proxy` already decrypts the key automatically via `getApiKey(service, userId)` when the request has an auth header. Sending the encrypted value means `ai-proxy` uses it directly (encrypted) as the API key, causing provider auth failures. Fix: remove the `apiKey` field from the request body.
 
-**What happens today:**
-1. `generateContent()` in WizardStepGenerate calls `generateAdvancedContent(config)`
-2. `generateAdvancedContent` calls `AIServiceController.generate(request, systemPrompt)`
-3. `AIServiceController.generate` calls `callProvider()` which invokes `enhanced-ai-chat` edge function
-4. `enhanced-ai-chat` is a CHAT function with tool-calling capabilities -- it's NOT optimized for long-form content generation
-5. It either returns truncated content, tool calls instead of content, or fails
-6. `generateAdvancedContent` returns `null`
-7. WizardStepGenerate falls back to template: `"Write about ${s.title} here."`
+### Bug 3: `max_tokens` gets deleted for newer models
+The `chatOpenAI` function (ai-proxy line 230-231) deletes `max_tokens` from the request body after converting it. But since the whole `params` object is spread into `requestBody` (line 211: `...params`), the `max_tokens` from our request gets caught in cleanup. This is actually handled correctly but worth noting.
 
-**Root cause:** `AIServiceController.callProvider` routes through `enhanced-ai-chat` (line 620), which is a general chat function. For content generation, it should use `ai-proxy` directly (as specified in the architecture memory: "Direct interaction with ai-proxy is mandatory").
+### Issue 4: Solution context is shallow in the prompt
+The `buildAdvancedContentPrompt` function (line 372-417) includes basic solution fields but truncates them:
+- Features: only first 5
+- Pain points: only first 3
+- Use cases: only first 3
+- Missing: `benefits`, `integrations`, `positioningStatement`, competitor details
 
-**Fix: Add a direct `ai-proxy` path for content generation in `generateAdvancedContent`**
+The `AISolutionIntegrationService.createSolutionAwarePrompt` does add richer context but only when `contentType` AND `contentIntent` are both truthy (line 72). The wizard passes `contentIntent: 'inform'` which is fine, but `contentType` comes from `wizardState.contentArticleType` which defaults to... let me check.
 
-File: `src/services/advancedContentGeneration.ts`
+Actually, looking at ContentWizardSidebar line 76, it defaults to empty. This means the condition on line 72 (`config.contentType && config.contentIntent`) may fail if contentArticleType is empty, skipping the rich solution context entirely.
 
-- Instead of going through `AIServiceController.generate()` (which routes through `enhanced-ai-chat`), call `supabase.functions.invoke('ai-proxy')` directly with the content generation prompt
-- This matches the architecture pattern and gives the AI the full token budget for long-form content
-- Add retry logic with a second provider if the first fails
+## The Fix (2 files)
 
-The change replaces lines 127-145:
+### File 1: `src/services/advancedContentGeneration.ts`
+
+**A. Fix response extraction (line 172)**
+Change from:
 ```typescript
-// Get user's active provider
-const { data: provider } = await supabase
-  .from('ai_service_providers')
-  .select('provider, api_key, preferred_model')
-  .eq('status', 'active')
-  .order('priority', { ascending: true })
-  .limit(1)
-  .single();
-
-if (!provider) throw new Error('No AI provider configured');
-
-// Call ai-proxy directly for content generation (not enhanced-ai-chat)
-const { data, error } = await supabase.functions.invoke('ai-proxy', {
-  body: {
-    service: provider.provider,
-    endpoint: 'chat',
-    params: {
-      model: provider.preferred_model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: Math.max(4000, config.targetLength * 2),
-      temperature: 0.7,
-    },
-    apiKey: provider.api_key,
-  }
-});
+const generatedContent = aiData?.choices?.[0]?.message?.content 
+  || aiData?.content 
+  || aiData?.text
+  || (typeof aiData === 'string' ? aiData : null);
+```
+To:
+```typescript
+const generatedContent = aiData?.data?.choices?.[0]?.message?.content
+  || aiData?.choices?.[0]?.message?.content
+  || aiData?.data?.content
+  || aiData?.content
+  || aiData?.text
+  || (typeof aiData === 'string' ? aiData : null);
 ```
 
-This ensures the full prompt (with SERP data, outline, solution context) gets sent directly to the AI provider with adequate token limits, instead of being filtered through a chat function that may trigger tool calls or truncate output.
+**B. Remove encrypted apiKey from request (lines 149-164)**
+Remove `apiKey: provider.api_key` from the `supabase.functions.invoke('ai-proxy')` body. The proxy already decrypts the key from the DB using the auth header.
 
-## Files to Modify
+**C. Enrich solution context in prompt (lines 372-417)**
+Expand the solution section in `buildAdvancedContentPrompt` to include ALL available fields:
+- All features (not just 5)
+- All pain points (not just 3)
+- All use cases (not just 3)
+- Benefits array
+- Integrations
+- Positioning statement
+- Competitor names and their strengths/weaknesses
+- Full case study details (challenge, solution, results, testimonials)
+- Pricing tiers
+- Technical specs (platforms, API capabilities, security features)
+- Metrics (adoption rate, ROI, customer satisfaction)
 
-1. **`supabase/functions/ai-streaming/index.ts`** -- Add content-creation intent detection to suppress full blog generation in Phase 1 streaming. Short acknowledgment only.
+**D. Default contentType fallback (line 72)**
+Change the condition to default to 'general' if contentType is empty:
+```typescript
+const effectiveContentType = config.contentType || 'general';
+if (config.selectedSolution && effectiveContentType) {
+```
 
-2. **`src/services/advancedContentGeneration.ts`** -- Replace `AIServiceController.generate()` with direct `ai-proxy` invocation for reliable long-form content generation.
+### File 2: `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx`
+
+**Default `contentArticleType`** to `'comprehensive'` instead of empty string in the initial wizard state (line ~75), ensuring the solution-aware prompt enrichment always runs.
 
 ## Expected Result
 
-- User says "create a blog about X" -> Chat shows brief "Launching the Content Wizard..." -> Wizard sidebar opens
-- Wizard Step 4 "Generate" -> Full AI-generated prose (1000-2000+ words) based on outline, SERP data, and solution context
+- "Generate" button in Step 4 produces 1000-2000+ word AI-written prose
+- Content naturally integrates the selected offering's features, pain points, case studies, pricing, and competitive positioning
 - No more "Write about X here" fallback templates
+- Selecting GLC (or any offering) means its full context flows into the AI prompt
 
