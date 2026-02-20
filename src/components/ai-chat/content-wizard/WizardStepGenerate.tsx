@@ -188,7 +188,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       if (aiError) throw new Error(aiError.message);
 
-      const content = aiResult?.content || aiResult?.choices?.[0]?.message?.content || '';
+      const content = aiResult?.data?.choices?.[0]?.message?.content || aiResult?.choices?.[0]?.message?.content || aiResult?.content || '';
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
