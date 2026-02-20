@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import { WizardStepSolution } from './WizardStepSolution';
 import { WizardStepResearch } from './WizardStepResearch';
 import { WizardStepOutline } from './WizardStepOutline';
@@ -40,6 +41,7 @@ export interface WizardState {
 }
 
 const STEPS = [
+  { id: 0, label: 'Topic' },
   { id: 1, label: 'Solution' },
   { id: 2, label: 'Research' },
   { id: 3, label: 'Outline' },
@@ -54,7 +56,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   solutionId,
   contentType = 'blog',
 }) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [wizardState, setWizardState] = useState<WizardState>({
     keyword,
     contentType,
@@ -76,6 +78,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
 
   const canProceed = (): boolean => {
     switch (currentStep) {
+      case 0: return wizardState.keyword.trim().length >= 2;
       case 1: return !!wizardState.selectedSolution;
       case 2: {
         const s = wizardState.researchSelections;
@@ -89,7 +92,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   };
 
   const goNext = () => { if (currentStep < 5 && canProceed()) setCurrentStep(s => s + 1); };
-  const goBack = () => { if (currentStep > 1) setCurrentStep(s => s - 1); };
+  const goBack = () => { if (currentStep > 0) setCurrentStep(s => s - 1); };
 
   return (
     <AnimatePresence>
@@ -122,7 +125,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
               <div className="flex items-center justify-between mb-4">
                 <div className="min-w-0">
                   <h2 className="text-sm font-semibold text-foreground truncate">Content Wizard</h2>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">"{keyword}"</p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">"{wizardState.keyword || keyword}"</p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-muted text-muted-foreground">
                   <X className="h-4 w-4" />
@@ -169,6 +172,21 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.2 }}
                   >
+                    {currentStep === 0 && (
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground">What would you like to write about?</h3>
+                          <p className="text-xs text-muted-foreground mt-1">Enter a keyword or topic for your content</p>
+                        </div>
+                        <Input
+                          value={wizardState.keyword}
+                          onChange={(e) => updateState({ keyword: e.target.value })}
+                          placeholder="e.g. AI in healthcare, best running shoes..."
+                          className="text-sm"
+                          autoFocus
+                        />
+                      </div>
+                    )}
                     {currentStep === 1 && (
                       <WizardStepSolution
                         selectedSolution={wizardState.selectedSolution}
@@ -222,7 +240,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={goBack}
-                  disabled={currentStep === 1}
+                  disabled={currentStep === 0}
                   className="text-muted-foreground"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" /> Back
