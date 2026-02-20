@@ -1,72 +1,66 @@
 
+# Fix: Content Wizard Falsely Triggering on AI Response Text
 
-# Fix: Content Wizard Not Opening When User Provides Topic
+## Problem Found During Testing
+
+When user types "create a blog":
+1. Phase 1 (streaming): AI correctly asks "What topic do you want to write about?" 
+2. Phase 2 (intent detection): `detectActionIntent("create a blog")` correctly returns `null` (no keyword found)
+3. **Fallback bug**: `detectActionIntent(fullContent)` runs the same user-message patterns against the AI's response text ("To create a blog, I'll need..."), matches it, extracts garbage keyword "you!", and launches the wizard incorrectly
 
 ## Root Cause
 
-The two-phase architecture has a gap:
+The fallback that checks the AI response (`fullContent`) uses the SAME general patterns meant for user messages. The AI's response naturally contains phrases like "create a blog" which match the user-intent patterns, and `extractParams` grabs random words from the response.
 
-- **Phase 1** (streaming via `ai-streaming`): Streams text only. Does NOT return `visualData`.
-- **Phase 2** (tool execution via `enhanced-ai-chat`): Returns `visualData` including `content_wizard`. But it ONLY runs when `detectActionIntent()` matches the **user's message**.
+## Fix (2 files, ~10 lines)
 
-When the user says "write a blog about AI in healthcare" in one message, the intent detector matches and Phase 2 fires correctly.
-
-But when the AI asks "What topic?" and the user replies with just "AI in healthcare", the intent detector finds no match (no "create/write/blog" keywords), so Phase 2 never fires. The wizard never opens.
-
-## Solution
-
-Two changes needed:
-
-### 1. Detect follow-up topic replies for the content wizard
+### 1. Separate AI-response detection into its own function
 **File**: `src/utils/actionIntentDetector.ts`
 
-Add a new mechanism: check the **AI's streamed response** (not just the user message) for signs the AI is launching the wizard. The AI response will contain phrases like "launching the content wizard" or "starting the content creation wizard" when it decides to invoke the tool.
+- Mark the AI-response patterns block (lines 386-407) with a flag like `aiResponseOnly: true` in the rule
+- Add a new `PatternRule` interface field: `aiResponseOnly?: boolean`
+- Create a new exported function: `detectAIResponseIntent(aiResponse: string)` that ONLY checks rules where `aiResponseOnly === true`
+- Also fix line 405: change `return {};` to `return null;` (so AI-response patterns also require a keyword)
 
-Add a new exported function `detectToolCallInResponse(aiResponse: string)` that checks if the AI's streamed text indicates it's calling `launch_content_wizard`, and extracts the keyword from context.
+### 2. Use the separated function for fallback
+**File**: `src/hooks/useEnhancedAIChatDB.ts` (lines 500-503)
 
-Alternatively (simpler and more reliable): modify the existing `detectActionIntent` to also accept the AI response as optional context, and add patterns that match the AI's response text for wizard launch signals.
-
-### 2. Pass AI response to intent detection in Phase 2
-**File**: `src/hooks/useEnhancedAIChatDB.ts`
-
-After streaming completes (around line 500), if `detectActionIntent(userMessage)` returns no match, also try `detectActionIntent` against the AI's streamed `fullContent` to catch cases where the AI indicates it's executing a tool.
-
-Update line 500 from:
-```
-const actionIntent = detectActionIntent(content);
-```
-To:
-```
+Change:
+```typescript
 let actionIntent = detectActionIntent(content);
 if (!actionIntent.detected) {
   actionIntent = detectActionIntent(fullContent);
 }
 ```
 
-### 3. Add AI-response patterns for wizard launch
-**File**: `src/utils/actionIntentDetector.ts`
+To:
+```typescript
+let actionIntent = detectActionIntent(content);
+if (!actionIntent.detected) {
+  actionIntent = detectAIResponseIntent(fullContent);
+}
+```
 
-Add new patterns that match typical AI response text when launching the wizard:
-- `/launching\s+(the\s+)?content\s+(creation\s+)?wizard/i`
-- `/starting\s+(the\s+)?content\s+wizard/i`
-- `/let me\s+(start|launch|open)\s+(the\s+)?content\s+wizard/i`
-- `/I'll\s+(launch|start|open)\s+(the\s+)?content\s+(creation\s+)?wizard/i`
+This ensures the fallback ONLY uses patterns designed for AI response text (like "launching the content wizard for [topic]"), not the general user-message patterns that falsely match.
 
-With `extractParams` pulling the keyword from the AI response text (e.g., after "about" or "for" or from quotes).
+## Expected Results After Fix
 
-## Expected Results
+| Scenario | Result |
+|----------|--------|
+| "create a blog" (no topic) | AI asks for topic, wizard does NOT open |
+| User replies "AI in healthcare" | AI says "launching content wizard for AI in healthcare", fallback detects it, wizard opens with correct keyword |
+| "write a blog about SEO" (topic included) | Direct match from user message, wizard opens immediately |
 
-| User Flow | What Happens |
-|-----------|-------------|
-| "Write a blog about SEO" (single message) | Intent matches user message directly, wizard opens with keyword "SEO" |
-| "Create a blog" then "AI in healthcare" (two messages) | AI response says "launching content wizard for AI in healthcare", intent matches AI response, wizard opens |
+## Technical Details
 
-## Technical Summary
+```text
+actionIntentDetector.ts
+  - Add aiResponseOnly flag to PatternRule interface
+  - Tag AI-response patterns with aiResponseOnly: true
+  - Fix extractParams return null instead of {}
+  - Export new detectAIResponseIntent() function
 
-| File | Change |
-|------|--------|
-| `src/utils/actionIntentDetector.ts` | Add AI-response patterns for wizard launch detection (~10 lines) |
-| `src/hooks/useEnhancedAIChatDB.ts` | Fallback to checking AI response if user message has no intent (~3 lines) |
-
-2 files, ~13 lines changed.
-
+useEnhancedAIChatDB.ts
+  - Import detectAIResponseIntent
+  - Use it for fallback instead of detectActionIntent
+```
