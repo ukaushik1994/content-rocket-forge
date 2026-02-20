@@ -1,56 +1,42 @@
 
 
-# Loading Skeleton for Proposal Browser + Handoff Verification + E2E Testing
+# Fix Proposal Browser: Better Cards + State Reset
 
-## 1. Loading Skeleton in ProposalBrowseStep
+## Problem 1: Proposal Cards Look Plain
+The current proposal cards in the sidebar use basic `Card` with minimal styling. The strategy page uses the `EnhancedAIProposalCard` component which has:
+- Status badges with color coding (Draft, Ready, etc.)
+- SEO score with progress bar
+- Word count and reading time estimates
+- Keyword tooltips
+- Hover glow effects and action icons
+- Content stats grid
 
-**File: `src/components/ai-chat/proposal-browser/ProposalBrowseStep.tsx`**
+**Fix**: Reuse `EnhancedAIProposalCard` directly inside `ProposalBrowseStep`, passing `showActions={false}` (since sidebar actions differ) and adding a "Use This" button overlay. This ensures visual consistency with the strategy page without duplicating styling code.
 
-Add an `isLoading` prop. When true, render 4 shimmer skeleton cards instead of the empty state or proposals list. Each skeleton card mimics the real proposal card layout:
-- Two small badge skeletons (priority + type)
-- A title skeleton (75% width)
-- A description skeleton (full width + 66% width)
-- Three keyword pill skeletons
-- Bottom row with impressions skeleton + button skeleton
+## Problem 2: Stale Proposals Across Chat Sessions
+The `ProposalBrowserSidebar` stores proposals in React `useState`. When the user navigates to a different chat and opens "AI Proposals" again, the component is not remounted -- it keeps the old proposals from the previous session.
 
-Uses the existing `Skeleton` component from `@/components/ui/skeleton` with `animate-pulse`.
+**Fix**: Reset all sidebar state (`step`, `proposals`, `wizardData`) whenever the sidebar opens. Add a `useEffect` that watches `isOpen` and resets to the initial `'solutions'` step when it transitions to `true`. This guarantees a fresh start every time the user clicks "AI Proposals."
 
-**File: `src/components/ai-chat/proposal-browser/ProposalBrowserSidebar.tsx`**
+## Changes
 
-Pass `isGenerating` state as `isLoading` prop to `ProposalBrowseStep`. Show the skeleton view during the generation phase (between clicking "Generate Proposals" and receiving results) by transitioning to the `proposals` step immediately when generation starts, rather than waiting for completion.
+### File 1: `src/components/ai-chat/proposal-browser/ProposalBrowseStep.tsx`
+- Import and use `EnhancedAIProposalCard` from the strategy components
+- Replace the plain `Card` rendering with `EnhancedAIProposalCard` for each proposal
+- Keep the "Use This" button as an overlay action on each card
+- Retain the loading skeleton and empty state as-is (those already look good)
 
-Changes:
-- In `handleSolutionSelect`, call `setStep('proposals')` before the API call starts (move it before the `try` block)
-- Pass `isGenerating` to `ProposalBrowseStep` as `isLoading`
+### File 2: `src/components/ai-chat/proposal-browser/ProposalBrowserSidebar.tsx`
+- Add a `useEffect` that resets state when `isOpen` transitions from `false` to `true`:
+  - `setStep('solutions')`
+  - `setProposals([])`
+  - `setWizardData(null)`
+  - `setIsGenerating(false)`
+- This ensures every new sidebar open starts fresh with solution selection
 
-## 2. Handoff Verification (Already Correct)
-
-The code already correctly handles the proposal-to-wizard handoff:
-- `ProposalBrowserSidebar.handleUseProposal` extracts `primary_keyword`, `solution_id`, and `content_type` from the selected proposal
-- It sets `wizardData` and transitions `step` to `'wizard'`
-- When `step === 'wizard'`, it renders `ContentWizardSidebar` with `keyword`, `solutionId`, and `contentType` props
-- `ContentWizardSidebar` accepts these props (lines 16-22) and uses them to pre-fill the wizard state
-
-No code changes needed for this -- it's already wired.
-
-## 3. E2E Flow Verification (Testing Only)
-
-The full flow is already implemented:
-1. User types "create a blog about X" in AI Chat
-2. Edge function returns `content_creation_choice` visual type with the keyword
-3. `EnhancedMessageBubble` renders `ContentCreationChoiceCard` inline
-4. "Start from Scratch" sets visualization to `content_wizard` type, opening `ContentWizardSidebar`
-5. "AI Proposals" sets visualization to `proposal_browser` type, opening `ProposalBrowserSidebar`
-6. `VisualizationSidebar` routes to the correct sidebar component based on type
-
-This will be tested after implementation.
-
-## Summary of Changes
-
-| File | Change |
-|------|--------|
-| `ProposalBrowseStep.tsx` | Add `isLoading` prop + skeleton card UI (4 shimmer cards) |
-| `ProposalBrowserSidebar.tsx` | Move step transition before API call, pass `isGenerating` to browse step |
-
-Two files modified, zero new files created.
+## Technical Notes
+- No new files created
+- No backend changes needed
+- The `EnhancedAIProposalCard` component is already exported and accepts the same proposal shape
+- The state reset uses a simple `useEffect` with `isOpen` dependency and a `prevOpen` ref to detect the false-to-true transition
 
