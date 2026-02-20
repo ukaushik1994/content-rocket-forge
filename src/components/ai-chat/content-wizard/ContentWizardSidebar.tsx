@@ -82,7 +82,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     wordCountMode: 'ai',
     writingStyle: 'conversational',
     expertiseLevel: 'intermediate',
-    contentArticleType: 'general',
+    contentArticleType: 'comprehensive',
     includeStats: false,
     includeCaseStudies: false,
     includeFAQs: true,
