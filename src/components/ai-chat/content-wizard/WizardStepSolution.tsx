@@ -39,11 +39,22 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
           useCases: Array.isArray(s.use_cases) ? s.use_cases.map(String) : [],
           painPoints: Array.isArray(s.pain_points) ? s.pain_points.map(String) : [],
           targetAudience: Array.isArray(s.target_audience) ? s.target_audience.map(String) : [],
-          description: `${s.name} - Business Solution`,
+          description: s.short_description || `${s.name} - Business Solution`,
           category: s.category || 'Business Solution',
           logoUrl: s.logo_url,
           externalUrl: s.external_url,
           resources: [],
+          benefits: Array.isArray(s.benefits) ? s.benefits.map(String) : [],
+          tags: Array.isArray(s.tags) ? s.tags.map(String) : [],
+          shortDescription: s.short_description || undefined,
+          marketData: s.market_data as any || undefined,
+          competitors: s.competitors as any || undefined,
+          technicalSpecs: s.technical_specs as any || undefined,
+          pricing: s.pricing_model as any || undefined,
+          caseStudies: s.case_studies as any || undefined,
+          uniqueValuePropositions: Array.isArray(s.unique_value_propositions) ? s.unique_value_propositions.map(String) : [],
+          keyDifferentiators: Array.isArray(s.key_differentiators) ? s.key_differentiators.map(String) : [],
+          positioningStatement: s.positioning_statement || undefined,
         }));
         setSolutions(formatted);
         if (preSelectedId && !selectedSolution) {
