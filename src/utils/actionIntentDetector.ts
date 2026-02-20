@@ -57,7 +57,7 @@ const ACTION_RULES: PatternRule[] = [
       if (topicMatch) return { keyword: topicMatch[1].trim() };
       const fallback = msg.match(/(?:blog|article|guide|content)\s+(?:about|on|for|titled|called)?\s*["']?(.+?)["']?\s*$/i);
       if (fallback) return { keyword: fallback[1].trim() };
-      return null;
+      return {};
     }
   },
 
