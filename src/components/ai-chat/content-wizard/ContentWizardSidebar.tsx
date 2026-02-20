@@ -35,6 +35,12 @@ export interface WizardState {
   outline: OutlineSection[];
   wordCount: number | null;
   wordCountMode: 'ai' | 'custom';
+  writingStyle: 'conversational' | 'professional' | 'academic' | 'casual';
+  expertiseLevel: 'beginner' | 'intermediate' | 'expert';
+  contentArticleType: 'general' | 'how-to' | 'listicle' | 'comprehensive';
+  includeStats: boolean;
+  includeCaseStudies: boolean;
+  includeFAQs: boolean;
   metaTitle: string;
   metaDescription: string;
   generatedContent: string;
@@ -65,6 +71,12 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     outline: [],
     wordCount: null,
     wordCountMode: 'ai',
+    writingStyle: 'conversational',
+    expertiseLevel: 'intermediate',
+    contentArticleType: 'general',
+    includeStats: false,
+    includeCaseStudies: false,
+    includeFAQs: true,
     metaTitle: '',
     metaDescription: '',
     generatedContent: '',
@@ -216,8 +228,14 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         researchSelections={wizardState.researchSelections}
                         wordCount={wizardState.wordCount}
                         wordCountMode={wizardState.wordCountMode}
+                        writingStyle={wizardState.writingStyle}
+                        expertiseLevel={wizardState.expertiseLevel}
+                        contentArticleType={wizardState.contentArticleType}
                         onWordCountChange={(wc) => updateState({ wordCount: wc })}
                         onModeChange={(mode) => updateState({ wordCountMode: mode })}
+                        onWritingStyleChange={(s) => updateState({ writingStyle: s })}
+                        onExpertiseLevelChange={(l) => updateState({ expertiseLevel: l })}
+                        onContentArticleTypeChange={(t) => updateState({ contentArticleType: t })}
                       />
                     )}
                     {currentStep === 5 && (

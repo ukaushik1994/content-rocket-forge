@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import DOMPurify from 'dompurify';
+import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
 import type { WizardState } from './ContentWizardSidebar';
 
 interface WizardStepGenerateProps {
@@ -89,51 +90,44 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   const generateContent = async () => {
     setIsGeneratingContent(true);
     try {
-      const provider = await getProvider();
-      if (!provider) {
-        toast.warning('No AI provider configured. Generating a draft outline for you to edit.');
-        const fallback = wizardState.outline.map(s =>
-          `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here. Consider addressing the key aspects of ${wizardState.keyword} related to this topic.</p>`
-        ).join('\n\n');
-        onContentGenerated(fallback);
-        return;
-      }
-
+      // Build outline text
       const outlineText = wizardState.outline.map(s => `${'#'.repeat(s.level + 1)} ${s.title}`).join('\n');
-      const researchContext = [
-        wizardState.researchSelections.faqs.length ? `FAQs to address: ${wizardState.researchSelections.faqs.join('; ')}` : '',
-        wizardState.researchSelections.contentGaps.length ? `Content gaps: ${wizardState.researchSelections.contentGaps.join('; ')}` : '',
-        wizardState.researchSelections.relatedKeywords.length ? `Keywords to incorporate: ${wizardState.researchSelections.relatedKeywords.join(', ')}` : '',
-      ].filter(Boolean).join('\n');
 
-      const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-proxy', {
-        body: {
-          service: provider.provider,
-          endpoint: 'chat',
-          params: {
-            model: provider.preferred_model || 'gpt-4',
-            messages: [
-              {
-                role: 'system',
-                content: `You are an expert content writer. Write a ${wizardState.contentType} article. Target: ~${wizardState.wordCount || 1500} words. Output clean HTML with h2, h3, p, ul, li tags. No meta tags or JSON.`
-              },
-              {
-                role: 'user',
-                content: `Write about "${wizardState.keyword}" for solution "${wizardState.selectedSolution?.name || 'our product'}".\n\nOutline:\n${outlineText}\n\nResearch context:\n${researchContext}\n\nSolution features: ${wizardState.selectedSolution?.features?.slice(0, 5).join(', ') || 'N/A'}`
-              }
-            ],
-            max_tokens: (wizardState.wordCount || 1500) * 3,
-          }
-        }
-      });
+      // Build SERP selections in the format expected by generateAdvancedContent
+      const serpSelections = [
+        ...wizardState.researchSelections.faqs.map(f => ({ type: 'question' as const, content: f, source: 'serp', selected: true })),
+        ...wizardState.researchSelections.contentGaps.map(g => ({ type: 'contentGap' as const, content: g, source: 'serp', selected: true })),
+        ...wizardState.researchSelections.relatedKeywords.map(k => ({ type: 'keyword' as const, content: k, source: 'serp', selected: true })),
+        ...wizardState.researchSelections.serpHeadings.map(h => ({ type: 'heading' as const, content: h, source: 'serp', selected: true })),
+      ];
 
-      if (aiError) throw new Error(aiError.message);
+      const targetLength = wizardState.wordCount || 1500;
 
-      const generated = aiResult?.content || aiResult?.choices?.[0]?.message?.content || '';
-      if (generated) {
-        onContentGenerated(generated);
+      const config: ContentGenerationConfig = {
+        mainKeyword: wizardState.keyword,
+        title: wizardState.metaTitle || `${wizardState.keyword} - Complete Guide`,
+        outline: outlineText,
+        secondaryKeywords: wizardState.researchSelections.relatedKeywords.join(', '),
+        writingStyle: wizardState.writingStyle,
+        expertiseLevel: wizardState.expertiseLevel,
+        targetLength,
+        contentType: wizardState.contentArticleType,
+        contentIntent: 'inform',
+        serpSelections,
+        selectedSolution: wizardState.selectedSolution,
+        additionalInstructions: '',
+        includeStats: wizardState.includeStats,
+        includeCaseStudies: wizardState.includeCaseStudies,
+        includeFAQs: wizardState.includeFAQs,
+      };
+
+      const result = await generateAdvancedContent(config);
+
+      if (result) {
+        onContentGenerated(result);
         toast.success('Content generated successfully!');
       } else {
+        // Fallback
         const fallback = wizardState.outline.map(s =>
           `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here. Consider addressing the key aspects of ${wizardState.keyword} related to this topic.</p>`
         ).join('\n\n');
@@ -141,6 +135,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         toast.warning('AI returned empty content. A draft outline has been created for you to edit.');
       }
     } catch (err) {
+      console.error('Content generation failed:', err);
       const fallback = wizardState.outline.map(s =>
         `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here. Consider addressing the key aspects of ${wizardState.keyword} related to this topic.</p>`
       ).join('\n\n');
@@ -157,37 +152,162 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     try {
       const titleMatch = wizardState.generatedContent.match(/<h[12][^>]*>(.*?)<\/h[12]>/i);
       const autoTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '') : `${wizardState.keyword} - ${wizardState.contentType}`;
+      const finalTitle = wizardState.metaTitle || autoTitle;
 
-      const insertData: any = {
-        user_id: user.id,
-        title: wizardState.metaTitle || autoTitle,
-        content: wizardState.generatedContent,
-        content_type: wizardState.contentType || 'blog',
-        main_keyword: wizardState.keyword,
-        secondary_keywords: wizardState.researchSelections.relatedKeywords.slice(0, 5),
-        status: 'draft' as const,
-        meta_title: wizardState.metaTitle || null,
-        meta_description: wizardState.metaDescription || null,
-        solution_id: wizardState.selectedSolution?.id || null,
-        metadata: {
-          generated_via: 'chat_wizard',
-          keyword: wizardState.keyword,
-          solution_id: wizardState.selectedSolution?.id,
-          word_count_mode: wizardState.wordCountMode,
-          outline_sections: wizardState.outline.length,
-        }
+      // Build comprehensive metadata matching Content Builder
+      const metadata: Record<string, any> = {
+        generated_via: 'chat_wizard',
+        keyword: wizardState.keyword,
+        contentType: wizardState.contentType,
+        solution_id: wizardState.selectedSolution?.id,
+        word_count_mode: wizardState.wordCountMode,
+        outline_sections: wizardState.outline.length,
+        writingStyle: wizardState.writingStyle,
+        expertiseLevel: wizardState.expertiseLevel,
+        contentArticleType: wizardState.contentArticleType,
+        outline: wizardState.outline,
+        metaTitle: wizardState.metaTitle,
+        metaDescription: wizardState.metaDescription,
+        mainKeyword: wizardState.keyword,
+        secondaryKeywords: wizardState.researchSelections.relatedKeywords,
+        wordCount: wizardState.generatedContent.split(/\s+/).length,
+        readingTime: Math.ceil(wizardState.generatedContent.split(/\s+/).length / 200),
+        selectedSolution: wizardState.selectedSolution ? {
+          id: wizardState.selectedSolution.id,
+          name: wizardState.selectedSolution.name,
+          category: wizardState.selectedSolution.category,
+          features: wizardState.selectedSolution.features,
+        } : null,
+        researchSelections: wizardState.researchSelections,
       };
-      const { data, error } = await supabase.from('content_items').insert(insertData).select('id, title').single();
 
-      if (error) throw error;
+      // Check for existing content to prevent duplicates
+      const { data: existingContent } = await supabase
+        .from('content_items')
+        .select('id')
+        .eq('title', finalTitle)
+        .eq('user_id', user.id)
+        .eq('status', 'draft')
+        .maybeSingle();
+
+      let contentId: string;
+
+      if (existingContent) {
+        // Update existing
+        const { data, error } = await supabase
+          .from('content_items')
+          .update({
+            content: wizardState.generatedContent,
+            meta_title: wizardState.metaTitle || null,
+            meta_description: wizardState.metaDescription || null,
+            seo_score: 0,
+            metadata,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingContent.id)
+          .select('id')
+          .single();
+        if (error) throw error;
+        contentId = data.id;
+      } else {
+        // Insert new
+        const { data, error } = await supabase
+          .from('content_items')
+          .insert({
+            user_id: user.id,
+            title: finalTitle,
+            content: wizardState.generatedContent,
+            content_type: (wizardState.contentType || 'blog') as any,
+            main_keyword: wizardState.keyword,
+            secondary_keywords: wizardState.researchSelections.relatedKeywords.slice(0, 5),
+            status: 'draft' as any,
+            meta_title: wizardState.metaTitle || null,
+            meta_description: wizardState.metaDescription || null,
+            solution_id: wizardState.selectedSolution?.id || null,
+            seo_score: 0,
+            metadata,
+          } as any)
+          .select('id, title')
+          .single();
+        if (error) throw error;
+        contentId = data.id;
+      }
+
+      // Save keywords and link them
+      const allKeywords = [
+        wizardState.keyword,
+        ...wizardState.researchSelections.relatedKeywords.slice(0, 5),
+      ].filter(Boolean);
+      const uniqueKeywords = [...new Set(allKeywords)];
+
+      const keywordIds: string[] = [];
+      for (const kw of uniqueKeywords) {
+        const { data: existing } = await supabase
+          .from('keywords')
+          .select('id')
+          .eq('keyword', kw)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existing) {
+          keywordIds.push(existing.id);
+        } else {
+          const { data: newKw, error: kwErr } = await supabase
+            .from('keywords')
+            .insert({ keyword: kw, user_id: user.id })
+            .select('id')
+            .maybeSingle();
+          if (!kwErr && newKw) keywordIds.push(newKw.id);
+        }
+      }
+
+      // Link keywords to content
+      if (keywordIds.length > 0) {
+        const contentKeywords = keywordIds.map(kid => ({
+          content_id: contentId,
+          keyword_id: kid,
+        }));
+        await supabase
+          .from('content_keywords')
+          .upsert(contentKeywords, { onConflict: 'content_id,keyword_id', ignoreDuplicates: true });
+      }
+
+      // Record reuse history
+      try {
+        const usedFaqs = wizardState.researchSelections.faqs;
+        const usedHeadings = wizardState.researchSelections.serpHeadings;
+        const usedTitles = [finalTitle].filter(Boolean);
+        if (usedFaqs.length + usedHeadings.length > 0) {
+          await supabase.from('content_reuse_history').insert({
+            user_id: user.id,
+            content_id: contentId,
+            primary_keyword: wizardState.keyword,
+            used_faqs: [...new Set(usedFaqs)],
+            used_headings: [...new Set(usedHeadings)],
+            used_titles: [...new Set(usedTitles)],
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to record reuse history (non-critical):', e);
+      }
+
       setSaved(true);
-      setSavedId(data.id);
-      toast.success(`Saved "${data.title}" as draft!`);
+      setSavedId(contentId);
+      toast.success(`Saved "${finalTitle}" as draft!`);
     } catch (err) {
+      console.error('Save failed:', err);
       toast.error('Failed to save. Please try again.');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleContinueEditing = () => {
+    if (!savedId) return;
+    // Load into Content Builder via sessionStorage (matching existing pattern)
+    sessionStorage.setItem('continueEditingContentId', savedId);
+    navigate('/content');
+    onClose();
   };
 
   if (saved && savedId) {
@@ -200,11 +320,14 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           <p className="text-sm font-medium text-foreground">Content Saved!</p>
           <p className="text-xs text-muted-foreground mt-1">Your draft is in the Repository</p>
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => { navigate('/repository'); onClose(); }} className="text-xs gap-1">
+        <div className="flex flex-col gap-2 w-full max-w-[200px]">
+          <Button size="sm" variant="outline" onClick={() => { navigate('/repository'); onClose(); }} className="text-xs gap-1 w-full">
             <ExternalLink className="w-3 h-3" /> View in Repository
           </Button>
-          <Button size="sm" variant="ghost" onClick={onClose} className="text-xs">Close</Button>
+          <Button size="sm" variant="default" onClick={handleContinueEditing} className="text-xs gap-1 w-full">
+            <PenLine className="w-3 h-3" /> Continue Editing
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onClose} className="text-xs w-full">Close</Button>
         </div>
       </div>
     );
@@ -252,7 +375,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         </Button>
       ) : (
         <>
-          {/* Content Preview */}
+          {/* Content Preview - sanitized */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Preview</span>
@@ -261,7 +384,10 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               </Badge>
             </div>
             <div className="rounded-lg border border-border/20 bg-muted/20 max-h-[250px] overflow-auto p-3">
-              <div className="prose prose-sm prose-invert max-w-none text-xs" dangerouslySetInnerHTML={{ __html: wizardState.generatedContent.slice(0, 3000) }} />
+              <div
+                className="prose prose-sm prose-invert max-w-none text-xs"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(wizardState.generatedContent.slice(0, 3000)) }}
+              />
             </div>
           </div>
 
