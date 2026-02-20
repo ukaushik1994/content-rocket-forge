@@ -57,12 +57,48 @@ export const WizardStepOutline: React.FC<WizardStepOutlineProps> = ({
         return;
       }
 
+      // Build rich context from solution and research
       const contextParts: string[] = [];
-      if (solution) contextParts.push(`Solution: ${solution.name}. Features: ${solution.features.slice(0, 5).join(', ')}`);
-      if (researchSelections.faqs.length) contextParts.push(`FAQs to address: ${researchSelections.faqs.join('; ')}`);
-      if (researchSelections.contentGaps.length) contextParts.push(`Content gaps: ${researchSelections.contentGaps.join('; ')}`);
-      if (researchSelections.relatedKeywords.length) contextParts.push(`Related keywords: ${researchSelections.relatedKeywords.join(', ')}`);
-      if (researchSelections.serpHeadings.length) contextParts.push(`SERP headings for inspiration: ${researchSelections.serpHeadings.join('; ')}`);
+      if (solution) {
+        contextParts.push(`Offering/Solution: "${solution.name}" — ${solution.description || ''}`);
+        if (solution.features?.length) contextParts.push(`Key Features: ${solution.features.join('; ')}`);
+        if (solution.painPoints?.length) contextParts.push(`Pain Points it solves: ${solution.painPoints.join('; ')}`);
+        if (solution.useCases?.length) contextParts.push(`Use Cases: ${solution.useCases.join('; ')}`);
+        if (solution.targetAudience?.length) contextParts.push(`Target Audience: ${solution.targetAudience.join(', ')}`);
+        if ((solution as any).benefits?.length) contextParts.push(`Benefits: ${(solution as any).benefits.join('; ')}`);
+        if ((solution as any).positioningStatement) contextParts.push(`Positioning: ${(solution as any).positioningStatement}`);
+        if ((solution as any).competitors?.length) {
+          const compNames = (solution as any).competitors.map((c: any) => c.name || c).join(', ');
+          contextParts.push(`Competitors to differentiate from: ${compNames}`);
+        }
+      }
+      if (researchSelections.faqs.length) contextParts.push(`FAQs readers ask: ${researchSelections.faqs.join('; ')}`);
+      if (researchSelections.contentGaps.length) contextParts.push(`Content gaps to fill: ${researchSelections.contentGaps.join('; ')}`);
+      if (researchSelections.relatedKeywords.length) contextParts.push(`Related keywords to cover: ${researchSelections.relatedKeywords.join(', ')}`);
+      if (researchSelections.serpHeadings.length) contextParts.push(`Top-ranking headings for inspiration: ${researchSelections.serpHeadings.join('; ')}`);
+
+      const systemPrompt = `You are an expert Content Strategist and SEO architect. Your job is to create comprehensive, strategically structured content outlines that:
+- Follow a logical reader journey (awareness → understanding → evaluation → action)
+- Use clear H2/H3 hierarchy for SEO and readability
+- Address search intent and competitive content gaps
+- Naturally weave in the offering/solution context when provided
+- Include 8-12 sections with subsections where appropriate
+
+Return ONLY a valid JSON array of objects with "title" (string) and "level" (1 for H2 main sections, 2 for H3 subsections). No markdown, no explanation — just the JSON array.`;
+
+      const userPrompt = `Create a comprehensive content outline for the topic: "${keyword}"
+
+${contextParts.length > 0 ? '### Context:\n' + contextParts.join('\n') : ''}
+
+Requirements:
+- 8-12 strategically ordered sections (level 1 = H2, level 2 = H3 subsection)
+- Start with a compelling introduction, end with actionable conclusion
+- If a solution/offering is provided, integrate it naturally (not as a sales pitch)
+- Turn FAQs into dedicated sections or subsections
+- Address content gaps as unique sections competitors miss
+- Include practical, actionable sections (how-to, best practices, examples)
+
+Return ONLY the JSON array.`;
 
       const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-proxy', {
         body: {
@@ -70,31 +106,50 @@ export const WizardStepOutline: React.FC<WizardStepOutlineProps> = ({
           endpoint: 'chat',
           params: {
             model: provider.preferred_model || 'gpt-4',
-            messages: [{
-              role: 'user',
-              content: `Create a detailed blog outline for "${keyword}". ${contextParts.join('. ')}. Return a JSON array of objects with "title" (string) and "level" (1 for H2, 2 for H3). Include 6-10 sections. Return ONLY valid JSON array.`
-            }],
-            max_tokens: 800,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            max_tokens: 2000,
+            temperature: 0.7,
           }
         }
       });
 
       if (aiError) throw new Error(aiError.message);
 
-      const content = aiResult?.content || aiResult?.choices?.[0]?.message?.content || '';
+      // Fix: ai-proxy returns nested { data: { choices: [...] } }
+      const content = aiResult?.data?.choices?.[0]?.message?.content
+        || aiResult?.choices?.[0]?.message?.content
+        || aiResult?.content
+        || '';
+
+      // Try JSON array parsing first
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        onOutlineChange(parsed.map((s: any) => ({ id: uuidv4(), title: s.title, level: s.level || 1 })));
+        onOutlineChange(parsed.map((s: any) => ({ id: uuidv4(), title: s.title || s.heading || '', level: s.level || 1 })));
       } else {
-        onOutlineChange([
-          { id: uuidv4(), title: `Introduction to ${keyword}`, level: 1 },
-          { id: uuidv4(), title: `What is ${keyword}?`, level: 2 },
-          { id: uuidv4(), title: `Key Benefits and Use Cases`, level: 1 },
-          { id: uuidv4(), title: `How to Get Started`, level: 1 },
-          { id: uuidv4(), title: `Best Practices`, level: 2 },
-          { id: uuidv4(), title: `Conclusion`, level: 1 },
-        ]);
+        // Fallback: parse markdown headings (## and ###)
+        const lines = content.split('\n').filter((l: string) => l.trim().startsWith('#'));
+        if (lines.length >= 3) {
+          const parsed = lines.map((line: string) => {
+            const h3 = line.trim().startsWith('###');
+            const title = line.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
+            return { id: uuidv4(), title, level: h3 ? 2 : 1 };
+          });
+          onOutlineChange(parsed);
+        } else {
+          // Final static fallback
+          onOutlineChange([
+            { id: uuidv4(), title: `Introduction to ${keyword}`, level: 1 },
+            { id: uuidv4(), title: `What is ${keyword}?`, level: 2 },
+            { id: uuidv4(), title: `Key Benefits and Use Cases`, level: 1 },
+            { id: uuidv4(), title: `How to Get Started`, level: 1 },
+            { id: uuidv4(), title: `Best Practices`, level: 2 },
+            { id: uuidv4(), title: `Conclusion`, level: 1 },
+          ]);
+        }
       }
     } catch {
       onOutlineChange([
