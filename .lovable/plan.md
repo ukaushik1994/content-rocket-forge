@@ -1,36 +1,48 @@
 
+# Fix: Content Wizard Generation Crashes and Quality Issues
 
-# Fix: Content Wizard Outline Generation -- AI Failures + Quality
+## Root Cause (from console logs)
 
-## Root Cause: Why "AI generation failed"
+The content generation is **crashing** before the AI call is ever made. The error:
 
-The `WizardStepOutline.tsx` line 84 extracts the AI response using:
 ```
-aiResult?.content || aiResult?.choices?.[0]?.message?.content
-```
-
-But `ai-proxy` returns a NESTED structure:
-```json
-{ "success": true, "data": { "choices": [{ "message": { "content": "..." } }] } }
+TypeError: (cs.results || []).join is not a function
 ```
 
-The correct path is `aiResult?.data?.choices?.[0]?.message?.content`. Since the current path evaluates to `undefined`, the `jsonMatch` regex finds nothing, and the code falls through to the static fallback outline (lines 90-97). The toast says "AI generation failed" because this lands in the catch block.
+At `advancedContentGeneration.ts` line 407, `cs.results` is an **object** (e.g., `{ revenue: "+30%", efficiency: "2x" }`), not an array. Calling `.join()` on an object throws a TypeError, which crashes `buildAdvancedContentPrompt()`, which crashes `generateAdvancedContent()`, which triggers the catch block in `WizardStepGenerate` producing the "Write about X here" fallback.
 
-This is the exact same bug we fixed in `advancedContentGeneration.ts` -- it just wasn't fixed in the Wizard's outline step.
+The AI proxy is working perfectly (logs show "OpenAI chat successful"). The prompt builder just never gets far enough to call it.
 
-## Root Cause: Why the outline quality is poor
+## Additional Bugs Found
 
-Even if the response path were correct, the prompt is weak:
-- **No system prompt** -- just a bare user message asking for JSON
-- **Only 800 max_tokens** -- too small for a detailed 8-10 section outline with subsections
-- **Shallow solution context** -- only `solution.features.slice(0, 5)`, no pain points, use cases, benefits, or positioning
-- **No audience/intent awareness** -- doesn't consider who the content is for
-- **Flat structure** -- asks for H2/H3 but doesn't guide the AI toward a strategic content architecture
+### Bug 2: Meta generation uses wrong response path
+`WizardStepGenerate.tsx` line 191:
+```typescript
+const content = aiResult?.content || aiResult?.choices?.[0]?.message?.content || '';
+```
+Missing `aiResult?.data?.choices` path. Meta title/description always falls back to generic defaults.
 
-## The Fix (1 file: `WizardStepOutline.tsx`)
+### Bug 3: OpenAI max_tokens deleted for legacy models
+`ai-proxy/index.ts` line 224 sets `requestBody.max_tokens`, then line 231 unconditionally deletes it. Legacy OpenAI models (gpt-4, gpt-4-turbo) get no token limit, relying on API defaults which may truncate long content.
 
-### A. Fix response extraction (line 84)
-Add the `data` nesting path:
+## Fixes (3 files)
+
+### File 1: `src/services/advancedContentGeneration.ts`
+
+**A. Fix the crash (line 407)** -- Safely handle `cs.results` whether it's an array, object, string, or undefined:
+```typescript
+const resultsStr = Array.isArray(cs.results) 
+  ? cs.results.join(', ') 
+  : typeof cs.results === 'object' && cs.results 
+    ? Object.entries(cs.results).map(([k, v]) => `${k}: ${v}`).join(', ')
+    : String(cs.results || 'N/A');
+```
+
+**B. Add defensive guards for ALL solution fields** -- Every `.join()`, `.map()`, and property access in the solution context section needs a type guard to prevent similar crashes from unexpected data shapes (competitors, pricing tiers, technical specs, metrics, etc.).
+
+### File 2: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+
+**Fix meta response path (line 191)** -- Add the `data.choices` nesting:
 ```typescript
 const content = aiResult?.data?.choices?.[0]?.message?.content
   || aiResult?.choices?.[0]?.message?.content
@@ -38,40 +50,23 @@ const content = aiResult?.data?.choices?.[0]?.message?.content
   || '';
 ```
 
-### B. Add a proper system prompt
-Add a system message that instructs the AI to act as a content strategist, creating outlines that are:
-- Strategically structured for SEO and reader engagement
-- Organized with clear H2/H3 hierarchy (not flat)
-- Addressing search intent and competitive gaps
-- Including solution-aware sections when an offering is selected
+### File 3: `supabase/functions/ai-proxy/index.ts`
 
-### C. Enrich the user prompt with full context
-- Include ALL solution fields (features, pain points, use cases, benefits, positioning, competitors)
-- Include ALL research selections (not just basic strings)
-- Add audience and content intent context
-- Specify the content type (blog, guide, how-to) for structural guidance
+**Fix max_tokens deletion (lines 224-231)** -- For legacy models, set max_tokens AFTER the cleanup:
+```typescript
+// Clean up unused parameters first
+delete requestBody.maxTokens;
+delete requestBody.max_tokens;
 
-### D. Increase token budget
-Change `max_tokens: 800` to `max_tokens: 2000` to allow for detailed outlines with 8-12 sections including subsections.
-
-### E. Better JSON parsing with fallback
-If the AI returns markdown-formatted headings instead of JSON, parse those too (regex for `##` and `###` patterns).
-
-## Technical Details
-
-```text
-File: src/components/ai-chat/content-wizard/WizardStepOutline.tsx
-
-Line 60-65: Expand contextParts to include ALL solution fields
-Line 67-80: Add system prompt, increase max_tokens to 2000
-Line 84: Fix response path to include aiResult?.data?.choices path
-Line 85-97: Improve JSON parsing with markdown fallback
+// Then set the correct token limit
+if (!isNewerModel && (params.maxTokens || params.max_tokens)) {
+  requestBody.max_tokens = params.maxTokens || params.max_tokens || 4000;
+}
 ```
 
 ## Expected Result
 
-- Outline generates successfully via AI (no more "AI generation failed")
-- 8-12 strategically structured sections with H2/H3 hierarchy
-- Solution context (GLC features, pain points, use cases) shapes the outline
-- Research selections (FAQs, content gaps) become dedicated sections
-- The outline flows naturally into Step 4 generation, producing better content
+- No more crashes from malformed solution data
+- Meta title/description generated by AI (not generic fallbacks)
+- Full token budget sent to OpenAI for content generation
+- Complete 1000-2000+ word AI-written prose incorporating GL Connect's features, case studies, and competitive positioning
