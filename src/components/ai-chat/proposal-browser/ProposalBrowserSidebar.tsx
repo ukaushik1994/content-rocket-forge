@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { X, ArrowLeft } from 'lucide-react';
@@ -27,6 +27,18 @@ export const ProposalBrowserSidebar: React.FC<ProposalBrowserSidebarProps> = ({
   const [proposals, setProposals] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [wizardData, setWizardData] = useState<{ keyword: string; solutionId?: string; contentType?: string } | null>(null);
+  const prevOpenRef = useRef(false);
+
+  // Reset state when sidebar opens fresh
+  useEffect(() => {
+    if (isOpen && !prevOpenRef.current) {
+      setStep('solutions');
+      setProposals([]);
+      setWizardData(null);
+      setIsGenerating(false);
+    }
+    prevOpenRef.current = isOpen;
+  }, [isOpen]);
 
   const handleSolutionSelect = useCallback(async (solutionIds: string[]) => {
     setIsGenerating(true);
