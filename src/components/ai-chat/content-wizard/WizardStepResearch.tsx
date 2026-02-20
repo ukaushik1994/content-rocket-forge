@@ -50,9 +50,9 @@ export const WizardStepResearch: React.FC<WizardStepResearchProps> = ({
       if (serpResult && serpResult.isGoogleData) {
         setData({
           faqs: (serpResult.peopleAlsoAsk || []).map(q => ({ text: typeof q === 'string' ? q : (q as any).question || String(q), source: 'serp' as const })),
-          contentGaps: (serpResult.contentGaps || []).map(g => ({ text: typeof g === 'string' ? g : String(g), source: 'serp' as const })),
+          contentGaps: (serpResult.contentGaps || []).map(g => ({ text: typeof g === 'string' ? g : (g as any).topic || (g as any).description || (g as any).content || JSON.stringify(g), source: 'serp' as const })),
           relatedKeywords: (serpResult.relatedSearches || serpResult.keywords || []).map(k => ({ text: typeof k === 'string' ? k : (k as any).keyword || String(k), source: 'serp' as const })),
-          serpHeadings: (serpResult.headings || []).map(h => ({ text: typeof h === 'string' ? h : String(h), source: 'serp' as const })),
+          serpHeadings: (serpResult.headings || []).map(h => ({ text: typeof h === 'string' ? h : (h as any).text || (h as any).title || (h as any).heading || JSON.stringify(h), source: 'serp' as const })),
         });
       } else {
         // Fallback: AI-generated research
