@@ -107,26 +107,24 @@ export const ProposalBrowseStep: React.FC<ProposalBrowseStepProps> = ({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.06 }}
-              className="relative"
             >
               <EnhancedAIProposalCard
                 proposal={proposal}
                 showActions={false}
                 isNew={index < 2}
+                actionSlot={
+                  <Button
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUseProposal(proposal);
+                    }}
+                    className="h-7 px-3 text-xs gap-1 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                  >
+                    Use This <ArrowRight className="h-3 w-3" />
+                  </Button>
+                }
               />
-              {/* Use This overlay button */}
-              <div className="absolute bottom-3 right-3 z-10">
-                <Button
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUseProposal(proposal);
-                  }}
-                  className="h-7 px-3 text-xs gap-1 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
-                >
-                  Use This <ArrowRight className="h-3 w-3" />
-                </Button>
-              </div>
             </motion.div>
           ))}
         </div>

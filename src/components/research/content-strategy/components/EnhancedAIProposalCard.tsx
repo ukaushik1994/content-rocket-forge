@@ -40,6 +40,7 @@ export interface EnhancedAIProposalCardProps {
   onViewDetails?: (proposal: any) => void;
   onEdit?: (proposal: any) => void;
   showActions?: boolean;
+  actionSlot?: React.ReactNode;
 }
 
 const priorityConfig = {
@@ -82,7 +83,8 @@ export const EnhancedAIProposalCard: React.FC<EnhancedAIProposalCardProps> = ({
   onAddToPipeline,
   onViewDetails,
   onEdit,
-  showActions = true
+  showActions = true,
+  actionSlot
 }) => {
   const proposalId = proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-');
   const priority = proposal.priority_tag || 'evergreen';
@@ -107,9 +109,14 @@ export const EnhancedAIProposalCard: React.FC<EnhancedAIProposalCardProps> = ({
       } animate-fade-in relative overflow-hidden bg-background/60 backdrop-blur-xl`}
       onClick={handleCardClick}
     >
-      {/* Header with priority tag, content type, and eye icon */}
+      {/* Header with NEW badge, priority tag, content type, and eye icon */}
       <div className="flex justify-between items-start mb-2">
         <div className="flex flex-wrap gap-1.5">
+          {isNew && (
+            <CustomBadge className="bg-primary text-primary-foreground font-bold text-xs" animated icon={<Sparkles className="h-3 w-3" />}>
+              NEW
+            </CustomBadge>
+          )}
           <CustomBadge className={priorityInfo.color} animated>
             {priorityInfo.icon} {priorityInfo.label}
           </CustomBadge>
@@ -237,21 +244,9 @@ export const EnhancedAIProposalCard: React.FC<EnhancedAIProposalCardProps> = ({
             </TooltipProvider>
           </div>
         )}
-      </div>
 
-      {/* New badge */}
-      {isNew && (
-        <motion.div
-          className="absolute top-2 left-2 z-10"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <CustomBadge className="bg-primary text-primary-foreground font-bold text-xs" animated icon={<Sparkles className="h-3 w-3" />}>
-            NEW
-          </CustomBadge>
-        </motion.div>
-      )}
+        {actionSlot}
+      </div>
 
       {/* Selection indicator */}
       {isSelected && (
