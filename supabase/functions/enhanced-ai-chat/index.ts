@@ -1859,40 +1859,25 @@ serve(async (req) => {
     const systemPromptTokens = estimateTokens(systemPrompt);
     const totalTokens = contextTokens + messagesTokens + systemPromptTokens;
 
-    // Phase 6: Dynamic token budget scaling for large context models (260K)
-    const estimatedModelContext = 260000; // LM Studio model context window
-    const outputTokenRatio = 0.15; // Allow ~15% for output (~39K), enabling ~220K input
+    // Phase 6: Dynamic token budget -- safe cap for OpenAI models
     const dynamicMaxTokens = Math.min(
-      Math.max(
-        Math.floor(estimatedModelContext * outputTokenRatio),
-        30000 // Minimum 30K tokens for detailed responses
-      ),
-      100000 // Maximum 100K tokens (reasonable cap)
+      Math.max(4096, Math.floor(totalTokens * 0.3)),
+      16000 // Safe cap for OpenAI models (max_tokens limit is 16384)
     );
 
     console.log(`📊 Token Budget Check:
   - Context: ${contextTokens} tokens
   - Messages: ${messagesTokens} tokens
   - System Prompt: ${systemPromptTokens} tokens
-  - Total Input: ${totalTokens} tokens (Max: 220,000)
-  - Model Context Window: ${estimatedModelContext}
+  - Total Input: ${totalTokens} tokens
   - Dynamic Max Output Tokens: ${dynamicMaxTokens}
-  - Total With Output: ${totalTokens + dynamicMaxTokens}
-  - Remaining Budget: ${estimatedModelContext - (totalTokens + dynamicMaxTokens)}
-  - Input Utilization: ${((totalTokens / 220000) * 100).toFixed(1)}%
-  - Status: ${totalTokens < 220000 ? '✅ INPUT SAFE' : '⚠️ INPUT EXCEEDS 220K'}
 `);
 
-    // Validate input token limit (220K max)
-    const maxInputTokens = 220000;
+    // Validate input token limit (120K safe cap)
+    const maxInputTokens = 120000;
     if (totalTokens > maxInputTokens) {
       console.error(`🚨 INPUT TOKEN LIMIT EXCEEDED: ${totalTokens} > ${maxInputTokens}`);
       throw new Error(`Context too large (${totalTokens} tokens). Maximum input: ${maxInputTokens.toLocaleString()} tokens. Please reduce context or use more specific queries.`);
-    }
-
-    // Safety check: total (input + output) shouldn't exceed model context
-    if ((totalTokens + dynamicMaxTokens) > estimatedModelContext) {
-      console.warn(`⚠️ Total tokens (${totalTokens + dynamicMaxTokens}) approaches model limit (${estimatedModelContext})`);
     }
 
 
