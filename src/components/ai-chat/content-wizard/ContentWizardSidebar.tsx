@@ -39,6 +39,7 @@ export interface WizardState {
     relatedKeywords: string[];
     serpHeadings: string[];
   };
+  serpData: any; // Raw SERP analysis data for comprehensive metadata persistence
   outline: OutlineSection[];
   wordCount: number | null;
   wordCountMode: 'ai' | 'custom';
@@ -77,6 +78,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     title: '',
     selectedSolution: null,
     researchSelections: { faqs: [], contentGaps: [], relatedKeywords: [], serpHeadings: [] },
+    serpData: null,
     outline: [],
     wordCount: null,
     wordCountMode: 'ai',
@@ -237,6 +239,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         keyword={wizardState.keyword}
                         selections={wizardState.researchSelections}
                         onSelectionsChange={(sel) => updateState({ researchSelections: sel })}
+                        onSerpDataChange={(data) => updateState({ serpData: data })}
                       />
                     )}
                     {currentStep === 2 && (
