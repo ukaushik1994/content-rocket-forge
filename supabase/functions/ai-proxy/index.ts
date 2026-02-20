@@ -235,6 +235,35 @@ async function chatOpenAI(apiKey: string, params: any) {
     requestBody.max_tokens = legacyMaxTokens;
   }
 
+  // Model-aware safety clamp -- prevent exceeding provider limits
+  const MODEL_TOKEN_LIMITS: Record<string, number> = {
+    'gpt-4o': 16384,
+    'gpt-4o-mini': 16384,
+    'gpt-4-turbo': 4096,
+    'gpt-4': 8192,
+    'gpt-3.5-turbo': 4096,
+  };
+
+  if (requestBody.max_tokens) {
+    const matchedLimit = Object.entries(MODEL_TOKEN_LIMITS)
+      .find(([key]) => model.startsWith(key));
+    if (matchedLimit) {
+      const clamped = Math.min(requestBody.max_tokens, matchedLimit[1]);
+      if (clamped !== requestBody.max_tokens) {
+        console.log(`⚠️ Clamped max_tokens from ${requestBody.max_tokens} to ${clamped} for model ${model}`);
+      }
+      requestBody.max_tokens = clamped;
+    }
+  }
+
+  if (requestBody.max_completion_tokens) {
+    const matchedLimit = Object.entries(MODEL_TOKEN_LIMITS)
+      .find(([key]) => model.startsWith(key));
+    if (matchedLimit) {
+      requestBody.max_completion_tokens = Math.min(requestBody.max_completion_tokens, matchedLimit[1]);
+    }
+  }
+
   const maxRetries = 3;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
