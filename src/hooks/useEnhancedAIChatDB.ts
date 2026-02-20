@@ -497,7 +497,10 @@ export const useEnhancedAIChatDB = () => {
           await saveMessage(finalMessage, conversationId);
 
           // ========== PHASE 2: Post-stream tool execution ==========
-          const actionIntent = detectActionIntent(content);
+          let actionIntent = detectActionIntent(content);
+          if (!actionIntent.detected) {
+            actionIntent = detectActionIntent(fullContent);
+          }
           if (actionIntent.detected && actionIntent.confidence !== 'low') {
             console.log('🔧 Action intent detected:', actionIntent.toolName, '- calling enhanced-ai-chat...');
 
