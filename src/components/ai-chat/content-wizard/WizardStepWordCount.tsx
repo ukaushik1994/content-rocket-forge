@@ -23,6 +23,7 @@ interface WizardStepWordCountProps {
   onWritingStyleChange: (style: 'conversational' | 'professional' | 'academic' | 'casual') => void;
   onExpertiseLevelChange: (level: 'beginner' | 'intermediate' | 'expert') => void;
   onContentArticleTypeChange: (type: 'general' | 'how-to' | 'listicle' | 'comprehensive') => void;
+  selectedSolutionName?: string;
 }
 
 const WRITING_STYLES = [
@@ -58,6 +59,7 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
   onWritingStyleChange,
   onExpertiseLevelChange,
   onContentArticleTypeChange,
+  selectedSolutionName,
 }) => {
   const aiEstimate = React.useMemo(() => {
     const sectionCount = outline.length;
@@ -75,6 +77,15 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
   return (
     <div className="space-y-5">
+      {selectedSolutionName && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
+          <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+          <p className="text-[11px] text-muted-foreground">
+            Defaults set from <span className="font-medium text-foreground">{selectedSolutionName}</span>'s audience profile — feel free to adjust
+          </p>
+        </div>
+      )}
+
       {/* Writing Style */}
       <div>
         <h3 className="text-sm font-medium text-foreground">Writing Style</h3>

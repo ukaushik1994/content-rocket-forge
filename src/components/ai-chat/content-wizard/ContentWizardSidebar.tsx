@@ -244,6 +244,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onWritingStyleChange={(s) => updateState({ writingStyle: s })}
                         onExpertiseLevelChange={(l) => updateState({ expertiseLevel: l })}
                         onContentArticleTypeChange={(t) => updateState({ contentArticleType: t })}
+                        selectedSolutionName={wizardState.selectedSolution?.name}
                       />
                     )}
                     {currentStep === 4 && (
