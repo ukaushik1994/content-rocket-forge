@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Loader2, Building2, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,12 +12,16 @@ interface WizardStepSolutionProps {
   selectedSolution: EnhancedSolution | null;
   onSelect: (solution: EnhancedSolution) => void;
   preSelectedId?: string | null;
+  keyword: string;
+  onKeywordChange: (keyword: string) => void;
 }
 
 export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
   selectedSolution,
   onSelect,
   preSelectedId,
+  keyword,
+  onKeywordChange,
 }) => {
   const [solutions, setSolutions] = useState<EnhancedSolution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,59 +58,70 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
 
   const getInitials = (name: string) => name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
 
-  if (isLoading) {
-    return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
-  }
-
-  if (!solutions.length) {
-    return (
-      <div className="text-center py-12">
-        <Building2 className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-        <p className="text-sm font-medium text-foreground">No solutions found</p>
-        <p className="text-xs text-muted-foreground mt-1">Add offerings in the Offerings module first.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Keyword Input */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground">What would you like to write about?</h3>
+        <p className="text-xs text-muted-foreground mt-1">Enter a keyword or topic for your content</p>
+        <Input
+          value={keyword}
+          onChange={(e) => onKeywordChange(e.target.value)}
+          placeholder="e.g. AI in healthcare, best running shoes..."
+          className="text-sm mt-2"
+          autoFocus
+        />
+      </div>
+
+      {/* Solution Selection */}
       <div>
         <h3 className="text-sm font-medium text-foreground">Choose Your Solution</h3>
         <p className="text-xs text-muted-foreground mt-0.5">Select the solution to create content for</p>
       </div>
-      <TooltipProvider>
-        <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
-          {solutions.map(solution => (
-            <motion.div key={solution.id} whileHover={{ scale: 1.08 }} className="flex flex-col items-center gap-1.5 cursor-pointer" onClick={() => onSelect(solution)}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="relative">
-                    <Avatar className={`h-14 w-14 border-2 transition-colors ${selectedSolution?.id === solution.id ? 'border-primary ring-2 ring-primary/30' : 'border-border/30 hover:border-primary/40'}`}>
-                      {solution.logoUrl ? <AvatarImage src={solution.logoUrl} alt={solution.name} className="object-cover" /> : (
-                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground font-semibold text-sm">{getInitials(solution.name)}</AvatarFallback>
-                      )}
-                    </Avatar>
-                    {selectedSolution?.id === solution.id && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 bg-primary rounded-full flex items-center justify-center border-2 border-background">
-                        <Check className="h-2.5 w-2.5 text-primary-foreground" />
-                      </motion.div>
-                    )}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <p className="font-medium text-sm">{solution.name}</p>
-                  {solution.features.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {solution.features.slice(0, 3).map((f, i) => <Badge key={i} variant="secondary" className="text-[10px]">{f}</Badge>)}
-                    </div>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-              <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[60px] truncate">{solution.name}</span>
-            </motion.div>
-          ))}
+
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+      ) : !solutions.length ? (
+        <div className="text-center py-8">
+          <Building2 className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-sm font-medium text-foreground">No solutions found</p>
+          <p className="text-xs text-muted-foreground mt-1">Add offerings in the Offerings module first.</p>
         </div>
-      </TooltipProvider>
+      ) : (
+        <TooltipProvider>
+          <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
+            {solutions.map(solution => (
+              <motion.div key={solution.id} whileHover={{ scale: 1.08 }} className="flex flex-col items-center gap-1.5 cursor-pointer" onClick={() => onSelect(solution)}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <Avatar className={`h-14 w-14 border-2 transition-colors ${selectedSolution?.id === solution.id ? 'border-primary ring-2 ring-primary/30' : 'border-border/30 hover:border-primary/40'}`}>
+                        {solution.logoUrl ? <AvatarImage src={solution.logoUrl} alt={solution.name} className="object-cover" /> : (
+                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground font-semibold text-sm">{getInitials(solution.name)}</AvatarFallback>
+                        )}
+                      </Avatar>
+                      {selectedSolution?.id === solution.id && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 bg-primary rounded-full flex items-center justify-center border-2 border-background">
+                          <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                        </motion.div>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="font-medium text-sm">{solution.name}</p>
+                    {solution.features.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {solution.features.slice(0, 3).map((f, i) => <Badge key={i} variant="secondary" className="text-[10px]">{f}</Badge>)}
+                      </div>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+                <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[60px] truncate">{solution.name}</span>
+              </motion.div>
+            ))}
+          </div>
+        </TooltipProvider>
+      )}
     </div>
   );
 };

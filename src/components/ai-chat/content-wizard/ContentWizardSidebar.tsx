@@ -4,7 +4,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
 import { WizardStepSolution } from './WizardStepSolution';
 import { WizardStepResearch } from './WizardStepResearch';
 import { WizardStepOutline } from './WizardStepOutline';
@@ -25,6 +24,7 @@ interface ContentWizardSidebarProps {
 export interface WizardState {
   keyword: string;
   contentType: string;
+  title: string;
   selectedSolution: EnhancedSolution | null;
   researchSelections: {
     faqs: string[];
@@ -47,12 +47,11 @@ export interface WizardState {
 }
 
 const STEPS = [
-  { id: 0, label: 'Topic' },
-  { id: 1, label: 'Solution' },
-  { id: 2, label: 'Research' },
-  { id: 3, label: 'Outline' },
-  { id: 4, label: 'Words' },
-  { id: 5, label: 'Generate' },
+  { id: 0, label: 'Topic & Solution' },
+  { id: 1, label: 'Research' },
+  { id: 2, label: 'Outline' },
+  { id: 3, label: 'Config' },
+  { id: 4, label: 'Generate' },
 ];
 
 export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
@@ -66,6 +65,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   const [wizardState, setWizardState] = useState<WizardState>({
     keyword,
     contentType,
+    title: '',
     selectedSolution: null,
     researchSelections: { faqs: [], contentGaps: [], relatedKeywords: [], serpHeadings: [] },
     outline: [],
@@ -90,27 +90,48 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
 
   const canProceed = (): boolean => {
     switch (currentStep) {
-      case 0: return wizardState.keyword.trim().length >= 2;
-      case 1: return !!wizardState.selectedSolution;
-      case 2: {
+      case 0: return wizardState.keyword.trim().length >= 2 && !!wizardState.selectedSolution;
+      case 1: {
         const s = wizardState.researchSelections;
         return (s.faqs.length + s.contentGaps.length + s.relatedKeywords.length + s.serpHeadings.length) > 0;
       }
-      case 3: return wizardState.outline.length > 0;
-      case 4: return wizardState.wordCountMode === 'ai' || (wizardState.wordCount !== null && wizardState.wordCount > 0);
-      case 5: return true;
+      case 2: return wizardState.outline.length > 0;
+      case 3: return wizardState.wordCountMode === 'ai' || (wizardState.wordCount !== null && wizardState.wordCount > 0);
+      case 4: return true;
       default: return false;
     }
   };
 
-  const goNext = () => { if (currentStep < 5 && canProceed()) setCurrentStep(s => s + 1); };
+  const goNext = () => { if (currentStep < 4 && canProceed()) setCurrentStep(s => s + 1); };
   const goBack = () => { if (currentStep > 0) setCurrentStep(s => s - 1); };
+
+  // Auto-infer writing defaults from solution data
+  const handleSolutionSelect = useCallback((sol: EnhancedSolution) => {
+    const updates: Partial<WizardState> = { selectedSolution: sol };
+    
+    // Infer writing style and expertise from solution's target audience
+    const audienceText = (sol.targetAudience || []).join(' ').toLowerCase();
+    if (audienceText.includes('enterprise') || audienceText.includes('executive') || audienceText.includes('cto') || audienceText.includes('ceo')) {
+      updates.writingStyle = 'professional';
+      updates.expertiseLevel = 'expert';
+    } else if (audienceText.includes('developer') || audienceText.includes('engineer') || audienceText.includes('technical')) {
+      updates.writingStyle = 'professional';
+      updates.expertiseLevel = 'expert';
+    } else if (audienceText.includes('beginner') || audienceText.includes('student') || audienceText.includes('consumer')) {
+      updates.writingStyle = 'conversational';
+      updates.expertiseLevel = 'beginner';
+    } else if (audienceText.includes('business') || audienceText.includes('professional') || audienceText.includes('manager')) {
+      updates.writingStyle = 'professional';
+      updates.expertiseLevel = 'intermediate';
+    }
+    
+    updateState(updates);
+  }, [updateState]);
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -185,35 +206,22 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                     transition={{ duration: 0.2 }}
                   >
                     {currentStep === 0 && (
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-semibold text-foreground">What would you like to write about?</h3>
-                          <p className="text-xs text-muted-foreground mt-1">Enter a keyword or topic for your content</p>
-                        </div>
-                        <Input
-                          value={wizardState.keyword}
-                          onChange={(e) => updateState({ keyword: e.target.value })}
-                          placeholder="e.g. AI in healthcare, best running shoes..."
-                          className="text-sm"
-                          autoFocus
-                        />
-                      </div>
-                    )}
-                    {currentStep === 1 && (
                       <WizardStepSolution
                         selectedSolution={wizardState.selectedSolution}
-                        onSelect={(sol) => updateState({ selectedSolution: sol })}
+                        onSelect={handleSolutionSelect}
                         preSelectedId={solutionId}
+                        keyword={wizardState.keyword}
+                        onKeywordChange={(kw) => updateState({ keyword: kw })}
                       />
                     )}
-                    {currentStep === 2 && (
+                    {currentStep === 1 && (
                       <WizardStepResearch
                         keyword={wizardState.keyword}
                         selections={wizardState.researchSelections}
                         onSelectionsChange={(sel) => updateState({ researchSelections: sel })}
                       />
                     )}
-                    {currentStep === 3 && (
+                    {currentStep === 2 && (
                       <WizardStepOutline
                         keyword={wizardState.keyword}
                         solution={wizardState.selectedSolution}
@@ -222,7 +230,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onOutlineChange={(outline) => updateState({ outline })}
                       />
                     )}
-                    {currentStep === 4 && (
+                    {currentStep === 3 && (
                       <WizardStepWordCount
                         outline={wizardState.outline}
                         researchSelections={wizardState.researchSelections}
@@ -238,11 +246,12 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onContentArticleTypeChange={(t) => updateState({ contentArticleType: t })}
                       />
                     )}
-                    {currentStep === 5 && (
+                    {currentStep === 4 && (
                       <WizardStepGenerate
                         wizardState={wizardState}
                         onMetaChange={(title, desc) => updateState({ metaTitle: title, metaDescription: desc })}
                         onContentGenerated={(content) => updateState({ generatedContent: content })}
+                        onTitleChange={(title) => updateState({ title })}
                         onClose={onClose}
                       />
                     )}
@@ -252,7 +261,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
             </ScrollArea>
 
             {/* Footer Navigation */}
-            {currentStep < 5 && (
+            {currentStep < 4 && (
               <div className="flex-shrink-0 px-5 py-3 border-t border-border/10 flex items-center justify-between">
                 <Button
                   variant="ghost"
