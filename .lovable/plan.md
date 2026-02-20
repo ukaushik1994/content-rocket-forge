@@ -1,76 +1,40 @@
 
+# Polish Proposal Cards UI
 
-# Fix Proposal Cards: Remove Fake Metrics, Show Real Data
+## Issues Identified from Screenshot
 
-## The Problem
+1. **"NEW" badge overlaps the priority tag** -- The NEW badge uses `absolute top-2 left-2` positioning, which sits directly on top of the "High Return" / "Evergreen" badges in the header row. This creates a visual clash where both are fighting for the same space.
 
-The `EnhancedAIProposalCard` component generates misleading fake data:
-- **Word count** (line 135): Multiplies description word count by 15, producing random numbers like "~270 words" or "~195 words" -- proposals aren't written content, so word count is meaningless
-- **SEO score** (line 137): `Math.random() * 40 + 60` generates a different random score every render
-- **Status** (line 127): `Math.random() > 0.5 ? 'draft' : 'ready'` randomly assigns status on each render
-- **SEO Metadata section**: Just repeats the title and description already shown above -- pure noise
+2. **"Use This" button overlaps the footer** -- The button is positioned with `absolute bottom-3 right-3` on the parent wrapper in `ProposalBrowseStep`, which overlaps the card's own footer row (timestamp area). This looks cramped and inconsistent.
 
-Meanwhile, the **actually useful** data from proposals (priority tags like "High Return", estimated monthly impressions like "8,618", primary keyword, related keywords) gets buried or displayed poorly.
+3. **Cards could use tighter spacing and better visual separation** for the sidebar context where space is limited.
 
-## The Fix
+## Changes
 
-Redesign the `EnhancedAIProposalCard` to show only real, meaningful proposal data:
+### File 1: `EnhancedAIProposalCard.tsx`
 
-### What Gets Removed
-- Fake word count estimation (line 135)
-- Fake random SEO score and grade (lines 137-138)
-- Fake random status assignment (lines 120-128)
-- The "Content stats" grid showing fake word count and reading time (lines 227-236)
-- The "SEO METADATA" box that just repeats title/description (lines 238-251)
-- The "AI Analysis" progress bar with random percentage (lines 253-269)
+**Fix the NEW badge overlap:**
+- Remove the absolutely-positioned NEW badge block (lines 243-254)
+- Instead, integrate the NEW indicator inline in the header badge row, before the priority tag
+- This keeps all badges flowing naturally without overlap
 
-### What Replaces It
-- **Priority tag badge** using the existing `priorityConfig` (Quick Win, High Return, Growth Opportunity, Evergreen) -- already in the component but not prominently shown
-- **Content type badge** (Blog Post, Article, etc.) -- already configured but unused
-- **Estimated Monthly Impressions** -- the real SEO metric from the proposal data, displayed in a compact highlight card
-- **Primary keyword** shown as a labeled pill
-- **Related keywords** (already shown, keep as-is)
-- Clean timestamp footer (keep as-is)
+**Integrate "Use This" into the card footer:**
+- Add an optional `actionSlot` prop (a `ReactNode`) that the parent can pass in
+- Render it in the footer row (right side, where the action buttons go)
+- This eliminates the need for absolute positioning from the parent
 
-### Visual Layout (Sidebar Card)
+### File 2: `ProposalBrowseStep.tsx`
 
-```text
-+------------------------------------------+
-| [High Return]  [Blog Post]          [eye] |
-|                                           |
-| Best Practices for Automating Financial   |
-| Reporting                                 |
-| A comprehensive guide outlining best...   |
-|                                           |
-| [primary keyword pill] [+2 related]       |
-|                                           |
-| [trending icon] Est. 8,618 impressions/mo |
-|                                           |
-| Just created                  [Use This ->]|
-+------------------------------------------+
-```
+**Pass "Use This" as `actionSlot` instead of absolute overlay:**
+- Remove the `absolute bottom-3 right-3` wrapper div (lines 117-129)
+- Instead, pass the "Use This" button as the `actionSlot` prop to `EnhancedAIProposalCard`
+- Remove the `relative` class from the parent `motion.div` since absolute positioning is no longer needed
 
-### Files Modified
+## Summary
 
-**`src/components/research/content-strategy/components/EnhancedAIProposalCard.tsx`**
-- Remove `estimatedWords`, `readingTime`, `seoScore`, `seoGrade` variables
-- Replace `getStatus()` random logic: use `proposal.status` if available, otherwise default to `'draft'` deterministically (no `Math.random()`)
-- Remove the "Content stats" grid (word count + reading time)
-- Remove the "SEO METADATA" section
-- Remove the "AI Analysis" progress bar section
-- Replace status badge row with: priority tag badge + content type badge
-- Add an "Estimated Impressions" compact row using `proposal.estimated_impressions` (only shown when data exists)
-- Move primary keyword display above related keywords for better visual hierarchy
+| File | Change |
+|------|--------|
+| `EnhancedAIProposalCard.tsx` | Move NEW badge inline into header row; add `actionSlot` prop rendered in footer |
+| `ProposalBrowseStep.tsx` | Pass "Use This" button via `actionSlot` prop instead of absolute overlay |
 
-**No changes needed to**:
-- `ProposalBrowseStep.tsx` (already uses the card correctly)
-- `ProposalBrowserSidebar.tsx` (state management is fine)
-- `StrategySuggestions.tsx` (strategy page also benefits from removing fake data)
-
-## Impact
-
-- Both the sidebar proposal cards AND the strategy page cards will show real data instead of fake metrics
-- Cards become more compact and scannable
-- Users see actionable info (impressions, priority, keywords) instead of misleading numbers
-- No new files, no backend changes -- single component fix
-
+Two files, focused fixes for the overlap issues. No new dependencies, no backend changes.
