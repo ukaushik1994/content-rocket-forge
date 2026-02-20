@@ -1,62 +1,43 @@
 
 
-# Fix: Content Wizard Not Launching from Chat
+# Fix: Content Wizard Still Not Launching
 
 ## Root Cause
 
-When a user types "create a blog", the intent detection system (`actionIntentDetector.ts`) matches the **wrong tool**. The `ACTION_RULES` array is evaluated top-to-bottom, first match wins:
+The `extractParams` function in the `launch_content_wizard` rule returns `null` when the user doesn't specify a topic (e.g., "create a blog" without "about X"). When `extractParams` returns `null`, line 189 of the intent detector treats this as "not enough info" and **skips the match entirely**.
+
+This means the tool hint `launch_content_wizard` is never sent to the AI. The AI handles the message generically and asks for all details manually (Topic, Audience, Length, Tone, Points) -- exactly what we see in the screenshot.
 
 ```text
-Rule at line 46:  create_content_item  (matches "create a blog")  <-- WINS (wrong)
-Rule at line 366: launch_content_wizard (matches "create a blog")  <-- never reached
+User: "create a blog"
+  -> Pattern match: YES (line 49: /create (a)? blog/)
+  -> extractParams: tries to find "about|on|for" -> NOT FOUND
+  -> tries fallback -> NOT FOUND
+  -> returns NULL
+  -> Line 189: if (params === null) continue;  <-- SKIPS THE MATCH
+  -> No tool hint sent
+  -> AI responds generically: "What topic? What audience? What tone?"
 ```
 
-So Phase 2 sends a tool hint for `create_content_item` instead of `launch_content_wizard`. The AI then asks for title, body, audience details manually instead of opening the wizard sidebar.
+## The Fix (1 file, 1 line)
 
-## Fix (1 file)
+**File: `src/utils/actionIntentDetector.ts`, line 60**
 
-### File: `src/utils/actionIntentDetector.ts`
+Change the `extractParams` function to return empty object `{}` instead of `null` when no keyword is found. This tells the system "wizard intent detected, but no keyword yet" -- which is the correct behavior. The edge function's tool definition already instructs the AI to ask for the topic before calling the tool.
 
-**Move the `launch_content_wizard` rule ABOVE the `create_content_item` rule** in the `ACTION_RULES` array.
-
-Additionally, narrow the `create_content_item` patterns to only match explicit save/store actions (not "create a blog" which should always go to the wizard):
-
-Current `create_content_item` patterns:
-- `(create|write|generate) (a)? (new)? (blog post|article|content|draft)` -- this is too broad, catches wizard-intended messages
-
-Updated `create_content_item` patterns:
-- `(save|store) (this|that|it) (as)? (a)? (draft|blog|post|article|content)` -- keep these
-- `(publish|save) (this|the) (blog|post|article|content)` -- keep these
-- Remove the `(create|write|generate)` pattern from this rule since the wizard handles creation
-
-The wizard rule already has the right patterns:
-- `(create|write|build|make) (a)? (new)? (blog|article|guide|content) (about|on|for)`
-- `(help me)? (create|write|build) (a)? (blog|article|guide)`
-- `create (a)? blog`
-- `write (an)? article`
-
-### Changes Summary
-
-1. Move the `launch_content_wizard` block (lines 366-406, both user and AI-response rules) to the TOP of the `ACTION_RULES` array, before `create_content_item`
-2. Remove the overly broad pattern `/(create|write|generate)\s+(a\s+)?(new\s+)?(blog\s*post|article|content|draft)/i` from `create_content_item` -- this pattern now belongs to the wizard
-3. Keep `create_content_item` for explicit save/store/publish patterns only
-
-This ensures any "create a blog", "write an article", "help me create content" message triggers the Content Wizard sidebar instead of the raw content creation tool.
-
-## Technical Details
-
-```text
-ACTION_RULES order change:
-
-BEFORE:
-  [0] create_content_item  (catches "create a blog" -- WRONG)
-  ...
-  [N] launch_content_wizard (never reached)
-
-AFTER:
-  [0] launch_content_wizard (catches "create a blog" -- CORRECT)
-  ...
-  [N] create_content_item   (only catches "save this as draft")
+Current (broken):
+```
+return null;  // <-- causes intent to be skipped
 ```
 
-No other files need changes -- the tool execution pipeline, `visualData` promotion, and sidebar rendering all work correctly once the right tool name is detected.
+Fixed:
+```
+return {};    // <-- wizard detected, AI will ask for topic
+```
+
+This single change makes "create a blog", "write an article", "help me create content" all correctly trigger the `launch_content_wizard` tool hint, which the AI then handles by either:
+- Asking for a topic (if none given), then calling the tool
+- Directly calling the tool (if topic is in the message)
+
+No other files need changes.
+
