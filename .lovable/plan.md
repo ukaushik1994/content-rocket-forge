@@ -1,40 +1,44 @@
 
-# Polish Proposal Cards UI
 
-## Issues Identified from Screenshot
+# Persist AI Chat Proposals to Database
 
-1. **"NEW" badge overlaps the priority tag** -- The NEW badge uses `absolute top-2 left-2` positioning, which sits directly on top of the "High Return" / "Evergreen" badges in the header row. This creates a visual clash where both are fighting for the same space.
+## Problem
 
-2. **"Use This" button overlaps the footer** -- The button is positioned with `absolute bottom-3 right-3` on the parent wrapper in `ProposalBrowseStep`, which overlaps the card's own footer row (timestamp area). This looks cramped and inconsistent.
+When a user generates proposals via the AI Chat sidebar (`ProposalBrowserSidebar`), the proposals are only held in React state. If the user closes the sidebar or navigates away, all generated proposals are lost. They should be saved to the `ai_strategy_proposals` table automatically so they appear in the Content Strategy page for future reference.
 
-3. **Cards could use tighter spacing and better visual separation** for the sidebar context where space is limited.
+## Current State
 
-## Changes
+- `ContentStrategyContext.tsx` (lines 332-400) already has full persistence logic that inserts proposals into `ai_strategy_proposals` with proper validation, field mapping, and error handling.
+- `ProposalBrowserSidebar.tsx` calls `contentStrategyService.generateAIStrategy()` directly and stores results only in local `useState`.
+- The `ai_strategy_proposals` table already has all needed columns: `user_id`, `title`, `primary_keyword`, `priority_tag`, `estimated_impressions`, `status`, `solution_id`, etc.
 
-### File 1: `EnhancedAIProposalCard.tsx`
+## Solution
 
-**Fix the NEW badge overlap:**
-- Remove the absolutely-positioned NEW badge block (lines 243-254)
-- Instead, integrate the NEW indicator inline in the header badge row, before the priority tag
-- This keeps all badges flowing naturally without overlap
+Add persistence logic to `ProposalBrowserSidebar.tsx` right after proposals are generated (inside `handleSolutionSelect`). This mirrors the same insert pattern used in `ContentStrategyContext`.
 
-**Integrate "Use This" into the card footer:**
-- Add an optional `actionSlot` prop (a `ReactNode`) that the parent can pass in
-- Render it in the footer row (right side, where the action buttons go)
-- This eliminates the need for absolute positioning from the parent
+### File: `src/components/ai-chat/proposal-browser/ProposalBrowserSidebar.tsx`
 
-### File 2: `ProposalBrowseStep.tsx`
+After the proposals are enriched (line 53-56), add a database insert block:
 
-**Pass "Use This" as `actionSlot` instead of absolute overlay:**
-- Remove the `absolute bottom-3 right-3` wrapper div (lines 117-129)
-- Instead, pass the "Use This" button as the `actionSlot` prop to `EnhancedAIProposalCard`
-- Remove the `relative` class from the parent `motion.div` since absolute positioning is no longer needed
+1. Get the current user via `supabase.auth.getUser()`
+2. Filter proposals to only those with valid `title` and `primary_keyword`
+3. Map them to the `ai_strategy_proposals` insert shape (matching the existing pattern from `ContentStrategyContext`):
+   - `user_id`, `title`, `description`, `primary_keyword`, `related_keywords`, `content_type`, `priority_tag`, `estimated_impressions`, `solution_id`, `proposal_data`, `status: 'available'`
+4. Insert via `supabase.from('ai_strategy_proposals').insert(...).select()`
+5. On success: use the returned rows (which have real DB `id`s) as the local state instead of the raw API response -- this ensures "Use This" passes real proposal IDs downstream
+6. On failure: log the error, show a warning toast, but still display the proposals in the sidebar (graceful degradation)
 
-## Summary
+### What This Achieves
 
-| File | Change |
-|------|--------|
-| `EnhancedAIProposalCard.tsx` | Move NEW badge inline into header row; add `actionSlot` prop rendered in footer |
-| `ProposalBrowseStep.tsx` | Pass "Use This" button via `actionSlot` prop instead of absolute overlay |
+- Proposals generated from AI Chat are automatically saved to the database
+- They appear on the Content Strategy page under "AI Proposals" for future reference
+- If the user leaves without clicking "Use This", the proposals are still accessible later
+- The `status` field starts as `'available'` and transitions to `'completed'` when content is created from them (existing trigger handles this)
+- No new tables, no schema changes, no new edge functions -- just one insert call in the sidebar
 
-Two files, focused fixes for the overlap issues. No new dependencies, no backend changes.
+### Edge Cases Handled
+
+- **Duplicate prevention**: Each generation creates new proposals with unique DB-generated UUIDs -- no conflict risk
+- **Missing fields**: The mapping includes fallback defaults (`'blog'`, `'evergreen'`, `0`) matching the existing pattern
+- **Auth failure**: If user isn't authenticated, the insert will fail silently and proposals still display locally
+
