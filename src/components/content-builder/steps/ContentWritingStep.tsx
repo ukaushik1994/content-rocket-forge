@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { EnhancedContentEditor } from './editor/EnhancedContentEditor';
 import { MinimalisticSidebar } from './writing/MinimalisticSidebar';
 import { toast } from 'sonner';
@@ -15,6 +15,7 @@ import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { AttachedImagesGallery, AttachedImage } from '@/components/content/AttachedImagesGallery';
 import { imageGenOrchestrator } from '@/services/imageGenOrchestrator';
 import { ImageSlot } from '@/components/content/ImagePlaceholder';
+import { mapOfferingToBrief } from '@/utils/content/offeringToBrief';
 
 export const ContentWritingStep = () => {
   const {
@@ -60,6 +61,16 @@ export const ContentWritingStep = () => {
   const [includeStats, setIncludeStats] = useState(true);
   const [includeCaseStudies, setIncludeCaseStudies] = useState(true);
   const [includeFAQs, setIncludeFAQs] = useState(true);
+
+  // Auto-set writing style + expertise from offering
+  const lastOfferingId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectedSolution || selectedSolution.id === lastOfferingId.current) return;
+    lastOfferingId.current = selectedSolution.id;
+    const result = mapOfferingToBrief(selectedSolution as any);
+    setWritingStyle(result.writingStyle.charAt(0).toUpperCase() + result.writingStyle.slice(1));
+    setExpertiseLevel(result.expertiseLevel.charAt(0).toUpperCase() + result.expertiseLevel.slice(1));
+  }, [selectedSolution]);
   
   // Image generation state
   const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);

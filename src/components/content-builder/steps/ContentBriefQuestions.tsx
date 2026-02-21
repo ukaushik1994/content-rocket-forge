@@ -1,14 +1,35 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Users, Target, Palette, ListChecks } from 'lucide-react';
+import { Users, Target, Palette, ListChecks, Sparkles } from 'lucide-react';
+import { mapOfferingToBrief } from '@/utils/content/offeringToBrief';
 
 export const ContentBriefQuestions = () => {
   const { state, dispatch } = useContentBuilder();
   const brief = state.contentBrief || { targetAudience: '', contentGoal: '', tone: '', specificPoints: '' };
+  const lastAutoFilledSolutionId = useRef<string | null>(null);
+
+  // Auto-fill brief from offering when solution changes (only fill empty fields)
+  useEffect(() => {
+    const sol = state.selectedSolution;
+    if (!sol || sol.id === lastAutoFilledSolutionId.current) return;
+    lastAutoFilledSolutionId.current = sol.id;
+
+    const result = mapOfferingToBrief(sol, null, state.contentIntent);
+    const suggested = result.contentBrief;
+
+    const merged = {
+      targetAudience: brief.targetAudience || suggested.targetAudience,
+      contentGoal: brief.contentGoal || suggested.contentGoal,
+      tone: brief.tone || suggested.tone,
+      specificPoints: brief.specificPoints || suggested.specificPoints,
+    };
+
+    dispatch({ type: 'SET_CONTENT_BRIEF', payload: merged });
+  }, [state.selectedSolution?.id]);
 
   const updateBrief = (field: string, value: string) => {
     dispatch({
@@ -16,6 +37,8 @@ export const ContentBriefQuestions = () => {
       payload: { ...brief, [field]: value }
     });
   };
+
+  const solutionName = state.selectedSolution?.name;
 
   return (
     <Card className="bg-gradient-to-br from-indigo-900/20 to-blue-900/10 border border-border/50">
@@ -27,6 +50,14 @@ export const ContentBriefQuestions = () => {
         <p className="text-xs text-muted-foreground">
           Help us tailor the content to your needs
         </p>
+        {solutionName && (
+          <div className="flex items-center gap-1.5 mt-1 px-2 py-1 rounded-md bg-primary/5 border border-primary/20 w-fit">
+            <Sparkles className="w-3 h-3 text-primary" />
+            <span className="text-[10px] text-muted-foreground">
+              Auto-filled from <span className="font-medium text-foreground">{solutionName}</span> — override anytime
+            </span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

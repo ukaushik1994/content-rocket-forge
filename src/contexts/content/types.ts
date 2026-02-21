@@ -1,5 +1,5 @@
 
-export type ContentType = 'article' | 'blog' | 'glossary' | 'social_post' | 'email' | 'landing_page';
+export type ContentType = 'article' | 'blog' | 'glossary' | 'social_post' | 'email' | 'landing_page' | 'social_twitter' | 'social_linkedin' | 'social_facebook' | 'social_instagram' | 'script' | 'meme' | 'carousel' | 'google_ads';
 
 export interface ContentItemType {
   id: string;
