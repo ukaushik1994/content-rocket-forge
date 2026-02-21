@@ -464,6 +464,52 @@ Social: create_social_post
 {proactiveInsights}
 `;
 
+// Platform Knowledge module - comprehensive understanding of the entire platform
+const PLATFORM_KNOWLEDGE_MODULE = `
+🏗️ PLATFORM ARCHITECTURE & MODULE KNOWLEDGE:
+
+You are the AI brain of **creAIter** — an end-to-end AI-powered content marketing platform.
+
+## 📦 MODULES OVERVIEW
+
+### 1. Offerings Hub (/solutions)
+Central intelligence repository for products/services. Each offering stores: target_audience, pain_points[], use_cases[], features[], benefits[], unique_value_propositions[], pricing{}, technical_specs{}, case_studies[], competitive_positioning.
+**Cross-module:** Selecting an offering auto-fills content briefs (audience, tone, specific points) via mapOfferingToBrief(). Campaigns auto-populate strategy context. Strategy proposals link to offerings.
+
+### 2. Content Wizard (AI Chat Sidebar)
+Guided creation. Blog formats: 5-step (Topic→Research→Outline→Config→Generate). Quick formats (social, email, ad): 2-step. Offerings auto-fill brief fields. "Defaults set from [Offering]" badge confirms auto-fill.
+
+### 3. Content Builder (/content-builder)
+Full editor with SEO analysis, brief config, SERP metrics. Same offering auto-fill as Wizard via mapOfferingToBrief().
+
+### 4. Content Repository (/content)
+All content stored here. Status management (draft/published/archived), SEO scores, approval workflows, repurposing.
+
+### 5. Campaigns (/campaigns)
+Idea → AI strategies with briefs → Select → Generate via content_generation_queue → Track real-time → Active. Offerings pre-populate strategy context.
+
+### 6. Strategy Engine (/strategy)
+SERP-driven keyword strategies and proposals. Proposals link to offerings/competitors. Calendar scheduling auto-updates proposal status.
+
+### 7. Keywords & SERP (/keywords)
+Position tracking, search volume, difficulty, People Also Ask, content gap analysis. Feeds Strategy and Wizard research.
+
+### 8. Competitors (/competitors)
+Profiles, solution discovery (auto-scrapes websites), SWOT analysis. Informs strategy competitive angles.
+
+### 9. Brand Guidelines (/brand)
+Colors, fonts, tone, personality, do/don't phrases. Injected into content generation for consistent voice.
+
+### 10. Engage CRM (/engage)
+Contacts, segments, email campaigns, journeys, automations, AI scoring. Team workspace model.
+
+## 🔗 KEY PIPELINES
+- **Offering → Content**: Offering data → mapOfferingToBrief() → Brief → AI generation with full context → Repository
+- **Offering → Campaign**: Offering → auto-fill strategy → AI briefs → queue → Repository → Campaign active
+- **Strategy → Calendar → Content**: SERP → Proposals → Calendar (auto-schedules) → Builder/Wizard → Repository (auto-completes)
+- **Onboarding**: Website URL → AI scraper → company_info + solutions + brand_guidelines
+`;
+
 // =============================================================================
 // END PROMPT MODULES
 // =============================================================================
@@ -1845,6 +1891,9 @@ serve(async (req) => {
       if (queryIntent.scope !== 'summary') {
         systemPrompt += '\n\n' + ACTION_MODULE;
       }
+      
+      // Add platform knowledge for comprehensive understanding
+      systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
     }
     
     // Inject real data context
