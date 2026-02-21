@@ -8684,6 +8684,14 @@ export type Database = {
         | "social_post"
         | "email"
         | "landing_page"
+        | "social_twitter"
+        | "social_linkedin"
+        | "social_facebook"
+        | "social_instagram"
+        | "script"
+        | "meme"
+        | "carousel"
+        | "google_ads"
       persona_type: "end_user" | "decision_maker" | "influencer"
     }
     CompositeTypes: {
@@ -8829,6 +8837,14 @@ export const Constants = {
         "social_post",
         "email",
         "landing_page",
+        "social_twitter",
+        "social_linkedin",
+        "social_facebook",
+        "social_instagram",
+        "script",
+        "meme",
+        "carousel",
+        "google_ads",
       ],
       persona_type: ["end_user", "decision_maker", "influencer"],
     },
