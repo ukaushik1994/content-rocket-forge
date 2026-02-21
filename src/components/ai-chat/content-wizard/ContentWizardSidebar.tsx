@@ -12,6 +12,7 @@ import { WizardStepGenerate } from './WizardStepGenerate';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
+import { mapOfferingToBrief } from '@/utils/content/offeringToBrief';
 
 interface ContentWizardSidebarProps {
   isOpen: boolean;
@@ -143,32 +144,15 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   const goNext = () => { if (currentStep < maxStep && canProceed()) setCurrentStep(s => s + 1); };
   const goBack = () => { if (currentStep > 0) setCurrentStep(s => s - 1); };
 
-  // Auto-infer writing defaults + content brief from solution data
+  // Auto-infer writing defaults + content brief from solution data using shared utility
   const handleSolutionSelect = useCallback((sol: EnhancedSolution) => {
-    const updates: Partial<WizardState> = { selectedSolution: sol };
-    
-    const audienceText = (sol.targetAudience || []).join(' ').toLowerCase();
-    
-    // Infer writing style, expertise, and content brief from audience
-    if (audienceText.includes('enterprise') || audienceText.includes('executive') || audienceText.includes('cto') || audienceText.includes('ceo')) {
-      updates.writingStyle = 'professional';
-      updates.expertiseLevel = 'expert';
-      updates.contentBrief = { targetAudience: 'enterprise', contentGoal: 'convert', tone: 'professional', specificPoints: '' };
-    } else if (audienceText.includes('developer') || audienceText.includes('engineer') || audienceText.includes('technical')) {
-      updates.writingStyle = 'professional';
-      updates.expertiseLevel = 'expert';
-      updates.contentBrief = { targetAudience: 'developers', contentGoal: 'educate', tone: 'technical', specificPoints: '' };
-    } else if (audienceText.includes('beginner') || audienceText.includes('student') || audienceText.includes('consumer')) {
-      updates.writingStyle = 'conversational';
-      updates.expertiseLevel = 'beginner';
-      updates.contentBrief = { targetAudience: 'beginners', contentGoal: 'educate', tone: 'friendly', specificPoints: '' };
-    } else if (audienceText.includes('business') || audienceText.includes('professional') || audienceText.includes('manager') || audienceText.includes('marketer')) {
-      updates.writingStyle = 'professional';
-      updates.expertiseLevel = 'intermediate';
-      updates.contentBrief = { targetAudience: 'professionals', contentGoal: 'authority', tone: 'professional', specificPoints: '' };
-    }
-    
-    updateState(updates);
+    const result = mapOfferingToBrief(sol);
+    updateState({
+      selectedSolution: sol,
+      writingStyle: result.writingStyle,
+      expertiseLevel: result.expertiseLevel,
+      contentBrief: result.contentBrief,
+    });
   }, [updateState]);
 
   return (
