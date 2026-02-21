@@ -148,7 +148,8 @@ export const ContentWritingStep = () => {
       additionalInstructions,
       includeStats,
       includeCaseStudies,
-      includeFAQs
+      includeFAQs,
+      formatType: state.contentType,
     };
     setIsGenerating(true);
     

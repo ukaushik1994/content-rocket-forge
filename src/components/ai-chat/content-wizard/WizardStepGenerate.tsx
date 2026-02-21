@@ -16,14 +16,24 @@ import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
 import type { WizardState } from './ContentWizardSidebar';
 
-// --- GAP 1 FIX: Map wizard format IDs to valid DB enum values ---
+// --- Format categories ---
+const BLOG_FORMATS = ['blog', 'landing-page'];
+const isQuickFormat = (ct: string) => !BLOG_FORMATS.includes(ct);
+
+// --- Map wizard format IDs to valid DB enum values ---
 const FORMAT_TO_DB_ENUM: Record<string, string> = {
   'blog': 'blog',
-  'social-linkedin': 'social',
-  'social-twitter': 'social',
+  'social-twitter': 'social_twitter',
+  'social-linkedin': 'social_linkedin',
+  'social-facebook': 'social_facebook',
+  'social-instagram': 'social_instagram',
   'email': 'email',
   'landing-page': 'landing_page',
-  'script': 'video_script',
+  'script': 'script',
+  'meme': 'meme',
+  'carousel': 'carousel',
+  'google-ads': 'google_ads',
+  'glossary': 'glossary',
 };
 
 // --- GAP 6 FIX: Title sanitization (same logic as Content Builder) ---
@@ -140,8 +150,10 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     loadContext();
   }, [user]);
 
+  const quick = isQuickFormat(wizardState.contentType);
+
   useEffect(() => {
-    if (!wizardState.metaTitle) generateMeta();
+    if (!quick && !wizardState.metaTitle) generateMeta();
   }, []);
 
   // Sync editable content with generated content
@@ -255,19 +267,20 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       const config: ContentGenerationConfig = {
         mainKeyword: wizardState.keyword,
         title: wizardState.title || wizardState.metaTitle || `${wizardState.keyword} - Complete Guide`,
-        outline: outlineText,
+        outline: quick ? '' : outlineText,
         secondaryKeywords: wizardState.researchSelections.relatedKeywords.join(', '),
         writingStyle: wizardState.writingStyle,
         expertiseLevel: wizardState.expertiseLevel,
         targetLength,
         contentType: wizardState.contentArticleType,
         contentIntent: 'inform',
-        serpSelections,
+        serpSelections: quick ? [] : serpSelections,
         selectedSolution: wizardState.selectedSolution,
         additionalInstructions: buildAdditionalInstructions(),
         includeStats: wizardState.includeStats,
         includeCaseStudies: wizardState.includeCaseStudies,
         includeFAQs: wizardState.includeFAQs,
+        formatType: wizardState.contentType,
       };
 
       const result = await generateAdvancedContent(config);
@@ -361,8 +374,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       // --- GAP 1: Map content type to valid DB enum ---
       const resolvedContentType = FORMAT_TO_DB_ENUM[wizardState.contentType] || 'blog';
 
-      // --- GAP 2: Calculate SEO score ---
-      const seoScore = calculateSeoScore(contentToSave, wizardState.keyword, finalMetaTitle, finalMetaDescription);
+      // --- SEO score: only for blog formats ---
+      const seoScore = quick ? null : calculateSeoScore(contentToSave, wizardState.keyword, finalMetaTitle, finalMetaDescription);
 
       // --- GAP 5: Build document structure ---
       const documentStructure = extractDocumentStructure(contentToSave);
@@ -519,9 +532,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         user_id: user.id,
         status: status as any,
         content_type: resolvedContentType as any,
-        seo_score: seoScore,
-        meta_title: finalMetaTitle || null,
-        meta_description: finalMetaDescription || null,
+        seo_score: quick ? null : seoScore,
+        meta_title: quick ? null : (finalMetaTitle || null),
+        meta_description: quick ? null : (finalMetaDescription || null),
         solution_id: wizardState.selectedSolution?.id || null,
         keywords: { main: wizardState.keyword, secondary: relatedKeywords } as any,
         metadata: metadata as any,
@@ -673,32 +686,34 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         />
       </div>
 
-      {/* Meta Fields */}
-      <div className="space-y-3">
-        <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground flex items-center gap-1">
-            Meta Title
-            {isGeneratingMeta && <Loader2 className="w-3 h-3 animate-spin" />}
-          </label>
-          <Input
-            value={wizardState.metaTitle}
-            onChange={(e) => onMetaChange(e.target.value, wizardState.metaDescription)}
-            placeholder="SEO title..."
-            className="text-xs h-8"
-          />
-          <p className="text-[10px] text-muted-foreground">{wizardState.metaTitle.length}/60 characters</p>
+      {/* Meta Fields - only for blog formats */}
+      {!quick && (
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground flex items-center gap-1">
+              Meta Title
+              {isGeneratingMeta && <Loader2 className="w-3 h-3 animate-spin" />}
+            </label>
+            <Input
+              value={wizardState.metaTitle}
+              onChange={(e) => onMetaChange(e.target.value, wizardState.metaDescription)}
+              placeholder="SEO title..."
+              className="text-xs h-8"
+            />
+            <p className="text-[10px] text-muted-foreground">{wizardState.metaTitle.length}/60 characters</p>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Meta Description</label>
+            <Textarea
+              value={wizardState.metaDescription}
+              onChange={(e) => onMetaChange(wizardState.metaTitle, e.target.value)}
+              placeholder="SEO description..."
+              className="text-xs min-h-[60px] resize-none"
+            />
+            <p className="text-[10px] text-muted-foreground">{wizardState.metaDescription.length}/160 characters</p>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground">Meta Description</label>
-          <Textarea
-            value={wizardState.metaDescription}
-            onChange={(e) => onMetaChange(wizardState.metaTitle, e.target.value)}
-            placeholder="SEO description..."
-            className="text-xs min-h-[60px] resize-none"
-          />
-          <p className="text-[10px] text-muted-foreground">{wizardState.metaDescription.length}/160 characters</p>
-        </div>
-      </div>
+      )}
 
       {/* Generate Button */}
       {!wizardState.generatedContent ? (
