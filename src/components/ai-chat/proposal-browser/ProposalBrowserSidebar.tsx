@@ -8,6 +8,7 @@ import { ProposalSolutionStep } from './ProposalSolutionStep';
 import { ProposalBrowseStep } from './ProposalBrowseStep';
 import { ContentWizardSidebar } from '../content-wizard/ContentWizardSidebar';
 import { contentStrategyService } from '@/services/contentStrategyService';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ProposalBrowserSidebarProps {
@@ -55,6 +56,46 @@ export const ProposalBrowserSidebar: React.FC<ProposalBrowserSidebarProps> = ({
         solution_id: p.solution_id || solutionIds[0]
       }));
       
+      // Persist to database
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const validProposals = enrichedProposals.filter(
+            (p: any) => p.title && p.primary_keyword
+          );
+          if (validProposals.length > 0) {
+            const rows = validProposals.map((p: any) => ({
+              user_id: user.id,
+              title: p.title,
+              description: p.description || null,
+              primary_keyword: p.primary_keyword,
+              related_keywords: p.related_keywords || [],
+              content_type: p.content_type || 'blog',
+              priority_tag: p.priority_tag || 'evergreen',
+              estimated_impressions: p.estimated_impressions || 0,
+              solution_id: p.solution_id || null,
+              proposal_data: p as any,
+              status: 'available'
+            }));
+            const { data: saved, error: dbErr } = await supabase
+              .from('ai_strategy_proposals')
+              .insert(rows)
+              .select();
+            if (dbErr) {
+              console.error('Failed to persist proposals:', dbErr);
+              toast.warning('Proposals generated but not saved to database');
+            } else if (saved) {
+              setProposals(saved);
+              setStep('proposals');
+              toast.success(`Generated ${saved.length} proposals`);
+              return;
+            }
+          }
+        }
+      } catch (persistErr) {
+        console.error('Proposal persistence error:', persistErr);
+      }
+
       setProposals(enrichedProposals);
       setStep('proposals');
       toast.success(`Generated ${enrichedProposals.length} proposals`);
