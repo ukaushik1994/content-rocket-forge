@@ -18,6 +18,81 @@ export interface ContentGenerationConfig {
   includeStats: boolean;
   includeCaseStudies: boolean;
   includeFAQs: boolean;
+  formatType?: string;
+}
+
+// --- Format-aware helpers ---
+const BLOG_FORMATS = ['blog', 'landing-page'];
+const isQuickFormat = (fmt?: string) => !!fmt && !BLOG_FORMATS.includes(fmt);
+
+function getSystemPromptForFormat(formatType: string): string {
+  switch (formatType) {
+    case 'social-twitter':
+      return `You are a social media expert specializing in Twitter/X. Create engaging tweets under 280 characters with relevant hashtags. Be punchy, concise, and attention-grabbing. Include a clear call-to-action when appropriate.`;
+    case 'social-linkedin':
+      return `You are a LinkedIn content strategist. Write professional, thought-leadership posts of 300-600 words. Use a professional yet approachable tone. Include a hook in the first line, provide value, and end with a question or CTA to drive engagement.`;
+    case 'social-facebook':
+      return `You are a Facebook content creator. Write engaging posts of 200-400 words that encourage interaction. Use a warm, conversational tone. Include a compelling hook, storytelling elements, and a clear call-to-action.`;
+    case 'social-instagram':
+      return `You are an Instagram caption writer. Create captivating captions with engaging hooks, relevant emojis, and strategic hashtags. Use line breaks for readability. Include a call-to-action and up to 30 relevant hashtags at the end.`;
+    case 'email':
+      return `You are an email marketing specialist. Write compelling email content with: a subject line (under 50 chars), preview text (under 90 chars), body content with clear sections, and a prominent CTA. Use a professional but personable tone.`;
+    case 'script':
+      return `You are a video/podcast scriptwriter. Create scripts with clear scene directions, natural dialogue, timing cues, and visual/audio notes. Format with [SCENE], [NARRATOR], [CUT TO], etc. Include intro hook, main content, and outro.`;
+    case 'carousel':
+      return `You are a carousel content designer. Create multi-slide content (5-8 slides). Each slide must have: a bold headline (under 10 words) and supporting body text (under 30 words). Slide 1 is the hook, last slide is the CTA. Format as "SLIDE 1:", "SLIDE 2:", etc.`;
+    case 'meme':
+      return `You are a meme creator. Generate meme text with TOP TEXT and BOTTOM TEXT format. Keep it punchy, humorous, and relatable to the topic. Include 2-3 variations. Format: "TOP: [text]\nBOTTOM: [text]"`;
+    case 'google-ads':
+      return `You are a Google Ads copywriter. Generate ad copy with: 3 headlines (max 30 chars each), 2 descriptions (max 90 chars each), and display URL paths. Include multiple ad variations. Focus on strong CTAs, unique value propositions, and keyword relevance.`;
+    case 'glossary':
+      return `You are a technical writer creating glossary entries. Define terms clearly and concisely with examples. Include related terms, usage context, and SEO-friendly definitions.`;
+    default:
+      return ''; // Will use the existing blog system prompt
+  }
+}
+
+function getMaxTokensForFormat(formatType: string, targetLength: number): number {
+  switch (formatType) {
+    case 'social-twitter': return 200;
+    case 'meme': return 300;
+    case 'google-ads': return 500;
+    case 'social-facebook': return 800;
+    case 'social-instagram': return 800;
+    case 'social-linkedin': return 1200;
+    case 'carousel': return 1500;
+    case 'email': return 2000;
+    case 'script': return 3000;
+    default: return Math.max(4000, targetLength * 2);
+  }
+}
+
+function buildQuickFormatPrompt(config: ContentGenerationConfig): string {
+  const sol = config.selectedSolution;
+  let prompt = `Create ${config.formatType} content about "${config.mainKeyword}".\n\n`;
+  
+  if (config.title) prompt += `Title/Topic: ${config.title}\n\n`;
+  
+  if (sol) {
+    prompt += `**Solution/Product Context:**\nName: ${sol.name}\n`;
+    if (sol.description) prompt += `Description: ${sol.description}\n`;
+    if (Array.isArray(sol.features) && sol.features.length) prompt += `Features: ${sol.features.join(', ')}\n`;
+    if (Array.isArray(sol.painPoints) && sol.painPoints.length) prompt += `Pain Points: ${sol.painPoints.join(', ')}\n`;
+    if (Array.isArray(sol.useCases) && sol.useCases.length) prompt += `Use Cases: ${sol.useCases.join(', ')}\n`;
+    if (Array.isArray(sol.targetAudience) && sol.targetAudience.length) prompt += `Target Audience: ${sol.targetAudience.join(', ')}\n`;
+    prompt += '\n';
+  }
+  
+  if (config.additionalInstructions) {
+    prompt += `**Additional Instructions:**\n${config.additionalInstructions}\n\n`;
+  }
+  
+  if (config.secondaryKeywords) {
+    prompt += `**Related Keywords to incorporate:** ${config.secondaryKeywords}\n\n`;
+  }
+  
+  prompt += `Generate the content now:`;
+  return prompt;
 }
 
 /**
@@ -51,11 +126,14 @@ export async function generateAdvancedContent(
       } : null
     });
 
-    // Validate that we have selected SERP items
+    // Determine if this is a quick (non-blog) format
+    const quickFormat = isQuickFormat(config.formatType);
+
+    // Validate that we have selected SERP items (only relevant for blog formats)
     const selectedSerpItems = config.serpSelections.filter(item => item.selected);
-    if (selectedSerpItems.length === 0) {
+    if (!quickFormat && selectedSerpItems.length === 0) {
       console.warn('⚠️ No SERP items selected for content generation');
-    } else {
+    } else if (!quickFormat) {
       console.log('✅ Using selected SERP items:', {
         totalSelected: selectedSerpItems.length,
         byType: selectedSerpItems.reduce((acc, item) => {
@@ -65,42 +143,41 @@ export async function generateAdvancedContent(
       });
     }
 
-    // Build the comprehensive prompt using selected SERP items
-    let prompt = buildAdvancedContentPrompt(config);
+    // Build prompt based on format type
+    let prompt: string;
+    if (quickFormat) {
+      prompt = buildQuickFormatPrompt(config);
+    } else {
+      prompt = buildAdvancedContentPrompt(config);
 
-    // Optionally append solution-aware guidelines
-    const effectiveContentType = config.contentType || 'general';
-    if (config.selectedSolution && effectiveContentType && config.contentIntent) {
-      const targetKeywords = [
-        config.mainKeyword,
-        ...((config.secondaryKeywords || '').split(',').map(k => k.trim()).filter(Boolean))
-      ];
+      // Optionally append solution-aware guidelines for blog formats
+      const effectiveContentType = config.contentType || 'general';
+      if (config.selectedSolution && effectiveContentType && config.contentIntent) {
+        const targetKeywords = [
+          config.mainKeyword,
+          ...((config.secondaryKeywords || '').split(',').map(k => k.trim()).filter(Boolean))
+        ];
 
-      prompt = AISolutionIntegrationService.createSolutionAwarePrompt({
-        solution: config.selectedSolution,
-        contentType: config.contentType as any,
-        contentIntent: config.contentIntent as any,
-        targetKeywords,
-        audience: Array.isArray(config.selectedSolution?.targetAudience)
-          ? config.selectedSolution.targetAudience.join(', ')
-          : undefined
-      }, prompt);
+        prompt = AISolutionIntegrationService.createSolutionAwarePrompt({
+          solution: config.selectedSolution,
+          contentType: config.contentType as any,
+          contentIntent: config.contentIntent as any,
+          targetKeywords,
+          audience: Array.isArray(config.selectedSolution?.targetAudience)
+            ? config.selectedSolution.targetAudience.join(', ')
+            : undefined
+        }, prompt);
 
-      console.log('🧩 Solution-aware guidelines appended to prompt');
+        console.log('🧩 Solution-aware guidelines appended to prompt');
+      }
     }
     
     console.log('📝 Generated content prompt length:', prompt.length);
-    console.log('🎯 Key prompt elements included:', {
-      hasSerpSelections: selectedSerpItems.length > 0,
-      hasOutline: prompt.includes('Content Outline'),
-      hasSecondaryKeywords: prompt.includes('Secondary Keywords'),
-      hasInstructions: prompt.includes('Additional Instructions'),
-      hasSolution: !!config.selectedSolution,
-      hasSolutionContext: prompt.includes('SOLUTION CONTEXT') || prompt.includes('Solution Integration')
-    });
+    console.log('🎯 Format type:', config.formatType || 'blog (default)');
 
-    // Enhanced system prompt that emphasizes SERP integration
-    const systemPrompt = `You are an expert content writer specializing in creating comprehensive, SEO-optimized articles that genuinely help readers. Your content is:
+    // Choose system prompt based on format
+    const formatSystemPrompt = config.formatType ? getSystemPromptForFormat(config.formatType) : '';
+    const systemPrompt = formatSystemPrompt || `You are an expert content writer specializing in creating comprehensive, SEO-optimized articles that genuinely help readers. Your content is:
 
 1. HELPFUL FIRST: Always prioritize providing real value to readers over SEO optimization
 2. ACCURATE: Base content on factual information and best practices
@@ -146,6 +223,9 @@ Always start with the title as an H1 heading and follow the provided outline str
 
     console.log(`🔌 Using provider: ${provider.provider} (${provider.preferred_model})`);
 
+    // Calculate max tokens based on format
+    const maxTokens = getMaxTokensForFormat(config.formatType || 'blog', config.targetLength);
+
     // Call ai-proxy directly for content generation (not enhanced-ai-chat)
     const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-proxy', {
       body: {
@@ -157,7 +237,7 @@ Always start with the title as an H1 heading and follow the provided outline str
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
           ],
-          max_tokens: Math.max(4000, config.targetLength * 2),
+          max_tokens: maxTokens,
           temperature: 0.7,
         },
       }

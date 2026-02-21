@@ -56,13 +56,21 @@ export interface WizardState {
   additionalInstructions: string;
 }
 
-const STEPS = [
+const BLOG_STEPS = [
   { id: 0, label: 'Topic & Solution' },
   { id: 1, label: 'Research' },
   { id: 2, label: 'Outline' },
   { id: 3, label: 'Config' },
   { id: 4, label: 'Generate' },
 ];
+
+const QUICK_STEPS = [
+  { id: 0, label: 'Topic & Solution' },
+  { id: 1, label: 'Generate' },
+];
+
+const BLOG_FORMATS = ['blog', 'landing-page'];
+const isQuickFormat = (ct: string) => !BLOG_FORMATS.includes(ct);
 
 export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   isOpen,
@@ -96,14 +104,31 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   });
 
   const { isMobile } = useResponsiveBreakpoint();
+  const quick = isQuickFormat(wizardState.contentType);
+  const activeSteps = quick ? QUICK_STEPS : BLOG_STEPS;
+  const maxStep = activeSteps.length - 1;
 
   const updateState = useCallback((updates: Partial<WizardState>) => {
-    setWizardState(prev => ({ ...prev, ...updates }));
+    setWizardState(prev => {
+      const next = { ...prev, ...updates };
+      // If content type changed between blog/quick, reset step to 0
+      if (updates.contentType && isQuickFormat(updates.contentType) !== isQuickFormat(prev.contentType)) {
+        return next; // step will be clamped in render
+      }
+      return next;
+    });
   }, []);
 
+  // Clamp step when switching between quick/blog
+  React.useEffect(() => {
+    if (currentStep > maxStep) setCurrentStep(maxStep);
+  }, [maxStep, currentStep]);
+
   const canProceed = (): boolean => {
+    if (currentStep === 0) return wizardState.keyword.trim().length >= 2 && !!wizardState.selectedSolution;
+    if (quick) return true; // step 1 = generate, always ok
+    // Blog steps
     switch (currentStep) {
-      case 0: return wizardState.keyword.trim().length >= 2 && !!wizardState.selectedSolution;
       case 1: {
         const s = wizardState.researchSelections;
         return (s.faqs.length + s.contentGaps.length + s.relatedKeywords.length + s.serpHeadings.length) > 0;
@@ -115,7 +140,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     }
   };
 
-  const goNext = () => { if (currentStep < 4 && canProceed()) setCurrentStep(s => s + 1); };
+  const goNext = () => { if (currentStep < maxStep && canProceed()) setCurrentStep(s => s + 1); };
   const goBack = () => { if (currentStep > 0) setCurrentStep(s => s - 1); };
 
   // Auto-infer writing defaults + content brief from solution data
@@ -185,26 +210,26 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
 
               {/* Step Indicator */}
               <div className="flex items-center gap-1">
-                {STEPS.map((step, idx) => (
+                {activeSteps.map((step, idx) => (
                   <React.Fragment key={step.id}>
                     <div className="flex flex-col items-center gap-1">
                       <div className={cn(
                         "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all",
-                        currentStep === step.id && "bg-primary text-primary-foreground ring-2 ring-primary/30",
-                        currentStep > step.id && "bg-primary/20 text-primary",
-                        currentStep < step.id && "bg-muted text-muted-foreground"
+                        currentStep === idx && "bg-primary text-primary-foreground ring-2 ring-primary/30",
+                        currentStep > idx && "bg-primary/20 text-primary",
+                        currentStep < idx && "bg-muted text-muted-foreground"
                       )}>
-                        {currentStep > step.id ? <Check className="w-3.5 h-3.5" /> : step.id}
+                        {currentStep > idx ? <Check className="w-3.5 h-3.5" /> : idx}
                       </div>
                       <span className={cn(
                         "text-[10px] font-medium",
-                        currentStep === step.id ? "text-foreground" : "text-muted-foreground"
+                        currentStep === idx ? "text-foreground" : "text-muted-foreground"
                       )}>{step.label}</span>
                     </div>
-                    {idx < STEPS.length - 1 && (
+                    {idx < activeSteps.length - 1 && (
                       <div className={cn(
                         "flex-1 h-0.5 rounded-full mt-[-14px]",
-                        currentStep > step.id ? "bg-primary/40" : "bg-border/30"
+                        currentStep > idx ? "bg-primary/40" : "bg-border/30"
                       )} />
                     )}
                   </React.Fragment>
@@ -234,7 +259,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onContentTypeChange={(ct) => updateState({ contentType: ct })}
                       />
                     )}
-                    {currentStep === 1 && (
+                    {!quick && currentStep === 1 && (
                       <WizardStepResearch
                         keyword={wizardState.keyword}
                         selections={wizardState.researchSelections}
@@ -242,7 +267,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onSerpDataChange={(data) => updateState({ serpData: data })}
                       />
                     )}
-                    {currentStep === 2 && (
+                    {!quick && currentStep === 2 && (
                       <WizardStepOutline
                         keyword={wizardState.keyword}
                         solution={wizardState.selectedSolution}
@@ -251,7 +276,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onOutlineChange={(outline) => updateState({ outline })}
                       />
                     )}
-                    {currentStep === 3 && (
+                    {!quick && currentStep === 3 && (
                       <WizardStepWordCount
                         outline={wizardState.outline}
                         researchSelections={wizardState.researchSelections}
@@ -272,7 +297,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onAdditionalInstructionsChange={(inst) => updateState({ additionalInstructions: inst })}
                       />
                     )}
-                    {currentStep === 4 && (
+                    {((quick && currentStep === 1) || (!quick && currentStep === 4)) && (
                       <WizardStepGenerate
                         wizardState={wizardState}
                         onMetaChange={(title, desc) => updateState({ metaTitle: title, metaDescription: desc })}
@@ -287,7 +312,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
             </ScrollArea>
 
             {/* Footer Navigation */}
-            {currentStep < 4 && (
+            {currentStep < maxStep && (
               <div className="flex-shrink-0 px-5 py-3 border-t border-border/10 flex items-center justify-between">
                 <Button
                   variant="ghost"
