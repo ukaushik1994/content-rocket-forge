@@ -1,0 +1,9 @@
+ALTER TABLE profiles
+  DROP COLUMN IF EXISTS full_name,
+  DROP COLUMN IF EXISTS birthdate,
+  DROP COLUMN IF EXISTS title,
+  DROP COLUMN IF EXISTS organization,
+  DROP COLUMN IF EXISTS bio,
+  DROP COLUMN IF EXISTS location,
+  DROP COLUMN IF EXISTS linkedin_url,
+  DROP COLUMN IF EXISTS phone;
