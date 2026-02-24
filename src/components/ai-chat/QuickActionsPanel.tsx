@@ -39,7 +39,7 @@ export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
       title: 'Create Content',
       description: 'Build optimized content step-by-step',
       icon: FileText,
-      action: 'navigate:/content-builder',
+      action: 'send:Create a new blog post',
       color: 'from-green-500/20 to-green-600/20',
       borderColor: 'border-green-500/30'
     },
