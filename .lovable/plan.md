@@ -1,76 +1,151 @@
 
 
-# Fix Plan: 5 Remaining Content Wizard Issues
+# Fix Plan: Content Wizard Intent Detection + Feature Parity Audit
 
-## Issue 1: AI Detection Score Not Showing ("No JSON found")
+## Problem Summary
 
-**Root Cause:** The `detectAIContent` service in `aiContentDetectionService.ts` already calls `ai-proxy` directly (rewritten in the last round). However, the `ai-proxy` response is nested under `data.data.choices[...]`. The current code at line 76 correctly checks `aiData?.data?.choices?.[0]?.message?.content` first. The likely issue is that the `ai-proxy` edge function returns the response wrapped differently for some providers, OR the model isn't returning pure JSON despite the system prompt.
+The Content Wizard has a **broken handoff chain**: when a user says "create a blog" and then provides a topic like "AI in healthcare", the system fails to open the wizard sidebar. Instead, the AI responds with a text-based outline in the chat.
 
-**Fix (in `src/services/aiContentDetectionService.ts`):**
-- Add `response_format: { type: "json_object" }` to the params for OpenAI models (forces JSON mode)
-- Improve the JSON extraction fallback: after the `\{[\s\S]*\}` regex, also try `stripMarkdownCodeFence` (already exists in the codebase) before parsing
-- Add more detailed error logging to show exactly what response came back
+**Root cause:** The two-phase streaming architecture relies on regex-based intent detection, but the follow-up topic message (e.g., "AI in healthcare") doesn't match any `ACTION_RULES` pattern. The system depends on `detectAIResponseIntent` scanning the AI's streamed text for phrases like "Launching the Content Wizard...", but the AI often doesn't use those exact phrases.
 
-## Issue 2: Word Count Undershoot (Chunked Generation Validation)
-
-**Status:** The chunked generation code is already in place (`generateInChunks` at line 103). It's triggered when `targetLength > 2500`. The logic looks correct — it splits outline into groups of 2-3 sections, calls ai-proxy per chunk with proportional word counts, and concatenates.
-
-**Fix (in `src/services/advancedContentGeneration.ts`):**
-- The `wordsPerChunk` calculation uses `config.targetLength / chunks.length`, but for the system prompt the AI still needs a stronger instruction. Add a reinforced word count instruction in each chunk prompt: `"ABSOLUTE MINIMUM: ${wordsPerChunk} words for these sections. Write detailed, thorough content with examples, explanations, and analysis for each section. Do NOT summarize or be brief."`
-- Increase `tokensPerChunk` multiplier from 1.8 to 2.2 to allow more room for output
-- Add a post-generation word count check: if total is still under 80% of target, log a warning (no retry — just awareness)
-
-## Issue 3: Stale Keyword from Quick Action ("post" extracted)
-
-**Root Cause:** The `EnhancedQuickActions.tsx` prompt was updated to "I want to create a new blog post", but the AI in `enhanced-ai-chat` still extracts "post" as the keyword from this message. The `launch_content_wizard` tool description (line 149 of `content-action-tools.ts`) says "If the user has NOT specified a clear topic... you MUST ask them" — but the AI interprets "blog post" as a topic.
-
-**Fix (in `supabase/functions/enhanced-ai-chat/content-action-tools.ts`):**
-- Update the tool description to explicitly list "post", "blog", "blog post", "article" as NOT valid keywords: `"Common words like 'post', 'blog', 'article', 'content' are NOT valid keywords. The keyword must be a specific subject matter topic (e.g. 'AI in healthcare', 'email marketing')."`
-
-**Also fix (in `src/components/ai-chat/EnhancedQuickActions.tsx`):**
-- Change the prompt to be even more explicit: `"I want to write a new blog post. What topic should I write about?"` — this phrasing makes the AI ask for the topic instead of extracting one.
-
-## Issue 4: Red Border Validation (Too Subtle / Clears Fast)
-
-**Status:** The red border IS applied (line 95 of `WizardStepSolution.tsx` has `keywordError && "border-destructive ring-1 ring-destructive/30"`). The `validationError` state in `ContentWizardSidebar.tsx` clears after 2 seconds (line 151: `setTimeout(() => setValidationError(false), 2000)`).
-
-**Fix (in `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx`):**
-- Increase timeout from 2000ms to 4000ms for better visibility
-- Add a shake animation on the keyword input when validation fails
-
-**Fix (in `src/components/ai-chat/content-wizard/WizardStepSolution.tsx`):**
-- Add an error message below the input when `keywordError` is true: a small red text "Please enter a topic (at least 2 characters)"
-
-## Issue 5: Content Gap Quality (Templated Patterns Expansion)
-
-**Status:** `TEMPLATED_PATTERNS` in `WizardStepResearch.tsx` already filters generic headings. But some patterns slip through (e.g., "Definition and Overview", "Key Benefits").
-
-**Fix (in `src/components/ai-chat/content-wizard/WizardStepResearch.tsx`):**
-- Add more patterns to `TEMPLATED_PATTERNS`:
-  - `/definition\s+and\s+overview$/i`
-  - `/^key\s+(benefits|features|advantages)/i`  
-  - `/^(the\s+)?(importance|role)\s+of/i`
-  - `/step.by.step/i`
-  - `/pros?\s+and\s+cons?/i`
+Additionally, the Content Builder has several features (Solution Integration Analysis, Document Structure Visualization, SEO Checklist) that need verification of proper integration in the Content Wizard.
 
 ---
 
-## Files Modified
+## Part 1: Fix Intent Detection Chain (Critical)
 
-| File | Changes |
-|------|---------|
-| `src/services/aiContentDetectionService.ts` | Add JSON mode param, improve fallback parsing |
-| `src/services/advancedContentGeneration.ts` | Stronger word count instruction per chunk, higher token multiplier |
-| `supabase/functions/enhanced-ai-chat/content-action-tools.ts` | Blacklist generic keywords in tool description |
-| `src/components/ai-chat/EnhancedQuickActions.tsx` | More explicit prompt phrasing |
-| `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx` | Longer validation timeout |
-| `src/components/ai-chat/content-wizard/WizardStepSolution.tsx` | Error message below input |
-| `src/components/ai-chat/content-wizard/WizardStepResearch.tsx` | Expand TEMPLATED_PATTERNS |
+### Problem A: Follow-up topic messages are missed
 
-## Implementation Order
-1. Quick fixes: EnhancedQuickActions prompt, validation timeout, error message (3 files)
-2. TEMPLATED_PATTERNS expansion (1 file)
-3. AI detection JSON fix (1 file)
-4. Word count reinforcement (1 file)  
-5. Backend tool description update + deploy (1 edge function)
+When the AI asks "What topic would you like to write about?" and the user replies "AI in healthcare", this plain text has no action intent match. The AI then responds conversationally instead of calling `launch_content_wizard`.
+
+**Fix 1: Add contextual intent detection in `useEnhancedAIChatDB.ts`**
+
+After Phase 1 streaming completes and no intent is detected from the user message OR the AI response, check the *conversation context*: if the previous AI message asked for a topic (detected by keywords like "topic", "keyword", "write about"), AND the current user message is short (under ~80 chars) and doesn't end with "?", treat it as a `launch_content_wizard` intent with the user's message as the keyword.
+
+**Fix 2: Strengthen AI response patterns in `actionIntentDetector.ts`**
+
+Add more AI response patterns that the model might use:
+- `/I'll\s+(help\s+you\s+)?(create|write)\s+(a\s+)?(blog|article|content)\s+(about|on)/i`
+- `/let's\s+(create|write|build)\s+(a\s+)?(blog|article|content)/i`
+- `/content\s+about\s+["']([^"']+)["']/i`
+
+**Fix 3: Direct wizard launch shortcut**
+
+When `detectActionIntent` matches `launch_content_wizard` with a keyword, skip Phase 2 entirely. Instead of calling `enhanced-ai-chat` (which then calls AI again), directly set the visualization data to `content_creation_choice` type on the assistant message. This eliminates the fragile AI-calls-tool-returns-visualData chain.
+
+### Problem B: Quick action prompt is too conversational
+
+The "Write content" quick action sends "I want to write a new blog post. What topic should I write about?" — this triggers intent detection correctly, but the AI then asks the user for a topic, adding an unnecessary round-trip.
+
+**Fix:** Change the quick action to open a **mini-dialog** (or inline prompt in the chat) asking for the topic first, THEN send the message with the topic already included. This removes one chat round-trip.
+
+Alternatively, skip the AI entirely for this quick action and directly open the Content Wizard sidebar with an empty keyword, letting the user fill it in Step 1.
+
+---
+
+## Part 2: Feature Parity Audit (Content Builder vs Content Wizard)
+
+### Already Integrated (Confirmed in Code)
+
+| Feature | Content Builder | Content Wizard | Status |
+|---------|----------------|----------------|--------|
+| Solution Selection | Yes | Yes (WizardStepSolution) | OK |
+| Solution-to-Brief Mapping | Yes | Yes (mapOfferingToBrief) | OK |
+| SERP Research | Yes | Yes (WizardStepResearch) | OK |
+| Outline Builder | Yes | Yes (WizardStepOutline) | OK |
+| Word Count Config | Yes | Yes (WizardStepWordCount) | OK |
+| Content Brief | Yes | Yes (in WizardStepWordCount) | OK |
+| Brand/Company Context | Yes | Yes (loaded in WizardStepGenerate) | OK |
+| Meta Title/Description | Yes | Yes (auto-generated) | OK |
+| SEO Score | Yes | Yes (calculateSeoScore) | OK |
+| AI Detection Score | Yes | Yes (detectAIContent) | OK |
+| Refinement Loop | No | Yes (Phase 5 addition) | OK |
+| Title Sanitization | Yes | Yes (sanitizeTitle) | OK |
+| Document Structure | Yes | Yes (extractDocumentStructure saved to metadata) | OK |
+| SERP Metrics Persistence | Yes | Yes (comprehensiveSerpData in metadata) | OK |
+| Solution Integration Metrics | Yes | Yes (solutionIntegrationMetrics in metadata) | OK |
+| Selection Stats | Yes | Yes (selectionStats in metadata) | OK |
+| Continue Editing | Yes | Yes (handleContinueEditing via sessionStorage) | OK |
+| User Instructions | No | Yes (getRecentUserInstructions) | OK |
+
+### Missing / Partial Features
+
+| Feature | Content Builder | Content Wizard | Gap |
+|---------|----------------|----------------|-----|
+| **SEO Checklist UI** | Interactive checklist panel with pass/fail items | Only a numeric score badge | Missing interactive checklist |
+| **Solution Integration Dashboard** | Real-time analysis panel showing mentions, features covered, pain points | Only saves metrics to metadata; no UI | Missing live analysis UI |
+| **Content Brief Questionnaire** | Dedicated UI step for audience/goals/tone/pain-points | Fields exist in WizardStepWordCount but bundled with word count config | Adequate but could be clearer |
+| **Chunked Generation Progress** | N/A (single call) | Stage label only ("Generating content...") | Could show per-chunk progress |
+
+### Fixes for Missing Features
+
+**Fix 4: Add lightweight SEO checklist to WizardStepGenerate**
+
+After content is generated, show an expandable SEO checklist below the score badge. Reuse the existing `calculateSeoScore` breakdown to show individual pass/fail items:
+- Keyword in title (pass/fail)
+- Keyword in first 200 chars (pass/fail)
+- Meta title length 50-60 chars (pass/fail)
+- Meta description length 120-160 chars (pass/fail)
+- Has H2 headings (pass/fail)
+- Word count > 800 (pass/fail)
+- Has formatting (lists/bold) (pass/fail)
+
+This is purely a UI addition — the scoring logic already exists.
+
+**Fix 5: Add solution integration summary to WizardStepGenerate**
+
+After content is generated and a solution is selected, show a small card:
+- "Solution mentions: X" (how many times the solution name appears)
+- "Features covered: X/Y" (which features from the solution are mentioned)
+- These values are already computed at save time (lines 526-538); just compute and display them during generation too.
+
+---
+
+## Implementation Plan
+
+### Files to Modify
+
+| # | File | Change |
+|---|------|--------|
+| 1 | `src/utils/actionIntentDetector.ts` | Add more AI response patterns; add contextual follow-up detection export |
+| 2 | `src/hooks/useEnhancedAIChatDB.ts` | Add contextual intent detection for topic follow-ups; add direct wizard launch shortcut |
+| 3 | `src/components/ai-chat/EnhancedQuickActions.tsx` | Change "Write content" to directly open wizard with empty keyword |
+| 4 | `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` | Add SEO checklist UI + solution integration summary card |
+
+### Execution Order
+
+1. **Fix intent detection** (actionIntentDetector.ts + useEnhancedAIChatDB.ts) — this is the critical broken path
+2. **Fix quick action shortcut** (EnhancedQuickActions.tsx) — removes unnecessary chat round-trip
+3. **Add SEO checklist + solution summary** (WizardStepGenerate.tsx) — feature parity polish
+
+### Technical Details
+
+**Contextual intent detection logic (useEnhancedAIChatDB.ts):**
+```text
+After Phase 1 streaming:
+  1. Run detectActionIntent(userMessage) -- existing
+  2. If not detected, run detectAIResponseIntent(aiResponse) -- existing
+  3. NEW: If still not detected, check conversation context:
+     - Look at last 3 messages for AI asking about topic/keyword
+     - If found AND current user message is short + non-question
+     - Treat as launch_content_wizard with keyword = userMessage
+```
+
+**Direct wizard launch (useEnhancedAIChatDB.ts):**
+```text
+When detectActionIntent returns launch_content_wizard WITH a keyword:
+  - Skip executeToolAction entirely
+  - Set assistant message visualData = { type: 'content_creation_choice', keyword }
+  - This immediately renders the choice card inline
+```
+
+**Quick action change (EnhancedQuickActions.tsx):**
+```text
+"Write content" onClick:
+  - Instead of send:message, directly call handleSetVisualization
+  - Pass { type: 'content_wizard', keyword: '' }
+  - Wizard opens at Step 1 where user types keyword
+```
+
+This requires passing `onSetVisualization` to EnhancedQuickActions, or dispatching a custom event.
 
