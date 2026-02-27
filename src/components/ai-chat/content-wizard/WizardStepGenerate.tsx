@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText, Send, Bold, Italic, Heading1, Heading2, Heading3, Link, List } from 'lucide-react';
+import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText, Send, Bold, Italic, Heading1, Heading2, Heading3, Link, List, RefreshCw, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -14,6 +14,9 @@ import { generateAdvancedContent, ContentGenerationConfig } from '@/services/adv
 import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
+import { detectAIContent } from '@/services/aiContentDetectionService';
+import { getRecentUserInstructions } from '@/services/userInstructionsService';
+import { cn } from '@/lib/utils';
 import type { WizardState } from './ContentWizardSidebar';
 
 // --- Format categories ---
@@ -68,7 +71,6 @@ function sanitizeTitle(
   return mainKeyword || 'Untitled Content';
 }
 
-// --- GAP 2 FIX: Lightweight SEO score calculation ---
 function calculateSeoScore(
   content: string,
   keyword: string,
@@ -78,32 +80,17 @@ function calculateSeoScore(
   let score = 0;
   const lowerContent = content.toLowerCase();
   const lowerKeyword = keyword.toLowerCase();
-
-  // Keyword in title area (first heading or first line)
   const firstLine = content.split('\n').find(l => l.trim())?.toLowerCase() || '';
   if (firstLine.includes(lowerKeyword)) score += 20;
-
-  // Keyword in first 200 chars
   if (lowerContent.substring(0, 200).includes(lowerKeyword)) score += 15;
-
-  // Meta title length 50-60 chars
   if (metaTitle.length >= 50 && metaTitle.length <= 60) score += 15;
   else if (metaTitle.length >= 30 && metaTitle.length <= 70) score += 8;
-
-  // Meta description length 120-160 chars
   if (metaDescription.length >= 120 && metaDescription.length <= 160) score += 15;
   else if (metaDescription.length >= 80 && metaDescription.length <= 200) score += 8;
-
-  // Has H2 headings
   if (/^## /m.test(content)) score += 15;
-
-  // Word count > 800
   const wordCount = content.split(/\s+/).filter(Boolean).length;
   if (wordCount > 800) score += 10;
-
-  // Has lists or bold formatting
   if (/^[-*+] /m.test(content) || /\*\*.+?\*\*/m.test(content)) score += 10;
-
   return Math.min(score, 100);
 }
 
@@ -136,6 +123,13 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   const [brandContext, setBrandContext] = useState<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Phase 5 state
+  const [generationStage, setGenerationStage] = useState<string>('');
+  const [seoScore, setSeoScore] = useState<number | null>(null);
+  const [aiHumanScore, setAiHumanScore] = useState<number | null>(null);
+  const [refinementInstruction, setRefinementInstruction] = useState('');
+  const [isRefining, setIsRefining] = useState(false);
+
   // Load company & brand context on mount
   useEffect(() => {
     if (!user) return;
@@ -162,6 +156,14 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       setEditableContent(wizardState.generatedContent);
     }
   }, [wizardState.generatedContent]);
+
+  // Recompute SEO score when content changes
+  useEffect(() => {
+    if (!quick && editableContent) {
+      const score = calculateSeoScore(editableContent, wizardState.keyword, wizardState.metaTitle, wizardState.metaDescription);
+      setSeoScore(score);
+    }
+  }, [editableContent, wizardState.metaTitle, wizardState.metaDescription, wizardState.keyword, quick]);
 
   const getProvider = async () => {
     const { data } = await supabase.from('ai_service_providers')
@@ -220,15 +222,15 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     }
   };
 
-  // Build additional instructions from company/brand context + content brief
-  const buildAdditionalInstructions = (): string => {
+  // Build additional instructions from company/brand context + content brief + user instructions
+  const buildAdditionalInstructions = async (): Promise<string> => {
     const parts: string[] = [];
 
     if (wizardState.additionalInstructions) {
       parts.push(wizardState.additionalInstructions);
     }
 
-    // Structured brand voice section (priority over generic text)
+    // Structured brand voice section
     const brandParts: string[] = [];
     if (companyContext) {
       brandParts.push(`Company: ${companyContext.name}${companyContext.industry ? ` (${companyContext.industry})` : ''}`);
@@ -252,11 +254,20 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     if (brief.tone) parts.push(`Desired tone: ${brief.tone}`);
     if (brief.specificPoints) parts.push(`Specific points: ${brief.specificPoints}`);
 
+    // Phase 5: Integrate user's most-used instructions
+    try {
+      const recentInstructions = await getRecentUserInstructions('content_generation', undefined, 3);
+      if (recentInstructions.length > 0) {
+        parts.push(`USER'S PREFERRED INSTRUCTIONS (from history):\n${recentInstructions.map(i => `- ${i.instruction_text}`).join('\n')}`);
+      }
+    } catch { /* non-critical */ }
+
     return parts.join('\n');
   };
 
   const generateContent = async () => {
     setIsGeneratingContent(true);
+    setGenerationStage('Building prompt...');
     try {
       const outlineText = wizardState.outline.map(s => `${'#'.repeat(s.level + 1)} ${s.title}`).join('\n');
 
@@ -268,6 +279,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       ];
 
       const targetLength = wizardState.wordCount || 1500;
+      const additionalInstructions = await buildAdditionalInstructions();
 
       const config: ContentGenerationConfig = {
         mainKeyword: wizardState.keyword,
@@ -281,18 +293,29 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         contentIntent: (wizardState.contentBrief.contentGoal as any) || 'inform',
         serpSelections: quick ? [] : serpSelections,
         selectedSolution: wizardState.selectedSolution,
-        additionalInstructions: buildAdditionalInstructions(),
+        additionalInstructions,
         includeStats: wizardState.includeStats,
         includeCaseStudies: wizardState.includeCaseStudies,
         includeFAQs: wizardState.includeFAQs,
         formatType: wizardState.contentType,
       };
 
+      setGenerationStage('Generating content...');
       const result = await generateAdvancedContent(config);
 
       if (result) {
         onContentGenerated(result);
         setEditableContent(result);
+
+        // Phase 5: Post-generation quality analysis
+        setGenerationStage('Analyzing quality...');
+        try {
+          const detection = await detectAIContent(result);
+          if (detection) {
+            setAiHumanScore(Math.max(0, 100 - (detection.confidence || 0)));
+          }
+        } catch { /* non-critical */ }
+
         toast.success('Content generated successfully!');
       } else {
         const fallback = wizardState.outline.map(s =>
@@ -312,6 +335,53 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       toast.warning('AI generation failed. A draft outline has been created.');
     } finally {
       setIsGeneratingContent(false);
+      setGenerationStage('');
+    }
+  };
+
+  // Phase 5: Refinement loop
+  const refineContent = async () => {
+    if (!refinementInstruction.trim() || !editableContent) return;
+    setIsRefining(true);
+    try {
+      const provider = await getProvider();
+      if (!provider) { toast.error('No AI provider configured'); return; }
+
+      const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-proxy', {
+        body: {
+          service: provider.provider,
+          endpoint: 'chat',
+          params: {
+            model: provider.preferred_model || 'gpt-4',
+            messages: [
+              { role: 'system', content: 'You are an expert content editor. Improve the given content based on the user\'s feedback. Keep the same structure and format (markdown). Return ONLY the improved content, no explanations.' },
+              { role: 'user', content: `Here is existing content to improve:\n\n${editableContent}\n\nImprovement requested: ${refinementInstruction}\n\nRewrite the content incorporating this feedback while keeping the same structure.` }
+            ],
+            max_tokens: 4000,
+            temperature: 0.7,
+          }
+        }
+      });
+
+      if (aiError) throw new Error(aiError.message);
+      const refined = aiResult?.data?.choices?.[0]?.message?.content || aiResult?.choices?.[0]?.message?.content || aiResult?.content || '';
+      if (refined) {
+        setEditableContent(refined);
+        onContentGenerated(refined);
+        setRefinementInstruction('');
+        toast.success('Content refined!');
+
+        // Re-run AI detection
+        try {
+          const detection = await detectAIContent(refined);
+          if (detection) setAiHumanScore(Math.max(0, 100 - (detection.confidence || 0)));
+        } catch {}
+      }
+    } catch (err) {
+      console.error('Refinement failed:', err);
+      toast.error('Refinement failed. Try again.');
+    } finally {
+      setIsRefining(false);
     }
   };
 
@@ -324,23 +394,15 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     toast.success('Content copied to clipboard!');
   };
 
-  // --- GAP 9 FIX: Insert markdown formatting at cursor position ---
   const insertFormatting = (prefix: string, suffix: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = editableContent.substring(start, end) || 'text';
-    const newContent =
-      editableContent.substring(0, start) +
-      prefix + selectedText + suffix +
-      editableContent.substring(end);
-
+    const newContent = editableContent.substring(0, start) + prefix + selectedText + suffix + editableContent.substring(end);
     setEditableContent(newContent);
     onContentGenerated(newContent);
-
-    // Restore cursor position after the inserted text
     setTimeout(() => {
       textarea.focus();
       const newCursorPos = start + prefix.length + selectedText.length + suffix.length;
@@ -355,19 +417,10 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     setIsSaving(true);
     try {
       const relatedKeywords = wizardState.researchSelections.relatedKeywords.slice(0, 5);
+      const sanitizedTitle = sanitizeTitle(wizardState.title.trim(), wizardState.metaTitle, wizardState.keyword, contentToSave);
 
-      // --- GAP 6: Sanitize title ---
-      const sanitizedTitle = sanitizeTitle(
-        wizardState.title.trim(),
-        wizardState.metaTitle,
-        wizardState.keyword,
-        contentToSave
-      );
-
-      // --- GAP 7: Auto-generate missing meta at save time ---
       let finalMetaTitle = wizardState.metaTitle;
       let finalMetaDescription = wizardState.metaDescription;
-
       if (!finalMetaTitle) {
         finalMetaTitle = extractTitleFromContent(contentToSave) || sanitizedTitle || wizardState.keyword;
       }
@@ -376,16 +429,10 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         finalMetaDescription = suggestions.metaDescription;
       }
 
-      // --- GAP 1: Map content type to valid DB enum ---
       const resolvedContentType = FORMAT_TO_DB_ENUM[wizardState.contentType] || 'blog';
-
-      // --- SEO score: only for blog formats ---
-      const seoScore = quick ? null : calculateSeoScore(contentToSave, wizardState.keyword, finalMetaTitle, finalMetaDescription);
-
-      // --- GAP 5: Build document structure ---
+      const finalSeoScore = quick ? null : calculateSeoScore(contentToSave, wizardState.keyword, finalMetaTitle, finalMetaDescription);
       const documentStructure = extractDocumentStructure(contentToSave);
 
-      // --- GAP 5: Build selection stats ---
       const selectionStats = {
         totalSelected:
           wizardState.researchSelections.faqs.length +
@@ -400,7 +447,6 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         },
       };
 
-      // Build comprehensive metadata matching Content Builder shape
       const metadata: Record<string, any> = {
         generated_via: 'chat_wizard',
         keyword: wizardState.keyword,
@@ -430,16 +476,12 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         } : null,
         contentBrief: wizardState.contentBrief,
         researchSelections: wizardState.researchSelections,
-
-        // --- NEW: Metadata parity fields ---
-        seoScore,
+        seoScore: finalSeoScore,
         documentStructure: documentStructure ? JSON.parse(JSON.stringify(documentStructure)) : null,
         selectionStats,
         lastOptimized: new Date().toISOString(),
         analysisTimestamp: new Date().toISOString(),
         ...(status === 'published' && { publishedAt: new Date().toISOString() }),
-
-        // --- SERP Metrics & Comprehensive SERP Data ---
         comprehensiveSerpData: wizardState.serpData ? JSON.parse(JSON.stringify({
           serpMetrics: {
             searchVolume: wizardState.serpData.searchVolume || null,
@@ -451,10 +493,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           },
           competitorAnalysis: {
             topCompetitors: (wizardState.serpData.topResults || []).map((r: any) => ({
-              title: r.title,
-              url: r.link,
-              position: r.position,
-              snippet: r.snippet,
+              title: r.title, url: r.link, position: r.position, snippet: r.snippet,
             })),
           },
           rankingOpportunities: {
@@ -466,8 +505,6 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           selectionStats,
           analysisTimestamp: new Date().toISOString(),
         })) : null,
-
-        // Flatten for backward compat (Repository detail views check both paths)
         serpMetrics: wizardState.serpData ? {
           searchVolume: wizardState.serpData.searchVolume || null,
           keywordDifficulty: wizardState.serpData.keywordDifficulty || null,
@@ -485,16 +522,14 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             title: r.title, url: r.link, position: r.position,
           })),
         } : null,
-
-        // Solution integration metrics (compute at save time)
         solutionIntegrationMetrics: wizardState.selectedSolution ? {
           solutionMentions: (contentToSave.match(
             new RegExp(wizardState.selectedSolution.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
           ) || []).length,
-          featuresCovered: Array.isArray(wizardState.selectedSolution.features) 
+          featuresCovered: Array.isArray(wizardState.selectedSolution.features)
             ? wizardState.selectedSolution.features.filter((f: string) =>
                 contentToSave.toLowerCase().includes(f.toLowerCase())
-              ).length 
+              ).length
             : 0,
           totalFeatures: Array.isArray(wizardState.selectedSolution.features)
             ? wizardState.selectedSolution.features.length
@@ -503,24 +538,13 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         } : null,
       };
 
-      // Add company/brand context to metadata if available
       if (companyContext) {
-        metadata.companyContext = {
-          name: companyContext.name,
-          industry: companyContext.industry,
-          mission: companyContext.mission,
-        };
+        metadata.companyContext = { name: companyContext.name, industry: companyContext.industry, mission: companyContext.mission };
       }
       if (brandContext) {
-        metadata.brandContext = {
-          tone: brandContext.tone,
-          keywords: brandContext.keywords,
-          doUse: brandContext.do_use,
-          dontUse: brandContext.dont_use,
-        };
+        metadata.brandContext = { tone: brandContext.tone, keywords: brandContext.keywords, doUse: brandContext.do_use, dontUse: brandContext.dont_use };
       }
 
-      // Check for existing content to prevent duplicates
       const { data: existingContent } = await supabase
         .from('content_items')
         .select('id')
@@ -537,7 +561,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         user_id: user.id,
         status: status as any,
         content_type: resolvedContentType as any,
-        seo_score: quick ? null : seoScore,
+        seo_score: quick ? null : finalSeoScore,
         meta_title: quick ? null : (finalMetaTitle || null),
         meta_description: quick ? null : (finalMetaDescription || null),
         solution_id: wizardState.selectedSolution?.id || null,
@@ -577,36 +601,19 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       // Save keywords and link them
       const allKeywords = [wizardState.keyword, ...relatedKeywords].filter(Boolean);
       const uniqueKeywords = [...new Set(allKeywords)];
-
       const keywordIds: string[] = [];
       for (const kw of uniqueKeywords) {
-        const { data: existing } = await supabase
-          .from('keywords')
-          .select('id')
-          .eq('keyword', kw)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
+        const { data: existing } = await supabase.from('keywords').select('id').eq('keyword', kw).eq('user_id', user.id).maybeSingle();
         if (existing) {
           keywordIds.push(existing.id);
         } else {
-          const { data: newKw, error: kwErr } = await supabase
-            .from('keywords')
-            .insert({ keyword: kw, user_id: user.id })
-            .select('id')
-            .maybeSingle();
+          const { data: newKw, error: kwErr } = await supabase.from('keywords').insert({ keyword: kw, user_id: user.id }).select('id').maybeSingle();
           if (!kwErr && newKw) keywordIds.push(newKw.id);
         }
       }
-
       if (keywordIds.length > 0) {
-        const contentKeywords = keywordIds.map(kid => ({
-          content_id: contentId,
-          keyword_id: kid,
-        }));
-        await supabase
-          .from('content_keywords')
-          .upsert(contentKeywords, { onConflict: 'content_id,keyword_id', ignoreDuplicates: true });
+        const contentKeywords = keywordIds.map(kid => ({ content_id: contentId, keyword_id: kid }));
+        await supabase.from('content_keywords').upsert(contentKeywords, { onConflict: 'content_id,keyword_id', ignoreDuplicates: true });
       }
 
       // Record reuse history
@@ -642,6 +649,17 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   const handleContinueEditing = () => {
     if (!savedId) return;
     sessionStorage.setItem('continueEditingContentId', savedId);
+    // Phase 5: Save wizard context for richer editing
+    sessionStorage.setItem('wizardContext', JSON.stringify({
+      keyword: wizardState.keyword,
+      researchSelections: wizardState.researchSelections,
+      outline: wizardState.outline,
+      serpData: wizardState.serpData,
+      selectedSolution: wizardState.selectedSolution ? {
+        id: wizardState.selectedSolution.id,
+        name: wizardState.selectedSolution.name,
+      } : null,
+    }));
     navigate('/content');
     onClose();
   };
@@ -722,10 +740,15 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       {/* Generate Button */}
       {!wizardState.generatedContent ? (
-        <Button onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-2">
-          {isGeneratingContent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {isGeneratingContent ? 'Generating...' : 'Generate Content'}
-        </Button>
+        <div className="space-y-2">
+          <Button onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-2">
+            {isGeneratingContent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {isGeneratingContent ? 'Generating...' : 'Generate Content'}
+          </Button>
+          {generationStage && (
+            <p className="text-[10px] text-muted-foreground text-center animate-pulse">{generationStage}</p>
+          )}
+        </div>
       ) : (
         <>
           {/* Rich Content Editor with Write/Preview tabs */}
@@ -741,13 +764,39 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                       <PenLine className="w-3 h-3" /> Edit
                     </TabsTrigger>
                   </TabsList>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <Badge variant="secondary" className="text-[10px] gap-1">
                       {wordCountNum.toLocaleString()} words
                     </Badge>
                     <Badge variant="outline" className="text-[10px] gap-1">
                       <Clock className="w-2.5 h-2.5" /> {readingTime} min
                     </Badge>
+                    {!quick && seoScore !== null && (
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "text-[10px] gap-1 border",
+                          seoScore >= 70 ? 'bg-green-500/15 text-green-400 border-green-500/30' :
+                          seoScore >= 40 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' :
+                          'bg-red-500/15 text-red-400 border-red-500/30'
+                        )}
+                      >
+                        SEO: {seoScore}
+                      </Badge>
+                    )}
+                    {aiHumanScore !== null && (
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "text-[10px] gap-1 border",
+                          aiHumanScore >= 70 ? 'bg-green-500/15 text-green-400 border-green-500/30' :
+                          aiHumanScore >= 40 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' :
+                          'bg-red-500/15 text-red-400 border-red-500/30'
+                        )}
+                      >
+                        <ShieldCheck className="w-2.5 h-2.5" /> Human: {aiHumanScore}%
+                      </Badge>
+                    )}
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyContent}>
                       <Copy className="w-3 h-3" />
                     </Button>
@@ -763,7 +812,6 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                 </TabsContent>
 
                 <TabsContent value="write" className="mt-0">
-                  {/* --- GAP 5 FIX: Compact formatting toolbar --- */}
                   <div className="flex items-center gap-0.5 mb-1.5 flex-wrap">
                     <Button variant="ghost" size="icon" className="h-6 w-6" title="Heading 1" onClick={() => insertFormatting('# ', '')}>
                       <Heading1 className="w-3 h-3" />
@@ -803,7 +851,28 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             </div>
           </div>
 
-          {/* --- GAP 4 FIX: Save as Draft + Publish buttons --- */}
+          {/* Refinement input */}
+          <div className="flex gap-1.5">
+            <Input
+              value={refinementInstruction}
+              onChange={(e) => setRefinementInstruction(e.target.value)}
+              placeholder="How should this be improved?"
+              className="text-xs h-8 flex-1"
+              onKeyDown={(e) => e.key === 'Enter' && !isRefining && refineContent()}
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={refineContent} 
+              disabled={isRefining || !refinementInstruction.trim()} 
+              className="text-xs h-8 gap-1 flex-shrink-0"
+            >
+              {isRefining ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              Refine
+            </Button>
+          </div>
+
+          {/* Save as Draft + Publish buttons */}
           <div className="flex gap-2">
             <Button onClick={() => saveContent('draft')} disabled={isSaving || !wizardState.title.trim()} className="flex-1 gap-2">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
