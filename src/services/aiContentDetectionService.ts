@@ -1,9 +1,19 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+export interface DimensionScores {
+  personalVoice: number;
+  specificity: number;
+  writingVariation: number;
+  factualDepth: number;
+}
+
 export interface AIDetectionResult {
   isAIWritten: boolean;
   confidence: number;
+  contentValueScore: number;
+  adjustedHumanScore: number;
+  dimensionScores: DimensionScores;
   aiIndicators: string[];
   humanizationSuggestions: string[];
 }
@@ -28,8 +38,9 @@ async function getActiveProvider() {
 }
 
 /**
- * Detect if content is AI-written and provide humanization suggestions.
- * Calls ai-proxy directly for reliable JSON extraction.
+ * Detect if content is AI-written using 4-dimension scoring with value-adjusted formula.
+ * Dimensions: Personal Voice, Specificity, Writing Variation, Factual Depth (each 0-25).
+ * Final adjustedHumanScore = rawHuman + max(0, (contentValueScore - 50) * 0.4)
  */
 export async function detectAIContent(
   content: string
@@ -50,16 +61,29 @@ export async function detectAIContent(
           messages: [
             {
               role: 'system',
-              content: 'You are an AI content detection analyst. Return ONLY valid JSON, no other text, no markdown fences.'
+              content: 'You are a content quality and AI detection analyst. Evaluate content across multiple dimensions. Return ONLY valid JSON, no other text, no markdown fences.'
             },
             {
               role: 'user',
-              content: `Analyze this content for AI writing patterns and provide humanization suggestions.
+              content: `Analyze this content for AI writing patterns AND content value. Score each dimension 0-25:
 
+DIMENSION 1 — Personal Voice (0-25): Does the content include first-person experiences, opinions, anecdotes, unique takes? Or is it generic "many experts say" style?
+DIMENSION 2 — Specificity (0-25): Does it name real companies, cite exact numbers, reference specific benchmarks, tools, versions? Or use vague generalities?
+DIMENSION 3 — Writing Variation (0-25): Does sentence length vary? Are there conversational asides, non-formulaic transitions, rhetorical questions? Or is every paragraph the same structure?
+DIMENSION 4 — Factual Depth (0-25): Does it show expert nuance, contrarian insights, beyond-surface analysis? Or just restate commonly known information?
+
+Also assess:
+- isAIWritten: overall likelihood this was AI-generated (true/false)
+- confidence: 0-100 how confident you are it's AI-written
+- contentValueScore: 0-100 how valuable this content is to a reader regardless of who wrote it
+- aiIndicators: list of specific patterns that suggest AI authorship
+- humanizationSuggestions: actionable ways to make it sound more human
+
+CONTENT TO ANALYZE:
 ${content.slice(0, 3000)}
 
-Respond with ONLY this JSON structure:
-{"isAIWritten": true/false, "confidence": 0-100, "aiIndicators": ["indicator1"], "humanizationSuggestions": ["suggestion1"]}`
+Respond with ONLY this JSON:
+{"isAIWritten": true/false, "confidence": 0-100, "contentValueScore": 0-100, "dimensionScores": {"personalVoice": 0-25, "specificity": 0-25, "writingVariation": 0-25, "factualDepth": 0-25}, "aiIndicators": ["..."], "humanizationSuggestions": ["..."]}`
             }
           ],
           max_tokens: 800,
@@ -86,10 +110,8 @@ Respond with ONLY this JSON structure:
 
     let result: any;
     try {
-      // Try direct parse first (JSON mode should return pure JSON)
       result = JSON.parse(responseContent);
     } catch {
-      // Fallback: strip markdown code fences then extract JSON
       const stripped = responseContent.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
       try {
         result = JSON.parse(stripped);
@@ -103,9 +125,27 @@ Respond with ONLY this JSON structure:
       }
     }
 
+    const confidence = result.confidence || 0;
+    const contentValueScore = result.contentValueScore || 0;
+    const rawHuman = Math.max(0, 100 - confidence);
+    const valueBoost = Math.max(0, (contentValueScore - 50) * 0.4);
+    const adjustedHumanScore = Math.min(100, Math.round(rawHuman + valueBoost));
+
+    const dimensionScores: DimensionScores = {
+      personalVoice: result.dimensionScores?.personalVoice || 0,
+      specificity: result.dimensionScores?.specificity || 0,
+      writingVariation: result.dimensionScores?.writingVariation || 0,
+      factualDepth: result.dimensionScores?.factualDepth || 0,
+    };
+
+    console.log('[AI Detection] Raw:', { confidence, rawHuman, contentValueScore, valueBoost, adjustedHumanScore, dimensionScores });
+
     return {
       isAIWritten: result.isAIWritten || false,
-      confidence: result.confidence || 0,
+      confidence,
+      contentValueScore,
+      adjustedHumanScore,
+      dimensionScores,
       aiIndicators: Array.isArray(result.aiIndicators) ? result.aiIndicators : [],
       humanizationSuggestions: Array.isArray(result.humanizationSuggestions) ? result.humanizationSuggestions : []
     };

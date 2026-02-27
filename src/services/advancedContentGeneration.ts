@@ -742,13 +742,20 @@ ${Array.isArray(sol.keyDifferentiators) && sol.keyDifferentiators.length > 0 ? `
     }
 
     prompt += `
-SOLUTION INTEGRATION REQUIREMENTS:
-- Naturally weave the offering's name, features, and benefits throughout the content
+SOLUTION INTEGRATION REQUIREMENTS (MANDATORY):
+- You MUST mention "${selectedSolution.name}" by name at least 2 times in the content
+- Naturally weave the offering's features and benefits throughout the content
 - Address specific pain points the offering solves with concrete examples
 - Reference case studies and metrics as proof points
 - Use competitive positioning to highlight differentiators
 - Include pricing context where relevant
 - End with a compelling call-to-action related to the offering
+- EVEN IF the solution is from a different industry than the topic, FIND creative cross-industry angles:
+  * Data integration or workflow optimization parallels
+  * Analytics or reporting capabilities that apply across domains
+  * Complementary use cases where the solution enhances the topic's outcomes
+  * Shared pain points (efficiency, cost, scalability) that bridge both domains
+- Frame the solution as a relevant tool that readers should consider, NOT as a forced advertisement
 `;
   }
 

@@ -50,8 +50,8 @@ export const MetaInformationCard = ({
         <div className="space-y-2">
           <label htmlFor="meta-title" className="text-sm font-medium flex justify-between">
             <span>Meta Title</span>
-            <span className={`text-xs ${metaTitle.length > 60 ? 'text-destructive' : 'text-muted-foreground'}`}>
-              {metaTitle.length}/60 characters
+            <span className={`text-xs ${metaTitle.length > 60 || metaTitle.length < 50 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {metaTitle.length}/60 characters{metaTitle.length < 50 ? ' (too short, min 50)' : ''}
             </span>
           </label>
           <Input
@@ -59,7 +59,7 @@ export const MetaInformationCard = ({
             value={metaTitle}
             onChange={(e) => onMetaTitleChange(e.target.value)}
             placeholder="Enter meta title"
-            className={`font-medium ${metaTitle.length > 60 ? 'border-destructive' : ''}`}
+            className={`font-medium ${metaTitle.length > 60 || metaTitle.length < 50 ? 'border-destructive' : ''}`}
           />
         </div>
         

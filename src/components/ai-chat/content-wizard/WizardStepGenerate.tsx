@@ -249,7 +249,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             model: provider.preferred_model || 'gpt-4',
             messages: [{
               role: 'user',
-              content: `Generate an SEO meta title (under 60 chars) and meta description (under 160 chars) for a blog about "${wizardState.keyword}". Solution: ${wizardState.selectedSolution?.name || 'N/A'}. Return JSON: {"metaTitle": "...", "metaDescription": "..."}`
+              content: `Generate an SEO meta title (between 50-60 characters, MUST be at least 50) and meta description (between 120-160 characters) for a blog about "${wizardState.keyword}". Solution: ${wizardState.selectedSolution?.name || 'N/A'}. Return JSON: {"metaTitle": "...", "metaDescription": "..."}`
             }],
             max_tokens: 200,
           }
@@ -368,7 +368,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         try {
           const detection = await detectAIContent(result);
           if (detection) {
-            setAiHumanScore(Math.max(0, 100 - (detection.confidence || 0)));
+            setAiHumanScore(detection.adjustedHumanScore);
           }
         } catch { /* non-critical */ }
 
@@ -430,7 +430,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         // Re-run AI detection
         try {
           const detection = await detectAIContent(refined);
-          if (detection) setAiHumanScore(Math.max(0, 100 - (detection.confidence || 0)));
+          if (detection) setAiHumanScore(detection.adjustedHumanScore);
         } catch {}
       }
     } catch (err) {
@@ -779,7 +779,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               placeholder="SEO title..."
               className="text-xs h-8"
             />
-            <p className="text-[10px] text-muted-foreground">{wizardState.metaTitle.length}/60 characters</p>
+            <p className={cn("text-[10px]", wizardState.metaTitle.length < 50 ? "text-destructive" : "text-muted-foreground")}>{wizardState.metaTitle.length}/60 characters{wizardState.metaTitle.length < 50 ? ' (min 50)' : ''}</p>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs text-muted-foreground">Meta Description</label>
@@ -850,7 +850,10 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                           'bg-red-500/15 text-red-400 border-red-500/30'
                         )}
                       >
-                        <ShieldCheck className="w-2.5 h-2.5" /> Human: {aiHumanScore}%
+                        <ShieldCheck className="w-2.5 h-2.5" />
+                        {aiHumanScore >= 70 ? `Human: ${aiHumanScore}%` :
+                         aiHumanScore >= 40 ? `Value Pass: ${aiHumanScore}%` :
+                         `Human: ${aiHumanScore}%`}
                       </Badge>
                     )}
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyContent}>
