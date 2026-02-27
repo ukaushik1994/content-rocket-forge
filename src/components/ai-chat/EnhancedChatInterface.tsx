@@ -325,7 +325,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       <div
         className={`fixed z-[60] transition-all duration-300 ${
           showSidebar 
-            ? 'top-[4.5rem] left-[18.5rem]' 
+            ? 'top-[4.5rem] sm:left-[16.5rem] lg:left-[18.5rem]' 
             : 'top-20 left-4'
         }`}
       >
@@ -343,7 +343,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       <div className={cn(
         "flex-1 flex transition-all duration-300 ease-out pt-20 pb-24 overflow-hidden",
         // Left sidebar margin - desktop only (sidebars overlay on mobile/tablet)
-        showSidebar && isDesktop && "lg:ml-80"
+        showSidebar && !isMobile && "sm:ml-72 lg:ml-80"
       )}>
         {/* Chat Messages Area - shrinks when visualization sidebar is open */}
         <motion.div 
