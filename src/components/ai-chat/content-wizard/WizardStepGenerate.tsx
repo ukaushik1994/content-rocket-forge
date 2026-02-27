@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText, Send, Bold, Italic, Heading1, Heading2, Heading3, Link, List, RefreshCw, ShieldCheck, ChevronDown, Check, X, Package } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText, Send, Bold, Italic, Heading1, Heading2, Heading3, Link, List, RefreshCw, ShieldCheck, ChevronDown, Check, X, Package, GraduationCap, AlertTriangle, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -20,8 +21,13 @@ import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
 import { detectAIContent } from '@/services/aiContentDetectionService';
 import { getRecentUserInstructions } from '@/services/userInstructionsService';
+import { analyzeContentQualityWithAI, AIContentQualityResult } from '@/services/aiContentQualityService';
+import { analyzeContentCompliance } from '@/services/contentComplianceService';
+import { ComplianceAnalysisResult } from '@/types/contentCompliance';
+import { wizardToBuilderState } from '@/utils/wizardStateAdapter';
 import { cn } from '@/lib/utils';
 import type { WizardState } from './ContentWizardSidebar';
+import { formatDistanceToNow } from 'date-fns';
 
 // --- Format categories ---
 const BLOG_FORMATS = ['blog', 'landing-page'];
@@ -211,6 +217,23 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   const [refinementInstruction, setRefinementInstruction] = useState('');
   const [isRefining, setIsRefining] = useState(false);
 
+  // Phase 1A: AI Quality Grade
+  const [aiQualityResult, setAiQualityResult] = useState<AIContentQualityResult | null>(null);
+  const [isAnalyzingQuality, setIsAnalyzingQuality] = useState(false);
+  const [showQualityDetails, setShowQualityDetails] = useState(false);
+
+  // Phase 1B: Compliance Analysis
+  const [complianceResult, setComplianceResult] = useState<ComplianceAnalysisResult | null>(null);
+
+  // Phase 1C: Content Gap Detection
+  const [detectedGaps, setDetectedGaps] = useState<string[]>([]);
+
+  // Phase 1D: Auto-Save
+  const [lastAutoSaved, setLastAutoSaved] = useState<Date | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const autoSaveContentRef = useRef<string>('');
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Load company & brand context on mount
   useEffect(() => {
     if (!user) return;
@@ -245,6 +268,99 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       setSeoScore(score);
     }
   }, [editableContent, wizardState.metaTitle, wizardState.metaDescription, wizardState.keyword, quick]);
+
+  // Phase 1A + 1B: Run quality & compliance analysis after content generation
+  const runQualityAnalysis = useCallback(async (content: string) => {
+    if (!content || quick) return;
+    const builderState = wizardToBuilderState(wizardState, content);
+
+    // 1B: Compliance (synchronous, rule-based)
+    try {
+      const compliance = analyzeContentCompliance(content, builderState);
+      setComplianceResult(compliance);
+    } catch (e) {
+      console.warn('Compliance analysis failed:', e);
+    }
+
+    // 1A: AI Quality Grade (async)
+    setIsAnalyzingQuality(true);
+    try {
+      const quality = await analyzeContentQualityWithAI(content, builderState);
+      setAiQualityResult(quality);
+    } catch (e) {
+      console.warn('AI quality analysis failed:', e);
+    } finally {
+      setIsAnalyzingQuality(false);
+    }
+  }, [wizardState, quick]);
+
+  // Phase 1C: Detect content gaps not covered
+  useEffect(() => {
+    if (!editableContent || quick) { setDetectedGaps([]); return; }
+    const gaps = wizardState.researchSelections.contentGaps || [];
+    if (gaps.length === 0) { setDetectedGaps([]); return; }
+    const lowerContent = editableContent.toLowerCase();
+    const missing = gaps.filter(gap => {
+      const words = gap.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      // If at least half the significant words are missing, it's a gap
+      const found = words.filter(w => lowerContent.includes(w)).length;
+      return words.length > 0 && found / words.length < 0.5;
+    });
+    setDetectedGaps(missing);
+  }, [editableContent, wizardState.researchSelections.contentGaps, quick]);
+
+  // Phase 1D: Auto-save draft every 60s if content changed
+  useEffect(() => {
+    if (!editableContent || !user || !wizardState.title.trim()) return;
+
+    // Clear previous timer
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
+    autoSaveTimerRef.current = setTimeout(async () => {
+      // Only save if content actually changed
+      if (editableContent === autoSaveContentRef.current) return;
+
+      setIsAutoSaving(true);
+      try {
+        const sanitized = sanitizeTitle(wizardState.title.trim(), wizardState.metaTitle, wizardState.keyword, editableContent);
+        const resolvedContentType = FORMAT_TO_DB_ENUM[wizardState.contentType] || 'blog';
+
+        const { data: existing } = await supabase
+          .from('content_items')
+          .select('id')
+          .eq('title', sanitized)
+          .eq('user_id', user.id)
+          .eq('status', 'draft')
+          .maybeSingle();
+
+        const payload = {
+          title: sanitized,
+          content: editableContent,
+          user_id: user.id,
+          status: 'draft' as any,
+          content_type: resolvedContentType as any,
+          metadata: { generated_via: 'chat_wizard', keyword: wizardState.keyword, auto_saved: true } as any,
+        };
+
+        if (existing) {
+          await supabase.from('content_items').update({ content: payload.content, metadata: payload.metadata }).eq('id', existing.id);
+        } else {
+          await supabase.from('content_items').insert(payload);
+        }
+
+        autoSaveContentRef.current = editableContent;
+        setLastAutoSaved(new Date());
+      } catch (e) {
+        console.warn('Auto-save failed:', e);
+      } finally {
+        setIsAutoSaving(false);
+      }
+    }, 60000); // 60 seconds
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [editableContent, user, wizardState.title, wizardState.keyword, wizardState.contentType, wizardState.metaTitle]);
 
   const getProvider = async () => {
     const { data } = await supabase.from('ai_service_providers')
@@ -426,6 +542,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             setAiHumanScore(detection.adjustedHumanScore);
           }
         } catch { /* non-critical */ }
+
+        // Phase 1A+1B: Run quality & compliance analysis
+        runQualityAnalysis(result);
 
         toast.success('Content generated successfully!');
       } else {
@@ -966,6 +1085,106 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             </div>
           </div>
 
+          {/* Phase 1A: AI Quality Grade Badge */}
+          {!quick && (aiQualityResult || isAnalyzingQuality) && (
+            <div className="space-y-1.5">
+              <button
+                onClick={() => setShowQualityDetails(!showQualityDetails)}
+                className="flex items-center gap-2 w-full text-left"
+              >
+                <div className={cn(
+                  "flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold border",
+                  isAnalyzingQuality ? "border-border animate-pulse bg-muted" :
+                  aiQualityResult?.overall.grade === 'A' ? "bg-primary/15 text-primary border-primary/30" :
+                  aiQualityResult?.overall.grade === 'B' ? "bg-primary/10 text-primary border-primary/20" :
+                  aiQualityResult?.overall.grade === 'C' ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" :
+                  "bg-destructive/15 text-destructive border-destructive/30"
+                )}>
+                  {isAnalyzingQuality ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : aiQualityResult?.overall.grade}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs font-medium text-foreground">AI Quality Grade</span>
+                  {aiQualityResult && (
+                    <p className="text-[10px] text-muted-foreground truncate">{aiQualityResult.overall.summary}</p>
+                  )}
+                </div>
+                <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform", showQualityDetails && "rotate-180")} />
+              </button>
+
+              {showQualityDetails && aiQualityResult && (
+                <div className="space-y-1.5 pl-10">
+                  {[
+                    { label: 'Intent Matching', score: aiQualityResult.intentMatching.score },
+                    { label: 'Keyword Integration', score: aiQualityResult.keywordIntegration.score },
+                    { label: 'Content Depth', score: aiQualityResult.contentDepth.score },
+                    { label: 'User Engagement', score: aiQualityResult.userEngagement.score },
+                    { label: 'SEO Effectiveness', score: aiQualityResult.seoEffectiveness.score },
+                  ].map(dim => (
+                    <div key={dim.label} className="flex items-center gap-2 text-[10px]">
+                      <span className="text-muted-foreground w-28 flex-shrink-0">{dim.label}</span>
+                      <Progress value={dim.score} className="h-1.5 flex-1" />
+                      <span className="text-foreground font-medium w-7 text-right">{dim.score}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Phase 1B: Compliance Analysis */}
+          {!quick && complianceResult && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Compliance ({complianceResult.overall.score}/100)
+                </span>
+                <ChevronDown className="w-3 h-3 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="space-y-2 pt-1 pb-2">
+                  {[
+                    { label: 'Keyword', score: complianceResult.keyword.score, weight: '30%', topViolation: complianceResult.keyword.violations[0]?.message },
+                    { label: 'SERP', score: complianceResult.serp.score, weight: '25%', topViolation: complianceResult.serp.violations[0]?.message },
+                    { label: 'Solution', score: complianceResult.solution.score, weight: '25%', topViolation: complianceResult.solution.violations[0]?.message },
+                    { label: 'Structure', score: complianceResult.structure.score, weight: '20%', topViolation: complianceResult.structure.violations[0]?.message },
+                  ].map(dim => (
+                    <div key={dim.label} className="space-y-0.5">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-muted-foreground">{dim.label} <span className="opacity-60">({dim.weight})</span></span>
+                        <span className={cn(
+                          "font-medium",
+                          dim.score >= 70 ? "text-primary" : dim.score >= 40 ? "text-yellow-400" : "text-destructive"
+                        )}>{dim.score}</span>
+                      </div>
+                      <Progress value={dim.score} className="h-1" />
+                      {dim.topViolation && (
+                        <p className="text-[9px] text-muted-foreground flex items-start gap-1">
+                          <AlertTriangle className="w-2.5 h-2.5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                          {dim.topViolation}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Phase 1C: Content Gap Chip + Refinement input */}
+          {detectedGaps.length > 0 && (
+            <button
+              onClick={() => {
+                const suggestion = `Add coverage of ${detectedGaps.slice(0, 3).join(', ')} — these are gaps in competitor content`;
+                setRefinementInstruction(suggestion);
+              }}
+              className="flex items-center gap-1.5 text-[10px] text-yellow-400 hover:text-yellow-300 transition-colors"
+            >
+              <Zap className="w-3 h-3" />
+              <span>{detectedGaps.length} content gap{detectedGaps.length > 1 ? 's' : ''} detected — click to auto-fill refinement</span>
+            </button>
+          )}
+
           {/* Refinement input */}
           <div className="flex gap-1.5">
             <Input
@@ -1055,6 +1274,18 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               <Send className="w-3 h-3" /> Publish
             </Button>
           </div>
+
+          {/* Phase 1D: Auto-save timestamp */}
+          {lastAutoSaved && (
+            <p className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
+              {isAutoSaving ? (
+                <><Loader2 className="w-2.5 h-2.5 animate-spin" /> Auto-saving...</>
+              ) : (
+                <><Clock className="w-2.5 h-2.5" /> Auto-saved {formatDistanceToNow(lastAutoSaved, { addSuffix: true })}</>
+              )}
+            </p>
+          )}
+
           <Button variant="outline" onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-1 text-xs">
             <Sparkles className="w-3 h-3" /> Regenerate
           </Button>
