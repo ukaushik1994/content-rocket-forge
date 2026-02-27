@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText, Send, Bold, Italic, Heading1, Heading2, Heading3, Link, List, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText, Send, Bold, Italic, Heading1, Heading2, Heading3, Link, List, RefreshCw, ShieldCheck, ChevronDown, Check, X, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -94,6 +95,61 @@ function calculateSeoScore(
   return Math.min(score, 100);
 }
 
+interface SeoCheckItem {
+  label: string;
+  passed: boolean;
+  detail: string;
+}
+
+function getSeoChecklist(
+  content: string,
+  keyword: string,
+  metaTitle: string,
+  metaDescription: string
+): SeoCheckItem[] {
+  const lowerContent = content.toLowerCase();
+  const lowerKeyword = keyword.toLowerCase();
+  const firstLine = content.split('\n').find(l => l.trim())?.toLowerCase() || '';
+  const wordCount = content.split(/\s+/).filter(Boolean).length;
+
+  return [
+    {
+      label: 'Keyword in title',
+      passed: firstLine.includes(lowerKeyword),
+      detail: firstLine.includes(lowerKeyword) ? 'Found in H1' : 'Add keyword to your main heading',
+    },
+    {
+      label: 'Keyword in intro',
+      passed: lowerContent.substring(0, 200).includes(lowerKeyword),
+      detail: lowerContent.substring(0, 200).includes(lowerKeyword) ? 'Appears in first 200 chars' : 'Add keyword to opening paragraph',
+    },
+    {
+      label: 'Meta title length',
+      passed: metaTitle.length >= 50 && metaTitle.length <= 60,
+      detail: `${metaTitle.length}/60 chars${metaTitle.length < 50 ? ' (too short)' : metaTitle.length > 60 ? ' (too long)' : ''}`,
+    },
+    {
+      label: 'Meta description length',
+      passed: metaDescription.length >= 120 && metaDescription.length <= 160,
+      detail: `${metaDescription.length}/160 chars${metaDescription.length < 120 ? ' (too short)' : metaDescription.length > 160 ? ' (too long)' : ''}`,
+    },
+    {
+      label: 'Has H2 headings',
+      passed: /^## /m.test(content),
+      detail: /^## /m.test(content) ? 'Content has subheadings' : 'Add ## headings for structure',
+    },
+    {
+      label: 'Word count > 800',
+      passed: wordCount > 800,
+      detail: `${wordCount} words${wordCount <= 800 ? ' (aim for 800+)' : ''}`,
+    },
+    {
+      label: 'Has formatting',
+      passed: /^[-*+] /m.test(content) || /\*\*.+?\*\*/m.test(content),
+      detail: (/^[-*+] /m.test(content) || /\*\*.+?\*\*/m.test(content)) ? 'Lists or bold text found' : 'Add lists or bold text',
+    },
+  ];
+}
 interface WizardStepGenerateProps {
   wizardState: WizardState;
   onMetaChange: (title: string, description: string) => void;
@@ -871,6 +927,63 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               Refine
             </Button>
           </div>
+
+          {/* SEO Checklist (blog formats only) */}
+          {!quick && seoScore !== null && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  SEO Checklist ({getSeoChecklist(editableContent, wizardState.keyword, wizardState.metaTitle, wizardState.metaDescription).filter(i => i.passed).length}/{getSeoChecklist(editableContent, wizardState.keyword, wizardState.metaTitle, wizardState.metaDescription).length} passed)
+                </span>
+                <ChevronDown className="w-3 h-3 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="space-y-1 pt-1 pb-2">
+                  {getSeoChecklist(editableContent, wizardState.keyword, wizardState.metaTitle, wizardState.metaDescription).map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-[10px]">
+                      {item.passed ? (
+                        <Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <X className="w-3 h-3 text-destructive mt-0.5 flex-shrink-0" />
+                      )}
+                      <div>
+                        <span className={cn("font-medium", item.passed ? "text-foreground" : "text-destructive")}>{item.label}</span>
+                        <span className="text-muted-foreground ml-1">· {item.detail}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Solution Integration Summary */}
+          {wizardState.selectedSolution && editableContent && (() => {
+            const solName = wizardState.selectedSolution!.name;
+            const mentions = (editableContent.match(
+              new RegExp(solName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+            ) || []).length;
+            const features = Array.isArray(wizardState.selectedSolution!.features) ? wizardState.selectedSolution!.features : [];
+            const covered = features.filter((f: string) => editableContent.toLowerCase().includes(f.toLowerCase())).length;
+            return (
+              <div className="rounded-lg border border-border/20 bg-muted/20 p-2.5 space-y-1">
+                <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
+                  <Package className="w-3 h-3" /> Solution Integration
+                </div>
+                <div className="flex gap-3 text-[10px]">
+                  <span className="text-foreground">
+                    <span className="font-semibold">{mentions}</span> mentions of "{solName}"
+                  </span>
+                  {features.length > 0 && (
+                    <span className="text-foreground">
+                      <span className="font-semibold">{covered}/{features.length}</span> features covered
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Save as Draft + Publish buttons */}
           <div className="flex gap-2">

@@ -3,17 +3,30 @@ import { motion } from 'framer-motion';
 
 interface EnhancedQuickActionsProps {
   onAction: (action: string, data?: any) => void;
+  onSetVisualization?: (visualData: any) => void;
 }
 
-export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAction }) => {
+export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAction, onSetVisualization }) => {
   const suggestions = [
-    { text: 'Write content', prompt: 'I want to write a new blog post. What topic should I write about?' },
+    { text: 'Write content', prompt: 'I want to write a new blog post. What topic should I write about?', directWizard: true },
     { text: 'Research keywords', prompt: 'Add keyword "content marketing" and run SERP analysis' },
     { text: 'Run a campaign', prompt: 'Help me set up and run a new campaign' },
     { text: 'Draft an email', prompt: 'Create a new email campaign for my latest content' },
     { text: 'Check performance', prompt: 'Show me my campaign dashboard with live queue status' },
     { text: 'What can you do?', prompt: '/help' },
   ];
+
+  const handleClick = (item: typeof suggestions[0]) => {
+    // Direct wizard launch: skip chat round-trip
+    if (item.directWizard && onSetVisualization) {
+      onSetVisualization({
+        type: 'content_wizard',
+        keyword: '',
+      });
+      return;
+    }
+    onAction(`send:${item.prompt}`, { displayText: item.text });
+  };
 
   return (
     <motion.div
@@ -26,7 +39,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
         <motion.button
           key={item.text}
           className="px-4 py-2 rounded-full border border-border/40 bg-card/50 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all duration-200 cursor-pointer"
-          onClick={() => onAction(`send:${item.prompt}`, { displayText: item.text })}
+          onClick={() => handleClick(item)}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 + index * 0.04, duration: 0.3 }}
