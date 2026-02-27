@@ -128,8 +128,14 @@ Respond with ONLY this JSON:
     const confidence = result.confidence || 0;
     const contentValueScore = result.contentValueScore || 0;
     const rawHuman = Math.max(0, 100 - confidence);
-    const valueBoost = Math.max(0, (contentValueScore - 50) * 0.4);
-    const adjustedHumanScore = Math.min(100, Math.round(rawHuman + valueBoost));
+    const valueBoost = Math.max(0, (contentValueScore - 40) * 0.6);
+    let adjustedHumanScore = Math.min(100, Math.round(rawHuman + valueBoost));
+
+    // Quality floor: high-value + deep content should never show red
+    const factualDepth = result.dimensionScores?.factualDepth || 0;
+    if (contentValueScore >= 75 && factualDepth >= 18 && adjustedHumanScore < 45) {
+      adjustedHumanScore = 45;
+    }
 
     const dimensionScores: DimensionScores = {
       personalVoice: result.dimensionScores?.personalVoice || 0,
