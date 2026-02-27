@@ -40,7 +40,7 @@ async function getActiveProvider() {
 /**
  * Detect if content is AI-written using 4-dimension scoring with value-adjusted formula.
  * Dimensions: Personal Voice, Specificity, Writing Variation, Factual Depth (each 0-25).
- * Final adjustedHumanScore = rawHuman + max(0, (contentValueScore - 50) * 0.4)
+ * Final adjustedHumanScore = rawHuman + max(0, (contentValueScore - 40) * 0.6)
  */
 export async function detectAIContent(
   content: string

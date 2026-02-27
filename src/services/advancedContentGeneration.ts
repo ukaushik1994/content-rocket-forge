@@ -162,6 +162,32 @@ ${chunkOutline}
 ABSOLUTE MINIMUM: ${wordsPerChunk} words for these sections. Write detailed, thorough content with examples, explanations, and analysis for each section. Do NOT summarize or be brief. Do NOT write a conclusion or wrap up — more sections follow.
 Start with the H1 title and these opening sections.`;
       } else {
+        // Build condensed SERP context for chunks 2+
+        const selectedKeywords = config.serpSelections
+          .filter(s => s.type === 'keyword' && s.selected)
+          .map(s => s.content);
+        const contentGaps = config.serpSelections
+          .filter(s => s.type === 'contentGap' && s.selected)
+          .map(s => s.content);
+        const selectedFaqs = config.serpSelections
+          .filter(s => s.type === 'question' && s.selected)
+          .map(s => s.content);
+        const selectedEntities = config.serpSelections
+          .filter(s => s.type === 'entity' && s.selected)
+          .map(s => s.content);
+        const solutionName = config.selectedSolution?.name || '';
+
+        let serpContext = '';
+        if (selectedKeywords.length || contentGaps.length || solutionName || selectedEntities.length) {
+          serpContext = `\n\nSERP CONTEXT (integrate throughout this section):`;
+          if (selectedKeywords.length) serpContext += `\n- Keywords to weave in: ${selectedKeywords.join(', ')}`;
+          if (solutionName) serpContext += `\n- Solution "${solutionName}": mention at least once in this section`;
+          if (contentGaps.length) serpContext += `\n- Content gaps to address: ${contentGaps.join('; ')}`;
+          if (config.secondaryKeywords) serpContext += `\n- Secondary keywords: ${config.secondaryKeywords}`;
+          if (selectedEntities.length) serpContext += `\n- Entities to reference: ${selectedEntities.join(', ')}`;
+          if (isLast && selectedFaqs.length) serpContext += `\n- FAQs to answer in conclusion: ${selectedFaqs.slice(0, 5).join('; ')}`;
+        }
+
         chunkPrompt = `You are continuing an article about "${config.mainKeyword}" titled "${config.title}".
 
 Here is what has been written so far (summary):
@@ -177,7 +203,7 @@ REQUIREMENTS:
 - Do NOT start with a heading that summarizes the whole article
 ${isLast ? '- This is the FINAL part — include a strong conclusion and any FAQ section if appropriate' : '- Do NOT write a conclusion — more sections follow'}
 - Maintain the same writing style: ${config.writingStyle}, ${config.expertiseLevel} level
-- Naturally incorporate the keyword "${config.mainKeyword}" where appropriate`;
+- Naturally incorporate the keyword "${config.mainKeyword}" where appropriate${serpContext}`;
       }
 
       const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-proxy', {

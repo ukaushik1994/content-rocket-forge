@@ -321,6 +321,35 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     return parts.join('\n');
   };
 
+  const buildKeywordRichFallback = () => {
+    const keyword = wizardState.keyword || 'Topic';
+    const title = wizardState.title || wizardState.metaTitle || `${keyword} - Complete Guide`;
+    const faqs = wizardState.researchSelections.faqs || [];
+    const secondaryKw = wizardState.researchSelections.relatedKeywords || [];
+
+    let fallback = `# ${title}\n\n${keyword} is a topic that requires detailed exploration. This guide covers everything you need to know.\n\n`;
+
+    if (wizardState.outline.length > 0) {
+      for (const s of wizardState.outline) {
+        fallback += `${'#'.repeat(s.level + 1)} ${s.title}\n\n`;
+        fallback += `[Expand this section about ${s.title} as it relates to ${keyword}. Include specific examples, data points, and actionable insights.]\n\n`;
+      }
+    }
+
+    if (faqs.length > 0) {
+      fallback += `## Frequently Asked Questions\n\n`;
+      for (const faq of faqs.slice(0, 5)) {
+        fallback += `### ${faq}\n\n[Answer this question with specific, helpful information.]\n\n`;
+      }
+    }
+
+    if (secondaryKw.length > 0) {
+      fallback += `---\n*Related keywords: ${secondaryKw.join(', ')}*\n`;
+    }
+
+    return fallback;
+  };
+
   const generateContent = async () => {
     setIsGeneratingContent(true);
     setGenerationStage('Building prompt...');
@@ -332,6 +361,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         ...wizardState.researchSelections.contentGaps.map(g => ({ type: 'contentGap' as const, content: g, source: 'serp', selected: true })),
         ...wizardState.researchSelections.relatedKeywords.map(k => ({ type: 'keyword' as const, content: k, source: 'serp', selected: true })),
         ...wizardState.researchSelections.serpHeadings.map(h => ({ type: 'heading' as const, content: h, source: 'serp', selected: true })),
+        ...(wizardState.researchSelections.entities?.map(e => ({ type: 'entity' as const, content: e, source: 'serp', selected: true })) || []),
       ];
 
       const targetLength = wizardState.wordCount || 1500;
@@ -374,21 +404,17 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
         toast.success('Content generated successfully!');
       } else {
-        const fallback = wizardState.outline.map(s =>
-          `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here.</p>`
-        ).join('\n\n');
+        const fallback = buildKeywordRichFallback();
         onContentGenerated(fallback);
         setEditableContent(fallback);
-        toast.warning('AI returned empty content. A draft outline has been created.');
+        toast.warning('AI returned empty content. A keyword-rich draft outline has been created.');
       }
     } catch (err) {
       console.error('Content generation failed:', err);
-      const fallback = wizardState.outline.map(s =>
-        `<h${s.level + 1}>${s.title}</h${s.level + 1}>\n<p>Write about ${s.title} here.</p>`
-      ).join('\n\n');
+      const fallback = buildKeywordRichFallback();
       onContentGenerated(fallback);
       setEditableContent(fallback);
-      toast.warning('AI generation failed. A draft outline has been created.');
+      toast.warning('AI generation failed. A keyword-rich draft outline has been created.');
     } finally {
       setIsGeneratingContent(false);
       setGenerationStage('');
