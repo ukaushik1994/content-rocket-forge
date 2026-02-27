@@ -97,6 +97,149 @@ function buildQuickFormatPrompt(config: ContentGenerationConfig): string {
 }
 
 /**
+ * Chunked generation: splits outline into groups of 2-3 sections,
+ * generates each chunk separately, then concatenates for reliable long-form output.
+ */
+async function generateInChunks(
+  config: ContentGenerationConfig,
+  provider: { provider: string; api_key: string; preferred_model: string | null },
+  systemPrompt: string,
+  fullPrompt: string,
+  totalMaxTokens: number
+): Promise<string | null> {
+  try {
+    // Parse outline into sections by splitting on heading markers
+    const outlineLines = (config.outline || '').split('\n').filter(l => l.trim());
+    const sections: { heading: string; lines: string[] }[] = [];
+    let current: { heading: string; lines: string[] } | null = null;
+
+    for (const line of outlineLines) {
+      if (/^#{1,3}\s/.test(line.trim()) || /^\d+\.\s/.test(line.trim()) || /^-\s+\*\*/.test(line.trim())) {
+        if (current) sections.push(current);
+        current = { heading: line.trim(), lines: [] };
+      } else if (current) {
+        current.lines.push(line);
+      } else {
+        current = { heading: line.trim(), lines: [] };
+      }
+    }
+    if (current) sections.push(current);
+
+    if (sections.length < 2) {
+      console.warn('⚠️ Not enough sections for chunked generation');
+      return null;
+    }
+
+    // Group sections into chunks of 2-3
+    const CHUNK_SIZE = 3;
+    const chunks: typeof sections[] = [];
+    for (let i = 0; i < sections.length; i += CHUNK_SIZE) {
+      chunks.push(sections.slice(i, i + CHUNK_SIZE));
+    }
+
+    const wordsPerChunk = Math.ceil(config.targetLength / chunks.length);
+    const tokensPerChunk = Math.max(4000, Math.ceil(wordsPerChunk * 1.8)); // ~1.8 tokens per word with markdown
+    const allParts: string[] = [];
+    let previousSummary = '';
+
+    console.log(`📦 Chunked gen: ${chunks.length} chunks, ~${wordsPerChunk} words each`);
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const chunkOutline = chunk.map(s => [s.heading, ...s.lines].join('\n')).join('\n');
+      const isFirst = i === 0;
+      const isLast = i === chunks.length - 1;
+
+      let chunkPrompt = '';
+      if (isFirst) {
+        // First chunk includes the full context but only writes the first sections
+        chunkPrompt = `${fullPrompt}
+
+IMPORTANT: You are writing PART 1 of ${chunks.length} of this article. Write ONLY these sections now:
+
+${chunkOutline}
+
+You MUST write approximately ${wordsPerChunk} words for these sections. Do NOT write a conclusion or wrap up — more sections follow.
+Start with the H1 title and these opening sections.`;
+      } else {
+        chunkPrompt = `You are continuing an article about "${config.mainKeyword}" titled "${config.title}".
+
+Here is what has been written so far (summary):
+${previousSummary}
+
+Now write the NEXT sections (Part ${i + 1} of ${chunks.length}):
+
+${chunkOutline}
+
+REQUIREMENTS:
+- Write approximately ${wordsPerChunk} words for these sections
+- Continue naturally from the previous content — do NOT repeat the title or introduction
+- Do NOT start with a heading that summarizes the whole article
+${isLast ? '- This is the FINAL part — include a strong conclusion and any FAQ section if appropriate' : '- Do NOT write a conclusion — more sections follow'}
+- Maintain the same writing style: ${config.writingStyle}, ${config.expertiseLevel} level
+- Naturally incorporate the keyword "${config.mainKeyword}" where appropriate`;
+      }
+
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-proxy', {
+        body: {
+          service: provider.provider,
+          endpoint: 'chat',
+          params: {
+            model: provider.preferred_model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: chunkPrompt }
+            ],
+            max_tokens: tokensPerChunk,
+            temperature: 0.7,
+          },
+        }
+      });
+
+      if (aiError) {
+        console.error(`❌ Chunk ${i + 1} failed:`, aiError);
+        return null;
+      }
+
+      const chunkContent = aiData?.data?.choices?.[0]?.message?.content
+        || aiData?.choices?.[0]?.message?.content
+        || aiData?.content || '';
+
+      if (!chunkContent) {
+        console.error(`❌ Chunk ${i + 1} returned empty content`);
+        return null;
+      }
+
+      const chunkWordCount = chunkContent.split(/\s+/).length;
+      console.log(`  ✅ Chunk ${i + 1}/${chunks.length}: ${chunkWordCount} words`);
+
+      allParts.push(chunkContent);
+
+      // Create a brief summary for context continuity (last 2 headings + key points)
+      const headingsInChunk = chunkContent.match(/^#{1,3}\s.+$/gm) || [];
+      previousSummary = `Sections covered so far: ${headingsInChunk.slice(-3).join(', ')}. The article has covered ${allParts.reduce((sum, p) => sum + p.split(/\s+/).length, 0)} words so far.`;
+    }
+
+    // Concatenate all chunks — remove duplicate title from subsequent chunks
+    let finalContent = allParts[0];
+    for (let i = 1; i < allParts.length; i++) {
+      let part = allParts[i];
+      // Remove any accidental title repetition at the start of subsequent chunks
+      const titleMatch = part.match(/^#\s.+\n/);
+      if (titleMatch && finalContent.includes(titleMatch[0].trim())) {
+        part = part.replace(titleMatch[0], '');
+      }
+      finalContent += '\n\n' + part.trim();
+    }
+
+    return finalContent;
+  } catch (error) {
+    console.error('💥 Chunked generation failed:', error);
+    return null;
+  }
+}
+
+/**
  * Generate advanced content using selected SERP items and AI
  */
 export async function generateAdvancedContent(
@@ -267,7 +410,19 @@ Always start with the title as an H1 heading and follow the provided outline str
     // Calculate max tokens based on format
     const maxTokens = getMaxTokensForFormat(config.formatType || 'blog', config.targetLength);
 
-    // Call ai-proxy directly for content generation (not enhanced-ai-chat)
+    // For long blog articles (>2500 words), use chunked generation
+    if (!quickFormat && config.targetLength > 2500 && config.outline && config.outline.trim()) {
+      console.log(`📦 Using chunked generation for ${config.targetLength} word target`);
+      const chunkedResult = await generateInChunks(config, provider, systemPrompt, prompt, maxTokens);
+      if (chunkedResult) {
+        const wordCount = chunkedResult.split(/\s+/).length;
+        console.log(`✅ Chunked generation complete: ${wordCount} words`);
+        return chunkedResult;
+      }
+      console.warn('⚠️ Chunked generation failed, falling back to single-pass');
+    }
+
+    // Single-pass generation (for short content or fallback)
     const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-proxy', {
       body: {
         service: provider.provider,
@@ -291,7 +446,7 @@ Always start with the title as an H1 heading and follow the provided outline str
 
     console.log('🔍 ai-proxy raw response keys:', aiData ? Object.keys(aiData) : 'null');
 
-    // Extract content from ai-proxy response - handles nested { data: { choices: [...] } } structure
+    // Extract content from ai-proxy response
     const generatedContent = aiData?.data?.choices?.[0]?.message?.content
       || aiData?.choices?.[0]?.message?.content 
       || aiData?.data?.content
