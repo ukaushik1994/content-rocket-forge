@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText, Send, Bold, Italic, Heading1, Heading2, Heading3, Link, List, RefreshCw, ShieldCheck, ChevronDown, Check, X, Package, GraduationCap, AlertTriangle, Zap } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Loader2, Sparkles, Save, CheckCircle2, ExternalLink, PenLine, Copy, Clock, FileText, Send, Bold, Italic, Heading1, Heading2, Heading3, Link, List, RefreshCw, ShieldCheck, ChevronDown, Check, X, Package, GraduationCap, AlertTriangle, Zap, ImagePlus, Globe, Twitter, Mail, Megaphone, FileBarChart, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -25,6 +26,8 @@ import { analyzeContentQualityWithAI, AIContentQualityResult } from '@/services/
 import { analyzeContentCompliance } from '@/services/contentComplianceService';
 import { ComplianceAnalysisResult } from '@/types/contentCompliance';
 import { wizardToBuilderState } from '@/utils/wizardStateAdapter';
+import { getActiveConnection, publishToWebsite } from '@/services/publishing/publishingService';
+import ImageGenService from '@/services/imageGenService';
 import { cn } from '@/lib/utils';
 import type { WizardState } from './ContentWizardSidebar';
 import { formatDistanceToNow } from 'date-fns';
@@ -187,6 +190,7 @@ interface WizardStepGenerateProps {
   onContentGenerated: (content: string) => void;
   onTitleChange: (title: string) => void;
   onClose: () => void;
+  onRepurpose?: (contentType: string, sourceContent: string, keyword: string) => void;
 }
 
 export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
@@ -195,6 +199,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   onContentGenerated,
   onTitleChange,
   onClose,
+  onRepurpose,
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -234,6 +239,14 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   const autoSaveContentRef = useRef<string>('');
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Phase 2A: Publish menu state
+  const [activeConnectionProvider, setActiveConnectionProvider] = useState<'wordpress' | 'wix' | null>(null);
+  const [isPublishingExternal, setIsPublishingExternal] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+
+  // Phase 2B: Image generation state
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
   // Load company & brand context on mount
   useEffect(() => {
     if (!user) return;
@@ -247,6 +260,11 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     };
     loadContext();
   }, [user]);
+
+  // Phase 2A: Detect active website connection on mount
+  useEffect(() => {
+    getActiveConnection().then(({ provider }) => setActiveConnectionProvider(provider));
+  }, []);
 
   const quick = isQuickFormat(wizardState.contentType);
 
@@ -636,6 +654,57 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     }, 0);
   };
 
+  // Phase 2A: Publish to external website
+  const publishExternal = async () => {
+    if (!activeConnectionProvider || !contentToSave) return;
+    setIsPublishingExternal(true);
+    try {
+      const result = await publishToWebsite({
+        title: wizardState.title || wizardState.metaTitle || wizardState.keyword,
+        contentMd: contentToSave,
+        excerpt: wizardState.metaDescription || undefined,
+        tags: wizardState.researchSelections.relatedKeywords.slice(0, 5),
+        status: 'publish',
+      });
+      if (result.ok && result.url) {
+        setPublishedUrl(result.url);
+        toast.success(`Published to ${activeConnectionProvider === 'wordpress' ? 'WordPress' : 'Wix'}!`);
+      } else {
+        toast.error(result.error || 'Publish failed');
+      }
+    } catch (err) {
+      console.error('External publish error:', err);
+      toast.error('Failed to publish externally');
+    } finally {
+      setIsPublishingExternal(false);
+    }
+  };
+
+  // Phase 2B: Generate image and insert into content
+  const handleGenerateImage = async () => {
+    setIsGeneratingImage(true);
+    try {
+      const prompt = `High quality blog illustration for: ${wizardState.title || wizardState.keyword}. Professional, modern style.`;
+      const result = await ImageGenService.generateImage({ prompt, size: '1024x1024' });
+      if (result && (result.url || result.base64)) {
+        const imageUrl = result.url || `data:image/png;base64,${result.base64}`;
+        const altText = wizardState.keyword || 'Generated image';
+        const markdownImage = `\n![${altText}](${imageUrl})\n`;
+        
+        const textarea = textareaRef.current;
+        const cursorPos = textarea?.selectionStart || editableContent.length;
+        const newContent = editableContent.substring(0, cursorPos) + markdownImage + editableContent.substring(cursorPos);
+        setEditableContent(newContent);
+        onContentGenerated(newContent);
+      }
+    } catch (err) {
+      console.error('Image generation failed:', err);
+      toast.error('Image generation failed');
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   // --- Core save logic (shared by draft & publish) ---
   const saveContent = async (status: 'draft' | 'published') => {
     if (!user) { toast.error('Please log in first.'); return; }
@@ -916,6 +985,30 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           </Button>
           <Button size="sm" variant="ghost" onClick={onClose} className="text-xs w-full">Close</Button>
         </div>
+
+        {/* Phase 2C: Repurpose Quick Actions */}
+        {onRepurpose && (
+          <div className="w-full max-w-[280px] mt-2">
+            <p className="text-[10px] text-muted-foreground mb-2 font-medium">Repurpose this content</p>
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {[
+                { type: 'social-twitter', label: 'Social Post', icon: Twitter },
+                { type: 'email', label: 'Email', icon: Mail },
+                { type: 'google-ads', label: 'Ad Copy', icon: Megaphone },
+                { type: 'blog', label: 'Summary', icon: FileBarChart },
+              ].map(item => (
+                <button
+                  key={item.type}
+                  onClick={() => onRepurpose(item.type, contentToSave, wizardState.keyword)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-border/30 bg-muted/30 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-primary/5 transition-all"
+                >
+                  <item.icon className="w-3 h-3" />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1068,6 +1161,17 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                     </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" title="List" onClick={() => insertFormatting('- ', '')}>
                       <List className="w-3 h-3" />
+                    </Button>
+                    <div className="w-px h-4 bg-border mx-0.5" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      title="Generate Image" 
+                      onClick={handleGenerateImage}
+                      disabled={isGeneratingImage}
+                    >
+                      {isGeneratingImage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
                     </Button>
                   </div>
                   <Textarea
@@ -1264,16 +1368,71 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             );
           })()}
 
-          {/* Save as Draft + Publish buttons */}
+          {/* Save as Draft + Publish dropdown */}
           <div className="flex gap-2">
             <Button onClick={() => saveContent('draft')} disabled={isSaving || !wizardState.title.trim()} className="flex-1 gap-2">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save as Draft
             </Button>
-            <Button variant="secondary" onClick={() => saveContent('published')} disabled={isSaving || !wizardState.title.trim()} className="gap-1 text-xs">
-              <Send className="w-3 h-3" /> Publish
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="secondary" disabled={isSaving || !wizardState.title.trim()} className="gap-1 text-xs">
+                  <Send className="w-3 h-3" /> Publish <ChevronDown className="w-3 h-3 ml-0.5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-56 p-1.5 space-y-0.5">
+                <button
+                  onClick={() => saveContent('published')}
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs hover:bg-accent transition-colors text-left"
+                >
+                  <Send className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span>Save as Published</span>
+                </button>
+                {activeConnectionProvider === 'wordpress' && (
+                  <button
+                    onClick={publishExternal}
+                    disabled={isPublishingExternal}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs hover:bg-accent transition-colors text-left disabled:opacity-50"
+                  >
+                    {isPublishingExternal ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5 text-muted-foreground" />}
+                    <span>Publish to WordPress</span>
+                  </button>
+                )}
+                {activeConnectionProvider === 'wix' && (
+                  <button
+                    onClick={publishExternal}
+                    disabled={isPublishingExternal}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs hover:bg-accent transition-colors text-left disabled:opacity-50"
+                  >
+                    {isPublishingExternal ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5 text-muted-foreground" />}
+                    <span>Publish to Wix</span>
+                  </button>
+                )}
+                {!activeConnectionProvider && (
+                  <button
+                    onClick={() => { navigate('/settings'); onClose(); }}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs hover:bg-accent transition-colors text-left text-muted-foreground"
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                    <span>Connect Website</span>
+                  </button>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
+
+          {/* Published URL badge */}
+          {publishedUrl && (
+            <a 
+              href={publishedUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-[10px] text-primary hover:underline"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Published: {publishedUrl}
+            </a>
+          )}
 
           {/* Phase 1D: Auto-save timestamp */}
           {lastAutoSaved && (
