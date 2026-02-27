@@ -92,9 +92,12 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
           value={keyword}
           onChange={(e) => onKeywordChange(e.target.value)}
           placeholder="e.g. AI in healthcare, best running shoes..."
-          className={cn("text-sm mt-2", keywordError && "border-destructive ring-1 ring-destructive/30")}
+          className={cn("text-sm mt-2", keywordError && "border-destructive ring-2 ring-destructive/40 animate-shake")}
           autoFocus
         />
+        {keywordError && (
+          <p className="text-xs text-destructive mt-1">Please enter a topic (at least 2 characters)</p>
+        )}
       </div>
 
       {/* Solution Selection */}
