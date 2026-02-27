@@ -1,128 +1,126 @@
 
 
-# Fix Plan: Solution Detection UI + SEO Score Alignment with Content Builder
+# Content Wizard Power Upgrade -- Phased Plan
 
-## Problem Summary
-
-Two bugs remain from the previous fix attempt, plus the SEO scoring engine is fundamentally different from the Content Builder's proven approach.
+The goal: make the Content Wizard the primary content tool, eventually replacing the Content Builder. Seven features across 3 phases, each building on the previous.
 
 ---
 
-## Bug 1: Solution Feature Detection UI Still Uses Exact Matching (Critical)
+## Phase 1: Quality Intelligence (The Brain)
+*Makes the Wizard produce measurably better content*
 
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` (line 1006)
+### 1A. AI Quality Grade Badge (A-F)
+- After content generation, run `analyzeContentQualityWithAI()` (already exists in `aiContentQualityService.ts`)
+- Show a compact grade badge (e.g., "B+") next to the SEO score at the top of the generate step
+- Clicking the badge expands to show 5 sub-scores: Intent Matching, Keyword Integration, Content Depth, User Engagement, SEO Effectiveness
+- **Challenge:** The service expects `ContentBuilderState`. We need to build a lightweight adapter that maps `WizardState` to the required fields (content, keywords, solution, outline, SERP data)
+- **UI:** Small badge inline with existing scores, collapsible detail panel below
 
-**Root Cause:** The previous fix updated the **save logic** (lines 611-627) to use `analyzeSolutionIntegration()` with fuzzy matching, but the **UI display** at line 1006 still uses naive exact matching:
+### 1B. 4-Dimension Compliance Analysis
+- Run `analyzeContentCompliance()` (exists in `contentComplianceService.ts`, 812 lines, battle-tested)
+- Show as a new collapsible section below the SEO checklist: "Compliance (78/100)"
+- Expandable to show 4 dimension bars: Keyword (30%), SERP (25%), Solution (25%), Structure (20%)
+- Each dimension shows its score + top violation if any
+- Same adapter challenge as 1A -- reuse the same `WizardState -> ContentBuilderState` mapper
+- **UI:** Collapsible card matching existing SEO checklist style
+
+### 1C. Content Gap Auto-Injection into Refinement
+- When content gaps exist in SERP data (`wizardState.serpData.contentGaps`), analyze which gaps the current content misses
+- Auto-populate the "How should this be improved?" refinement input with a smart suggestion like: "Add coverage of [missing topic 1], [missing topic 2] -- these are gaps in competitor content"
+- Show a small "Gaps detected" chip above the refinement input that the user can click to auto-fill
+- **No new service needed** -- just compare `contentGaps` from SERP against current content headings/text
+
+### 1D. Auto-Save with Timestamp
+- Add a `useEffect` with a 60-second debounced timer that saves the current content as a draft to `content_items`
+- Show a subtle "Auto-saved 2m ago" timestamp below the editor
+- Only triggers if content has changed since last save
+- Reuse existing save logic but with `status: 'draft'` and skip toast notifications
+
+---
+
+## Phase 2: Post-Save Actions (The Output)
+*Maximizes what users can do with finished content*
+
+### 2A. Inline Publish Menu (WordPress/Wix)
+- Replace the current "Publish" button with a dropdown that shows:
+  - "Save as Published" (current behavior -- just marks status)
+  - "Publish to WordPress" (if WP connection active)
+  - "Publish to Wix" (if Wix connection active)
+- Use existing `getActiveConnection()` and `publishToWebsite()` from `publishingService.ts`
+- After successful publish, show the published URL inline
+- If no connection is active, show a "Connect Website" link to settings
+
+### 2B. Image Generation Button in Toolbar
+- Add a small image icon (ImagePlus) to the existing formatting toolbar (Bold, Italic, H1, H2...)
+- On click, call the AI image generation API with context from the content title + keyword
+- Show a loading spinner, then insert the generated image as markdown `![alt](url)` at cursor position
+- Store generated images in the `generated_images` metadata field (matching Content Builder pattern)
+- Uses the Lovable AI gateway (`google/gemini-2.5-flash-image`) -- no new edge function needed
+
+### 2C. Post-Save Repurpose Quick Actions
+- After saving a blog, show a "Repurpose" section with 4 quick action chips: Social Post, Email, Ad Copy, Summary
+- Clicking one opens the Content Wizard in quick-format mode pre-filled with the saved content as source material
+- Reuse existing Quick Format flow -- just pre-populate the content field
+- **No new service needed** -- it's a UI flow that chains wizard sessions
+
+---
+
+## Phase 3: Polish and Parity (The Details)
+*Final touches to match Content Builder quality*
+
+### 3A. WizardState to ContentBuilderState Adapter
+- Create a shared utility `src/utils/wizardStateAdapter.ts` that maps WizardState fields to ContentBuilderState fields
+- This is the foundation for Phase 1A and 1B -- extracted here as a reusable utility
+- Maps: content, keywords, solution, outline, SERP selections, meta fields, content type
+
+---
+
+## Technical Architecture
+
+### New Files
+| File | Purpose |
+|------|---------|
+| `src/utils/wizardStateAdapter.ts` | Maps WizardState to ContentBuilderState for reusing Builder services |
+
+### Modified Files
+| File | Changes |
+|------|---------|
+| `WizardStepGenerate.tsx` | All UI additions (grade badge, compliance section, gap chips, auto-save, publish dropdown, image button, repurpose actions) |
+
+### Existing Services Reused (No Changes)
+| Service | Used For |
+|---------|----------|
+| `aiContentQualityService.ts` | AI Quality Grade (A-F) |
+| `contentComplianceService.ts` | 4-dimension compliance |
+| `publishingService.ts` | WordPress/Wix publishing |
+| `AI Gateway` | Image generation |
+
+---
+
+## Phase Order and Dependencies
 
 ```text
-const covered = features.filter((f: string) => editableContent.toLowerCase().includes(f.toLowerCase())).length;
-```
-
-This is why the user sees "0/10 features covered" in the sidebar even though the saved metadata would be correct.
-
-**Fix:** Replace the inline exact-match in the UI render block (lines 1000-1024) with a call to `analyzeSolutionIntegration()` -- the same function already imported at line 16. Use `solMetrics.mentionedFeatures.length` for the display count and `solMetrics.nameMentions` for mentions.
-
----
-
-## Bug 2: SEO Score Uses Wrong Algorithm
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` (lines 76-100)
-
-**Root Cause:** The wizard's `calculateSeoScore` is a simple 7-item checklist where each item adds fixed points. This produces unreliable scores (65 when 5/7 pass). Meanwhile, the Content Builder uses a battle-tested 3-dimension weighted algorithm from `src/utils/seo/`:
-
-| Dimension | Weight | Source File |
-|-----------|--------|-------------|
-| Keyword density score | 40% | `keywordAnalysis.ts` (optimal range 1-3%) |
-| Content length score | 30% | `contentAnalysis.ts` (tiered: 300/600/1000/1500 words) |
-| Readability score | 30% | `contentAnalysis.ts` (sentence + word length penalties) |
-
-**Fix:** Replace `calculateSeoScore()` with the Content Builder's approach:
-1. Import `calculateKeywordUsage`, `calculateKeywordUsageScore` from `@/utils/seo/keywordAnalysis`
-2. Import `calculateContentLengthScore`, `calculateReadabilityScore` from `@/utils/seo/contentAnalysis`
-3. Compute: `score = keywordScore * 0.4 + contentLengthScore * 0.3 + readabilityScore * 0.3`
-
-Keep the existing `getSeoChecklist()` for the expandable checklist display, but add two new items:
-- **Keyword density** (shows actual % and optimal range)
-- **Readability** (shows avg sentence length)
-
----
-
-## Enhancement: Richer SEO Checklist
-
-Add 2 new items to `getSeoChecklist()` (currently 7 items, becomes 9) to match Content Builder depth:
-
-1. **Keyword density**: Check if main keyword density is between 1-3%. Show actual density percentage.
-2. **Readability**: Check if avg sentence length is under 25 words.
-
-These items are display-only and don't affect the main score (which now comes from the weighted algorithm).
-
----
-
-## Implementation Sequence
-
-| Step | Task | Lines |
-|------|------|-------|
-| 1 | Add imports for Content Builder scoring utils | Top of file |
-| 2 | Replace `calculateSeoScore` with weighted 3-dimension algorithm | Lines 76-100 |
-| 3 | Add keyword density + readability items to `getSeoChecklist` | Lines 108-156 |
-| 4 | Fix solution integration UI display to use fuzzy matching | Lines 1000-1024 |
-
-All changes are in a single file: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
-
----
-
-## Technical Details
-
-**New calculateSeoScore (replaces lines 76-100):**
-```text
-function calculateSeoScore(content, keyword, metaTitle, metaDescription) {
-  // Use Content Builder's proven 3-dimension weighted algorithm
-  const keywordUsage = calculateKeywordUsage(content, keyword, []);
-  const keywordScore = calculateKeywordUsageScore(keywordUsage, keyword);
-  const contentLengthScore = calculateContentLengthScore(content);
-  const readabilityScore = calculateReadabilityScore(content);
+Phase 1 (Quality Intelligence)
+  |-- 3A: State Adapter (build first, needed by 1A + 1B)
+  |-- 1A: AI Quality Grade
+  |-- 1B: Compliance Analysis
+  |-- 1C: Content Gap Auto-Injection
+  |-- 1D: Auto-Save
   
-  // Weighted average (same weights as Content Builder)
-  let score = Math.round(
-    (keywordScore * 0.4) + (contentLengthScore * 0.3) + (readabilityScore * 0.3)
-  );
-  
-  // Bonus for meta tag optimization (up to +10)
-  if (metaTitle.length >= 50 && metaTitle.length <= 60) score += 5;
-  if (metaDescription.length >= 120 && metaDescription.length <= 160) score += 5;
-  
-  return Math.min(100, score);
-}
+Phase 2 (Post-Save Actions)
+  |-- 2A: Inline Publish Menu
+  |-- 2B: Image Generation
+  |-- 2C: Post-Save Repurpose
+
+Phase 3 (Polish)
+  |-- Final testing and edge case handling
 ```
 
-**Fixed solution UI display (replaces lines 1000-1024):**
-```text
-{wizardState.selectedSolution && editableContent && (() => {
-  const solMetrics = analyzeSolutionIntegration(editableContent, {
-    name: wizardState.selectedSolution.name,
-    features: Array.isArray(wizardState.selectedSolution.features) ? wizardState.selectedSolution.features : [],
-    painPoints: Array.isArray(wizardState.selectedSolution.painPoints) ? wizardState.selectedSolution.painPoints : [],
-    targetAudience: Array.isArray(wizardState.selectedSolution.targetAudience) ? wizardState.selectedSolution.targetAudience : [],
-  });
-  return (
-    <div className="...">
-      <span>{solMetrics.nameMentions} mentions of "{wizardState.selectedSolution.name}"</span>
-      <span>{solMetrics.mentionedFeatures.length}/{features.length} features covered</span>
-    </div>
-  );
-})()}
-```
+---
 
-**New checklist items (appended to getSeoChecklist):**
-```text
-{
-  label: 'Keyword density',
-  passed: density >= 1 && density <= 3,
-  detail: `${density.toFixed(1)}% (optimal: 1-3%)`
-},
-{
-  label: 'Readability',
-  passed: avgSentenceLength <= 25,
-  detail: `Avg sentence: ${Math.round(avgSentenceLength)} words${avgSentenceLength > 25 ? ' (shorten sentences)' : ''}`
-}
-```
+## What We're NOT Adding (and Why)
+- **Title Suggestions**: User confirmed "Skip" -- refinement input covers this
+- **Document Structure visual card**: Too complex for sidebar, compliance analysis covers structure scoring
+- **Featured Snippets analysis**: Already captured in SERP data and used in content gap detection
+- **Full Content Builder parity**: Not needed yet -- the Wizard's strength is speed, not depth
+
