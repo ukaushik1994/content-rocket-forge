@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { SafeMarkdown } from '@/components/ui/SafeMarkdown';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
 import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
+import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
 import { detectAIContent } from '@/services/aiContentDetectionService';
@@ -79,19 +80,22 @@ function calculateSeoScore(
   metaDescription: string
 ): number {
   let score = 0;
+  let itemsPassed = 0;
   const lowerContent = content.toLowerCase();
   const lowerKeyword = keyword.toLowerCase();
   const firstLine = content.split('\n').find(l => l.trim())?.toLowerCase() || '';
-  if (firstLine.includes(lowerKeyword)) score += 20;
-  if (lowerContent.substring(0, 200).includes(lowerKeyword)) score += 15;
-  if (metaTitle.length >= 50 && metaTitle.length <= 60) score += 15;
-  else if (metaTitle.length >= 30 && metaTitle.length <= 70) score += 8;
-  if (metaDescription.length >= 120 && metaDescription.length <= 160) score += 15;
-  else if (metaDescription.length >= 80 && metaDescription.length <= 200) score += 8;
-  if (/^## /m.test(content)) score += 15;
+  if (firstLine.includes(lowerKeyword)) { score += 20; itemsPassed++; }
+  if (lowerContent.substring(0, 200).includes(lowerKeyword)) { score += 15; itemsPassed++; }
+  if (metaTitle.length >= 50 && metaTitle.length <= 60) { score += 15; itemsPassed++; }
+  else if (metaTitle.length >= 30 && metaTitle.length <= 70) { score += 12; }
+  if (metaDescription.length >= 120 && metaDescription.length <= 160) { score += 15; itemsPassed++; }
+  else if (metaDescription.length >= 80 && metaDescription.length <= 200) { score += 12; }
+  if (/^## /m.test(content)) { score += 15; itemsPassed++; }
   const wordCount = content.split(/\s+/).filter(Boolean).length;
-  if (wordCount > 800) score += 10;
-  if (/^[-*+] /m.test(content) || /\*\*.+?\*\*/m.test(content)) score += 10;
+  if (wordCount > 800) { score += 10; itemsPassed++; }
+  if (/^[-*+] /m.test(content) || /\*\*.+?\*\*/m.test(content)) { score += 10; itemsPassed++; }
+  // Floor: if 5+ of 7 checklist items pass, score should be at least 70
+  if (itemsPassed >= 5) score = Math.max(score, 70);
   return Math.min(score, 100);
 }
 
@@ -604,20 +608,23 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             title: r.title, url: r.link, position: r.position,
           })),
         } : null,
-        solutionIntegrationMetrics: wizardState.selectedSolution ? {
-          solutionMentions: (contentToSave.match(
-            new RegExp(wizardState.selectedSolution.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
-          ) || []).length,
-          featuresCovered: Array.isArray(wizardState.selectedSolution.features)
-            ? wizardState.selectedSolution.features.filter((f: string) =>
-                contentToSave.toLowerCase().includes(f.toLowerCase())
-              ).length
-            : 0,
-          totalFeatures: Array.isArray(wizardState.selectedSolution.features)
-            ? wizardState.selectedSolution.features.length
-            : 0,
-          integrationScore: null,
-        } : null,
+        solutionIntegrationMetrics: wizardState.selectedSolution ? (() => {
+          const solMetrics = analyzeSolutionIntegration(contentToSave, {
+            name: wizardState.selectedSolution.name,
+            features: Array.isArray(wizardState.selectedSolution.features) ? wizardState.selectedSolution.features : [],
+            painPoints: Array.isArray(wizardState.selectedSolution.painPoints) ? wizardState.selectedSolution.painPoints : [],
+            targetAudience: Array.isArray(wizardState.selectedSolution.targetAudience) ? wizardState.selectedSolution.targetAudience : [],
+          });
+          return {
+            solutionMentions: solMetrics.nameMentions,
+            featuresCovered: solMetrics.mentionedFeatures.length,
+            totalFeatures: Array.isArray(wizardState.selectedSolution.features) ? wizardState.selectedSolution.features.length : 0,
+            featureIncorporation: solMetrics.featureIncorporation,
+            positioningScore: solMetrics.positioningScore,
+            mentionedFeatures: solMetrics.mentionedFeatures,
+            integrationScore: solMetrics.featureIncorporation,
+          };
+        })() : null,
       };
 
       if (companyContext) {

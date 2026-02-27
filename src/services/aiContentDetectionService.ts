@@ -133,8 +133,14 @@ Respond with ONLY this JSON:
 
     // Quality floor: high-value + deep content should never show red
     const factualDepth = result.dimensionScores?.factualDepth || 0;
-    if (contentValueScore >= 75 && factualDepth >= 18 && adjustedHumanScore < 45) {
-      adjustedHumanScore = 45;
+    const specificity = result.dimensionScores?.specificity || 0;
+    const writingVariation = result.dimensionScores?.writingVariation || 0;
+    if (contentValueScore >= 65 && factualDepth >= 15 && adjustedHumanScore < 48) {
+      adjustedHumanScore = 48;
+    }
+    // Secondary floor: specificity-driven (factual + varied but may lack personal voice)
+    if (specificity >= 18 && writingVariation >= 15 && adjustedHumanScore < 42) {
+      adjustedHumanScore = 42;
     }
 
     const dimensionScores: DimensionScores = {
