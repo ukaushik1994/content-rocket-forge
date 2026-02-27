@@ -158,10 +158,6 @@ export const useEnhancedAIChatDB = () => {
       
       setConversations(prev => [data, ...prev]);
       setActiveConversation(data.id);
-      setMessages([]);
-      
-      // Reload conversations to ensure they're fresh
-      await loadConversations();
       
       return data.id;
     } catch (error) {

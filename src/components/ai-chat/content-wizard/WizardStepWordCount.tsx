@@ -192,7 +192,7 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
                 "flex items-center gap-2 p-2.5 rounded-lg border transition-all text-left cursor-pointer",
                 writingStyle === s.value
                   ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border/30 hover:border-border/50 bg-muted/20"
+                  : "border-border/20 hover:border-border/40 bg-muted/10"
               )}
             >
               <s.icon className={cn("w-4 h-4 flex-shrink-0", writingStyle === s.value ? "text-primary" : "text-muted-foreground")} />
@@ -217,7 +217,7 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
                 "flex flex-col items-center gap-1 p-2.5 rounded-lg border transition-all cursor-pointer",
                 expertiseLevel === l.value
                   ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border/30 hover:border-border/50 bg-muted/20"
+                  : "border-border/20 hover:border-border/40 bg-muted/10"
               )}
             >
               <l.icon className={cn("w-4 h-4", expertiseLevel === l.value ? "text-primary" : "text-muted-foreground")} />
@@ -239,7 +239,7 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
                 "flex items-center gap-2 p-2.5 rounded-lg border transition-all text-left cursor-pointer",
                 contentArticleType === t.value
                   ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border/30 hover:border-border/50 bg-muted/20"
+                  : "border-border/20 hover:border-border/40 bg-muted/10"
               )}
             >
               <t.icon className={cn("w-4 h-4 flex-shrink-0", contentArticleType === t.value ? "text-primary" : "text-muted-foreground")} />
@@ -262,7 +262,7 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
               "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all cursor-pointer",
               wordCountMode === 'ai'
                 ? "border-primary bg-primary/5 shadow-sm"
-                : "border-border/30 hover:border-border/50 bg-muted/20"
+                : "border-border/20 hover:border-border/40 bg-muted/10"
             )}
           >
             <Sparkles className={cn("w-4 h-4", wordCountMode === 'ai' ? "text-primary" : "text-muted-foreground")} />
@@ -279,7 +279,7 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
               "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all cursor-pointer",
               wordCountMode === 'custom'
                 ? "border-primary bg-primary/5 shadow-sm"
-                : "border-border/30 hover:border-border/50 bg-muted/20"
+                : "border-border/20 hover:border-border/40 bg-muted/10"
             )}
           >
             <PenLine className={cn("w-4 h-4", wordCountMode === 'custom' ? "text-primary" : "text-muted-foreground")} />

@@ -122,7 +122,7 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="relative">
-                      <Avatar className={`h-14 w-14 border-2 transition-colors ${selectedSolution?.id === solution.id ? 'border-primary ring-2 ring-primary/30' : 'border-border/30 hover:border-primary/40'}`}>
+                      <Avatar className={`h-14 w-14 border-2 transition-colors ${selectedSolution?.id === solution.id ? 'border-primary ring-2 ring-primary/30' : 'border-border/20 hover:border-primary/40'}`}>
                         {solution.logoUrl ? <AvatarImage src={solution.logoUrl} alt={solution.name} className="object-cover" /> : (
                           <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground font-semibold text-sm">{getInitials(solution.name)}</AvatarFallback>
                         )}
@@ -166,7 +166,7 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
                     "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all cursor-pointer text-center",
                     contentType === format.id
                       ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border/30 hover:border-border/50 bg-muted/20"
+                      : "border-border/20 hover:border-border/40 bg-muted/10"
                   )}
                 >
                   <Icon className={cn("w-4 h-4", contentType === format.id ? "text-primary" : "text-muted-foreground")} />
