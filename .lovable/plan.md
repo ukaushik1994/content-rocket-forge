@@ -1,108 +1,128 @@
 
 
-# Fix Plan: SEO Score, Solution Feature Detection, and Human Score
+# Fix Plan: Solution Detection UI + SEO Score Alignment with Content Builder
 
-## Summary of Issues (from E2E test)
+## Problem Summary
 
-1. **SEO Score shows 65 when 5/7 checklist items pass** -- scoring weights are misaligned
-2. **Solution Feature Detection: 0/10 features despite 37 solution mentions** -- exact string matching fails on multi-word features
-3. **Human Score: 33%** -- below target; quality floor threshold too strict
+Two bugs remain from the previous fix attempt, plus the SEO scoring engine is fundamentally different from the Content Builder's proven approach.
 
 ---
 
-## Issue 1: SEO Score Calculation is Under-Weighted
+## Bug 1: Solution Feature Detection UI Still Uses Exact Matching (Critical)
 
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` (lines 75-96)
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` (line 1006)
 
-**Root Cause:** The `calculateSeoScore()` function has a max possible score of 100, but 7 items only sum to 100 if ALL items get full marks. The problem is partial-credit items (meta title 30-70 chars gets only 8 instead of 15). When 5/7 pass fully but 2 get partial, the score lands at ~65 instead of the ~75-80 a user would expect.
+**Root Cause:** The previous fix updated the **save logic** (lines 611-627) to use `analyzeSolutionIntegration()` with fuzzy matching, but the **UI display** at line 1006 still uses naive exact matching:
 
-**What the Content Builder does better:** The Content Builder's `useSeoAnalysis` hook uses a separate detailed analysis with proportional weighting and a richer checklist that maps more linearly to the user-visible score.
+```text
+const covered = features.filter((f: string) => editableContent.toLowerCase().includes(f.toLowerCase())).length;
+```
 
-**Fix:**
-- Increase base scores for critical items (keyword in title: 20, keyword in intro: 15, H2 headings: 15, word count: 10, formatting: 10) -- these remain
-- Improve partial credit: meta title 30-70 chars should get 12 (not 8), meta description 80-200 chars should get 12 (not 8)
-- Add a minimum floor: if 5+ of 7 checklist items pass, score should be at least 70
-- This prevents the confusing UX where "5/7 passed" shows a score that looks like a C-minus
+This is why the user sees "0/10 features covered" in the sidebar even though the saved metadata would be correct.
 
----
-
-## Issue 2: Solution Feature Detection Fails on Multi-Word Features (Critical)
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` (lines 607-620)
-
-**Root Cause:** The wizard's save logic uses naive exact-match: `contentToSave.toLowerCase().includes(f.toLowerCase())`. Features like "Real-time Data Synchronization" or "Enterprise-Grade Security" rarely appear verbatim in natural prose. Result: 0/10 features detected despite 37 solution name mentions.
-
-**What the Content Builder does better:** The Content Builder uses `analyzeSolutionIntegration()` from `src/utils/seo/solution/analyzeSolutionIntegration.ts` (lines 34-50) which has **semantic/fuzzy matching**: it splits each feature into words >3 chars and counts a match if 70%+ of those words appear in the content. This is far more robust.
-
-**Fix:**
-- Replace the inline exact-match logic in WizardStepGenerate's save flow (lines 607-620) with a call to `analyzeSolutionIntegration()` -- the same utility the Content Builder uses
-- This gives us `featureIncorporation`, `mentionedFeatures`, `positioningScore`, `painPointsAddressed`, `audienceAlignment` -- all computed with fuzzy matching
-- The `solutionIntegrationMetrics` in metadata will now contain accurate, comparable data
+**Fix:** Replace the inline exact-match in the UI render block (lines 1000-1024) with a call to `analyzeSolutionIntegration()` -- the same function already imported at line 16. Use `solMetrics.mentionedFeatures.length` for the display count and `solMetrics.nameMentions` for mentions.
 
 ---
 
-## Issue 3: Human Score Too Low (33%)
+## Bug 2: SEO Score Uses Wrong Algorithm
 
-**File:** `src/services/aiContentDetectionService.ts` (lines 128-138)
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` (lines 76-100)
 
-**Root Cause:** The quality floor check (line 136) requires `contentValueScore >= 75 AND factualDepth >= 18` to bump the score to 45. For content that's high-value but below 75 on the AI's subjective scale, there's no safety net. The formula `rawHuman + valueBoost` where `valueBoost = max(0, (contentValueScore - 40) * 0.6)` means a confidence of 80 (AI thinks it's AI-written) yields rawHuman=20, and unless contentValueScore is 70+, the boost is small.
+**Root Cause:** The wizard's `calculateSeoScore` is a simple 7-item checklist where each item adds fixed points. This produces unreliable scores (65 when 5/7 pass). Meanwhile, the Content Builder uses a battle-tested 3-dimension weighted algorithm from `src/utils/seo/`:
 
-**What helps:**
-- Lower the quality floor threshold from `contentValueScore >= 75` to `>= 65` and from `factualDepth >= 18` to `>= 15`
-- This ensures well-researched articles (which ours clearly are given 37 solution mentions and SERP integration) don't get flagged as "low quality"
-- Raise the floor minimum from 45 to 48 so these articles show amber "Quality OK" rather than red
-- Add a second floor: if `specificity >= 18 AND writingVariation >= 15`, set minimum to 42 (covers articles that are factual and varied but may lack personal voice)
+| Dimension | Weight | Source File |
+|-----------|--------|-------------|
+| Keyword density score | 40% | `keywordAnalysis.ts` (optimal range 1-3%) |
+| Content length score | 30% | `contentAnalysis.ts` (tiered: 300/600/1000/1500 words) |
+| Readability score | 30% | `contentAnalysis.ts` (sentence + word length penalties) |
+
+**Fix:** Replace `calculateSeoScore()` with the Content Builder's approach:
+1. Import `calculateKeywordUsage`, `calculateKeywordUsageScore` from `@/utils/seo/keywordAnalysis`
+2. Import `calculateContentLengthScore`, `calculateReadabilityScore` from `@/utils/seo/contentAnalysis`
+3. Compute: `score = keywordScore * 0.4 + contentLengthScore * 0.3 + readabilityScore * 0.3`
+
+Keep the existing `getSeoChecklist()` for the expandable checklist display, but add two new items:
+- **Keyword density** (shows actual % and optimal range)
+- **Readability** (shows avg sentence length)
+
+---
+
+## Enhancement: Richer SEO Checklist
+
+Add 2 new items to `getSeoChecklist()` (currently 7 items, becomes 9) to match Content Builder depth:
+
+1. **Keyword density**: Check if main keyword density is between 1-3%. Show actual density percentage.
+2. **Readability**: Check if avg sentence length is under 25 words.
+
+These items are display-only and don't affect the main score (which now comes from the weighted algorithm).
 
 ---
 
 ## Implementation Sequence
 
-| Step | Task | File |
-|------|------|------|
-| 1 | Fix SEO score partial-credit weights + add 5/7 floor | `WizardStepGenerate.tsx` |
-| 2 | Replace exact-match feature detection with `analyzeSolutionIntegration()` | `WizardStepGenerate.tsx` |
-| 3 | Lower quality floor thresholds + add specificity floor | `aiContentDetectionService.ts` |
-| 4 | E2E test with provided credentials | Browser test |
+| Step | Task | Lines |
+|------|------|-------|
+| 1 | Add imports for Content Builder scoring utils | Top of file |
+| 2 | Replace `calculateSeoScore` with weighted 3-dimension algorithm | Lines 76-100 |
+| 3 | Add keyword density + readability items to `getSeoChecklist` | Lines 108-156 |
+| 4 | Fix solution integration UI display to use fuzzy matching | Lines 1000-1024 |
+
+All changes are in a single file: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+
+---
 
 ## Technical Details
 
-**SEO Score fix (calculateSeoScore):**
+**New calculateSeoScore (replaces lines 76-100):**
 ```text
-// Partial credit improvements
-meta title 30-70 chars: 8 -> 12
-meta description 80-200 chars: 8 -> 12
-
-// Add floor after calculation
-if (checklist items passed >= 5) score = Math.max(score, 70)
-```
-
-**Feature detection fix (save flow):**
-```text
-// Replace lines 607-620 with:
-import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
-
-const solMetrics = analyzeSolutionIntegration(contentToSave, wizardState.selectedSolution);
-solutionIntegrationMetrics: {
-  solutionMentions: solMetrics.nameMentions,
-  featuresCovered: solMetrics.mentionedFeatures.length,
-  totalFeatures: wizardState.selectedSolution.features.length,
-  featureIncorporation: solMetrics.featureIncorporation,
-  positioningScore: solMetrics.positioningScore,
-  mentionedFeatures: solMetrics.mentionedFeatures,
-  integrationScore: solMetrics.featureIncorporation,
+function calculateSeoScore(content, keyword, metaTitle, metaDescription) {
+  // Use Content Builder's proven 3-dimension weighted algorithm
+  const keywordUsage = calculateKeywordUsage(content, keyword, []);
+  const keywordScore = calculateKeywordUsageScore(keywordUsage, keyword);
+  const contentLengthScore = calculateContentLengthScore(content);
+  const readabilityScore = calculateReadabilityScore(content);
+  
+  // Weighted average (same weights as Content Builder)
+  let score = Math.round(
+    (keywordScore * 0.4) + (contentLengthScore * 0.3) + (readabilityScore * 0.3)
+  );
+  
+  // Bonus for meta tag optimization (up to +10)
+  if (metaTitle.length >= 50 && metaTitle.length <= 60) score += 5;
+  if (metaDescription.length >= 120 && metaDescription.length <= 160) score += 5;
+  
+  return Math.min(100, score);
 }
 ```
 
-**Human score quality floors:**
+**Fixed solution UI display (replaces lines 1000-1024):**
 ```text
-// Primary floor (lowered thresholds)
-if (contentValueScore >= 65 && factualDepth >= 15 && adjustedHumanScore < 48) {
-  adjustedHumanScore = 48;
-}
-
-// Secondary floor (specificity-driven)
-if (specificity >= 18 && writingVariation >= 15 && adjustedHumanScore < 42) {
-  adjustedHumanScore = 42;
-}
+{wizardState.selectedSolution && editableContent && (() => {
+  const solMetrics = analyzeSolutionIntegration(editableContent, {
+    name: wizardState.selectedSolution.name,
+    features: Array.isArray(wizardState.selectedSolution.features) ? wizardState.selectedSolution.features : [],
+    painPoints: Array.isArray(wizardState.selectedSolution.painPoints) ? wizardState.selectedSolution.painPoints : [],
+    targetAudience: Array.isArray(wizardState.selectedSolution.targetAudience) ? wizardState.selectedSolution.targetAudience : [],
+  });
+  return (
+    <div className="...">
+      <span>{solMetrics.nameMentions} mentions of "{wizardState.selectedSolution.name}"</span>
+      <span>{solMetrics.mentionedFeatures.length}/{features.length} features covered</span>
+    </div>
+  );
+})()}
 ```
 
+**New checklist items (appended to getSeoChecklist):**
+```text
+{
+  label: 'Keyword density',
+  passed: density >= 1 && density <= 3,
+  detail: `${density.toFixed(1)}% (optimal: 1-3%)`
+},
+{
+  label: 'Readability',
+  passed: avgSentenceLength <= 25,
+  detail: `Avg sentence: ${Math.round(avgSentenceLength)} words${avgSentenceLength > 25 ? ' (shorten sentences)' : ''}`
+}
+```
