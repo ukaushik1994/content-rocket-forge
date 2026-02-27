@@ -1,95 +1,71 @@
 
+# Fix Plan: SERP Context Leak, Entity Mapping, Docstring & Fallback
 
-# Fix Plan: Boost Human Score + Search Engine Optimization
+## Issues Found
 
-## Current State (from live test)
+### Issue 1: Chunked Generation Loses SERP + Solution Context (Critical)
 
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| Meta Title | 55/60 chars | 50-60 | PASS |
-| SEO Score | 80 | 70+ | PASS |
-| Human Score | 23% | 60%+ | FAIL |
-| Word Count | 4,894 | 4,000+ | PASS |
-| Personal Voice | 5/25 | 15+ | FAIL |
-| Specificity | 20/25 | 18+ | PASS |
-| Writing Variation | 15/25 | 18+ | NEEDS WORK |
-| Factual Depth | 20/25 | 18+ | PASS |
+**File:** `src/services/advancedContentGeneration.ts` (lines 147-221)
 
-**Root cause**: The content reads like a well-researched encyclopedia article but lacks personal voice (scored 5/25). Search engines penalize this pattern. The value-adjustment formula is also too conservative.
+**Problem:** When articles are >2500 words, `generateInChunks()` splits the outline into 2-3 section groups. The FIRST chunk gets the full prompt (with all SERP items, solution data, keywords). But chunks 2+ get a stripped-down prompt (lines 165-180) that only includes:
+- Keyword and title
+- A brief summary of previous headings
+- Writing style and expertise level
+
+ALL SERP selections, solution context, secondary keywords, content gaps, and FAQ requirements are **completely lost** for chunks 2+. This means ~60-70% of a long article ignores the research data.
+
+**Fix:** Re-inject a condensed SERP + solution context block into chunks 2+ prompts. Add after line 180:
+- Selected SERP keywords to weave in
+- Solution name + mandatory mention reminder
+- Content gaps still to address
+- Secondary keywords list
+
+This requires passing the `config` object's SERP data into the continuation prompt without bloating token count (use condensed format).
 
 ---
 
-## Fix 1: Humanize the Generation Prompt
+### Issue 2: Entity Mapping Gap in WizardStepGenerate
 
-**File: `src/services/advancedContentGeneration.ts`**
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` (lines 330-335)
 
-Add explicit humanization instructions to the system prompt:
+**Problem:** The `serpSelections` array maps 4 types from `researchSelections`:
+- faqs -> type 'question'
+- contentGaps -> type 'contentGap'
+- relatedKeywords -> type 'keyword'
+- serpHeadings -> type 'heading'
 
-- "Write in first person occasionally. Use phrases like 'I have seen...', 'In my experience...', 'What most people miss is...'"
-- "Vary sentence length dramatically: mix 5-word sentences with 25-word ones"
-- "Include at least 2 personal anecdotes or opinion statements per major section"
-- "Use conversational transitions: 'Here is the thing:', 'Let me explain why:', 'You might be wondering...'"
-- "Avoid formulaic patterns: don't start every section with a definition. Start some with questions, some with bold claims, some with stories"
-- "Add contrarian takes: don't just state the obvious. Challenge common assumptions at least twice in the article"
+But `researchSelections` also contains **entities** (discovered during research step). These are never passed to the generation prompt, so entity coverage is missed.
 
-These instructions make the AI produce content that scores higher on personalVoice and writingVariation dimensions.
-
-## Fix 2: Increase Value Boost Formula
-
-**File: `src/services/aiContentDetectionService.ts`**
-
-Change the formula from:
+**Fix:** Add entity mapping to the serpSelections array:
 ```text
-valueBoost = max(0, (contentValueScore - 50) * 0.4)
-```
-To:
-```text
-valueBoost = max(0, (contentValueScore - 40) * 0.6)
+...wizardState.researchSelections.entities?.map(e => ({
+  type: 'entity', content: e, source: 'serp', selected: true
+})) || []
 ```
 
-With contentValueScore=70: old boost = 8, new boost = 18. Result: 15 + 18 = 33%.
+---
 
-Combined with the humanized prompt (which should raise raw human from 15% to ~35%), expected final score: 35 + 12 = ~47-55%.
+### Issue 3: Stale Docstring in AI Detection Service
 
-Additionally, add a "quality floor": if contentValueScore >= 75 AND factualDepth >= 18, set minimum adjustedHumanScore to 45%. This prevents high-value content from being flagged red.
+**File:** `src/services/aiContentDetectionService.ts` (line 43)
 
-## Fix 3: Improve Badge Thresholds
+**Problem:** Docstring says `adjustedHumanScore = rawHuman + max(0, (contentValueScore - 50) * 0.4)` but actual code (line 131) uses `(contentValueScore - 40) * 0.6`. Misleading for anyone reading the code.
 
-**File: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`**
+**Fix:** Update docstring to match actual formula: `(contentValueScore - 40) * 0.6`
 
-Current thresholds are too strict for AI-generated content. Adjust:
+---
 
-| Range | Old Label | New Label | Color |
-|-------|-----------|-----------|-------|
-| 60%+ | Human: X% | Human: X% | Green |
-| 40-59% | Value Pass: X% | Value Pass: X% | Amber |
-| 25-39% with value >= 65 | Human: X% (red) | Quality OK: X% | Amber (not red) |
-| Below 25% with low value | Human: X% | AI Detected: X% | Red |
+### Issue 4: Bare Skeleton Fallback on Generation Failure
 
-This prevents false alarms on genuinely valuable content.
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` (lines 377-381, 386-391)
 
-## Fix 4: Verify GL Connect Solution Mentions
+**Problem:** When AI generation fails or returns empty, the fallback creates bare HTML like `<h2>Title</h2><p>Write about Title here.</p>`. This has zero SEO value and no keyword integration.
 
-**File: `src/services/advancedContentGeneration.ts`**
-
-The solution-aware prompt was injected (confirmed in logs), but the content may still skip mentions. Strengthen the instruction:
-
-- Move the "MANDATORY: mention solution 2+ times" instruction from the end of the prompt to the beginning (higher priority in LLM attention)
-- Add a specific example: "For example, if writing about AI in healthcare and the solution is GL Connect, mention how GL Connect's data integration capabilities parallel healthcare data challenges"
-
-## Fix 5: Add Search Engine Optimization Signals to Content
-
-**File: `src/services/advancedContentGeneration.ts`**
-
-Add SEO-specific generation instructions:
-
-- "Include a FAQ section at the end with 3-5 questions using 'People Also Ask' format"
-- "Use the exact keyword phrase in the first 100 characters of the article"
-- "Add a TL;DR or key takeaways section near the top for featured snippet eligibility"
-- "Use numbered lists and bullet points in at least 2 sections for rich snippet formatting"
-- "Include schema-friendly structures: step-by-step processes, comparison tables, definition boxes"
-
-These structural signals improve search engine ranking potential beyond the SEO score.
+**Fix:** Replace with a keyword-rich markdown outline that includes:
+- H1 with the main keyword
+- H2s from the outline with brief keyword-integrated prompts
+- A placeholder FAQ section with selected questions
+- Secondary keywords listed for reference
 
 ---
 
@@ -97,21 +73,38 @@ These structural signals improve search engine ranking potential beyond the SEO 
 
 | Step | Task | File |
 |------|------|------|
-| 1 | Add humanization instructions to generation prompt | advancedContentGeneration.ts |
-| 2 | Update value boost formula + quality floor | aiContentDetectionService.ts |
-| 3 | Fix badge thresholds for quality content | WizardStepGenerate.tsx |
-| 4 | Strengthen solution mention priority | advancedContentGeneration.ts |
-| 5 | Add SEO structural signals to prompt | advancedContentGeneration.ts |
-| 6 | End-to-end retest with same credentials | Browser test |
+| 1 | Re-inject SERP + solution context into chunked generation (chunks 2+) | `advancedContentGeneration.ts` |
+| 2 | Add entity mapping to serpSelections array | `WizardStepGenerate.tsx` |
+| 3 | Fix stale docstring to match actual formula | `aiContentDetectionService.ts` |
+| 4 | Replace bare fallback with keyword-rich outline | `WizardStepGenerate.tsx` |
+| 5 | End-to-end test with provided credentials | Browser test |
 
-## Expected Outcomes After Fix
+## Technical Details
 
-| Metric | Before | After (expected) |
-|--------|--------|-------------------|
-| Human Score | 23% | 50-65% |
-| Personal Voice | 5/25 | 15-20/25 |
-| Writing Variation | 15/25 | 20-23/25 |
-| SEO Score | 80 | 85-92 |
-| Solution Mentions | 0 | 2-4 |
-| Featured Snippet Eligible | No | Yes (FAQ + TL;DR) |
+**Chunk 2+ prompt injection (condensed format to save tokens):**
+```text
+SERP CONTEXT (integrate throughout):
+- Keywords: ${selectedKeywords.join(', ')}
+- Solution "${solutionName}": mention at least once in this section
+- Content gaps to address: ${remainingGaps}
+- Secondary keywords: ${secondaryKeywords}
+```
 
+**Keyword-rich fallback template:**
+```text
+# ${title}
+
+${keyword} is a topic that requires detailed exploration...
+
+## ${outlineSection.title}
+
+[Content about ${outlineSection.title} related to ${keyword}]
+
+## Frequently Asked Questions
+
+### ${faq1}
+### ${faq2}
+
+---
+*Keywords: ${secondaryKeywords}*
+```
