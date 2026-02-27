@@ -338,6 +338,23 @@ export async function generateAdvancedContent(
 5. ENGAGING: Use clear, conversational language that keeps readers interested
 6. WELL-STRUCTURED: Follow logical flow with proper headings and formatting
 
+HUMANIZATION RULES (MANDATORY — these prevent AI-detection flags):
+- Write in first person occasionally. Use phrases like "I have seen...", "In my experience...", "What most people miss is...", "Here is what surprised me..."
+- Vary sentence length dramatically: mix 5-word punchy sentences with 25-word explanatory ones
+- Include at least 2 personal anecdotes, opinions, or "hot takes" per major section
+- Use conversational transitions: "Here is the thing:", "Let me explain why:", "You might be wondering...", "But wait—"
+- Avoid formulaic patterns: do NOT start every section with a definition. Start some with questions, some with bold claims, some with short stories
+- Add contrarian takes: challenge common assumptions at least twice in the article. Say "Most guides will tell you X, but actually..."
+- Break the fourth wall occasionally: address the reader directly, ask rhetorical questions, use humor sparingly
+- Use incomplete sentences for emphasis. Like this. It works.
+
+SEO STRUCTURAL SIGNALS (MANDATORY — these improve search ranking):
+- Include the exact primary keyword phrase within the first 100 characters of the article
+- Add a "Key Takeaways" or "TL;DR" section near the top (after intro) with 3-5 bullet points for featured snippet eligibility
+- Include a FAQ section at the end with 3-5 questions using "People Also Ask" format (## Frequently Asked Questions)
+- Use numbered lists and bullet points in at least 2 sections for rich snippet formatting
+- Include at least one comparison table or step-by-step process for schema-friendly structure
+
 WRITING STYLE RULES (MANDATORY — VIOLATION = FAILURE):
 - NEVER start with "In today's [adjective] world/environment/landscape" or any variation
 - NEVER use these words/phrases: "game-changer", "revolutionize", "landscape", "paramount", "leverage", "navigate the complexities", "realm", "tapestry", "comprehensive guide", "delve into", "it's important to note", "In conclusion", "without further ado", "let's dive in", "at the end of the day", "unlock the power", "harness the potential", "cutting-edge", "seamless", "robust"
@@ -742,15 +759,16 @@ ${Array.isArray(sol.keyDifferentiators) && sol.keyDifferentiators.length > 0 ? `
     }
 
     prompt += `
-SOLUTION INTEGRATION REQUIREMENTS (MANDATORY):
-- You MUST mention "${selectedSolution.name}" by name at least 2 times in the content
+⚠️ SOLUTION INTEGRATION — HIGHEST PRIORITY (READ THIS FIRST):
+- You MUST mention "${selectedSolution.name}" by name at LEAST 2 times in the content — this is non-negotiable
+- For example, if writing about AI in healthcare and the solution is "${selectedSolution.name}", mention how ${selectedSolution.name}'s capabilities (data integration, workflow optimization, analytics) parallel the challenges discussed in the article
 - Naturally weave the offering's features and benefits throughout the content
 - Address specific pain points the offering solves with concrete examples
 - Reference case studies and metrics as proof points
 - Use competitive positioning to highlight differentiators
 - Include pricing context where relevant
 - End with a compelling call-to-action related to the offering
-- EVEN IF the solution is from a different industry than the topic, FIND creative cross-industry angles:
+- EVEN IF the solution is from a different industry than the topic, you MUST FIND creative cross-industry angles:
   * Data integration or workflow optimization parallels
   * Analytics or reporting capabilities that apply across domains
   * Complementary use cases where the solution enhances the topic's outcomes

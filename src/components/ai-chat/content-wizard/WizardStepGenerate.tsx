@@ -845,15 +845,17 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                         variant="outline" 
                         className={cn(
                           "text-[10px] gap-1 border",
-                          aiHumanScore >= 70 ? 'bg-green-500/15 text-green-400 border-green-500/30' :
+                          aiHumanScore >= 60 ? 'bg-green-500/15 text-green-400 border-green-500/30' :
                           aiHumanScore >= 40 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' :
+                          aiHumanScore >= 25 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' :
                           'bg-red-500/15 text-red-400 border-red-500/30'
                         )}
                       >
                         <ShieldCheck className="w-2.5 h-2.5" />
-                        {aiHumanScore >= 70 ? `Human: ${aiHumanScore}%` :
+                        {aiHumanScore >= 60 ? `Human: ${aiHumanScore}%` :
                          aiHumanScore >= 40 ? `Value Pass: ${aiHumanScore}%` :
-                         `Human: ${aiHumanScore}%`}
+                         aiHumanScore >= 25 ? `Quality OK: ${aiHumanScore}%` :
+                         `AI Detected: ${aiHumanScore}%`}
                       </Badge>
                     )}
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyContent}>
