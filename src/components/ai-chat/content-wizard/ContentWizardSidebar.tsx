@@ -148,7 +148,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     if (currentStep === 0 && wizardState.keyword.trim().length < 2) {
       toast.error('Please enter a topic to continue');
       setValidationError(true);
-      setTimeout(() => setValidationError(false), 2000);
+      setTimeout(() => setValidationError(false), 4000);
       return;
     }
     if (currentStep === 0 && !wizardState.selectedSolution) {

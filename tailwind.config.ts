@@ -126,6 +126,11 @@ export default {
 					'0%': { backgroundPosition: '0% 50%' },
 					'50%': { backgroundPosition: '100% 50%' },
 					'100%': { backgroundPosition: '0% 50%' }
+				},
+				'shake': {
+					'0%, 100%': { transform: 'translateX(0)' },
+					'20%, 60%': { transform: 'translateX(-4px)' },
+					'40%, 80%': { transform: 'translateX(4px)' },
 				}
 			},
 			animation: {
@@ -133,7 +138,8 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
 				'float': 'float 6s ease-in-out infinite',
-				'gradient-shift': 'gradient-shift 15s ease infinite'
+				'gradient-shift': 'gradient-shift 15s ease infinite',
+				'shake': 'shake 0.4s ease-in-out',
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

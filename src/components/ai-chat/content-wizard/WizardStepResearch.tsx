@@ -40,6 +40,11 @@ const TEMPLATED_PATTERNS = [
   /ultimate\s+guide$/i,
   /^a\s+guide\s+to/i,
   /for\s+beginners$/i,
+  /definition\s+and\s+overview$/i,
+  /^key\s+(benefits|features|advantages)/i,
+  /^(the\s+)?(importance|role)\s+of/i,
+  /step.by.step/i,
+  /pros?\s+and\s+cons?/i,
 ];
 
 function isTemplatedHeading(text: string, keyword: string): boolean {

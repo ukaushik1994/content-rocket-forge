@@ -138,7 +138,7 @@ async function generateInChunks(
     }
 
     const wordsPerChunk = Math.ceil(config.targetLength / chunks.length);
-    const tokensPerChunk = Math.max(4000, Math.ceil(wordsPerChunk * 1.8)); // ~1.8 tokens per word with markdown
+    const tokensPerChunk = Math.max(4000, Math.ceil(wordsPerChunk * 2.2)); // ~2.2 tokens per word for reliable output
     const allParts: string[] = [];
     let previousSummary = '';
 
@@ -159,7 +159,7 @@ IMPORTANT: You are writing PART 1 of ${chunks.length} of this article. Write ONL
 
 ${chunkOutline}
 
-You MUST write approximately ${wordsPerChunk} words for these sections. Do NOT write a conclusion or wrap up — more sections follow.
+ABSOLUTE MINIMUM: ${wordsPerChunk} words for these sections. Write detailed, thorough content with examples, explanations, and analysis for each section. Do NOT summarize or be brief. Do NOT write a conclusion or wrap up — more sections follow.
 Start with the H1 title and these opening sections.`;
       } else {
         chunkPrompt = `You are continuing an article about "${config.mainKeyword}" titled "${config.title}".
@@ -172,7 +172,7 @@ Now write the NEXT sections (Part ${i + 1} of ${chunks.length}):
 ${chunkOutline}
 
 REQUIREMENTS:
-- Write approximately ${wordsPerChunk} words for these sections
+- ABSOLUTE MINIMUM: ${wordsPerChunk} words for these sections. Write detailed, thorough content with examples, explanations, and analysis. Do NOT summarize or be brief
 - Continue naturally from the previous content — do NOT repeat the title or introduction
 - Do NOT start with a heading that summarizes the whole article
 ${isLast ? '- This is the FINAL part — include a strong conclusion and any FAQ section if appropriate' : '- Do NOT write a conclusion — more sections follow'}
@@ -230,6 +230,14 @@ ${isLast ? '- This is the FINAL part — include a strong conclusion and any FAQ
         part = part.replace(titleMatch[0], '');
       }
       finalContent += '\n\n' + part.trim();
+    }
+
+    const totalWords = finalContent.split(/\s+/).length;
+    const targetRatio = totalWords / config.targetLength;
+    if (targetRatio < 0.8) {
+      console.warn(`⚠️ Word count undershoot: ${totalWords} words vs ${config.targetLength} target (${Math.round(targetRatio * 100)}%)`);
+    } else {
+      console.log(`✅ Final word count: ${totalWords} words (${Math.round(targetRatio * 100)}% of ${config.targetLength} target)`);
     }
 
     return finalContent;

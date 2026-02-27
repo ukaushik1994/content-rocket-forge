@@ -64,6 +64,7 @@ Respond with ONLY this JSON structure:
           ],
           max_tokens: 800,
           temperature: 0.3,
+          response_format: { type: "json_object" },
         }
       }
     });
@@ -83,13 +84,24 @@ Respond with ONLY this JSON structure:
       return null;
     }
 
-    const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.warn('No JSON found in AI detection response:', responseContent.slice(0, 200));
-      return null;
+    let result: any;
+    try {
+      // Try direct parse first (JSON mode should return pure JSON)
+      result = JSON.parse(responseContent);
+    } catch {
+      // Fallback: strip markdown code fences then extract JSON
+      const stripped = responseContent.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+      try {
+        result = JSON.parse(stripped);
+      } catch {
+        const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          console.warn('No JSON found in AI detection response:', responseContent.slice(0, 300));
+          return null;
+        }
+        result = JSON.parse(jsonMatch[0]);
+      }
     }
-
-    const result = JSON.parse(jsonMatch[0]);
 
     return {
       isAIWritten: result.isAIWritten || false,

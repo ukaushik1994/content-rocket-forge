@@ -146,11 +146,11 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "launch_content_wizard",
-      description: "Launch the interactive content creation wizard. The 'keyword' parameter is REQUIRED. If the user has NOT specified a clear topic, keyword, or title (e.g. they just say 'create a blog'), you MUST ask them: 'What topic or keyword would you like to write about?' BEFORE calling this tool. Once they provide a title or topic, extract the core keyword/phrase and pass it as the 'keyword' parameter. Never call with an empty or generic keyword.",
+      description: "Launch the interactive content creation wizard. The 'keyword' parameter is REQUIRED and must be a specific subject matter topic. Common words like 'post', 'blog', 'blog post', 'article', 'content', 'piece', 'write' are NOT valid keywords — these are format descriptors, not topics. A valid keyword is a specific subject (e.g. 'AI in healthcare', 'email marketing', 'best running shoes'). If the user has NOT specified a clear topic (e.g. they just say 'create a blog' or 'write a post'), you MUST ask them: 'What topic or keyword would you like to write about?' BEFORE calling this tool. Never call with a generic or format-only keyword.",
       parameters: {
         type: "object",
         properties: {
-          keyword: { type: "string", description: "The main topic, keyword, or phrase the user wants to write about. Extract from their title or topic. REQUIRED - never leave empty." },
+          keyword: { type: "string", description: "The specific subject matter topic the user wants to write about. Must be a real topic (e.g. 'AI in healthcare'), NOT a format word like 'post' or 'blog'. REQUIRED - never leave empty or generic." },
           solution_id: { type: "string", description: "Optional solution ID to pre-select" },
           content_type: { type: "string", enum: ["blog", "article", "guide"], default: "blog", description: "Type of content to create" }
         },
