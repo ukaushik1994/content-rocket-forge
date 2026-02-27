@@ -1,5 +1,6 @@
 import { SerpSelection } from '@/contexts/content-builder/types';
 import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
+import { getPromptTemplatesByType } from '@/services/userPreferencesService';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ContentGenerationConfig {
@@ -177,7 +178,7 @@ export async function generateAdvancedContent(
 
     // Choose system prompt based on format
     const formatSystemPrompt = config.formatType ? getSystemPromptForFormat(config.formatType) : '';
-    const systemPrompt = formatSystemPrompt || `You are an expert content writer specializing in creating comprehensive, SEO-optimized articles that genuinely help readers. Your content is:
+    let systemPrompt = formatSystemPrompt || `You are an expert content writer specializing in creating comprehensive, SEO-optimized articles that genuinely help readers. Your content is:
 
 1. HELPFUL FIRST: Always prioritize providing real value to readers over SEO optimization
 2. ACCURATE: Base content on factual information and best practices
@@ -185,6 +186,28 @@ export async function generateAdvancedContent(
 4. ACTIONABLE: Provide concrete steps and practical advice readers can implement
 5. ENGAGING: Use clear, conversational language that keeps readers interested
 6. WELL-STRUCTURED: Follow logical flow with proper headings and formatting
+
+WRITING STYLE RULES (MANDATORY — VIOLATION = FAILURE):
+- NEVER start with "In today's [adjective] world/environment/landscape" or any variation
+- NEVER use these words/phrases: "game-changer", "revolutionize", "landscape", "paramount", "leverage", "navigate the complexities", "realm", "tapestry", "comprehensive guide", "delve into", "it's important to note", "In conclusion", "without further ado", "let's dive in", "at the end of the day", "unlock the power", "harness the potential", "cutting-edge", "seamless", "robust"
+- Start articles with a specific fact, statistic, question, or real scenario — never a generic opener
+- Write like a subject-matter expert talking to a peer, not an AI summarizing a topic
+- Use concrete numbers, specific examples, and named references wherever possible
+- Vary sentence length deliberately. Mix short punchy sentences with longer explanatory ones
+- Use active voice. Avoid passive constructions
+- No filler paragraphs — every paragraph MUST advance the reader's understanding
+- When mentioning a solution/product, integrate it as a natural recommendation within the educational flow — NEVER shift to sales copy tone
+
+DEPTH RULES (MANDATORY):
+- When listing items, include specific details (version numbers, module names, config steps, exact metrics)
+- Replace generic bullet points with actionable steps a practitioner can follow immediately
+- Include at least one specific example, metric, or benchmark per major section
+- Prefer "Company X achieved Y% improvement in Z months" over "organizations have reported improvements"
+
+CASE STUDY RULES (when case studies are provided):
+- You MUST cite each case study with the EXACT company name, industry, and numerical results provided
+- NEVER paraphrase case studies into vague statements like "organizations have reported improvements"
+- Each case study = a concrete proof point with specific metrics placed in the most relevant section
 
 CRITICAL: You MUST strategically incorporate ALL selected SERP elements provided in the prompt. These elements represent competitive research and content opportunities that should be woven throughout your content:
 - Answer ALL selected questions as dedicated sections or FAQ entries
@@ -201,6 +224,24 @@ When incorporating SERP research data:
 - Structure content based on proven heading patterns from SERP analysis
 
 Always start with the title as an H1 heading and follow the provided outline structure. Focus on creating content that readers will find genuinely useful and that search engines will recognize as high-quality.`;
+
+    // Integrate user's custom prompt template as additive layer (Settings → on top of Wizard)
+    const formatForTemplate = config.formatType || 'blog';
+    try {
+      const userTemplates = getPromptTemplatesByType(formatForTemplate);
+      if (userTemplates.length > 0) {
+        const userTemplate = userTemplates[0];
+        if (userTemplate.promptTemplate) {
+          systemPrompt += `\n\nADDITIONAL USER PREFERENCES (follow these on top of all rules above):\n${userTemplate.promptTemplate}`;
+          console.log('📋 Appended user prompt template for format:', formatForTemplate);
+        }
+        if (userTemplate.structureTemplate) {
+          systemPrompt += `\n\nUSER STRUCTURE PREFERENCES:\n${userTemplate.structureTemplate}`;
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not load user prompt templates:', e);
+    }
 
     // Get user's active AI provider directly
     console.log(`🚀 Advanced content generation via direct ai-proxy`);
@@ -578,7 +619,7 @@ ${additionalInstructions}
 4. **Keyword Integration**: Naturally incorporate ALL selected keywords throughout the content
 5. **Content Gap Coverage**: Address ALL content gaps to provide unique value
 6. **Quality**: Write engaging, informative content that provides real value to readers
-7. **Length**: Aim for approximately ${config.targetLength} words with substantial, meaningful content
+7. **Length**: You MUST write between ${Math.floor(config.targetLength * 0.9)} and ${Math.ceil(config.targetLength * 1.1)} words. This is a hard requirement — count your output carefully
 8. **Expertise**: Write at the ${config.expertiseLevel} level with appropriate depth and complexity
 9. **Style**: Use a ${config.writingStyle} tone throughout the content
 
