@@ -1,6 +1,5 @@
 
-import AIServiceController from '@/services/aiService/AIServiceController';
-import { AiProvider } from '@/services/aiService/types';
+import { supabase } from "@/integrations/supabase/client";
 
 export interface AIDetectionResult {
   isAIWritten: boolean;
@@ -10,41 +9,88 @@ export interface AIDetectionResult {
 }
 
 /**
- * Detect if content is AI-written and provide humanization suggestions
+ * Get the user's active AI provider for direct ai-proxy calls
+ */
+async function getActiveProvider() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: provider } = await supabase
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .order('priority', { ascending: true })
+    .limit(1)
+    .single();
+
+  return provider;
+}
+
+/**
+ * Detect if content is AI-written and provide humanization suggestions.
+ * Calls ai-proxy directly for reliable JSON extraction.
  */
 export async function detectAIContent(
-  content: string,
-  provider: AiProvider = 'openai'
+  content: string
 ): Promise<AIDetectionResult | null> {
   try {
-    const response = await AIServiceController.generate({
-      input: `Analyze this content for AI writing patterns and provide humanization suggestions:
-
-${content}
-
-Respond in JSON format:
-{
-  "isAIWritten": boolean,
-  "confidence": number (0-100),
-  "aiIndicators": ["indicator1", "indicator2"],
-  "humanizationSuggestions": ["suggestion1", "suggestion2"]
-}`,
-      use_case: 'strategy',
-      temperature: 0.3,
-      max_tokens: 1000
-    });
-
-    if (!response?.content) {
-      throw new Error('No response from AI detection service');
+    const provider = await getActiveProvider();
+    if (!provider) {
+      console.warn('No AI provider configured for AI detection');
+      return null;
     }
 
-    const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+    const { data: aiData, error } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'chat',
+        params: {
+          model: provider.preferred_model || 'gpt-4',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an AI content detection analyst. Return ONLY valid JSON, no other text, no markdown fences.'
+            },
+            {
+              role: 'user',
+              content: `Analyze this content for AI writing patterns and provide humanization suggestions.
+
+${content.slice(0, 3000)}
+
+Respond with ONLY this JSON structure:
+{"isAIWritten": true/false, "confidence": 0-100, "aiIndicators": ["indicator1"], "humanizationSuggestions": ["suggestion1"]}`
+            }
+          ],
+          max_tokens: 800,
+          temperature: 0.3,
+        }
+      }
+    });
+
+    if (error) {
+      console.error('AI detection proxy error:', error);
+      return null;
+    }
+
+    const responseContent = aiData?.data?.choices?.[0]?.message?.content
+      || aiData?.choices?.[0]?.message?.content
+      || aiData?.content
+      || '';
+
+    if (!responseContent) {
+      console.warn('Empty response from AI detection');
+      return null;
+    }
+
+    const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('No JSON found in AI detection response');
+      console.warn('No JSON found in AI detection response:', responseContent.slice(0, 200));
+      return null;
     }
 
     const result = JSON.parse(jsonMatch[0]);
-    
+
     return {
       isAIWritten: result.isAIWritten || false,
       confidence: result.confidence || 0,
@@ -62,12 +108,26 @@ Respond in JSON format:
  */
 export async function humanizeContent(
   content: string,
-  suggestions: string[],
-  provider: AiProvider = 'openai'
+  suggestions: string[]
 ): Promise<string | null> {
   try {
-    const response = await AIServiceController.generate({
-      input: `Humanize this content based on these specific suggestions:
+    const provider = await getActiveProvider();
+    if (!provider) return null;
+
+    const { data: aiData, error } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'chat',
+        params: {
+          model: provider.preferred_model || 'gpt-4',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a content editor. Humanize AI-written content to sound more natural. Return ONLY the rewritten content, no commentary.'
+            },
+            {
+              role: 'user',
+              content: `Humanize this content based on these suggestions:
 
 SUGGESTIONS:
 ${suggestions.map(s => `- ${s}`).join('\n')}
@@ -75,13 +135,21 @@ ${suggestions.map(s => `- ${s}`).join('\n')}
 CONTENT TO HUMANIZE:
 ${content}
 
-Make it sound more natural and human-written while keeping all the important information and structure intact.`,
-      use_case: 'content_generation',
-      temperature: 0.7,
-      max_tokens: 3000
+Rewrite it to sound more natural and human-written while keeping all important information and structure intact.`
+            }
+          ],
+          max_tokens: 4000,
+          temperature: 0.7,
+        }
+      }
     });
 
-    return response?.content || null;
+    if (error) return null;
+
+    return aiData?.data?.choices?.[0]?.message?.content
+      || aiData?.choices?.[0]?.message?.content
+      || aiData?.content
+      || null;
   } catch (error) {
     console.error('Error humanizing content:', error);
     return null;

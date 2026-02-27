@@ -29,6 +29,29 @@ interface ResearchData {
   serpHeadings: { text: string; source: 'serp' | 'ai' }[];
 }
 
+// Heuristic to detect templated/generic headings that shouldn't be labeled "From SERP"
+const TEMPLATED_PATTERNS = [
+  /tips\s+and\s+tricks$/i,
+  /^(top|best)\s+\d+/i,
+  /complete\s+guide$/i,
+  /everything\s+you\s+need/i,
+  /^what\s+is\s+/i,
+  /^how\s+to\s+/i,
+  /ultimate\s+guide$/i,
+  /^a\s+guide\s+to/i,
+  /for\s+beginners$/i,
+];
+
+function isTemplatedHeading(text: string, keyword: string): boolean {
+  const withoutKeyword = text.replace(new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+  return TEMPLATED_PATTERNS.some(p => p.test(withoutKeyword)) || withoutKeyword.length < 5;
+}
+
+function sanitizeSource(text: string, keyword: string, originalSource: 'serp' | 'ai'): 'serp' | 'ai' {
+  if (originalSource === 'serp' && isTemplatedHeading(text, keyword)) return 'ai';
+  return originalSource;
+}
+
 export const WizardStepResearch: React.FC<WizardStepResearchProps> = ({
   keyword,
   selections,
@@ -53,10 +76,10 @@ export const WizardStepResearch: React.FC<WizardStepResearchProps> = ({
         // Store raw SERP data for comprehensive metadata persistence
         onSerpDataChange?.(serpResult);
         setData({
-          faqs: (serpResult.peopleAlsoAsk || []).map(q => ({ text: typeof q === 'string' ? q : (q as any).question || String(q), source: 'serp' as const })),
-          contentGaps: (serpResult.contentGaps || []).map(g => ({ text: typeof g === 'string' ? g : (g as any).topic || (g as any).description || (g as any).content || JSON.stringify(g), source: 'serp' as const })),
-          relatedKeywords: (serpResult.relatedSearches || serpResult.keywords || []).map(k => ({ text: typeof k === 'string' ? k : (k as any).query || (k as any).keyword || String(k), source: 'serp' as const })),
-          serpHeadings: (serpResult.headings || []).map(h => ({ text: typeof h === 'string' ? h : (h as any).text || (h as any).title || (h as any).heading || JSON.stringify(h), source: 'serp' as const })),
+          faqs: (serpResult.peopleAlsoAsk || []).map(q => { const t = typeof q === 'string' ? q : (q as any).question || String(q); return { text: t, source: sanitizeSource(t, keyword, 'serp') }; }),
+          contentGaps: (serpResult.contentGaps || []).map(g => { const t = typeof g === 'string' ? g : (g as any).topic || (g as any).description || (g as any).content || JSON.stringify(g); return { text: t, source: sanitizeSource(t, keyword, 'serp') }; }),
+          relatedKeywords: (serpResult.relatedSearches || serpResult.keywords || []).map(k => { const t = typeof k === 'string' ? k : (k as any).query || (k as any).keyword || String(k); return { text: t, source: sanitizeSource(t, keyword, 'serp') }; }),
+          serpHeadings: (serpResult.headings || []).map(h => { const t = typeof h === 'string' ? h : (h as any).text || (h as any).title || (h as any).heading || JSON.stringify(h); return { text: t, source: sanitizeSource(t, keyword, 'serp') }; }),
         });
       } else {
         // Fallback: AI-generated research

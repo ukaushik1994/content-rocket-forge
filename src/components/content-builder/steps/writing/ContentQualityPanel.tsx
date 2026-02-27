@@ -57,7 +57,7 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
       }
 
       // Run AI detection
-      const aiResult = await detectAIContent(content, aiProvider);
+      const aiResult = await detectAIContent(content);
       if (aiResult) {
         setAiDetection(aiResult);
       }

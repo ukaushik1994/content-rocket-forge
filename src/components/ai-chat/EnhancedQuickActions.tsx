@@ -7,7 +7,7 @@ interface EnhancedQuickActionsProps {
 
 export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAction }) => {
   const suggestions = [
-    { text: 'Write content', prompt: 'Create a new blog post about trending industry topics' },
+    { text: 'Write content', prompt: 'I want to create a new blog post' },
     { text: 'Research keywords', prompt: 'Add keyword "content marketing" and run SERP analysis' },
     { text: 'Run a campaign', prompt: 'Help me set up and run a new campaign' },
     { text: 'Draft an email', prompt: 'Create a new email campaign for my latest content' },
