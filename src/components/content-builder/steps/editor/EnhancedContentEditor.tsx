@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Eye, Edit3, Download, Copy, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import ReactMarkdown from 'react-markdown';
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown';
 import { motion } from 'framer-motion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -271,77 +271,9 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
         <div className="min-h-[500px] w-full">
           {content ? (
             <div className="prose prose-gray dark:prose-invert max-w-none">
-              <ReactMarkdown
-                components={{
-                  h1: ({ children }) => (
-                    <h1 className="text-2xl font-bold mb-4 text-foreground border-b border-border pb-2">
-                      {children}
-                    </h1>
-                  ),
-                  h2: ({ children }) => (
-                    <h2 className="text-xl font-semibold mb-3 mt-6 text-foreground">
-                      {children}
-                    </h2>
-                  ),
-                  h3: ({ children }) => (
-                    <h3 className="text-lg font-medium mb-2 mt-4 text-foreground">
-                      {children}
-                    </h3>
-                  ),
-                  p: ({ children }) => (
-                    <p className="mb-4 text-muted-foreground leading-relaxed">
-                      {children}
-                    </p>
-                  ),
-                  ul: ({ children }) => (
-                    <ul className="mb-4 ml-6 list-disc space-y-1 text-muted-foreground">
-                      {children}
-                    </ul>
-                  ),
-                  ol: ({ children }) => (
-                    <ol className="mb-4 ml-6 list-decimal space-y-1 text-muted-foreground">
-                      {children}
-                    </ol>
-                  ),
-                  li: ({ children }) => (
-                    <li className="text-muted-foreground">
-                      {children}
-                    </li>
-                  ),
-                  strong: ({ children }) => (
-                    <strong className="font-semibold text-foreground">
-                      {children}
-                    </strong>
-                  ),
-                  em: ({ children }) => (
-                    <em className="italic text-muted-foreground">
-                      {children}
-                    </em>
-                  ),
-                  a: ({ children, href }) => (
-                    <a 
-                      href={href} 
-                      className="text-primary hover:underline"
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                    >
-                      {children}
-                    </a>
-                  ),
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4">
-                      {children}
-                    </blockquote>
-                  ),
-                  code: ({ children }) => (
-                    <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono">
-                      {children}
-                    </code>
-                  ),
-                }}
-              >
+              <SafeMarkdown className="prose prose-gray dark:prose-invert max-w-none">
                 {content}
-              </ReactMarkdown>
+              </SafeMarkdown>
             </div>
           ) : (
             <div className="flex items-center justify-center h-[500px] text-muted-foreground">

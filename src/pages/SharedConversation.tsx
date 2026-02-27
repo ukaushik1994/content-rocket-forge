@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
-import ReactMarkdown from 'react-markdown';
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown';
 
 interface SharedMessage {
   id: string;
@@ -194,7 +194,7 @@ const SharedConversation: React.FC = () => {
                       "prose prose-sm max-w-none",
                       message.type === 'user' && 'prose-invert'
                     )}>
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                      <SafeMarkdown>{message.content}</SafeMarkdown>
                     </div>
                     <div className={cn(
                       "text-xs mt-2 opacity-60",

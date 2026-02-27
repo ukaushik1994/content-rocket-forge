@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
 import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
@@ -752,7 +752,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                 <TabsContent value="preview" className="mt-0">
                   <div className="rounded-lg border border-border/20 bg-muted/20 max-h-[300px] overflow-auto p-3">
                     <div className="prose prose-sm prose-invert max-w-none text-xs">
-                      <ReactMarkdown>{editableContent || contentToSave}</ReactMarkdown>
+                      <SafeMarkdown>{editableContent || contentToSave}</SafeMarkdown>
                     </div>
                   </div>
                 </TabsContent>
