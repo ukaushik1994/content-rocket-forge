@@ -229,7 +229,23 @@ export function FormatPromptSettings() {
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Prompt Templates</h2>
         <p className="text-muted-foreground">
-          Customize AI prompts for each content format
+          Add custom style preferences on top of the Content Wizard's built-in rules
+        </p>
+      </div>
+
+      {/* Wizard-handled info */}
+      <div className="rounded-lg border border-border/30 bg-muted/20 p-4 space-y-2">
+        <p className="text-xs font-medium text-foreground">The Content Wizard already handles:</p>
+        <ul className="text-[11px] text-muted-foreground space-y-0.5 list-disc pl-4">
+          <li>Content structure and outline</li>
+          <li>Word count targets</li>
+          <li>SEO and keyword optimization</li>
+          <li>Solution/offering integration</li>
+          <li>SERP research data</li>
+          <li>Writing quality and anti-AI rules</li>
+        </ul>
+        <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/20">
+          <span className="font-medium text-foreground">Your custom prompts add ON TOP of these.</span> Use them for tone preferences, banned words, formatting rules, or industry-specific terminology.
         </p>
       </div>
 

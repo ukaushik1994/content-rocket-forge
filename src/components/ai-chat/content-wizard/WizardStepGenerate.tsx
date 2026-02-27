@@ -228,17 +228,22 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       parts.push(wizardState.additionalInstructions);
     }
 
+    // Structured brand voice section (priority over generic text)
+    const brandParts: string[] = [];
     if (companyContext) {
-      parts.push(`Company: ${companyContext.name}${companyContext.industry ? ` (${companyContext.industry})` : ''}${companyContext.mission ? `. Mission: ${companyContext.mission}` : ''}`);
+      brandParts.push(`Company: ${companyContext.name}${companyContext.industry ? ` (${companyContext.industry})` : ''}`);
+      if (companyContext.mission) brandParts.push(`Mission: ${companyContext.mission}`);
     }
-
     if (brandContext) {
       const tone = Array.isArray(brandContext.tone) ? brandContext.tone.join(', ') : '';
       const doUse = Array.isArray(brandContext.do_use) ? brandContext.do_use.join(', ') : '';
       const dontUse = Array.isArray(brandContext.dont_use) ? brandContext.dont_use.join(', ') : '';
-      if (tone) parts.push(`Brand tone: ${tone}`);
-      if (doUse) parts.push(`DO use: ${doUse}`);
-      if (dontUse) parts.push(`DON'T use: ${dontUse}`);
+      if (tone) brandParts.push(`Tone: ${tone}`);
+      if (doUse) brandParts.push(`DO use: ${doUse}`);
+      if (dontUse) brandParts.push(`DON'T use: ${dontUse}`);
+    }
+    if (brandParts.length > 0) {
+      parts.push(`BRAND VOICE (follow strictly):\n${brandParts.join('\n')}`);
     }
 
     const brief = wizardState.contentBrief;
