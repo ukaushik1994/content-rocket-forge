@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ContextualAction } from '@/services/aiService';
 import { useNavigate } from 'react-router-dom';
-import { detectActionIntent, detectAIResponseIntent } from '@/utils/actionIntentDetector';
+import { detectActionIntent, detectAIResponseIntent, detectContextualContentIntent } from '@/utils/actionIntentDetector';
 
 export interface AIConversation {
   id: string;
@@ -501,40 +501,65 @@ export const useEnhancedAIChatDB = () => {
           if (!actionIntent.detected) {
             actionIntent = detectAIResponseIntent(fullContent);
           }
+          // NEW: Contextual follow-up detection (user replied with a topic)
+          if (!actionIntent.detected) {
+            const recentMsgs = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
+            actionIntent = detectContextualContentIntent(content, recentMsgs);
+          }
+
           if (actionIntent.detected && actionIntent.confidence !== 'low') {
-            console.log('🔧 Action intent detected:', actionIntent.toolName, '- calling enhanced-ai-chat...');
-
-            const conversationForTools = [
-              ...messages.slice(-8).map(m => ({ role: m.role, content: m.content })),
-              { role: 'user' as const, content },
-              { role: 'assistant' as const, content: fullContent },
-              { role: 'user' as const, content: `Please execute the action I requested. Tool hint: ${actionIntent.toolName}${actionIntent.params && Object.keys(actionIntent.params).length > 0 ? ` with params: ${JSON.stringify(actionIntent.params)}` : ''}` }
-            ];
-
-            // If destructive action, show confirmation instead of executing
-            if (actionIntent.requiresConfirmation) {
-              console.log('⚠️ Destructive action requires confirmation:', actionIntent.toolName);
-              setPendingConfirmation({
-                toolName: actionIntent.toolName,
-                originalMessage: content,
-                conversationId: conversationId!,
-                conversationHistory: conversationForTools,
-              });
-
-              const confirmMessage: EnhancedChatMessage = {
-                id: `confirm-${Date.now()}`,
+            // Direct wizard launch shortcut: skip tool call, set visualData directly
+            if (actionIntent.toolName === 'launch_content_wizard') {
+              console.log('🚀 Direct wizard launch with keyword:', actionIntent.params.keyword);
+              const wizardMessage: EnhancedChatMessage = {
+                id: `wizard-${Date.now()}`,
                 role: 'assistant',
-                content: '',
+                content: actionIntent.params.keyword 
+                  ? `Great! Let's create content about "${actionIntent.params.keyword}". How would you like to proceed?`
+                  : 'How would you like to create your content?',
                 timestamp: new Date(),
-                confirmationData: {
-                  toolName: actionIntent.toolName,
-                  originalMessage: content,
+                visualData: {
+                  type: 'content_creation_choice',
+                  keyword: actionIntent.params.keyword || '',
                 },
               };
-              setMessages(prev => [...prev, confirmMessage]);
+              setMessages(prev => [...prev, wizardMessage]);
+              await saveMessage(wizardMessage, conversationId);
             } else {
-              // Non-destructive: execute immediately
-              await executeToolAction(conversationForTools, conversationId!, actionIntent.toolName);
+              console.log('🔧 Action intent detected:', actionIntent.toolName, '- calling enhanced-ai-chat...');
+
+              const conversationForTools = [
+                ...messages.slice(-8).map(m => ({ role: m.role, content: m.content })),
+                { role: 'user' as const, content },
+                { role: 'assistant' as const, content: fullContent },
+                { role: 'user' as const, content: `Please execute the action I requested. Tool hint: ${actionIntent.toolName}${actionIntent.params && Object.keys(actionIntent.params).length > 0 ? ` with params: ${JSON.stringify(actionIntent.params)}` : ''}` }
+              ];
+
+              // If destructive action, show confirmation instead of executing
+              if (actionIntent.requiresConfirmation) {
+                console.log('⚠️ Destructive action requires confirmation:', actionIntent.toolName);
+                setPendingConfirmation({
+                  toolName: actionIntent.toolName,
+                  originalMessage: content,
+                  conversationId: conversationId!,
+                  conversationHistory: conversationForTools,
+                });
+
+                const confirmMessage: EnhancedChatMessage = {
+                  id: `confirm-${Date.now()}`,
+                  role: 'assistant',
+                  content: '',
+                  timestamp: new Date(),
+                  confirmationData: {
+                    toolName: actionIntent.toolName,
+                    originalMessage: content,
+                  },
+                };
+                setMessages(prev => [...prev, confirmMessage]);
+              } else {
+                // Non-destructive: execute immediately
+                await executeToolAction(conversationForTools, conversationId!, actionIntent.toolName);
+              }
             }
           }
         }

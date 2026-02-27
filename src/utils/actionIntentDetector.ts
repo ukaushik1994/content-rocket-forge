@@ -70,6 +70,12 @@ const ACTION_RULES: PatternRule[] = [
       /I'll\s+(launch|start|open)\s+(the\s+)?content\s+(creation\s+)?wizard/i,
       /opening\s+(the\s+)?content\s+(creation\s+)?wizard/i,
       /content\s+wizard\s+(is\s+)?(now\s+)?(ready|open|launch)/i,
+      // Broader AI response patterns
+      /I'll\s+(help\s+you\s+)?(create|write)\s+(a\s+)?(blog|article|content)\s+(about|on)/i,
+      /let's\s+(create|write|build)\s+(a\s+)?(blog|article|content)/i,
+      /let\s+me\s+(help\s+you\s+)?(create|write|draft)\s+(a\s+)?(blog|article|content|post)/i,
+      /I'll\s+(get|set)\s+(the\s+)?content\s+(wizard|creation)/i,
+      /starting\s+(the\s+)?content\s+creation/i,
     ],
     toolName: 'launch_content_wizard',
     confidence: 'high',
@@ -226,6 +232,54 @@ export function detectAIResponseIntent(aiResponse: string): ActionIntent {
           confidence: rule.confidence,
           params,
           requiresConfirmation,
+        };
+      }
+    }
+  }
+
+  return { detected: false, toolName: '', confidence: 'low', params: {} };
+}
+
+/**
+ * Contextual follow-up detection.
+ * Checks if the previous AI message was asking for a topic/keyword,
+ * and the current user message is a short non-question (likely the topic).
+ */
+const TOPIC_ASK_PATTERNS = [
+  /what\s+(topic|keyword|subject)/i,
+  /write\s+about/i,
+  /which\s+(topic|keyword)/i,
+  /what\s+would\s+you\s+like\s+to\s+(write|create|blog)/i,
+  /what\s+should\s+(I|we)\s+write/i,
+  /provide\s+(a\s+)?(topic|keyword)/i,
+  /enter\s+(a\s+)?(topic|keyword)/i,
+  /what\s+(is|are)\s+(the\s+)?(topic|keyword)/i,
+];
+
+export function detectContextualContentIntent(
+  userMessage: string,
+  recentMessages: Array<{ role: string; content: string }>
+): ActionIntent {
+  const trimmed = userMessage.trim();
+  
+  // Must be short (topic-like) and not a question
+  if (trimmed.length > 80 || trimmed.length < 2 || trimmed.endsWith('?')) {
+    return { detected: false, toolName: '', confidence: 'low', params: {} };
+  }
+
+  // Look at last 3 assistant messages for topic-asking patterns
+  const recentAssistant = recentMessages
+    .filter(m => m.role === 'assistant')
+    .slice(-3);
+
+  for (const msg of recentAssistant) {
+    for (const pattern of TOPIC_ASK_PATTERNS) {
+      if (pattern.test(msg.content)) {
+        return {
+          detected: true,
+          toolName: 'launch_content_wizard',
+          confidence: 'medium',
+          params: { keyword: trimmed },
         };
       }
     }

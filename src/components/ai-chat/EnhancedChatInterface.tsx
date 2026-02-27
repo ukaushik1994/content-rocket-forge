@@ -438,7 +438,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     </motion.div>
 
                     {/* Pill suggestions */}
-                    <EnhancedQuickActions onAction={handleLegacyAction} />
+                    <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
 
                     {/* Metrics strip — only shows if user has data */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />

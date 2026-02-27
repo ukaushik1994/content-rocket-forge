@@ -167,6 +167,7 @@ export interface VisualData {
   workflowStep?: WorkflowStep;
   serpData?: any;
   tableData?: TableData;
+  keyword?: string; // Used by content_creation_choice for wizard launch
   actionableItems?: ActionableItem[]; // Context-specific quick actions with navigation
   deepDivePrompts?: string[]; // AI-generated follow-up questions
   chartPerspectives?: ChartPerspective; // Multi-perspective chart context
