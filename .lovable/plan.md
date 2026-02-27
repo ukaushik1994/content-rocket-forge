@@ -1,209 +1,159 @@
 
-# Phase 4 & 5 Implementation Plan
 
-## Phase 4: SERP & Research Quality (Issues #25-29)
+# Fix Plan: 8 Remaining Content Wizard Issues
 
-### 4A. Visual badges for real vs AI data (Issues #25, #29)
+## Issue 1: Word Count Massive Undershoot (1,573 words vs 7,200 target)
+
+**Root Cause:** AI models treat word count instructions as suggestions, not hard limits. Even with "MUST write between X and Y words," the model stops when it feels done. Single-pass generation cannot reliably produce 5,000+ word articles.
+
+**Fix:** Implement chunked generation in `advancedContentGeneration.ts`. When `targetLength > 2500`, split the outline into section groups and generate each group separately, then concatenate.
+
+**File:** `src/services/advancedContentGeneration.ts`
+
+Changes:
+- Add a `generateInChunks` function that splits the outline into groups of 2-3 sections
+- Each chunk gets its own ai-proxy call with a proportional word count target (e.g., 3 sections out of 9 = 1/3 of total words)
+- The system prompt for each chunk includes: "You are continuing an article. Here is what was written so far: [previous chunks summary]. Now write the next sections."
+- The final result concatenates all chunks
+- For articles under 2,500 words, keep the current single-pass approach
+
+This is the only reliable way to hit high word counts with LLMs.
+
+---
+
+## Issue 2: AI Detection Score Error ("No JSON found in AI detection response")
+
+**Root Cause:** `detectAIContent` in `aiContentDetectionService.ts` uses `AIServiceController.generate()`, which routes through `enhanced-ai-chat`. That edge function is a full conversational AI system with tool-calling — it wraps the response in conversational text (e.g., "Here's my analysis: {...}"), and the JSON regex fails to extract it reliably from the `message` field.
+
+**Fix:** Rewrite `detectAIContent` to call `ai-proxy` directly (same pattern as `advancedContentGeneration.ts`), bypassing `AIServiceController` and `enhanced-ai-chat`. This gives raw model output where JSON extraction is reliable.
+
+**File:** `src/services/aiContentDetectionService.ts`
+
+Changes:
+- Remove `AIServiceController` import
+- Import `supabase` from integrations
+- Fetch the active provider directly from `ai_service_providers` table
+- Call `supabase.functions.invoke('ai-proxy', ...)` with a system prompt enforcing JSON-only output
+- Add `"Return ONLY valid JSON, no other text"` to the prompt
+- Add a fallback: if JSON parse fails, return a default score of `null` instead of throwing
+
+---
+
+## Issue 3: Stale "trending industry topics" Keyword
+
+**Root Cause:** The "Write content" quick action in `EnhancedQuickActions.tsx` sends `"Create a new blog post about trending industry topics"` as the prompt. The AI then calls `launch_content_wizard` with `keyword: "trending industry topics"`, which pre-fills the wizard topic field.
+
+**Fix:** Change the quick action prompt to ask the user what topic they want, instead of providing a fake topic.
+
+**File:** `src/components/ai-chat/EnhancedQuickActions.tsx` (line 10)
+
+Change:
+```
+{ text: 'Write content', prompt: 'Create a new blog post about trending industry topics' }
+```
+To:
+```
+{ text: 'Write content', prompt: 'I want to create a new blog post' }
+```
+
+This forces the AI to ask "What topic would you like to write about?" (as the tool description already requires) instead of passing a generic keyword.
+
+---
+
+## Issue 4: Missing "Continue Editing" Button
+
+**Root Cause:** The "Continue Editing" button at line 685 only shows in the `saved && savedId` state (the post-save success screen, lines 667-691). It IS there — but only after saving. The test may have missed it, or the tester expected it before saving.
+
+**Verification needed:** Re-check if the button appears after saving. If it does, this is a non-issue. If not, the `saved` state may not be getting set correctly.
+
+**Likely non-issue** — the button exists at line 685 and shows after save. No code change needed unless re-testing confirms otherwise.
+
+---
+
+## Issue 5: Silent Topic Validation (No Red Border)
+
+**Root Cause:** The validation logic in `ContentWizardSidebar.tsx` (lines 145-153) sets `validationError` state and shows a toast. The `keywordError` prop is passed to `WizardStepSolution` (line 259). But the red border depends on `WizardStepSolution` actually using the `keywordError` prop on its input field.
+
+**Fix:** Verify `WizardStepSolution.tsx` applies the red border class. The previous Phase 1 implementation added `keywordError` prop handling — need to confirm the `cn()` class includes `border-destructive` when `keywordError` is true.
+
+**File:** `src/components/ai-chat/content-wizard/WizardStepSolution.tsx`
+
+Check and fix: Ensure the keyword input has:
+```tsx
+className={cn("text-sm", keywordError && "border-destructive")}
+```
+
+---
+
+## Issue 6: Templated SERP Headings Labeled as "From SERP"
+
+**Root Cause:** The research step labels items as "From SERP" when they come from the SERP API response, but the SERP API itself sometimes returns templated/generic headings. The green badge implies "real competitor data" but some items are AI-generated by the SERP analysis.
+
+**Fix:** Add a heuristic filter in `WizardStepResearch.tsx` to detect templated headings and re-label them as "AI Suggested" (blue badge).
 
 **File:** `src/components/ai-chat/content-wizard/WizardStepResearch.tsx`
 
-The component already tracks `source: 'serp' | 'ai'` and shows badges (line 194-196). Changes needed:
-
-- Update the Badge styling: SERP items get a green badge (`bg-green-500/15 text-green-400 border-green-500/30` with label "From SERP"), AI items get a blue badge (`bg-blue-500/15 text-blue-400 border-blue-500/30` with label "AI Suggested")
-- Current badges just say "SERP" or "AI" -- make them more descriptive and color-coded
-
-### 4B. Filter irrelevant strategy signals from outlines (Issue #26)
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepOutline.tsx`
-
-After the AI generates the outline (around line 131 where `parsed.map` happens), add a filter step:
-
+Add a pattern check:
 ```typescript
-const IRRELEVANT_PATTERNS = [
-  /video\s+content\s+opportunit/i,
-  /local\s+services?/i,
-  /visual\s+content\s+strateg/i,
-  /podcast\s+opportunit/i,
-  /infographic\s+creation/i,
-  /social\s+media\s+strateg/i,
+const TEMPLATED_PATTERNS = [
+  /tips\s+and\s+tricks$/i,
+  /^(top|best)\s+\d+/i,
+  /complete\s+guide$/i,
+  /everything\s+you\s+need/i,
+  /^what\s+is\s+/i,
+  /^how\s+to\s+/i,
 ];
 
-// Filter out strategy signals that aren't article sections
-const filtered = parsed.filter(s => 
-  !IRRELEVANT_PATTERNS.some(p => p.test(s.title || s.heading || ''))
-);
+function isTemplatedHeading(text: string, keyword: string): boolean {
+  // If the heading is just "[keyword] + generic suffix", it's templated
+  const withoutKeyword = text.replace(new RegExp(keyword, 'gi'), '').trim();
+  return TEMPLATED_PATTERNS.some(p => p.test(withoutKeyword)) || withoutKeyword.length < 5;
+}
 ```
 
-Apply this filter at all three parse paths (JSON array, markdown headings, both around lines 131, 139).
-
-### 4C. Surface People Also Ask data (Issue #27)
-
-The Research step already has an "FAQs / People Also Ask" category (line 140) that maps `serpResult.peopleAlsoAsk`. This is already implemented. The label just needs to be more prominent -- it already says "FAQs / People Also Ask". No code change needed here, it's working.
-
-### 4D. Improve content gap quality (Issue #28)
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepResearch.tsx`
-
-In the `fetchAIResearch` function (line 72), improve the AI prompt (line 98) to generate competitor-specific gaps instead of generic template patterns:
-
-Change the prompt to:
-```
-For the topic "${keyword}", generate research data in JSON format:
-- faqs: 5 specific questions searchers ask (not generic "What is X?" patterns)
-- contentGaps: 4 specific topics that existing top-ranking articles MISS or cover poorly (reference what competitors lack, not just keyword variations)
-- relatedKeywords: 6 related long-tail search terms
-- serpHeadings: 5 specific headings that would outperform current top results
-
-Make every item specific and actionable, not templated. Return ONLY valid JSON.
-```
-
-Also update the static fallback (lines 82-86) to be less templated -- use slightly more specific fallback patterns.
+Apply this when assigning the `source` field: if the heading matches a templated pattern, override source to `'ai'`.
 
 ---
 
-## Phase 5: Platform Parity & Polish (Issues #12, #14, #15, #16, #31, #32, #34, #35)
+## Issue 7: Stale Wizard Header
 
-### 5A. Refinement loop (Issue #12)
+**Root Cause:** The header in `ContentWizardSidebar.tsx` (line 203) shows `wizardState.keyword || keyword`. The `keyword` fallback is the initial prop value. When the user types a new keyword, `wizardState.keyword` updates — but only after `onKeywordChange` is called. The display should always show the latest `wizardState.keyword`.
 
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+**Fix:** Minor — ensure the header always reads from `wizardState.keyword` and drops the `|| keyword` fallback since `wizardState.keyword` is initialized from `keyword` prop already.
 
-After content is generated (post line 816, near the Regenerate button), add a "Refine" input + button:
+**File:** `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx` (line 203)
 
-- A small text input: "How should this be improved?"
-- A "Refine" button that sends the current content + refinement instruction back to `generateAdvancedContent` with the instruction prepended to `additionalInstructions`
-- This is different from Regenerate (which starts fresh) -- Refine passes the existing content as context
-
-Add state: `refinementInstruction`, `isRefining`
-
-The refine function sends to ai-proxy with a prompt like:
-```
-Here is existing content to improve:
-[content]
-
-Improvement requested: [user instruction]
-
-Rewrite the content incorporating this feedback while keeping the same structure.
-```
-
-### 5B. Content quality score badge (Issue #14)
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
-
-The `calculateSeoScore` function already exists (line 72-108). After generation, display it as a badge next to the word count badge (around line 745-753):
-
-```tsx
-{!quick && seoScore !== null && (
-  <Badge variant={seoScore >= 70 ? 'default' : seoScore >= 40 ? 'secondary' : 'destructive'} className="text-[10px] gap-1">
-    SEO: {seoScore}/100
-  </Badge>
-)}
-```
-
-Compute `seoScore` reactively from `editableContent`.
-
-### 5C. AI detection score indicator (Issue #15)
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
-
-Import `detectAIContent` from `@/services/aiContentDetectionService`. After content generation completes, run it automatically:
-
-```typescript
-const [aiScore, setAiScore] = useState<number | null>(null);
-
-// In generateContent, after setting editableContent:
-const detection = await detectAIContent(result);
-setAiScore(detection?.overallScore ?? null);
-```
-
-Show as a small badge: "Human: 85%" (where 85 = 100 - aiScore).
-
-### 5D. User instructions integration (Issue #16)
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
-
-In `buildAdditionalInstructions()`, after the existing logic (around line 254), add:
-
-```typescript
-import { getRecentUserInstructions } from '@/services/userInstructionsService';
-
-// Inside buildAdditionalInstructions:
-try {
-  const recentInstructions = await getRecentUserInstructions(3);
-  if (recentInstructions.length > 0) {
-    parts.push(`USER'S PREFERRED INSTRUCTIONS (from history):\n${recentInstructions.join('\n')}`);
-  }
-} catch {}
-```
-
-Note: This makes `buildAdditionalInstructions` async, so `generateContent` will need to `await` it.
-
-### 5E. Progress indicator during generation (Issue #31)
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
-
-Replace the simple `isGeneratingContent` spinner with a staged progress indicator:
-
-```typescript
-const [generationStage, setGenerationStage] = useState<string>('');
-
-// In generateContent:
-setGenerationStage('Building prompt...');
-// ... build config
-setGenerationStage('Generating content...');
-const result = await generateAdvancedContent(config);
-setGenerationStage('Analyzing quality...');
-// ... run seo score + ai detection
-setGenerationStage('');
-```
-
-Show the stage text below the spinner in the Generate button area.
-
-### 5F. Continue Editing with full state (Issue #35)
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
-
-The `handleContinueEditing` already saves `continueEditingContentId` to sessionStorage (line 643-646). Enhance it to also save wizard context:
-
-```typescript
-sessionStorage.setItem('wizardContext', JSON.stringify({
-  keyword: wizardState.keyword,
-  researchSelections: wizardState.researchSelections,
-  outline: wizardState.outline,
-  serpData: wizardState.serpData,
-  selectedSolution: wizardState.selectedSolution ? {
-    id: wizardState.selectedSolution.id,
-    name: wizardState.selectedSolution.name,
-  } : null,
-}));
-```
-
-The Content Builder already loads by contentId, but having wizard context in sessionStorage enables richer editing context.
-
-### 5G. Meta fields already editable (Issue #32)
-
-Looking at lines 702-718, meta title and description are already editable `Input` and `Textarea` fields. This issue is already resolved.
-
-### 5H. Metadata parity (Issue #34)
-
-Looking at lines 404-503, the save logic already includes `serpMetrics`, `comprehensiveSerpData`, `solutionIntegrationMetrics`, `selectionStats`, `documentStructure`, and `seoScore`. This is already implemented with full parity.
+Change: `"{wizardState.keyword || keyword}"` to `"{wizardState.keyword}"`
 
 ---
+
+## Issue 8: SERP Cache Contamination Warning
+
+**Root Cause:** This is a console warning from the SERP caching layer. It's non-critical and doesn't affect functionality. The cache refuses to store responses it considers contaminated (e.g., error responses or incomplete data).
+
+**Fix:** No user-facing fix needed. This is defensive caching working as intended. Can suppress the console warning if desired, but it's informational.
+
+---
+
+## Implementation Order
+
+1. **Issue 3** (Quick action prompt) — 1 line change
+2. **Issue 7** (Stale header) — 1 line change
+3. **Issue 5** (Red border validation) — verify and fix in WizardStepSolution
+4. **Issue 6** (Templated SERP headings) — add heuristic filter
+5. **Issue 2** (AI detection error) — rewrite to use ai-proxy directly
+6. **Issue 1** (Word count undershoot) — chunked generation logic
+
+Issues 4 and 8 require no code changes.
 
 ## Files Modified
 
-| Phase | File | Changes |
-|-------|------|---------|
-| 4 | `WizardStepResearch.tsx` | Green/blue badge colors, improved AI prompt for gaps |
-| 4 | `WizardStepOutline.tsx` | Filter irrelevant strategy signals from generated outlines |
-| 5 | `WizardStepGenerate.tsx` | Refine button, SEO score badge, AI detection indicator, user instructions integration, progress stages, enhanced Continue Editing |
+| File | Changes |
+|------|---------|
+| `EnhancedQuickActions.tsx` | Fix quick action prompt |
+| `ContentWizardSidebar.tsx` | Fix stale header display |
+| `WizardStepSolution.tsx` | Verify/fix red border on validation |
+| `WizardStepResearch.tsx` | Add templated heading detection |
+| `aiContentDetectionService.ts` | Rewrite to use ai-proxy directly |
+| `advancedContentGeneration.ts` | Add chunked generation for long articles |
 
-## Already Done (No Changes Needed)
-- Issue #27 (PAA integration) -- already in Research step
-- Issue #32 (Meta fields editable) -- already editable
-- Issue #34 (Metadata parity) -- already comprehensive
-- Issue #30 (Landing page vs reality) -- addressed by adding visible scores
-
-## Implementation Order
-1. Phase 4 changes (Research badges + Outline filtering) -- quick wins
-2. Phase 5A-5C (Refine, scores, AI detection) -- core value
-3. Phase 5D-5F (Instructions, progress, Continue Editing) -- polish
