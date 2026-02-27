@@ -1,159 +1,76 @@
 
 
-# Fix Plan: 8 Remaining Content Wizard Issues
+# Fix Plan: 5 Remaining Content Wizard Issues
 
-## Issue 1: Word Count Massive Undershoot (1,573 words vs 7,200 target)
+## Issue 1: AI Detection Score Not Showing ("No JSON found")
 
-**Root Cause:** AI models treat word count instructions as suggestions, not hard limits. Even with "MUST write between X and Y words," the model stops when it feels done. Single-pass generation cannot reliably produce 5,000+ word articles.
+**Root Cause:** The `detectAIContent` service in `aiContentDetectionService.ts` already calls `ai-proxy` directly (rewritten in the last round). However, the `ai-proxy` response is nested under `data.data.choices[...]`. The current code at line 76 correctly checks `aiData?.data?.choices?.[0]?.message?.content` first. The likely issue is that the `ai-proxy` edge function returns the response wrapped differently for some providers, OR the model isn't returning pure JSON despite the system prompt.
 
-**Fix:** Implement chunked generation in `advancedContentGeneration.ts`. When `targetLength > 2500`, split the outline into section groups and generate each group separately, then concatenate.
+**Fix (in `src/services/aiContentDetectionService.ts`):**
+- Add `response_format: { type: "json_object" }` to the params for OpenAI models (forces JSON mode)
+- Improve the JSON extraction fallback: after the `\{[\s\S]*\}` regex, also try `stripMarkdownCodeFence` (already exists in the codebase) before parsing
+- Add more detailed error logging to show exactly what response came back
 
-**File:** `src/services/advancedContentGeneration.ts`
+## Issue 2: Word Count Undershoot (Chunked Generation Validation)
 
-Changes:
-- Add a `generateInChunks` function that splits the outline into groups of 2-3 sections
-- Each chunk gets its own ai-proxy call with a proportional word count target (e.g., 3 sections out of 9 = 1/3 of total words)
-- The system prompt for each chunk includes: "You are continuing an article. Here is what was written so far: [previous chunks summary]. Now write the next sections."
-- The final result concatenates all chunks
-- For articles under 2,500 words, keep the current single-pass approach
+**Status:** The chunked generation code is already in place (`generateInChunks` at line 103). It's triggered when `targetLength > 2500`. The logic looks correct — it splits outline into groups of 2-3 sections, calls ai-proxy per chunk with proportional word counts, and concatenates.
 
-This is the only reliable way to hit high word counts with LLMs.
+**Fix (in `src/services/advancedContentGeneration.ts`):**
+- The `wordsPerChunk` calculation uses `config.targetLength / chunks.length`, but for the system prompt the AI still needs a stronger instruction. Add a reinforced word count instruction in each chunk prompt: `"ABSOLUTE MINIMUM: ${wordsPerChunk} words for these sections. Write detailed, thorough content with examples, explanations, and analysis for each section. Do NOT summarize or be brief."`
+- Increase `tokensPerChunk` multiplier from 1.8 to 2.2 to allow more room for output
+- Add a post-generation word count check: if total is still under 80% of target, log a warning (no retry — just awareness)
 
----
+## Issue 3: Stale Keyword from Quick Action ("post" extracted)
 
-## Issue 2: AI Detection Score Error ("No JSON found in AI detection response")
+**Root Cause:** The `EnhancedQuickActions.tsx` prompt was updated to "I want to create a new blog post", but the AI in `enhanced-ai-chat` still extracts "post" as the keyword from this message. The `launch_content_wizard` tool description (line 149 of `content-action-tools.ts`) says "If the user has NOT specified a clear topic... you MUST ask them" — but the AI interprets "blog post" as a topic.
 
-**Root Cause:** `detectAIContent` in `aiContentDetectionService.ts` uses `AIServiceController.generate()`, which routes through `enhanced-ai-chat`. That edge function is a full conversational AI system with tool-calling — it wraps the response in conversational text (e.g., "Here's my analysis: {...}"), and the JSON regex fails to extract it reliably from the `message` field.
+**Fix (in `supabase/functions/enhanced-ai-chat/content-action-tools.ts`):**
+- Update the tool description to explicitly list "post", "blog", "blog post", "article" as NOT valid keywords: `"Common words like 'post', 'blog', 'article', 'content' are NOT valid keywords. The keyword must be a specific subject matter topic (e.g. 'AI in healthcare', 'email marketing')."`
 
-**Fix:** Rewrite `detectAIContent` to call `ai-proxy` directly (same pattern as `advancedContentGeneration.ts`), bypassing `AIServiceController` and `enhanced-ai-chat`. This gives raw model output where JSON extraction is reliable.
+**Also fix (in `src/components/ai-chat/EnhancedQuickActions.tsx`):**
+- Change the prompt to be even more explicit: `"I want to write a new blog post. What topic should I write about?"` — this phrasing makes the AI ask for the topic instead of extracting one.
 
-**File:** `src/services/aiContentDetectionService.ts`
+## Issue 4: Red Border Validation (Too Subtle / Clears Fast)
 
-Changes:
-- Remove `AIServiceController` import
-- Import `supabase` from integrations
-- Fetch the active provider directly from `ai_service_providers` table
-- Call `supabase.functions.invoke('ai-proxy', ...)` with a system prompt enforcing JSON-only output
-- Add `"Return ONLY valid JSON, no other text"` to the prompt
-- Add a fallback: if JSON parse fails, return a default score of `null` instead of throwing
+**Status:** The red border IS applied (line 95 of `WizardStepSolution.tsx` has `keywordError && "border-destructive ring-1 ring-destructive/30"`). The `validationError` state in `ContentWizardSidebar.tsx` clears after 2 seconds (line 151: `setTimeout(() => setValidationError(false), 2000)`).
 
----
+**Fix (in `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx`):**
+- Increase timeout from 2000ms to 4000ms for better visibility
+- Add a shake animation on the keyword input when validation fails
 
-## Issue 3: Stale "trending industry topics" Keyword
+**Fix (in `src/components/ai-chat/content-wizard/WizardStepSolution.tsx`):**
+- Add an error message below the input when `keywordError` is true: a small red text "Please enter a topic (at least 2 characters)"
 
-**Root Cause:** The "Write content" quick action in `EnhancedQuickActions.tsx` sends `"Create a new blog post about trending industry topics"` as the prompt. The AI then calls `launch_content_wizard` with `keyword: "trending industry topics"`, which pre-fills the wizard topic field.
+## Issue 5: Content Gap Quality (Templated Patterns Expansion)
 
-**Fix:** Change the quick action prompt to ask the user what topic they want, instead of providing a fake topic.
+**Status:** `TEMPLATED_PATTERNS` in `WizardStepResearch.tsx` already filters generic headings. But some patterns slip through (e.g., "Definition and Overview", "Key Benefits").
 
-**File:** `src/components/ai-chat/EnhancedQuickActions.tsx` (line 10)
-
-Change:
-```
-{ text: 'Write content', prompt: 'Create a new blog post about trending industry topics' }
-```
-To:
-```
-{ text: 'Write content', prompt: 'I want to create a new blog post' }
-```
-
-This forces the AI to ask "What topic would you like to write about?" (as the tool description already requires) instead of passing a generic keyword.
+**Fix (in `src/components/ai-chat/content-wizard/WizardStepResearch.tsx`):**
+- Add more patterns to `TEMPLATED_PATTERNS`:
+  - `/definition\s+and\s+overview$/i`
+  - `/^key\s+(benefits|features|advantages)/i`  
+  - `/^(the\s+)?(importance|role)\s+of/i`
+  - `/step.by.step/i`
+  - `/pros?\s+and\s+cons?/i`
 
 ---
-
-## Issue 4: Missing "Continue Editing" Button
-
-**Root Cause:** The "Continue Editing" button at line 685 only shows in the `saved && savedId` state (the post-save success screen, lines 667-691). It IS there — but only after saving. The test may have missed it, or the tester expected it before saving.
-
-**Verification needed:** Re-check if the button appears after saving. If it does, this is a non-issue. If not, the `saved` state may not be getting set correctly.
-
-**Likely non-issue** — the button exists at line 685 and shows after save. No code change needed unless re-testing confirms otherwise.
-
----
-
-## Issue 5: Silent Topic Validation (No Red Border)
-
-**Root Cause:** The validation logic in `ContentWizardSidebar.tsx` (lines 145-153) sets `validationError` state and shows a toast. The `keywordError` prop is passed to `WizardStepSolution` (line 259). But the red border depends on `WizardStepSolution` actually using the `keywordError` prop on its input field.
-
-**Fix:** Verify `WizardStepSolution.tsx` applies the red border class. The previous Phase 1 implementation added `keywordError` prop handling — need to confirm the `cn()` class includes `border-destructive` when `keywordError` is true.
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepSolution.tsx`
-
-Check and fix: Ensure the keyword input has:
-```tsx
-className={cn("text-sm", keywordError && "border-destructive")}
-```
-
----
-
-## Issue 6: Templated SERP Headings Labeled as "From SERP"
-
-**Root Cause:** The research step labels items as "From SERP" when they come from the SERP API response, but the SERP API itself sometimes returns templated/generic headings. The green badge implies "real competitor data" but some items are AI-generated by the SERP analysis.
-
-**Fix:** Add a heuristic filter in `WizardStepResearch.tsx` to detect templated headings and re-label them as "AI Suggested" (blue badge).
-
-**File:** `src/components/ai-chat/content-wizard/WizardStepResearch.tsx`
-
-Add a pattern check:
-```typescript
-const TEMPLATED_PATTERNS = [
-  /tips\s+and\s+tricks$/i,
-  /^(top|best)\s+\d+/i,
-  /complete\s+guide$/i,
-  /everything\s+you\s+need/i,
-  /^what\s+is\s+/i,
-  /^how\s+to\s+/i,
-];
-
-function isTemplatedHeading(text: string, keyword: string): boolean {
-  // If the heading is just "[keyword] + generic suffix", it's templated
-  const withoutKeyword = text.replace(new RegExp(keyword, 'gi'), '').trim();
-  return TEMPLATED_PATTERNS.some(p => p.test(withoutKeyword)) || withoutKeyword.length < 5;
-}
-```
-
-Apply this when assigning the `source` field: if the heading matches a templated pattern, override source to `'ai'`.
-
----
-
-## Issue 7: Stale Wizard Header
-
-**Root Cause:** The header in `ContentWizardSidebar.tsx` (line 203) shows `wizardState.keyword || keyword`. The `keyword` fallback is the initial prop value. When the user types a new keyword, `wizardState.keyword` updates — but only after `onKeywordChange` is called. The display should always show the latest `wizardState.keyword`.
-
-**Fix:** Minor — ensure the header always reads from `wizardState.keyword` and drops the `|| keyword` fallback since `wizardState.keyword` is initialized from `keyword` prop already.
-
-**File:** `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx` (line 203)
-
-Change: `"{wizardState.keyword || keyword}"` to `"{wizardState.keyword}"`
-
----
-
-## Issue 8: SERP Cache Contamination Warning
-
-**Root Cause:** This is a console warning from the SERP caching layer. It's non-critical and doesn't affect functionality. The cache refuses to store responses it considers contaminated (e.g., error responses or incomplete data).
-
-**Fix:** No user-facing fix needed. This is defensive caching working as intended. Can suppress the console warning if desired, but it's informational.
-
----
-
-## Implementation Order
-
-1. **Issue 3** (Quick action prompt) — 1 line change
-2. **Issue 7** (Stale header) — 1 line change
-3. **Issue 5** (Red border validation) — verify and fix in WizardStepSolution
-4. **Issue 6** (Templated SERP headings) — add heuristic filter
-5. **Issue 2** (AI detection error) — rewrite to use ai-proxy directly
-6. **Issue 1** (Word count undershoot) — chunked generation logic
-
-Issues 4 and 8 require no code changes.
 
 ## Files Modified
 
 | File | Changes |
 |------|---------|
-| `EnhancedQuickActions.tsx` | Fix quick action prompt |
-| `ContentWizardSidebar.tsx` | Fix stale header display |
-| `WizardStepSolution.tsx` | Verify/fix red border on validation |
-| `WizardStepResearch.tsx` | Add templated heading detection |
-| `aiContentDetectionService.ts` | Rewrite to use ai-proxy directly |
-| `advancedContentGeneration.ts` | Add chunked generation for long articles |
+| `src/services/aiContentDetectionService.ts` | Add JSON mode param, improve fallback parsing |
+| `src/services/advancedContentGeneration.ts` | Stronger word count instruction per chunk, higher token multiplier |
+| `supabase/functions/enhanced-ai-chat/content-action-tools.ts` | Blacklist generic keywords in tool description |
+| `src/components/ai-chat/EnhancedQuickActions.tsx` | More explicit prompt phrasing |
+| `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx` | Longer validation timeout |
+| `src/components/ai-chat/content-wizard/WizardStepSolution.tsx` | Error message below input |
+| `src/components/ai-chat/content-wizard/WizardStepResearch.tsx` | Expand TEMPLATED_PATTERNS |
+
+## Implementation Order
+1. Quick fixes: EnhancedQuickActions prompt, validation timeout, error message (3 files)
+2. TEMPLATED_PATTERNS expansion (1 file)
+3. AI detection JSON fix (1 file)
+4. Word count reinforcement (1 file)  
+5. Backend tool description update + deploy (1 edge function)
 
