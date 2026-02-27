@@ -40,6 +40,7 @@ export interface WizardState {
     contentGaps: string[];
     relatedKeywords: string[];
     serpHeadings: string[];
+    entities?: string[];
   };
   serpData: any; // Raw SERP analysis data for comprehensive metadata persistence
   outline: OutlineSection[];
