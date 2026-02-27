@@ -124,20 +124,32 @@ Return ONLY the JSON array.`;
         || aiResult?.content
         || '';
 
+      // Filter out irrelevant strategy signals that aren't article sections
+      const IRRELEVANT_PATTERNS = [
+        /video\s+content\s+opportunit/i,
+        /local\s+services?\b/i,
+        /visual\s+content\s+strateg/i,
+        /podcast\s+opportunit/i,
+        /infographic\s+creation/i,
+        /social\s+media\s+strateg/i,
+      ];
+      const filterIrrelevant = (items: any[]) =>
+        items.filter(s => !IRRELEVANT_PATTERNS.some(p => p.test(s.title || s.heading || '')));
+
       // Try JSON array parsing first
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+        const parsed = filterIrrelevant(JSON.parse(jsonMatch[0]));
         onOutlineChange(parsed.map((s: any) => ({ id: uuidv4(), title: s.title || s.heading || '', level: s.level || 1 })));
       } else {
         // Fallback: parse markdown headings (## and ###)
         const lines = content.split('\n').filter((l: string) => l.trim().startsWith('#'));
         if (lines.length >= 3) {
-          const parsed = lines.map((line: string) => {
+          const parsed = filterIrrelevant(lines.map((line: string) => {
             const h3 = line.trim().startsWith('###');
             const title = line.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
             return { id: uuidv4(), title, level: h3 ? 2 : 1 };
-          });
+          }));
           onOutlineChange(parsed);
         } else {
           // Final static fallback

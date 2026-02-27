@@ -79,10 +79,10 @@ export const WizardStepResearch: React.FC<WizardStepResearchProps> = ({
 
       if (!provider) {
         setData({
-          faqs: [{ text: `What is ${keyword}?`, source: 'ai' }, { text: `How does ${keyword} work?`, source: 'ai' }, { text: `Benefits of ${keyword}`, source: 'ai' }],
-          contentGaps: [{ text: `Beginner's guide to ${keyword}`, source: 'ai' }, { text: `${keyword} best practices`, source: 'ai' }],
-          relatedKeywords: [{ text: `${keyword} tools`, source: 'ai' }, { text: `${keyword} strategy`, source: 'ai' }, { text: `${keyword} examples`, source: 'ai' }],
-          serpHeadings: [{ text: `Introduction to ${keyword}`, source: 'ai' }, { text: `Key Benefits`, source: 'ai' }, { text: `How to Get Started`, source: 'ai' }],
+          faqs: [{ text: `How do practitioners implement ${keyword} effectively?`, source: 'ai' }, { text: `What common mistakes should you avoid with ${keyword}?`, source: 'ai' }, { text: `How does ${keyword} compare to alternatives?`, source: 'ai' }],
+          contentGaps: [{ text: `Real-world ${keyword} implementation challenges and solutions`, source: 'ai' }, { text: `${keyword} ROI measurement and benchmarks`, source: 'ai' }],
+          relatedKeywords: [{ text: `${keyword} implementation guide`, source: 'ai' }, { text: `${keyword} vs alternatives comparison`, source: 'ai' }, { text: `${keyword} case studies`, source: 'ai' }],
+          serpHeadings: [{ text: `Why Most ${keyword} Strategies Fail (And How to Fix Yours)`, source: 'ai' }, { text: `Step-by-Step Implementation`, source: 'ai' }, { text: `Measuring Success: Key Metrics`, source: 'ai' }],
         });
         return;
       }
@@ -95,7 +95,13 @@ export const WizardStepResearch: React.FC<WizardStepResearchProps> = ({
             model: provider.preferred_model || 'gpt-4',
             messages: [{
               role: 'user',
-              content: `For the topic "${keyword}", generate research data in JSON format with these arrays: faqs (5 questions people ask), contentGaps (4 underserved topics), relatedKeywords (6 related search terms), serpHeadings (5 common article headings). Return ONLY valid JSON.`
+              content: `For the topic "${keyword}", generate research data in JSON format with these arrays:
+- faqs: 5 specific questions searchers ask (not generic "What is X?" patterns — use long-tail, intent-driven questions)
+- contentGaps: 4 specific topics that existing top-ranking articles MISS or cover poorly (reference what competitors lack, not just keyword variations)
+- relatedKeywords: 6 related long-tail search terms with commercial or informational intent
+- serpHeadings: 5 specific, compelling headings that would outperform current top results
+
+Make every item specific and actionable, not templated. Return ONLY valid JSON.`
             }],
             max_tokens: 1000,
           }
@@ -191,8 +197,16 @@ export const WizardStepResearch: React.FC<WizardStepResearchProps> = ({
                     className="mt-0.5"
                   />
                   <span className="text-xs text-foreground/80 leading-relaxed flex-1">{item.text}</span>
-                  <Badge variant={item.source === 'serp' ? 'default' : 'secondary'} className="text-[9px] h-4 px-1 flex-shrink-0">
-                    {item.source === 'serp' ? 'SERP' : 'AI'}
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "text-[9px] h-4 px-1.5 flex-shrink-0 border",
+                      item.source === 'serp' 
+                        ? 'bg-green-500/15 text-green-400 border-green-500/30' 
+                        : 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                    )}
+                  >
+                    {item.source === 'serp' ? 'From SERP' : 'AI Suggested'}
                   </Badge>
                 </label>
               ))}
