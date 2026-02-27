@@ -160,6 +160,25 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   };
   const goBack = () => { if (currentStep > 0) setCurrentStep(s => s - 1); };
 
+  // Phase 2C: Handle repurpose from success screen
+  const handleRepurpose = useCallback((newContentType: string, sourceContent: string, keyword: string) => {
+    setWizardState(prev => ({
+      ...prev,
+      keyword,
+      contentType: newContentType,
+      title: '',
+      generatedContent: '',
+      additionalInstructions: `Use this content as source material and repurpose it:\n\n${sourceContent.substring(0, 2000)}`,
+      researchSelections: { faqs: [], contentGaps: [], relatedKeywords: [], serpHeadings: [] },
+      serpData: null,
+      outline: [],
+      metaTitle: '',
+      metaDescription: '',
+    }));
+    // Quick formats go directly to generate (step 1), blog formats go to step 0
+    setCurrentStep(isQuickFormat(newContentType) ? 1 : 0);
+  }, []);
+
   // Auto-infer writing defaults + content brief from solution data using shared utility
   const handleSolutionSelect = useCallback((sol: EnhancedSolution) => {
     const result = mapOfferingToBrief(sol);
@@ -305,6 +324,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onContentGenerated={(content) => updateState({ generatedContent: content })}
                         onTitleChange={(title) => updateState({ title })}
                         onClose={onClose}
+                        onRepurpose={handleRepurpose}
                       />
                     )}
                   </motion.div>
