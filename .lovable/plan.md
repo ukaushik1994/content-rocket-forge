@@ -1,151 +1,114 @@
 
 
-# Fix Plan: Content Wizard Intent Detection + Feature Parity Audit
+# Fix Plan: Human Score, Solution Integration & Meta Title
 
-## Problem Summary
+## Three Issues to Fix
 
-The Content Wizard has a **broken handoff chain**: when a user says "create a blog" and then provides a topic like "AI in healthcare", the system fails to open the wizard sidebar. Instead, the AI responds with a text-based outline in the chat.
+### Issue 1: Human Score shows 15% -- needs value-adjusted scoring
 
-**Root cause:** The two-phase streaming architecture relies on regex-based intent detection, but the follow-up topic message (e.g., "AI in healthcare") doesn't match any `ACTION_RULES` pattern. The system depends on `detectAIResponseIntent` scanning the AI's streamed text for phrases like "Launching the Content Wizard...", but the AI often doesn't use those exact phrases.
+**Current problem:** The AI detection prompt simply asks "is this AI-written?" and returns a confidence score. The human score = 100 - confidence. A well-structured, comprehensive article scores LOW because structured = AI-like. But structured + valuable content is exactly what search engines want.
 
-Additionally, the Content Builder has several features (Solution Integration Analysis, Document Structure Visualization, SEO Checklist) that need verification of proper integration in the Content Wizard.
+**Solution: Value-Adjusted Scoring**
+
+Rewrite the detection prompt in `aiContentDetectionService.ts` to evaluate content on 4 dimensions (as requested):
+
+1. **Personal experiences & opinions** -- first-person voice, anecdotes, unique takes (0-25 pts)
+2. **Specificity over generality** -- named companies, exact numbers, real benchmarks vs "many experts say..." (0-25 pts)
+3. **Writing pattern variation** -- sentence length variety, conversational asides, non-formulaic transitions (0-25 pts)
+4. **Factual depth** -- expert nuance, contrarian insights, beyond-surface analysis (0-25 pts)
+
+The prompt will ask the AI to score each dimension separately AND return a `contentValueScore` (0-100). The final displayed "Human Score" will be:
+
+```text
+adjustedScore = rawHumanScore + (contentValueBoost)
+where contentValueBoost = max(0, (contentValueScore - 50) * 0.4)
+```
+
+So if raw human = 15% but content value = 90, boost = (90-50)*0.4 = +16, final = 31%. If content value = 100, boost = +20, final = 35%. This rewards genuinely valuable content without blindly inflating scores.
+
+The badge will also show contextual labels:
+- >= 70%: green "Human: X%"  
+- 40-69% with high value: amber "Value Pass: X%"
+- < 40% with low value: red "Human: X%" (actual concern)
+
+**Files:** `src/services/aiContentDetectionService.ts`, `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
 
 ---
 
-## Part 1: Fix Intent Detection Chain (Critical)
+### Issue 2: Solution Integration shows 0 mentions -- need creative connection angles
 
-### Problem A: Follow-up topic messages are missed
+**Current problem:** When topic = "AI in healthcare" and solution = "GL Connect" (financial/data tool), the generator doesn't mention it because the solution-aware prompt allows skipping irrelevant solutions. But the user wants the AI to ALWAYS find creative connection angles.
 
-When the AI asks "What topic would you like to write about?" and the user replies "AI in healthcare", this plain text has no action intent match. The AI then responds conversationally instead of calling `launch_content_wizard`.
+**Solution:** Update `AISolutionIntegrationService.createSolutionAwarePrompt` in `advancedContentGeneration.ts` to add an explicit instruction: "You MUST find at least 1-2 creative angles to naturally connect this solution to the topic. Even if the solution isn't directly in the same industry, find overlap in data handling, workflow optimization, integration capabilities, or complementary use cases."
 
-**Fix 1: Add contextual intent detection in `useEnhancedAIChatDB.ts`**
+Also update the generation system prompt with a new rule: "When a solution is selected, ALWAYS mention it at least twice -- once as a contextual example and once as a recommendation. Find cross-industry angles if the solution is from a different domain."
 
-After Phase 1 streaming completes and no intent is detected from the user message OR the AI response, check the *conversation context*: if the previous AI message asked for a topic (detected by keywords like "topic", "keyword", "write about"), AND the current user message is short (under ~80 chars) and doesn't end with "?", treat it as a `launch_content_wizard` intent with the user's message as the keyword.
-
-**Fix 2: Strengthen AI response patterns in `actionIntentDetector.ts`**
-
-Add more AI response patterns that the model might use:
-- `/I'll\s+(help\s+you\s+)?(create|write)\s+(a\s+)?(blog|article|content)\s+(about|on)/i`
-- `/let's\s+(create|write|build)\s+(a\s+)?(blog|article|content)/i`
-- `/content\s+about\s+["']([^"']+)["']/i`
-
-**Fix 3: Direct wizard launch shortcut**
-
-When `detectActionIntent` matches `launch_content_wizard` with a keyword, skip Phase 2 entirely. Instead of calling `enhanced-ai-chat` (which then calls AI again), directly set the visualization data to `content_creation_choice` type on the assistant message. This eliminates the fragile AI-calls-tool-returns-visualData chain.
-
-### Problem B: Quick action prompt is too conversational
-
-The "Write content" quick action sends "I want to write a new blog post. What topic should I write about?" — this triggers intent detection correctly, but the AI then asks the user for a topic, adding an unnecessary round-trip.
-
-**Fix:** Change the quick action to open a **mini-dialog** (or inline prompt in the chat) asking for the topic first, THEN send the message with the topic already included. This removes one chat round-trip.
-
-Alternatively, skip the AI entirely for this quick action and directly open the Content Wizard sidebar with an empty keyword, letting the user fill it in Step 1.
+**Files:** `src/services/advancedContentGeneration.ts` (system prompt + solution-aware prompt builder)
 
 ---
 
-## Part 2: Feature Parity Audit (Content Builder vs Content Wizard)
+### Issue 3: Meta title allows below 50 characters -- should enforce 50-60 range
 
-### Already Integrated (Confirmed in Code)
+**Current problem:** 
+- The SEO checklist in `WizardStepGenerate.tsx` correctly checks `>= 50 && <= 60` but the display label says "too short" without enforcing it
+- The `MetaInformationCard.tsx` only flags `> 60` as destructive (red border) but doesn't flag `< 50`
+- The `generateMetaSuggestions.ts` utility truncates at 60 but has no minimum of 50
+- The AI prompt for meta generation says "under 60 chars" but doesn't say "at least 50"
 
-| Feature | Content Builder | Content Wizard | Status |
-|---------|----------------|----------------|--------|
-| Solution Selection | Yes | Yes (WizardStepSolution) | OK |
-| Solution-to-Brief Mapping | Yes | Yes (mapOfferingToBrief) | OK |
-| SERP Research | Yes | Yes (WizardStepResearch) | OK |
-| Outline Builder | Yes | Yes (WizardStepOutline) | OK |
-| Word Count Config | Yes | Yes (WizardStepWordCount) | OK |
-| Content Brief | Yes | Yes (in WizardStepWordCount) | OK |
-| Brand/Company Context | Yes | Yes (loaded in WizardStepGenerate) | OK |
-| Meta Title/Description | Yes | Yes (auto-generated) | OK |
-| SEO Score | Yes | Yes (calculateSeoScore) | OK |
-| AI Detection Score | Yes | Yes (detectAIContent) | OK |
-| Refinement Loop | No | Yes (Phase 5 addition) | OK |
-| Title Sanitization | Yes | Yes (sanitizeTitle) | OK |
-| Document Structure | Yes | Yes (extractDocumentStructure saved to metadata) | OK |
-| SERP Metrics Persistence | Yes | Yes (comprehensiveSerpData in metadata) | OK |
-| Solution Integration Metrics | Yes | Yes (solutionIntegrationMetrics in metadata) | OK |
-| Selection Stats | Yes | Yes (selectionStats in metadata) | OK |
-| Continue Editing | Yes | Yes (handleContinueEditing via sessionStorage) | OK |
-| User Instructions | No | Yes (getRecentUserInstructions) | OK |
+**Fixes across 4 files:**
 
-### Missing / Partial Features
+1. **`WizardStepGenerate.tsx`** line 782: Update character counter to show warning when < 50 (currently only shows `/60`)
+2. **`WizardStepGenerate.tsx`** line 252: Update AI prompt to say "between 50-60 characters" instead of "under 60 chars"
+3. **`MetaInformationCard.tsx`** lines 53, 62: Add `< 50` check alongside `> 60` for destructive styling
+4. **`generateMetaSuggestions.ts`**: Add minimum 50 char enforcement -- if generated title < 50, pad with "| Keyword" or extend
 
-| Feature | Content Builder | Content Wizard | Gap |
-|---------|----------------|----------------|-----|
-| **SEO Checklist UI** | Interactive checklist panel with pass/fail items | Only a numeric score badge | Missing interactive checklist |
-| **Solution Integration Dashboard** | Real-time analysis panel showing mentions, features covered, pain points | Only saves metrics to metadata; no UI | Missing live analysis UI |
-| **Content Brief Questionnaire** | Dedicated UI step for audience/goals/tone/pain-points | Fields exist in WizardStepWordCount but bundled with word count config | Adequate but could be clearer |
-| **Chunked Generation Progress** | N/A (single call) | Stage label only ("Generating content...") | Could show per-chunk progress |
-
-### Fixes for Missing Features
-
-**Fix 4: Add lightweight SEO checklist to WizardStepGenerate**
-
-After content is generated, show an expandable SEO checklist below the score badge. Reuse the existing `calculateSeoScore` breakdown to show individual pass/fail items:
-- Keyword in title (pass/fail)
-- Keyword in first 200 chars (pass/fail)
-- Meta title length 50-60 chars (pass/fail)
-- Meta description length 120-160 chars (pass/fail)
-- Has H2 headings (pass/fail)
-- Word count > 800 (pass/fail)
-- Has formatting (lists/bold) (pass/fail)
-
-This is purely a UI addition — the scoring logic already exists.
-
-**Fix 5: Add solution integration summary to WizardStepGenerate**
-
-After content is generated and a solution is selected, show a small card:
-- "Solution mentions: X" (how many times the solution name appears)
-- "Features covered: X/Y" (which features from the solution are mentioned)
-- These values are already computed at save time (lines 526-538); just compute and display them during generation too.
+**Files:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`, `src/components/content-builder/final-review/MetaInformationCard.tsx`, `src/utils/seo/meta/generateMetaSuggestions.ts`
 
 ---
 
-## Implementation Plan
+## Implementation Sequence
 
-### Files to Modify
+| Step | Task | Files |
+|------|------|-------|
+| 1 | Rewrite AI detection prompt with 4-dimension scoring + value-adjusted formula | `aiContentDetectionService.ts` |
+| 2 | Update human score badge to show contextual labels (value pass) | `WizardStepGenerate.tsx` |
+| 3 | Add "find connection angles" instruction to solution-aware prompts | `advancedContentGeneration.ts` |
+| 4 | Fix meta title 50-60 char validation across all files | `WizardStepGenerate.tsx`, `MetaInformationCard.tsx`, `generateMetaSuggestions.ts` |
+| 5 | End-to-end test with provided credentials | Browser test |
 
-| # | File | Change |
-|---|------|--------|
-| 1 | `src/utils/actionIntentDetector.ts` | Add more AI response patterns; add contextual follow-up detection export |
-| 2 | `src/hooks/useEnhancedAIChatDB.ts` | Add contextual intent detection for topic follow-ups; add direct wizard launch shortcut |
-| 3 | `src/components/ai-chat/EnhancedQuickActions.tsx` | Change "Write content" to directly open wizard with empty keyword |
-| 4 | `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx` | Add SEO checklist UI + solution integration summary card |
+## Technical Details
 
-### Execution Order
-
-1. **Fix intent detection** (actionIntentDetector.ts + useEnhancedAIChatDB.ts) — this is the critical broken path
-2. **Fix quick action shortcut** (EnhancedQuickActions.tsx) — removes unnecessary chat round-trip
-3. **Add SEO checklist + solution summary** (WizardStepGenerate.tsx) — feature parity polish
-
-### Technical Details
-
-**Contextual intent detection logic (useEnhancedAIChatDB.ts):**
+**Updated `AIDetectionResult` interface:**
 ```text
-After Phase 1 streaming:
-  1. Run detectActionIntent(userMessage) -- existing
-  2. If not detected, run detectAIResponseIntent(aiResponse) -- existing
-  3. NEW: If still not detected, check conversation context:
-     - Look at last 3 messages for AI asking about topic/keyword
-     - If found AND current user message is short + non-question
-     - Treat as launch_content_wizard with keyword = userMessage
+interface AIDetectionResult {
+  isAIWritten: boolean;
+  confidence: number;
+  contentValueScore: number;         // NEW: 0-100
+  adjustedHumanScore: number;        // NEW: value-adjusted
+  dimensionScores: {                 // NEW
+    personalVoice: number;
+    specificity: number;
+    writingVariation: number;
+    factualDepth: number;
+  };
+  aiIndicators: string[];
+  humanizationSuggestions: string[];
+}
 ```
 
-**Direct wizard launch (useEnhancedAIChatDB.ts):**
+**Value-adjusted formula in WizardStepGenerate:**
 ```text
-When detectActionIntent returns launch_content_wizard WITH a keyword:
-  - Skip executeToolAction entirely
-  - Set assistant message visualData = { type: 'content_creation_choice', keyword }
-  - This immediately renders the choice card inline
+const rawHuman = 100 - detection.confidence;
+const valueBoost = Math.max(0, (detection.contentValueScore - 50) * 0.4);
+const adjusted = Math.min(100, Math.round(rawHuman + valueBoost));
+setAiHumanScore(adjusted);
 ```
 
-**Quick action change (EnhancedQuickActions.tsx):**
+**Solution angle instruction (appended to solution-aware prompt):**
 ```text
-"Write content" onClick:
-  - Instead of send:message, directly call handleSetVisualization
-  - Pass { type: 'content_wizard', keyword: '' }
-  - Wizard opens at Step 1 where user types keyword
+"MANDATORY: You MUST mention [solution name] at least 2 times in the content.
+Find creative cross-industry angles: data integration, workflow optimization, 
+analytics capabilities, or complementary use cases. Frame the solution as a 
+relevant tool that enhances the topic's outcomes."
 ```
-
-This requires passing `onSetVisualization` to EnhancedQuickActions, or dispatching a custom event.
 
