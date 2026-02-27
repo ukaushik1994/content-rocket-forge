@@ -1,220 +1,209 @@
 
-# Phased Implementation Plan: All 35 Content Wizard Issues
+# Phase 4 & 5 Implementation Plan
 
-## Summary
+## Phase 4: SERP & Research Quality (Issues #25-29)
 
-35 issues across 5 phases. Each phase is self-contained and testable. The core architectural gap: `advancedContentGeneration.ts` calls `ai-proxy` directly, bypassing `AIServiceController` where Settings templates ARE loaded. This means the Wizard ignores all user-configured prompts.
+### 4A. Visual badges for real vs AI data (Issues #25, #29)
 
-**Key Decisions:**
-- Humanizer = anti-AI rules baked into the generation prompt (no UI toggle, no second pass)
-- Settings prompts = additive layer on top of Wizard's built-in logic (no overlap)
-- Solution defaults beat Settings when conflicting
-- Word count = strict within 10%
-- Settings Prompts tab will show what the Wizard already covers so users don't duplicate
+**File:** `src/components/ai-chat/content-wizard/WizardStepResearch.tsx`
 
----
+The component already tracks `source: 'serp' | 'ai'` and shows badges (line 194-196). Changes needed:
 
-## Phase 1: Critical Flow and UX Fixes
+- Update the Badge styling: SERP items get a green badge (`bg-green-500/15 text-green-400 border-green-500/30` with label "From SERP"), AI items get a blue badge (`bg-blue-500/15 text-blue-400 border-blue-500/30` with label "AI Suggested")
+- Current badges just say "SERP" or "AI" -- make them more descriptive and color-coded
 
-**Issues addressed: #1, #2, #3, #4, #6, #11**
+### 4B. Filter irrelevant strategy signals from outlines (Issue #26)
 
-| # | Issue | What to fix |
-|---|-------|-------------|
-| 1 | Choice card missing on repeat requests | Reset `requestPromotedVisualData` in the edge function every time `launch_content_wizard` tool is called, not just first time |
-| 2 | Silent topic validation | Show toast error + red border when Next is clicked with empty topic in `ContentWizardSidebar.tsx` |
-| 3 | Stale "trending industry topics" | Pass empty string instead of vague placeholder when no real keyword is extracted |
-| 4 | Goal dropdown not auto-filled from solution | Map solution category to a default goal in `WizardStepConfig.tsx` |
-| 6 | Word count slider not visible | Ensure word count control is accessible and scrollable on Config step |
-| 11 | `contentIntent` hardcoded to 'inform' | Use Goal dropdown value to dynamically set contentIntent |
+**File:** `src/components/ai-chat/content-wizard/WizardStepOutline.tsx`
 
-**Files:** `enhanced-ai-chat/index.ts`, `content-action-tools.ts`, `ContentWizardSidebar.tsx`, `WizardStepConfig.tsx`
+After the AI generates the outline (around line 131 where `parsed.map` happens), add a filter step:
 
-**Test:** Launch wizard twice in same chat, verify choice card appears both times. Clear topic, click Next, verify error shown. Select a solution, verify Goal auto-fills.
+```typescript
+const IRRELEVANT_PATTERNS = [
+  /video\s+content\s+opportunit/i,
+  /local\s+services?/i,
+  /visual\s+content\s+strateg/i,
+  /podcast\s+opportunit/i,
+  /infographic\s+creation/i,
+  /social\s+media\s+strateg/i,
+];
 
----
-
-## Phase 2: Content Quality Engine (Humanizer + Word Count + Depth)
-
-**Issues addressed: #5, #7, #8, #9, #10, #13, #33**
-
-All changes in `advancedContentGeneration.ts` system prompt.
-
-### 2A. Anti-AI Humanization (Issues #5, #33)
-
-Add mandatory WRITING STYLE RULES block to the system prompt:
-
-- Banned openers: "In today's [adjective] world/environment/landscape"
-- Banned phrases: "game-changer", "revolutionize", "landscape", "paramount", "leverage", "navigate the complexities", "realm", "tapestry", "comprehensive guide", "delve into", "it's important to note", "without further ado", "let's dive in"
-- Require: Start with a specific fact/statistic/question/scenario
-- Require: Write like a subject-matter expert talking to a peer
-- Require: Concrete numbers, specific examples, varied sentence length, active voice
-- Require: No filler paragraphs -- every paragraph must advance understanding
-
-This IS the humanizer -- built into the prompt so content comes out human on the first pass, no toggle needed.
-
-### 2B. Strict Word Count (Issue #8)
-
-Change "Aim for approximately X words" to: "You MUST write between [0.9x] and [1.1x] words. This is a hard requirement."
-
-### 2C. Case Study Enforcement (Issue #7)
-
-Add rule: When case studies are provided, cite each with exact company name, industry, and numerical results. Never paraphrase into vague "organizations have reported improvements."
-
-### 2D. Depth Over Surface (Issues #9, #10)
-
-Add rules: Include specific details (version numbers, module names, config steps). Replace generic bullets with actionable practitioner steps. At least one specific metric/benchmark per major section.
-
-### 2E. Non-Promotional Solution Integration (Issue #13)
-
-Add rule: Mention the solution as a natural recommendation within educational context. Never shift to sales copy tone. Maintain consistent expert voice throughout.
-
-**Files:** `advancedContentGeneration.ts` (system prompt section, lines 180-203)
-
-**Test:** Generate content for same keyword as before, compare output. Verify no AI cliches, word count within 10%, case studies cited with exact numbers, solution mentioned without promotional tone shift.
-
----
-
-## Phase 3: Settings Prompt Integration
-
-**Issues addressed: #17, #18, #19, #20**
-
-### How It Works
-
-The Wizard builds its full system prompt as it does today (SERP rules, solution context, outline, word count, humanizer rules from Phase 2). Then, BEFORE sending to ai-proxy, it loads the user's custom prompt template for the current format type via `getPromptTemplatesByType(formatType)` and appends it as an "ADDITIONAL USER PREFERENCES" section.
-
-**Priority order (top wins for conflicts):**
-1. Solution data (audience, tone, pain points) -- most specific context
-2. Content Wizard built-in rules (SERP, outline, word count, humanizer)
-3. Settings prompt templates -- user's custom style/voice/rules
-4. Brand guidelines -- supplementary context
-
-### No-Overlap Guarantee
-
-Update the Settings Prompts tab (`FormatPromptSettings.tsx`) to show a read-only summary of what the Wizard already handles:
-
-```
-The Content Wizard already handles:
-- Content structure and outline
-- Word count targets
-- SEO and keyword optimization
-- Solution/offering integration
-- SERP research data
-- Writing quality and anti-AI rules
-
-Your custom prompts add ON TOP of these. Use them for:
-- Tone and voice preferences ("always use British English")
-- Banned words or phrases specific to your brand
-- Formatting preferences ("always end with a CTA")
-- Industry-specific terminology rules
+// Filter out strategy signals that aren't article sections
+const filtered = parsed.filter(s => 
+  !IRRELEVANT_PATTERNS.some(p => p.test(s.title || s.heading || ''))
+);
 ```
 
-### Code Change
+Apply this filter at all three parse paths (JSON array, markdown headings, both around lines 131, 139).
 
-In `advancedContentGeneration.ts`, after the system prompt is built (around line 203), before the ai-proxy call (line 230):
+### 4C. Surface People Also Ask data (Issue #27)
 
-1. Import `getPromptTemplatesByType`
-2. Load templates for `config.formatType || 'blog'`
-3. If a template exists, append as: `ADDITIONAL USER PREFERENCES (follow these on top of all rules above): [template content]`
-4. If template has a `structureTemplate`, append that too
+The Research step already has an "FAQs / People Also Ask" category (line 140) that maps `serpResult.peopleAlsoAsk`. This is already implemented. The label just needs to be more prominent -- it already says "FAQs / People Also Ask". No code change needed here, it's working.
 
-### Brand Context Restructure
+### 4D. Improve content gap quality (Issue #28)
 
-In `WizardStepGenerate.tsx` `buildAdditionalInstructions()`, restructure brand info from loose text to a labeled section: "BRAND VOICE (follow strictly): Company, Tone, DO use, DON'T use"
+**File:** `src/components/ai-chat/content-wizard/WizardStepResearch.tsx`
 
-**Files:** `advancedContentGeneration.ts`, `FormatPromptSettings.tsx`, `WizardStepGenerate.tsx`
+In the `fetchAIResearch` function (line 72), improve the AI prompt (line 98) to generate competitor-specific gaps instead of generic template patterns:
 
-**Test:** Add a custom blog template in Settings ("always use British English, end with a question"). Generate content. Verify British spelling appears and article ends with a question -- while Wizard's structure/word count/solution rules are still followed.
+Change the prompt to:
+```
+For the topic "${keyword}", generate research data in JSON format:
+- faqs: 5 specific questions searchers ask (not generic "What is X?" patterns)
+- contentGaps: 4 specific topics that existing top-ranking articles MISS or cover poorly (reference what competitors lack, not just keyword variations)
+- relatedKeywords: 6 related long-tail search terms
+- serpHeadings: 5 specific headings that would outperform current top results
 
----
-
-## Phase 4: SERP and Research Quality
-
-**Issues addressed: #25, #26, #27, #28, #29**
-
-| # | Issue | Fix |
-|---|-------|-----|
-| 25 | Templated SERP headings | Add a flag to distinguish real SERP data from AI-generated fallback. Tag fallback items with "(AI-suggested)" label |
-| 26 | Irrelevant strategy signals in outlines | Filter out items containing "video content opportunity", "local services", "visual content" from auto-generated outlines -- these are strategy signals, not article sections |
-| 27 | No PAA integration | If "People Also Ask" data exists in SERP response, surface it in Research step alongside Content Gaps and Headings |
-| 28 | Content gaps look generic | Improve SERP analysis prompt to generate gaps referencing specific competitor weaknesses rather than keyword+template patterns |
-| 29 | SERP data not clearly labeled | Add visual badges in Research step: green "From SERP" vs blue "AI Suggested" |
-
-**Files:** `WizardStepResearch.tsx`, `WizardStepOutline.tsx`, SERP edge function
-
-**Test:** Enter a well-known keyword, verify research items show real SERP data with green badges. Verify outline doesn't include video/local service items.
-
----
-
-## Phase 5: Platform Parity and Polish
-
-**Issues addressed: #12, #14, #15, #16, #30, #31, #32, #34, #35**
-
-| # | Issue | Fix |
-|---|-------|-----|
-| 12 | No refinement loop | Add "Refine" button post-generation that sends content back with specific improvement instructions |
-| 14 | No content score in Wizard | After generation, run lightweight scoring (readability, keyword density, structure) and show a score badge |
-| 15 | No AI detection score | Import `aiContentDetectionService`, run automatically post-generation, show as small indicator |
-| 16 | User instructions not integrated | Fetch `getRecentUserInstructions()` and append top 3 most-used instructions to prompt |
-| 30 | Landing page promises vs reality | Ensure metrics shown match what landing page advertises |
-| 31 | No progress indicator | Show staged progress: "Building prompt... Generating... Finalizing..." |
-| 32 | Meta fields not editable | Make meta title/description editable directly in Generate step |
-| 34 | Content Builder metadata parity | Save same metadata fields (serpMetrics, solutionIntegrationMetrics) as Content Builder |
-| 35 | No "Continue Editing" | Pass all wizard state to Content Builder via sessionStorage |
-
-**Files:** `WizardStepGenerate.tsx`, `ContentWizardSidebar.tsx`, `aiContentDetectionService.ts`
-
-**Test:** Generate content, verify score badge and AI detection indicator appear. Click Refine, verify content improves. Click Continue Editing, verify Content Builder opens with all context preserved.
-
----
-
-## Implementation Sequence
-
-```text
-Phase 1 (Flow Fixes)         --> 1 session
-Phase 2 (Quality Engine)     --> 1 session
-Phase 3 (Prompt Integration) --> 1 session
-Phase 4 (SERP Quality)       --> 1 session
-Phase 5 (Parity & Polish)    --> 2 sessions
+Make every item specific and actionable, not templated. Return ONLY valid JSON.
 ```
 
-Each phase ends with end-to-end testing before proceeding.
+Also update the static fallback (lines 82-86) to be less templated -- use slightly more specific fallback patterns.
 
-## Issue Tracking Checklist
+---
 
-| Issue | Phase | Description |
-|-------|-------|-------------|
-| 1 | 1 | Choice card missing on repeat requests |
-| 2 | 1 | Silent topic validation |
-| 3 | 1 | Stale "trending industry topics" keyword |
-| 4 | 1 | Goal dropdown not auto-filled |
-| 5 | 2 | Generic AI-sounding openers |
-| 6 | 1 | Word count slider not visible |
-| 7 | 2 | Case studies cited vaguely |
-| 8 | 2 | Word count undershooting by 30-40% |
-| 9 | 2 | Shallow bullet points |
-| 10 | 2 | No specific details (versions, modules) |
-| 11 | 1 | contentIntent hardcoded to 'inform' |
-| 12 | 5 | No refinement loop |
-| 13 | 2 | Solution integration sounds promotional |
-| 14 | 5 | No content score in Wizard |
-| 15 | 5 | No AI detection score |
-| 16 | 5 | User instructions not integrated |
-| 17 | 3 | Settings templates NOT used by Wizard |
-| 18 | 3 | Settings templates could overlap Wizard rules |
-| 19 | 3 | Priority unclear when Settings vs Solution conflict |
-| 20 | 3 | Brand context loosely appended |
-| 21 | 3 | No visibility into what Wizard handles |
-| 22 | 3 | Settings prompts description unclear |
-| 23 | 3 | Structure templates ignored |
-| 24 | 3 | No fallback when no template exists |
-| 25 | 4 | SERP headings look templated |
-| 26 | 4 | Irrelevant strategy signals in outlines |
-| 27 | 4 | No PAA integration |
-| 28 | 4 | Content gaps look generic |
-| 29 | 4 | SERP data not labeled real vs AI |
-| 30 | 5 | Landing page vs reality gap |
-| 31 | 5 | No progress indicator during generation |
-| 32 | 5 | Meta fields not editable inline |
-| 33 | 2 | No humanization layer |
-| 34 | 5 | Content Builder metadata parity |
-| 35 | 5 | No "Continue Editing" flow |
+## Phase 5: Platform Parity & Polish (Issues #12, #14, #15, #16, #31, #32, #34, #35)
+
+### 5A. Refinement loop (Issue #12)
+
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+
+After content is generated (post line 816, near the Regenerate button), add a "Refine" input + button:
+
+- A small text input: "How should this be improved?"
+- A "Refine" button that sends the current content + refinement instruction back to `generateAdvancedContent` with the instruction prepended to `additionalInstructions`
+- This is different from Regenerate (which starts fresh) -- Refine passes the existing content as context
+
+Add state: `refinementInstruction`, `isRefining`
+
+The refine function sends to ai-proxy with a prompt like:
+```
+Here is existing content to improve:
+[content]
+
+Improvement requested: [user instruction]
+
+Rewrite the content incorporating this feedback while keeping the same structure.
+```
+
+### 5B. Content quality score badge (Issue #14)
+
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+
+The `calculateSeoScore` function already exists (line 72-108). After generation, display it as a badge next to the word count badge (around line 745-753):
+
+```tsx
+{!quick && seoScore !== null && (
+  <Badge variant={seoScore >= 70 ? 'default' : seoScore >= 40 ? 'secondary' : 'destructive'} className="text-[10px] gap-1">
+    SEO: {seoScore}/100
+  </Badge>
+)}
+```
+
+Compute `seoScore` reactively from `editableContent`.
+
+### 5C. AI detection score indicator (Issue #15)
+
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+
+Import `detectAIContent` from `@/services/aiContentDetectionService`. After content generation completes, run it automatically:
+
+```typescript
+const [aiScore, setAiScore] = useState<number | null>(null);
+
+// In generateContent, after setting editableContent:
+const detection = await detectAIContent(result);
+setAiScore(detection?.overallScore ?? null);
+```
+
+Show as a small badge: "Human: 85%" (where 85 = 100 - aiScore).
+
+### 5D. User instructions integration (Issue #16)
+
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+
+In `buildAdditionalInstructions()`, after the existing logic (around line 254), add:
+
+```typescript
+import { getRecentUserInstructions } from '@/services/userInstructionsService';
+
+// Inside buildAdditionalInstructions:
+try {
+  const recentInstructions = await getRecentUserInstructions(3);
+  if (recentInstructions.length > 0) {
+    parts.push(`USER'S PREFERRED INSTRUCTIONS (from history):\n${recentInstructions.join('\n')}`);
+  }
+} catch {}
+```
+
+Note: This makes `buildAdditionalInstructions` async, so `generateContent` will need to `await` it.
+
+### 5E. Progress indicator during generation (Issue #31)
+
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+
+Replace the simple `isGeneratingContent` spinner with a staged progress indicator:
+
+```typescript
+const [generationStage, setGenerationStage] = useState<string>('');
+
+// In generateContent:
+setGenerationStage('Building prompt...');
+// ... build config
+setGenerationStage('Generating content...');
+const result = await generateAdvancedContent(config);
+setGenerationStage('Analyzing quality...');
+// ... run seo score + ai detection
+setGenerationStage('');
+```
+
+Show the stage text below the spinner in the Generate button area.
+
+### 5F. Continue Editing with full state (Issue #35)
+
+**File:** `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+
+The `handleContinueEditing` already saves `continueEditingContentId` to sessionStorage (line 643-646). Enhance it to also save wizard context:
+
+```typescript
+sessionStorage.setItem('wizardContext', JSON.stringify({
+  keyword: wizardState.keyword,
+  researchSelections: wizardState.researchSelections,
+  outline: wizardState.outline,
+  serpData: wizardState.serpData,
+  selectedSolution: wizardState.selectedSolution ? {
+    id: wizardState.selectedSolution.id,
+    name: wizardState.selectedSolution.name,
+  } : null,
+}));
+```
+
+The Content Builder already loads by contentId, but having wizard context in sessionStorage enables richer editing context.
+
+### 5G. Meta fields already editable (Issue #32)
+
+Looking at lines 702-718, meta title and description are already editable `Input` and `Textarea` fields. This issue is already resolved.
+
+### 5H. Metadata parity (Issue #34)
+
+Looking at lines 404-503, the save logic already includes `serpMetrics`, `comprehensiveSerpData`, `solutionIntegrationMetrics`, `selectionStats`, `documentStructure`, and `seoScore`. This is already implemented with full parity.
+
+---
+
+## Files Modified
+
+| Phase | File | Changes |
+|-------|------|---------|
+| 4 | `WizardStepResearch.tsx` | Green/blue badge colors, improved AI prompt for gaps |
+| 4 | `WizardStepOutline.tsx` | Filter irrelevant strategy signals from generated outlines |
+| 5 | `WizardStepGenerate.tsx` | Refine button, SEO score badge, AI detection indicator, user instructions integration, progress stages, enhanced Continue Editing |
+
+## Already Done (No Changes Needed)
+- Issue #27 (PAA integration) -- already in Research step
+- Issue #32 (Meta fields editable) -- already editable
+- Issue #34 (Metadata parity) -- already comprehensive
+- Issue #30 (Landing page vs reality) -- addressed by adding visible scores
+
+## Implementation Order
+1. Phase 4 changes (Research badges + Outline filtering) -- quick wins
+2. Phase 5A-5C (Refine, scores, AI detection) -- core value
+3. Phase 5D-5F (Instructions, progress, Continue Editing) -- polish
