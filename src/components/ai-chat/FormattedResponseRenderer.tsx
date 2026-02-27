@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
@@ -714,114 +714,8 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
   }
   
   return (
-    <div className={cn("prose prose-sm max-w-none", className)}>
-      <ReactMarkdown
-        components={{
-          h1: ({ children }) => (
-            <h1 className="text-lg font-semibold text-foreground mb-4 mt-6 first:mt-0 border-b border-border pb-2">
-              {children}
-            </h1>
-          ),
-          h2: ({ children }) => (
-            <h2 className="text-base font-semibold text-foreground mb-3 mt-6 first:mt-0 border-l-4 border-primary pl-3">
-              {children}
-            </h2>
-          ),
-          h3: ({ children }) => (
-            <h3 className="text-sm font-semibold text-foreground mb-2 mt-4 first:mt-0">
-              {children}
-            </h3>
-          ),
-              p: ({ children }) => (
-                <p className="text-sm text-foreground/90 mb-4 leading-relaxed max-w-prose">
-                  {children}
-                </p>
-              ),
-          ul: ({ children }) => (
-            <ul className="list-disc space-y-2 mb-4 text-sm text-foreground/90 ml-6 pl-0">
-              {children}
-            </ul>
-          ),
-          ol: ({ children }) => (
-            <ol className="list-decimal space-y-2 mb-4 text-sm text-foreground/90 ml-6 pl-0">
-              {children}
-            </ol>
-          ),
-          li: ({ children }) => (
-            <li className="ml-0 pl-1 leading-relaxed">
-              {children}
-            </li>
-          ),
-          strong: ({ children }) => (
-            <strong className="font-semibold text-foreground">
-              {children}
-            </strong>
-          ),
-          em: ({ children }) => (
-            <em className="italic text-foreground/90">
-              {children}
-            </em>
-          ),
-          hr: () => (
-            <hr className="my-4 border-border" />
-          ),
-          blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-primary/30 pl-4 py-2 bg-muted/20 rounded-r-md mb-3">
-              <div className="text-sm text-muted-foreground italic">
-                {children}
-              </div>
-            </blockquote>
-          ),
-          table: ({ children }) => (
-            <EnhancedTableRenderer rawTableData={processedResult.processedContent}>
-              <table className="min-w-full border border-border rounded-lg bg-card">
-                {children}
-              </table>
-            </EnhancedTableRenderer>
-          ),
-          thead: ({ children }) => (
-            <thead className="bg-muted/50">
-              {children}
-            </thead>
-          ),
-          tbody: ({ children }) => (
-            <tbody className="divide-y divide-border">
-              {children}
-            </tbody>
-          ),
-          tr: ({ children }) => (
-            <tr className="hover:bg-muted/30 transition-colors">
-              {children}
-            </tr>
-          ),
-          th: ({ children }) => (
-            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">
-              {children}
-            </th>
-          ),
-          td: ({ children }) => (
-            <td className="px-4 py-3 text-sm text-foreground border-b border-border/50">
-              {children}
-            </td>
-          ),
-          code: ({ children, className }) => {
-            const isInline = !className;
-            return isInline ? (
-              <code className="bg-muted/70 px-2 py-1 rounded-md text-xs font-mono text-foreground border border-border/30">
-                {children}
-              </code>
-            ) : (
-              <pre className="bg-muted/50 p-4 rounded-lg overflow-x-auto mb-4 border border-border/30 backdrop-blur-sm">
-                <code className="text-xs font-mono text-foreground/90 leading-relaxed">
-                  {children}
-                </code>
-              </pre>
-            );
-          }
-        }}
-      >
-        {processedResult.processedContent}
-      </ReactMarkdown>
-    </div>
+    <SafeMarkdown className={cn("prose prose-sm max-w-none dark:prose-invert", className)}>
+      {processedResult.processedContent}
+    </SafeMarkdown>
   );
 };

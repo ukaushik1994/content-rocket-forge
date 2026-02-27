@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { CompetitorSolutionsTab } from './CompetitorSolutionsTab';
-import ReactMarkdown from 'react-markdown';
+import { SafeMarkdown } from '@/components/ui/SafeMarkdown';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { 
