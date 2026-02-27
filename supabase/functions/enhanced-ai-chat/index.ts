@@ -2124,7 +2124,8 @@ serve(async (req) => {
             });
           }
           // Promote visualData from tool results (e.g., launch_content_wizard)
-          if (parsed?.visualData && !requestPromotedVisualData) {
+          // Always overwrite so repeat requests show the choice card again
+          if (parsed?.visualData) {
             requestPromotedVisualData = parsed.visualData;
             console.log('📊 Promoted visualData from tool result:', parsed.visualData.type);
           }

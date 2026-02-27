@@ -13,6 +13,7 @@ import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solu
 import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { mapOfferingToBrief } from '@/utils/content/offeringToBrief';
+import { toast } from 'sonner';
 
 interface ContentWizardSidebarProps {
   isOpen: boolean;
@@ -141,7 +142,21 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     }
   };
 
-  const goNext = () => { if (currentStep < maxStep && canProceed()) setCurrentStep(s => s + 1); };
+  const [validationError, setValidationError] = useState(false);
+
+  const goNext = () => {
+    if (currentStep === 0 && wizardState.keyword.trim().length < 2) {
+      toast.error('Please enter a topic to continue');
+      setValidationError(true);
+      setTimeout(() => setValidationError(false), 2000);
+      return;
+    }
+    if (currentStep === 0 && !wizardState.selectedSolution) {
+      toast.error('Please select an offering to continue');
+      return;
+    }
+    if (currentStep < maxStep && canProceed()) setCurrentStep(s => s + 1);
+  };
   const goBack = () => { if (currentStep > 0) setCurrentStep(s => s - 1); };
 
   // Auto-infer writing defaults + content brief from solution data using shared utility
@@ -238,9 +253,10 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         onSelect={handleSolutionSelect}
                         preSelectedId={solutionId}
                         keyword={wizardState.keyword}
-                        onKeywordChange={(kw) => updateState({ keyword: kw })}
+                        onKeywordChange={(kw) => { updateState({ keyword: kw }); setValidationError(false); }}
                         contentType={wizardState.contentType}
                         onContentTypeChange={(ct) => updateState({ contentType: ct })}
+                        keywordError={validationError}
                       />
                     )}
                     {!quick && currentStep === 1 && (
