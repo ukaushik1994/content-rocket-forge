@@ -14,6 +14,8 @@ import { SafeMarkdown } from '@/components/ui/SafeMarkdown';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
 import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
 import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
+import { calculateKeywordUsage, calculateKeywordUsageScore } from '@/utils/seo/keywordAnalysis';
+import { calculateContentLengthScore, calculateReadabilityScore } from '@/utils/seo/contentAnalysis';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
 import { detectAIContent } from '@/services/aiContentDetectionService';
@@ -79,24 +81,22 @@ function calculateSeoScore(
   metaTitle: string,
   metaDescription: string
 ): number {
-  let score = 0;
-  let itemsPassed = 0;
-  const lowerContent = content.toLowerCase();
-  const lowerKeyword = keyword.toLowerCase();
-  const firstLine = content.split('\n').find(l => l.trim())?.toLowerCase() || '';
-  if (firstLine.includes(lowerKeyword)) { score += 20; itemsPassed++; }
-  if (lowerContent.substring(0, 200).includes(lowerKeyword)) { score += 15; itemsPassed++; }
-  if (metaTitle.length >= 50 && metaTitle.length <= 60) { score += 15; itemsPassed++; }
-  else if (metaTitle.length >= 30 && metaTitle.length <= 70) { score += 12; }
-  if (metaDescription.length >= 120 && metaDescription.length <= 160) { score += 15; itemsPassed++; }
-  else if (metaDescription.length >= 80 && metaDescription.length <= 200) { score += 12; }
-  if (/^## /m.test(content)) { score += 15; itemsPassed++; }
-  const wordCount = content.split(/\s+/).filter(Boolean).length;
-  if (wordCount > 800) { score += 10; itemsPassed++; }
-  if (/^[-*+] /m.test(content) || /\*\*.+?\*\*/m.test(content)) { score += 10; itemsPassed++; }
-  // Floor: if 5+ of 7 checklist items pass, score should be at least 70
-  if (itemsPassed >= 5) score = Math.max(score, 70);
-  return Math.min(score, 100);
+  // Use Content Builder's proven 3-dimension weighted algorithm
+  const keywordUsage = calculateKeywordUsage(content, keyword, []);
+  const keywordScore = calculateKeywordUsageScore(keywordUsage, keyword);
+  const contentLengthScore = calculateContentLengthScore(content);
+  const readabilityScore = calculateReadabilityScore(content);
+
+  // Weighted average (same weights as Content Builder)
+  let score = Math.round(
+    (keywordScore * 0.4) + (contentLengthScore * 0.3) + (readabilityScore * 0.3)
+  );
+
+  // Bonus for meta tag optimization (up to +10)
+  if (metaTitle.length >= 50 && metaTitle.length <= 60) score += 5;
+  if (metaDescription.length >= 120 && metaDescription.length <= 160) score += 5;
+
+  return Math.min(100, score);
 }
 
 interface SeoCheckItem {
@@ -152,6 +152,27 @@ function getSeoChecklist(
       passed: /^[-*+] /m.test(content) || /\*\*.+?\*\*/m.test(content),
       detail: (/^[-*+] /m.test(content) || /\*\*.+?\*\*/m.test(content)) ? 'Lists or bold text found' : 'Add lists or bold text',
     },
+    // Content Builder parity items
+    (() => {
+      const kwUsage = calculateKeywordUsage(content, keyword, []);
+      const mainKw = kwUsage.find(k => k.keyword.toLowerCase() === keyword.toLowerCase());
+      const density = mainKw ? parseFloat(mainKw.density.replace('%', '')) : 0;
+      return {
+        label: 'Keyword density',
+        passed: density >= 1 && density <= 3,
+        detail: `${density.toFixed(1)}% (optimal: 1-3%)`,
+      };
+    })(),
+    (() => {
+      const sentences = content.split(/[.!?]+/).filter(Boolean);
+      const words = content.split(/\s+/).filter(Boolean);
+      const avg = sentences.length > 0 ? words.length / sentences.length : 0;
+      return {
+        label: 'Readability',
+        passed: avg <= 25,
+        detail: `Avg sentence: ${Math.round(avg)} words${avg > 25 ? ' (shorten sentences)' : ''}`,
+      };
+    })(),
   ];
 }
 interface WizardStepGenerateProps {
@@ -998,12 +1019,13 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
           {/* Solution Integration Summary */}
           {wizardState.selectedSolution && editableContent && (() => {
-            const solName = wizardState.selectedSolution!.name;
-            const mentions = (editableContent.match(
-              new RegExp(solName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
-            ) || []).length;
-            const features = Array.isArray(wizardState.selectedSolution!.features) ? wizardState.selectedSolution!.features : [];
-            const covered = features.filter((f: string) => editableContent.toLowerCase().includes(f.toLowerCase())).length;
+            const solMetrics = analyzeSolutionIntegration(editableContent, {
+              name: wizardState.selectedSolution!.name,
+              features: Array.isArray(wizardState.selectedSolution!.features) ? wizardState.selectedSolution!.features : [],
+              painPoints: Array.isArray(wizardState.selectedSolution!.painPoints) ? wizardState.selectedSolution!.painPoints : [],
+              targetAudience: Array.isArray(wizardState.selectedSolution!.targetAudience) ? wizardState.selectedSolution!.targetAudience : [],
+            });
+            const totalFeatures = Array.isArray(wizardState.selectedSolution!.features) ? wizardState.selectedSolution!.features.length : 0;
             return (
               <div className="rounded-lg border border-border/20 bg-muted/20 p-2.5 space-y-1">
                 <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
@@ -1011,11 +1033,11 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                 </div>
                 <div className="flex gap-3 text-[10px]">
                   <span className="text-foreground">
-                    <span className="font-semibold">{mentions}</span> mentions of "{solName}"
+                    <span className="font-semibold">{solMetrics.nameMentions}</span> mentions of "{wizardState.selectedSolution!.name}"
                   </span>
-                  {features.length > 0 && (
+                  {totalFeatures > 0 && (
                     <span className="text-foreground">
-                      <span className="font-semibold">{covered}/{features.length}</span> features covered
+                      <span className="font-semibold">{solMetrics.mentionedFeatures.length}/{totalFeatures}</span> features covered
                     </span>
                   )}
                 </div>
