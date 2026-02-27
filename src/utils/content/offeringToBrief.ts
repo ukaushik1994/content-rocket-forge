@@ -63,15 +63,22 @@ function inferToneFromAudience(audience: string): string {
 }
 
 /**
- * Infers content goal from content intent or defaults.
+ * Infers content goal from content intent, priority tag, or offering category.
  */
-export function inferContentGoal(contentIntent?: string, priorityTag?: string): string {
+export function inferContentGoal(contentIntent?: string, priorityTag?: string, category?: string): string {
   if (contentIntent === 'inform' || contentIntent === 'educate') return 'educate';
   if (contentIntent === 'convert') return 'convert';
   if (contentIntent === 'entertain') return 'engage';
   if (priorityTag === 'quick-win') return 'rank';
   if (priorityTag === 'authority') return 'authority';
-  return '';
+  // Auto-fill from solution category when no explicit intent
+  if (category) {
+    const c = category.toLowerCase();
+    if (c.includes('sales') || c.includes('commerce') || c.includes('pricing')) return 'convert';
+    if (c.includes('tech') || c.includes('platform') || c.includes('software') || c.includes('saas')) return 'educate';
+    if (c.includes('brand') || c.includes('thought') || c.includes('consulting')) return 'authority';
+  }
+  return 'educate'; // sensible default instead of empty
 }
 
 /**
@@ -113,7 +120,7 @@ export function mapOfferingToBrief(
     tone = inferToneFromAudience(audience);
   }
 
-  const contentGoal = inferContentGoal(contentIntent, priorityTag);
+  const contentGoal = inferContentGoal(contentIntent, priorityTag, offering.category);
   const specificPoints = composeSpecificPoints(offering);
 
   // Writing style + expertise from audience

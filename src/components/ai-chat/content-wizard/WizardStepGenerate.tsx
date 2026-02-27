@@ -273,7 +273,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         expertiseLevel: wizardState.expertiseLevel,
         targetLength,
         contentType: wizardState.contentArticleType,
-        contentIntent: 'inform',
+        contentIntent: (wizardState.contentBrief.contentGoal as any) || 'inform',
         serpSelections: quick ? [] : serpSelections,
         selectedSolution: wizardState.selectedSolution,
         additionalInstructions: buildAdditionalInstructions(),

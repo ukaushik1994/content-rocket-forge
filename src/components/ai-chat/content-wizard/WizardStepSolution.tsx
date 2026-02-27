@@ -18,6 +18,7 @@ interface WizardStepSolutionProps {
   onKeywordChange: (keyword: string) => void;
   contentType: string;
   onContentTypeChange: (type: string) => void;
+  keywordError?: boolean;
 }
 
 export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
@@ -28,6 +29,7 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
   onKeywordChange,
   contentType,
   onContentTypeChange,
+  keywordError,
 }) => {
   const [solutions, setSolutions] = useState<EnhancedSolution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +92,7 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
           value={keyword}
           onChange={(e) => onKeywordChange(e.target.value)}
           placeholder="e.g. AI in healthcare, best running shoes..."
-          className="text-sm mt-2"
+          className={cn("text-sm mt-2", keywordError && "border-destructive ring-1 ring-destructive/30")}
           autoFocus
         />
       </div>
