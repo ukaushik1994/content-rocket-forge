@@ -39,7 +39,7 @@ export const RepositoryHeader: React.FC = () => {
     {
       label: 'Social Post',
       icon: MessageSquare,
-      action: () => navigate('/content-builder?type=social_post'),
+      action: () => navigate('/ai-chat'),
       gradient: 'from-pink-500 to-pink-600',
       description: 'Create social media content'
     }
