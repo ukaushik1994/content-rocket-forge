@@ -57,7 +57,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           title: 'No email content yet',
           description: 'Create engaging email campaigns to connect with your audience.',
           actionLabel: 'Create Email',
-          action: () => navigate('/content-builder?type=email')
+          action: () => navigate('/ai-chat')
         },
         landing_page: {
           icon: Globe,
