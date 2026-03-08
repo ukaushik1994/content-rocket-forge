@@ -550,6 +550,15 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             onSendMessage={handleSendMessage} 
             isLoading={isLoading} 
             placeholder={messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
+            onOpenProposals={() => {
+              // Trigger the proposal browser sidebar via the same visual data flow
+              handleSetVisualization({
+                type: 'proposal_browser',
+                title: 'AI Proposals',
+                description: 'Browse AI-generated content proposals',
+                step: 'solution_selection'
+              });
+            }}
           />
         </div>
       </div>
