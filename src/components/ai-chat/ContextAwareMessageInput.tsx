@@ -22,6 +22,7 @@ interface ContextAwareMessageInputProps {
   placeholder?: string;
   onTypingChange?: (isTyping: boolean) => void;
   onOpenProposals?: () => void;
+  onLaunchWizard?: (userPrompt: string) => void;
 }
 
 export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> = ({
