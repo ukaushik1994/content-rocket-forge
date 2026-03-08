@@ -13,11 +13,11 @@ const ContentTypeSelection = () => {
 
   const contentTypes = [
     {
-      id: 'content-builder',
-      title: 'Content Builder',
+      id: 'content-wizard',
+      title: 'Content Wizard',
       description: 'Create high-quality blog articles, social media posts, newsletters, and other engaging content types with AI-powered assistance',
       icon: Puzzle,
-      path: '/content-builder',
+      path: '/ai-chat',
       features: ['Multi-format', 'AI-powered', 'SEO optimized', 'Template library'],
       targetAudience: ['Content creators', 'Marketers', 'Social media managers'],
       category: 'Content Creation',

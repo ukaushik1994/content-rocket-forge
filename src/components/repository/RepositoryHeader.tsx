@@ -79,7 +79,7 @@ export const RepositoryHeader: React.FC = () => {
           transition={{ delay: 0.4, duration: 0.6 }}
         >
           <Button 
-            onClick={() => navigate('/content-builder')}
+            onClick={() => navigate('/ai-chat')}
             className="glass-button bg-gradient-to-r from-primary to-neon-blue hover:from-primary/80 hover:to-neon-blue/80 text-white border-white/20 shadow-lg hover:shadow-xl transition-all duration-300"
             size="lg"
           >

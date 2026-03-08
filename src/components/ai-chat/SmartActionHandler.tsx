@@ -150,7 +150,7 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
                 contentBuilder.setContentType('blog');
                 contentBuilder.setContentTitle(`How to Use ${solution.name} Effectively`);
                 
-                navigate('/content-builder');
+                navigate('/ai-chat');
                 
                 result = {
                   solutionOptimized: true,

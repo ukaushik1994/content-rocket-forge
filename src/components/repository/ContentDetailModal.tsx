@@ -276,7 +276,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     if (content.content_type === 'glossary') {
       navigate(`/glossary-builder?edit=${content.id}`);
     } else {
-      navigate(`/content-builder?edit=${content.id}`);
+      navigate(`/ai-chat`);
     }
     onClose();
   };

@@ -172,7 +172,7 @@ export const useStrategyIntegration = () => {
     if (solution?.id) params.set('solution_id', solution.id);
     if (pipelineItem?.id) params.set('pipeline_id', pipelineItem.id);
     
-    navigate(`/content-builder?${params.toString()}`);
+    navigate(`/ai-chat`);
   };
 
   const navigateToKeywords = (tab?: string) => {

@@ -142,7 +142,7 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
         description: action.description,
         ...action.data
       };
-      navigate('/content-builder', { state: { prefilledData: preloadData } });
+      navigate('/ai-chat', { state: { prefilledData: preloadData } });
     } else if (actionStr.includes('keyword-research') || actionStr.includes('research')) {
       navigate('/research/content-strategy', { 
         state: { prefilledKeyword: action.data?.keyword || action.data?.mainKeyword || action.label }

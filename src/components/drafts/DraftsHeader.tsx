@@ -14,7 +14,7 @@ export function DraftsHeader() {
   const drafts = contentItems.filter(item => item.status === 'draft');
   
   const handleCreateNew = () => {
-    navigate('/content-builder');
+    navigate('/ai-chat');
   };
   
   return (
