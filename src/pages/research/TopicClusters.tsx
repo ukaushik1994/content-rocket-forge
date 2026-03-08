@@ -130,7 +130,7 @@ const TopicClusters = () => {
         clusterId: cluster.id
       };
       localStorage.setItem('cluster_content_data', JSON.stringify(clusterData));
-      window.location.href = '/content-builder';
+      window.location.href = '/ai-chat';
     }
   };
 
