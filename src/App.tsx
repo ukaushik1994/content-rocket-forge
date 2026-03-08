@@ -16,7 +16,7 @@ import CheckEmail from "./pages/CheckEmail";
 import AuthCallback from "./pages/AuthCallback";
 import Repository from "./pages/Repository";
 import { RepositoryBackfill } from "./pages/RepositoryBackfill";
-import ContentBuilderPage from "./pages/ContentBuilder";
+// ContentBuilder deprecated - redirects to /ai-chat
 import ContentTypeSelection from "./pages/ContentTypeSelection";
 import ContentApproval from "./pages/ContentApproval";
 import GlossaryBuilder from "./pages/GlossaryBuilder";
@@ -137,7 +137,7 @@ const App = () => (
                   <Route path="/drafts" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/repository" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/repository/backfill" element={<ProtectedRoute><RepositoryBackfill /></ProtectedRoute>} />
-                  <Route path="/content-builder" element={<ProtectedRoute><ContentBuilderPage /></ProtectedRoute>} />
+                  <Route path="/content-builder" element={<Navigate to="/ai-chat" replace />} />
                   <Route path="/content-type-selection" element={<ProtectedRoute><ContentTypeSelection /></ProtectedRoute>} />
                   <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                   <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />

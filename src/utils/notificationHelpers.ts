@@ -56,7 +56,7 @@ export class NotificationHelper {
           label: 'View',
           action: 'navigate',
           variant: 'secondary',
-          url: `/content-builder?id=${contentId}`
+          url: `/ai-chat`
         }
       ],
       previewData: { contentId, contentTitle, reviewerName },
@@ -78,11 +78,11 @@ export class NotificationHelper {
           label: 'Edit Content',
           action: 'navigate',
           variant: 'primary',
-          url: `/content-builder?id=${contentId}`
+          url: `/ai-chat`
         }
       ],
       previewData: { contentId, contentTitle, reason },
-      linkUrl: `/content-builder?id=${contentId}`
+      linkUrl: `/ai-chat`
     });
   }
 
@@ -101,7 +101,7 @@ export class NotificationHelper {
           label: 'View Results',
           action: 'navigate',
           variant: 'primary',
-          url: `/content-builder?id=${contentId}&tab=analysis`
+          url: `/ai-chat`
         }
       ],
       previewData: { contentId, contentTitle, analysisType },
@@ -123,7 +123,7 @@ export class NotificationHelper {
           label: 'Review',
           action: 'navigate',
           variant: 'primary',
-          url: `/content-builder?id=${contentId}`
+          url: `/ai-chat`
         },
         {
           id: 'regenerate',
@@ -173,7 +173,7 @@ export class NotificationHelper {
           label: 'Create Content',
           action: 'navigate',
           variant: 'primary',
-          url: `/content-builder?keyword=${encodeURIComponent(keyword)}`
+          url: `/ai-chat`
         },
         {
           id: 'view_opportunity',

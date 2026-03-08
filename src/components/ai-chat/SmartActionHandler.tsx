@@ -32,8 +32,8 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
       switch (action) {
         // Navigation actions
         case 'navigate:/content-builder':
-          navigate('/content-builder');
-          result = { navigated: true, route: '/content-builder' };
+          navigate('/ai-chat');
+          result = { navigated: true, route: '/ai-chat' };
           break;
 
         case 'navigate:/solutions':
@@ -70,8 +70,8 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
               contentBuilder.setContentTitle(data.strategy.title);
             }
             
-            // Navigate to content builder
-            navigate('/content-builder');
+            // Navigate to content wizard
+            navigate('/ai-chat');
             
             result = { 
               contentBuilderInitialized: true, 
@@ -150,7 +150,7 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
                 contentBuilder.setContentType('blog');
                 contentBuilder.setContentTitle(`How to Use ${solution.name} Effectively`);
                 
-                navigate('/content-builder');
+                navigate('/ai-chat');
                 
                 result = {
                   solutionOptimized: true,

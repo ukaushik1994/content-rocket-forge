@@ -89,11 +89,11 @@ export const BriefModal: React.FC<BriefModalProps> = ({
     // Store brief data in localStorage for content builder
     localStorage.setItem('contentBrief', JSON.stringify(briefData));
     
-    // Navigate to content builder
-    navigate('/content-builder?from=opportunity');
+    // Navigate to content wizard
+    navigate('/ai-chat');
     onClose();
     
-    toast.success('Brief loaded into Content Builder');
+    toast.success('Brief loaded into Content Wizard');
   };
 
   const handleAddToCalendar = async () => {

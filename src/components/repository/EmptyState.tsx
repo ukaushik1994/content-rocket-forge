@@ -36,14 +36,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           title: 'No articles yet',
           description: 'Start creating informative articles to build your content library.',
           actionLabel: 'Create Article',
-          action: () => navigate('/content-builder?type=article')
+          action: () => navigate('/ai-chat')
         },
         blog: {
           icon: Edit,
           title: 'No blog posts yet',
           description: 'Share your thoughts and insights by creating your first blog post.',
           actionLabel: 'Create Blog Post',
-          action: () => navigate('/content-builder?type=blog')
+          action: () => navigate('/ai-chat')
         },
         glossary: {
           icon: BookOpen,
@@ -57,21 +57,21 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           title: 'No email content yet',
           description: 'Create engaging email campaigns to connect with your audience.',
           actionLabel: 'Create Email',
-          action: () => navigate('/content-builder?type=email')
+          action: () => navigate('/ai-chat')
         },
         landing_page: {
           icon: Globe,
           title: 'No landing pages yet',
           description: 'Design compelling landing pages to convert visitors into customers.',
           actionLabel: 'Create Landing Page',
-          action: () => navigate('/content-builder?type=landing_page')
+          action: () => navigate('/ai-chat')
         },
         social_post: {
           icon: MessageSquare,
           title: 'No social posts yet',
           description: 'Create engaging social media content to grow your online presence.',
           actionLabel: 'Create Social Post',
-          action: () => navigate('/content-builder?type=social_post')
+          action: () => navigate('/ai-chat')
         }
       };
 
@@ -84,7 +84,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         title: `No ${status} content`,
         description: `You don't have any ${status} content yet. Create some content and set its status to see it here.`,
         actionLabel: 'Create Content',
-        action: () => navigate('/content-builder')
+        action: () => navigate('/ai-chat')
       };
     }
 
@@ -93,7 +93,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       title: 'Welcome to your Content Repository',
       description: 'This is where all your content will live. Start by creating your first piece of content.',
       actionLabel: 'Create Your First Content',
-      action: () => navigate('/content-builder')
+      action: () => navigate('/ai-chat')
     };
   };
 

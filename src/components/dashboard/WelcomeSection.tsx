@@ -138,7 +138,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
               y: 0
             }
           }}>
-              <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300 hover:shadow-neon group relative overflow-hidden" onClick={() => navigate('/content-builder')}>
+              <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300 hover:shadow-neon group relative overflow-hidden" onClick={() => navigate('/ai-chat')}>
                 <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-20 transition-opacity" />
                 <span className="relative z-10 flex items-center">
                   New Content Project

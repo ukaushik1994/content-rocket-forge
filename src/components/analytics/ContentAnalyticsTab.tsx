@@ -184,7 +184,7 @@ export const ContentAnalyticsTab = () => {
               <Button 
                 variant="outline" 
                 className="border-blue-500/30 hover:bg-blue-500/10"
-                onClick={() => navigate('/content-builder')}
+                onClick={() => navigate('/ai-chat')}
               >
                 <Rocket className="h-4 w-4 mr-2" />
                 Create Content

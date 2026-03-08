@@ -32,7 +32,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ navi
       title: "AI Content Creation",
       description: "Generate high-quality, SEO-optimized content with advanced AI assistance.",
       icon: <Brain className="h-6 w-6" />,
-      action: () => navigate('/content-builder'),
+      action: () => navigate('/ai-chat'),
       buttonText: "Create Content",
       gradient: "from-neon-purple/20 to-neon-pink/15",
       iconBg: "from-neon-purple/30 to-neon-pink/20",

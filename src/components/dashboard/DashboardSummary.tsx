@@ -698,7 +698,7 @@ export const DashboardSummary = () => {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button 
                 className="bg-gradient-to-r from-neon-blue/20 to-neon-purple/20 hover:from-neon-blue/30 hover:to-neon-purple/30 text-white border border-white/20 hover-scale"
-                onClick={() => navigate('/content-builder')}
+                onClick={() => navigate('/ai-chat')}
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Create New Content

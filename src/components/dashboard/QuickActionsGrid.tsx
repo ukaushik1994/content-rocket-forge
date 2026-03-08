@@ -35,7 +35,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       title: "AI Content Creation",
       description: "Generate high-quality, SEO-optimized content with advanced AI assistance.",
       icon: <Brain className="h-5 w-5 text-neon-purple" />,
-      action: () => navigate('/content-builder'),
+      action: () => navigate('/ai-chat'),
       buttonText: "Create Content",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-neon-purple/30 to-neon-pink/20",

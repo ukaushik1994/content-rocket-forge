@@ -11,7 +11,7 @@ export const RepositoryHeader: React.FC = () => {
     {
       label: 'New Article',
       icon: FileText,
-      action: () => navigate('/content-builder'),
+      action: () => navigate('/ai-chat'),
       gradient: 'from-blue-500 to-blue-600',
       description: 'Create blog posts and articles'
     },
@@ -25,21 +25,21 @@ export const RepositoryHeader: React.FC = () => {
     {
       label: 'Email Content',
       icon: Mail,
-      action: () => navigate('/content-builder?type=email'),
+      action: () => navigate('/ai-chat'),
       gradient: 'from-green-500 to-green-600',
       description: 'Create email campaigns'
     },
     {
       label: 'Landing Page',
       icon: Globe,
-      action: () => navigate('/content-builder?type=landing_page'),
+      action: () => navigate('/ai-chat'),
       gradient: 'from-orange-500 to-orange-600',
       description: 'Build landing pages'
     },
     {
       label: 'Social Post',
       icon: MessageSquare,
-      action: () => navigate('/content-builder?type=social_post'),
+      action: () => navigate('/ai-chat'),
       gradient: 'from-pink-500 to-pink-600',
       description: 'Create social media content'
     }
@@ -79,7 +79,7 @@ export const RepositoryHeader: React.FC = () => {
           transition={{ delay: 0.4, duration: 0.6 }}
         >
           <Button 
-            onClick={() => navigate('/content-builder')}
+            onClick={() => navigate('/ai-chat')}
             className="glass-button bg-gradient-to-r from-primary to-neon-blue hover:from-primary/80 hover:to-neon-blue/80 text-white border-white/20 shadow-lg hover:shadow-xl transition-all duration-300"
             size="lg"
           >
