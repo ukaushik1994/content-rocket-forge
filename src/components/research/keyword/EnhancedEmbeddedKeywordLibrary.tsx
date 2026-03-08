@@ -118,7 +118,7 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
             </div>
             <h3 className="text-lg font-semibold mb-2">No keywords in your content yet</h3>
             <p className="text-muted-foreground mb-4">Start creating content and adding keywords to build your keyword repository</p>
-            <Button onClick={() => window.location.href = '/content-builder'}>
+            <Button onClick={() => window.location.href = '/ai-chat'}>
               Create Content →
             </Button>
           </div>
