@@ -186,3 +186,6 @@ verify_jwt = false
 
 [functions.engage-unsubscribe]
 verify_jwt = false
+
+[functions.extract-wizard-context]
+verify_jwt = false
