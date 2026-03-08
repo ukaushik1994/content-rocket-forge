@@ -149,7 +149,7 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
 
   const handleEditMeta = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/content-builder/${contentId}?tab=meta`);
+    navigate(`/ai-chat`);
   };
 
   const handleAddKeywords = (e: React.MouseEvent) => {
