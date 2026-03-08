@@ -19,6 +19,7 @@ import { CampaignsPanel } from './panels/CampaignsPanel';
 import { EmailPanel } from './panels/EmailPanel';
 import { SocialPanel } from './panels/SocialPanel';
 import { KeywordsPanel } from './panels/KeywordsPanel';
+import { AnalyticsPanel } from './panels/AnalyticsPanel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -959,6 +960,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   }
   if (visualData?.type === 'keywords') {
     return <KeywordsPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'analytics') {
+    return <AnalyticsPanel isOpen={isOpen} onClose={onClose} />;
   }
 
   return (

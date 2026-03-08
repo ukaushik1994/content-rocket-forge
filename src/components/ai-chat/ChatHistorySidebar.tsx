@@ -227,7 +227,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <SidebarNavItem icon={<PenLine className="h-4 w-4" />} label="Content Wizard" onClick={() => handlePanel('content_wizard')} />
             <SidebarNavItem icon={<Megaphone className="h-4 w-4" />} label="Campaigns" onClick={() => handlePanel('campaigns')} />
             <SidebarNavItem icon={<Search className="h-4 w-4" />} label="Keywords" onClick={() => handlePanel('keywords')} />
-            <SidebarNavItem icon={<BarChart3 className="h-4 w-4" />} label="Analytics" onClick={() => handleNavigation('/analytics')} />
+            <SidebarNavItem icon={<BarChart3 className="h-4 w-4" />} label="Analytics" onClick={() => handlePanel('analytics')} />
 
             {/* ── ENGAGE ── */}
             <SidebarSection label="Engage" />
