@@ -11,6 +11,10 @@ import { AISummaryCard } from './AISummaryCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ContentWizardSidebar } from './content-wizard/ContentWizardSidebar';
 import { ProposalBrowserSidebar } from './proposal-browser/ProposalBrowserSidebar';
+import { RepositoryPanel } from './panels/RepositoryPanel';
+import { OfferingsPanel } from './panels/OfferingsPanel';
+import { ApprovalsPanel } from './panels/ApprovalsPanel';
+import { ContactsPanel } from './panels/ContactsPanel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -925,6 +929,20 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
         keyword={visualData.keyword || ''}
       />
     );
+  }
+
+  // Panel modes — Phase 2
+  if (visualData?.type === 'repository') {
+    return <RepositoryPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'offerings') {
+    return <OfferingsPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'approvals') {
+    return <ApprovalsPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'contacts') {
+    return <ContactsPanel isOpen={isOpen} onClose={onClose} />;
   }
 
   return (

@@ -218,9 +218,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           <div className="px-2">
             {/* ── LIBRARY ── */}
             <SidebarSection label="Library" />
-            <SidebarNavItem icon={<FileText className="h-4 w-4" />} label="Repository" onClick={() => handleNavigation('/repository')} />
-            <SidebarNavItem icon={<Puzzle className="h-4 w-4" />} label="Offerings" onClick={() => handleNavigation('/offerings')} />
-            <SidebarNavItem icon={<CheckCircle className="h-4 w-4" />} label="Approvals" onClick={() => handleNavigation('/content-approval')} />
+            <SidebarNavItem icon={<FileText className="h-4 w-4" />} label="Repository" onClick={() => handlePanel('repository')} />
+            <SidebarNavItem icon={<Puzzle className="h-4 w-4" />} label="Offerings" onClick={() => handlePanel('offerings')} />
+            <SidebarNavItem icon={<CheckCircle className="h-4 w-4" />} label="Approvals" onClick={() => handlePanel('approvals')} />
 
             {/* ── TOOLS ── */}
             <SidebarSection label="Tools" />
@@ -233,7 +233,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <SidebarSection label="Engage" />
             <SidebarNavItem icon={<Mail className="h-4 w-4" />} label="Email" onClick={() => handleNavigation('/engage/email')} />
             <SidebarNavItem icon={<Share2 className="h-4 w-4" />} label="Social" onClick={() => handleNavigation('/engage/social')} />
-            <SidebarNavItem icon={<Users className="h-4 w-4" />} label="Contacts" onClick={() => handleNavigation('/engage/contacts')} />
+            <SidebarNavItem icon={<Users className="h-4 w-4" />} label="Contacts" onClick={() => handlePanel('contacts')} />
             <SidebarNavItem icon={<Zap className="h-4 w-4" />} label="Automations" onClick={() => handleNavigation('/engage/automations')} />
             <SidebarNavItem icon={<GitBranch className="h-4 w-4" />} label="Journeys" onClick={() => handleNavigation('/engage/journeys')} />
 
