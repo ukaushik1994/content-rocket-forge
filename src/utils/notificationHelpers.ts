@@ -123,7 +123,7 @@ export class NotificationHelper {
           label: 'Review',
           action: 'navigate',
           variant: 'primary',
-          url: `/content-builder?id=${contentId}`
+          url: `/ai-chat`
         },
         {
           id: 'regenerate',
