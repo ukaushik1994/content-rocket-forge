@@ -82,7 +82,7 @@ export class NotificationHelper {
         }
       ],
       previewData: { contentId, contentTitle, reason },
-      linkUrl: `/content-builder?id=${contentId}`
+      linkUrl: `/ai-chat`
     });
   }
 
