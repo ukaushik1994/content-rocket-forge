@@ -30,7 +30,8 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   isLoading,
   placeholder = "Type your message...",
   onTypingChange,
-  onOpenProposals
+  onOpenProposals,
+  onLaunchWizard
 }) => {
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
