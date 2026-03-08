@@ -84,7 +84,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         title: `No ${status} content`,
         description: `You don't have any ${status} content yet. Create some content and set its status to see it here.`,
         actionLabel: 'Create Content',
-        action: () => navigate('/content-builder')
+        action: () => navigate('/ai-chat')
       };
     }
 
