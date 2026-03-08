@@ -43,7 +43,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           title: 'No blog posts yet',
           description: 'Share your thoughts and insights by creating your first blog post.',
           actionLabel: 'Create Blog Post',
-          action: () => navigate('/content-builder?type=blog')
+          action: () => navigate('/ai-chat')
         },
         glossary: {
           icon: BookOpen,
