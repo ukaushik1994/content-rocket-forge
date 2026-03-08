@@ -364,7 +364,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   return <div className={cn("h-full flex flex-col", className)}>
       {/* Chat History Sidebar */}
       <AnimatePresence>
-        {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} />}
+      {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} onOpenPanel={(panelType) => {
+              if (panelType === 'content_wizard') {
+                handleSetVisualization({ type: 'content_wizard', keyword: '', content_type: 'blog' });
+              }
+            }} />}
       </AnimatePresence>
 
       {/* Visualization Sidebar (Right) - positioned within chat area */}
@@ -589,7 +593,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         "border-t border-border/20 bg-background/80 backdrop-blur-md",
         "transition-all duration-300 ease-out",
         // Left padding only on desktop when sidebar is open (sidebars overlay on mobile/tablet)
-        showSidebar && isDesktop && "lg:pl-80"
+        showSidebar && !isMobile && "sm:pl-72 lg:pl-80"
       )}>
         <div className="max-w-6xl mx-auto px-4 py-3">
           {/* Context Indicator */}
