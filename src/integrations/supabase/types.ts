@@ -8579,7 +8579,7 @@ export type Database = {
         Args: {
           p_module: string
           p_severity: string
-          p_timeframe?: unknown
+          p_timeframe?: string
           p_user_id: string
         }
         Returns: string
