@@ -56,7 +56,7 @@ export class NotificationHelper {
           label: 'View',
           action: 'navigate',
           variant: 'secondary',
-          url: `/content-builder?id=${contentId}`
+          url: `/ai-chat`
         }
       ],
       previewData: { contentId, contentTitle, reviewerName },
