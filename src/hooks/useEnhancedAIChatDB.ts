@@ -660,11 +660,11 @@ export const useEnhancedAIChatDB = () => {
         switch (actionString) {
           case 'create-blog-post':
             console.log('📝 Creating blog post');
-            navigate('/content-builder?type=blog-post');
+            navigate('/ai-chat');
             break;
           case 'create-landing-page':
             console.log('🏗️ Creating landing page');
-            navigate('/content-builder?type=landing-page');
+            navigate('/ai-chat');
             break;
           case 'keyword-research':
             console.log('🔍 Opening keyword research');
@@ -675,7 +675,7 @@ export const useEnhancedAIChatDB = () => {
             navigate('/research/content-strategy');
             break;
           case 'navigate-content-builder':
-            navigate('/content-builder');
+            navigate('/ai-chat');
             break;
           case 'navigate-analytics':
             navigate('/analytics');

@@ -14,7 +14,7 @@ const EmptyContentState: React.FC = () => {
       </div>
       <p className="text-muted-foreground mb-6">No content available to repurpose</p>
       <Button 
-        onClick={() => navigate('/content-builder')} 
+        onClick={() => navigate('/ai-chat')} 
         className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-purple/90 hover:to-neon-blue/90"
       >
         Create New Content

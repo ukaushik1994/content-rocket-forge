@@ -823,7 +823,7 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
       baseActions.push({
         id: 'create-content',
         label: 'Start Creating Content',
-        action: 'navigate:/content-builder',
+        action: 'navigate:/ai-chat',
         type: 'button',
         variant: 'primary'
       });

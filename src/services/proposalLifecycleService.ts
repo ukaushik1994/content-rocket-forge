@@ -286,7 +286,7 @@ class ProposalLifecycleService {
       outlineSuggestions: context.outline_suggestions
     }));
 
-    window.location.href = `/content-builder?${builderParams.toString()}`;
+    window.location.href = `/ai-chat`;
   }
 
   // Log lifecycle update

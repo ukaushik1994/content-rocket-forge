@@ -61,8 +61,8 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
   };
 
   const handleEdit = (id: string) => {
-    // Navigate to content builder with the selected draft
-    navigate(`/content-builder`, { state: { contentId: id } });
+    // Navigate to content wizard with the selected draft
+    navigate(`/ai-chat`, { state: { contentId: id } });
   };
 
   const handleView = (id: string) => {

@@ -157,8 +157,8 @@ function generateContextualActions(
     actions.push({
       id: 'content-builder',
       type: 'button',
-      label: 'Open Content Builder',
-      action: 'navigate:/content-builder',
+      label: 'Open Content Wizard',
+      action: 'navigate:/ai-chat',
       variant: 'primary'
     });
   }

@@ -130,7 +130,7 @@ const TopicClusters = () => {
         clusterId: cluster.id
       };
       localStorage.setItem('cluster_content_data', JSON.stringify(clusterData));
-      window.location.href = '/content-builder';
+      window.location.href = '/ai-chat';
     }
   };
 
@@ -504,7 +504,7 @@ const TopicClusters = () => {
                       </div>
 
                       <Button
-                        onClick={() => window.location.href = '/content-builder'}
+                        onClick={() => window.location.href = '/ai-chat'}
                         className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 h-12 px-8"
                       >
                         <ArrowRight className="h-4 w-4 mr-2" />
