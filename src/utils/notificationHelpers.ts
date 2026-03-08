@@ -173,7 +173,7 @@ export class NotificationHelper {
           label: 'Create Content',
           action: 'navigate',
           variant: 'primary',
-          url: `/content-builder?keyword=${encodeURIComponent(keyword)}`
+          url: `/ai-chat`
         },
         {
           id: 'view_opportunity',

@@ -93,7 +93,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       title: 'Welcome to your Content Repository',
       description: 'This is where all your content will live. Start by creating your first piece of content.',
       actionLabel: 'Create Your First Content',
-      action: () => navigate('/content-builder')
+      action: () => navigate('/ai-chat')
     };
   };
 
