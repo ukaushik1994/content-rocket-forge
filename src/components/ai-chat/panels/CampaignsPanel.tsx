@@ -5,6 +5,7 @@ import { CampaignBreakdownView } from '@/components/campaigns/CampaignBreakdownV
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { ContentGenerationProvider } from '@/contexts/ContentGenerationContext';
 import { SavedCampaign } from '@/services/campaignService';
+import { CampaignGoal, CampaignTimeline } from '@/types/campaign-types';
 import { Megaphone, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -24,9 +25,9 @@ const CampaignsPanelInner: React.FC<{ isOpen: boolean; onClose: () => void }> = 
           strategy={viewingCampaign.selected_strategy}
           campaignInput={{
             idea: viewingCampaign.original_idea,
-            goal: viewingCampaign.goal || '',
+            goal: (viewingCampaign.goal as CampaignGoal) || undefined,
             targetAudience: viewingCampaign.target_audience || '',
-            timeline: viewingCampaign.timeline || '',
+            timeline: (viewingCampaign.timeline as CampaignTimeline) || undefined,
           }}
         />
       </PanelShell>

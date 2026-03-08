@@ -948,6 +948,18 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   if (visualData?.type === 'contacts') {
     return <ContactsPanel isOpen={isOpen} onClose={onClose} />;
   }
+  if (visualData?.type === 'campaigns') {
+    return <CampaignsPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'email') {
+    return <EmailPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'social') {
+    return <SocialPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'keywords') {
+    return <KeywordsPanel isOpen={isOpen} onClose={onClose} />;
+  }
 
   return (
     <AnimatePresence>

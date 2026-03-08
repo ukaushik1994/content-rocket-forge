@@ -56,7 +56,7 @@ export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> =
         return true;
       });
     }
-    return result.sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+    return result.sort((a: any, b: any) => (b[sortBy] || 0) - (a[sortBy] || 0));
   }, [keywords, searchQuery, statusFilter, sortBy]);
 
   return (
@@ -65,14 +65,13 @@ export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> =
       
       <div className="mt-4">
         <KeywordsFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          sortBy={sortBy}
-          onSortByChange={setSortBy}
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
+          onRefresh={loadKeywords}
         />
       </div>
 
@@ -88,11 +87,11 @@ export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> =
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 gap-3">
-            {filteredKeywords.map(k => <KeywordCard key={k.id} keyword={k} onRefresh={loadKeywords} />)}
+            {filteredKeywords.map(k => <KeywordCard key={k.id} keyword={k} />)}
           </div>
         ) : (
           <div className="space-y-2">
-            {filteredKeywords.map(k => <KeywordListItem key={k.id} keyword={k} onRefresh={loadKeywords} />)}
+            {filteredKeywords.map(k => <KeywordListItem key={k.id} keyword={k} />)}
           </div>
         )}
       </div>
