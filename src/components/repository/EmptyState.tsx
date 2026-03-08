@@ -64,7 +64,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           title: 'No landing pages yet',
           description: 'Design compelling landing pages to convert visitors into customers.',
           actionLabel: 'Create Landing Page',
-          action: () => navigate('/content-builder?type=landing_page')
+          action: () => navigate('/ai-chat')
         },
         social_post: {
           icon: MessageSquare,
