@@ -911,6 +911,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
         keyword={visualData.keyword || ''}
         solutionId={visualData.solution_id}
         contentType={visualData.content_type}
+        extractedContext={visualData.extractedContext}
       />
     );
   }

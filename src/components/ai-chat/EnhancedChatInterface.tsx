@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { ContextAwareMessageInput } from './ContextAwareMessageInput';
@@ -25,6 +25,9 @@ import { Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { cn } from '@/lib/utils';
+import { extractWizardContext, WizardContextExtraction } from '@/services/wizardContextExtraction';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface EnhancedChatInterfaceProps {
   className?: string;
@@ -267,6 +270,61 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const handleSendMessage = async (message: string) => {
     await sendMessage(message);
   };
+
+  // Handle wizard launch with AI context extraction
+  const [isExtractingContext, setIsExtractingContext] = useState(false);
+  
+  const handleLaunchWizard = useCallback(async (userPrompt: string) => {
+    setIsExtractingContext(true);
+    try {
+      // Get user's solutions for matching
+      const { data: { user } } = await supabase.auth.getUser();
+      let solutions: { id: string; name: string }[] = [];
+      
+      if (user) {
+        const { data: solutionData } = await supabase
+          .from('solutions' as any)
+          .select('id, name')
+          .eq('user_id', user.id)
+          .limit(50);
+        solutions = (solutionData || []) as any[];
+      }
+
+      // Build conversation history from current messages
+      const conversationHistory = messages.slice(-10).map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      // Extract context via AI
+      const extracted = await extractWizardContext(userPrompt, conversationHistory, solutions);
+
+      // Open wizard sidebar directly with pre-filled data
+      handleSetVisualization({
+        type: 'content_wizard',
+        keyword: extracted.keyword || userPrompt,
+        solution_id: extracted.solution_id,
+        content_type: extracted.content_type || 'blog',
+        // Pass extraction data for pre-filling
+        extractedContext: extracted,
+      });
+
+      toast.success('Content Wizard ready', {
+        description: `Topic: "${extracted.keyword}"${extracted.tone ? ` · Tone: ${extracted.tone}` : ''}`,
+        duration: 3000,
+      });
+    } catch (err) {
+      console.error('Wizard context extraction failed:', err);
+      // Fallback: open wizard with just the user prompt
+      handleSetVisualization({
+        type: 'content_wizard',
+        keyword: userPrompt,
+        content_type: 'blog',
+      });
+    } finally {
+      setIsExtractingContext(false);
+    }
+  }, [messages, handleSetVisualization]);
 
   const containerVariants = {
     hidden: {
@@ -548,10 +606,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           
           <ContextAwareMessageInput 
             onSendMessage={handleSendMessage} 
-            isLoading={isLoading} 
-            placeholder={messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
+            isLoading={isLoading || isExtractingContext} 
+            placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
             onOpenProposals={() => {
-              // Trigger the proposal browser sidebar via the same visual data flow
               handleSetVisualization({
                 type: 'proposal_browser',
                 title: 'AI Proposals',
@@ -559,6 +616,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 step: 'solution_selection'
               });
             }}
+            onLaunchWizard={handleLaunchWizard}
           />
         </div>
       </div>
