@@ -121,8 +121,12 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !isLoading) {
-      if (wizardMode) {
-        // In wizard mode, prefix the message to trigger the content wizard intent
+      if (wizardMode && onLaunchWizard) {
+        // In wizard mode, trigger AI extraction and direct wizard launch
+        onLaunchWizard(message.trim());
+        setWizardMode(false);
+      } else if (wizardMode) {
+        // Fallback if no onLaunchWizard handler
         onSendMessage(`Create content about: ${message.trim()}`);
         setWizardMode(false);
       } else {

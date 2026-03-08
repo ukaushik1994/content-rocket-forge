@@ -25,6 +25,9 @@ import { Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { cn } from '@/lib/utils';
+import { extractWizardContext, WizardContextExtraction } from '@/services/wizardContextExtraction';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface EnhancedChatInterfaceProps {
   className?: string;
