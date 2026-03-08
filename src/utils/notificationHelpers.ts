@@ -78,7 +78,7 @@ export class NotificationHelper {
           label: 'Edit Content',
           action: 'navigate',
           variant: 'primary',
-          url: `/content-builder?id=${contentId}`
+          url: `/ai-chat`
         }
       ],
       previewData: { contentId, contentTitle, reason },
