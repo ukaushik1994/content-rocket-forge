@@ -36,7 +36,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           title: 'No articles yet',
           description: 'Start creating informative articles to build your content library.',
           actionLabel: 'Create Article',
-          action: () => navigate('/content-builder?type=article')
+          action: () => navigate('/ai-chat')
         },
         blog: {
           icon: Edit,
