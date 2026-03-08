@@ -606,10 +606,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           
           <ContextAwareMessageInput 
             onSendMessage={handleSendMessage} 
-            isLoading={isLoading} 
-            placeholder={messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
+            isLoading={isLoading || isExtractingContext} 
+            placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
             onOpenProposals={() => {
-              // Trigger the proposal browser sidebar via the same visual data flow
               handleSetVisualization({
                 type: 'proposal_browser',
                 title: 'AI Proposals',
@@ -617,6 +616,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 step: 'solution_selection'
               });
             }}
+            onLaunchWizard={handleLaunchWizard}
           />
         </div>
       </div>
