@@ -15,6 +15,10 @@ import { RepositoryPanel } from './panels/RepositoryPanel';
 import { OfferingsPanel } from './panels/OfferingsPanel';
 import { ApprovalsPanel } from './panels/ApprovalsPanel';
 import { ContactsPanel } from './panels/ContactsPanel';
+import { CampaignsPanel } from './panels/CampaignsPanel';
+import { EmailPanel } from './panels/EmailPanel';
+import { SocialPanel } from './panels/SocialPanel';
+import { KeywordsPanel } from './panels/KeywordsPanel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -943,6 +947,18 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   }
   if (visualData?.type === 'contacts') {
     return <ContactsPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'campaigns') {
+    return <CampaignsPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'email') {
+    return <EmailPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'social') {
+    return <SocialPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'keywords') {
+    return <KeywordsPanel isOpen={isOpen} onClose={onClose} />;
   }
 
   return (
