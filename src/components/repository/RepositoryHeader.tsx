@@ -11,7 +11,7 @@ export const RepositoryHeader: React.FC = () => {
     {
       label: 'New Article',
       icon: FileText,
-      action: () => navigate('/content-builder'),
+      action: () => navigate('/ai-chat'),
       gradient: 'from-blue-500 to-blue-600',
       description: 'Create blog posts and articles'
     },
