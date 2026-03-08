@@ -1,45 +1,67 @@
 
 
-# Fix: Add Proper Spacing Between Sidebar and Chat Content
+# Plan: Deprecate Content Builder
 
-## Problem
-When the sidebar is open, chat messages are cut off on the left because the main content area doesn't get enough left margin to clear the sidebar. The sidebar is `w-72` on small screens and `w-80` on desktop, but the margin (`lg:ml-80`) only applies at the `lg` breakpoint.
+## Key Discovery
 
-## Fix
+The Content Builder has two layers:
+1. **UI Layer** — the `/content-builder` page, route, and step-based wizard components (~30 files in `src/components/content-builder/`)
+2. **Shared Layer** — the context types in `src/contexts/content-builder/types/` are imported by **181 files** including Solutions, Campaigns, Research, and the Wizard itself
 
-### File: `src/components/ai-chat/EnhancedChatInterface.tsx`
+We **cannot** delete the shared types. We deprecate the UI and redirect users.
 
-**Line 346** -- Update the margin logic to match the sidebar width at each breakpoint:
+## Phase 1: Redirect the Route (Safe, immediate)
 
-Change:
-```
-showSidebar && isDesktop && "lg:ml-80"
-```
-To:
-```
-showSidebar && !isMobile && "sm:ml-72 lg:ml-80"
-```
+**`src/App.tsx`**
+- Replace the `/content-builder` route with a redirect to `/ai-chat` (the Wizard)
+- Remove the `ContentBuilderPage` import
 
-This ensures:
-- **Mobile**: No margin (sidebar overlays with backdrop, as intended)
-- **sm-md (tablet)**: `ml-72` margin matches the sidebar's `sm:w-72`
-- **lg+ (desktop)**: `ml-80` margin matches the sidebar's `lg:w-80`
+**`src/pages/ContentBuilder.tsx`**
+- Replace entire file with a `<Navigate to="/ai-chat" replace />` redirect component
 
-### Also update the floating toggle position (Line 328)
+## Phase 2: Update All Navigation References (~15 files)
 
-The toggle button position should also account for the `sm:w-72` sidebar:
+Change every `navigate('/content-builder')` to `navigate('/ai-chat')` in:
+- `src/components/dashboard/WelcomeSection.tsx`
+- `src/components/dashboard/QuickActionsGrid.tsx`
+- `src/components/dashboard/EnhancedQuickActions.tsx`
+- `src/components/repository/RepositoryHeader.tsx`
+- `src/components/repository/RepositoryHero.tsx`
+- `src/components/drafts/DraftsHeader.tsx`
+- `src/components/drafts/list/EmptyState.tsx`
+- `src/components/analytics/ContentAnalyticsTab.tsx`
+- `src/components/ai-chat/ModernActionButtons.tsx`
+- `src/components/research/content-strategy/opportunity/BriefModal.tsx`
+- `src/hooks/useEnhancedAIChatDB.ts`
+- `src/services/aiService.ts`
+- `src/pages/ContentTypeSelection.tsx`
 
-Change:
-```
-'top-[4.5rem] left-[18.5rem]'
-```
-To:
-```
-'top-[4.5rem] sm:left-[16.5rem] lg:left-[18.5rem]'
-```
+Update labels from "Content Builder" to "Content Wizard" or "Create Content" where shown in UI text.
 
-This keeps the hamburger icon flush with the sidebar edge at each breakpoint.
+## Phase 3: Keep Shared Infrastructure (No changes)
+
+The following stay **untouched** — they are shared platform types, not builder-specific:
+- `src/contexts/content-builder/types/` (solution types, company types, offering types, etc.)
+- `src/contexts/content-builder/ContentBuilderContext.tsx` (used by Solutions page and Strategy Dialog)
+- `src/contexts/ContentBuilderContext.tsx` (re-export wrapper)
+
+## Phase 4: Remove Builder UI Components (Optional, future cleanup)
+
+These components become dead code after Phase 1-2 but are safe to leave for now:
+- `src/components/content-builder/` (the step wizard UI)
+- `src/pages/ContentBuilder.tsx` (after redirect)
+- `src/hooks/useFinalReview.ts` and `src/hooks/final-review/`
+
+**Not removing now** because the `StrategyBuilderDialog` still imports `SerpAnalysisStep` from the builder, and Solutions page wraps in `ContentBuilderProvider`.
 
 ## Summary
-Two lines changed in `EnhancedChatInterface.tsx` -- margin and toggle position now respect all breakpoints, so content is never hidden behind the sidebar.
+
+| Phase | Action | Files Changed | Risk |
+|-------|--------|---------------|------|
+| 1 | Redirect route | 2 | None |
+| 2 | Update nav references | ~15 | Low |
+| 3 | Keep shared types | 0 | None |
+| 4 | Dead code cleanup | Deferred | — |
+
+Total: ~17 files changed. No functionality lost — users land on the superior Wizard instead.
 
