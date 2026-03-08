@@ -32,8 +32,8 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
       switch (action) {
         // Navigation actions
         case 'navigate:/content-builder':
-          navigate('/content-builder');
-          result = { navigated: true, route: '/content-builder' };
+          navigate('/ai-chat');
+          result = { navigated: true, route: '/ai-chat' };
           break;
 
         case 'navigate:/solutions':
