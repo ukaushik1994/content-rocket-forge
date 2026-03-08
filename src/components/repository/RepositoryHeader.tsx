@@ -32,7 +32,7 @@ export const RepositoryHeader: React.FC = () => {
     {
       label: 'Landing Page',
       icon: Globe,
-      action: () => navigate('/content-builder?type=landing_page'),
+      action: () => navigate('/ai-chat'),
       gradient: 'from-orange-500 to-orange-600',
       description: 'Build landing pages'
     },
