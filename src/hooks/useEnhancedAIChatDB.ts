@@ -664,7 +664,7 @@ export const useEnhancedAIChatDB = () => {
             break;
           case 'create-landing-page':
             console.log('🏗️ Creating landing page');
-            navigate('/content-builder?type=landing-page');
+            navigate('/ai-chat');
             break;
           case 'keyword-research':
             console.log('🔍 Opening keyword research');
