@@ -25,7 +25,7 @@ export const RepositoryHeader: React.FC = () => {
     {
       label: 'Email Content',
       icon: Mail,
-      action: () => navigate('/content-builder?type=email'),
+      action: () => navigate('/ai-chat'),
       gradient: 'from-green-500 to-green-600',
       description: 'Create email campaigns'
     },
