@@ -83,11 +83,12 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   keyword,
   solutionId,
   contentType = 'blog',
+  extractedContext,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [wizardState, setWizardState] = useState<WizardState>({
     keyword,
-    contentType,
+    contentType: extractedContext?.content_type || contentType,
     title: '',
     selectedSolution: null,
     researchSelections: { faqs: [], contentGaps: [], relatedKeywords: [], serpHeadings: [] },
@@ -95,7 +96,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     outline: [],
     wordCount: null,
     wordCountMode: 'ai',
-    writingStyle: 'conversational',
+    writingStyle: (extractedContext?.writing_style as WizardState['writingStyle']) || 'conversational',
     expertiseLevel: 'intermediate',
     contentArticleType: 'comprehensive',
     includeStats: false,
@@ -104,9 +105,37 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     metaTitle: '',
     metaDescription: '',
     generatedContent: '',
-    contentBrief: { targetAudience: '', contentGoal: '', tone: '', specificPoints: '' },
-    additionalInstructions: '',
+    contentBrief: {
+      targetAudience: extractedContext?.target_audience || '',
+      contentGoal: extractedContext?.content_goal || '',
+      tone: extractedContext?.tone || '',
+      specificPoints: Array.isArray(extractedContext?.specific_points) 
+        ? extractedContext.specific_points.join(', ') 
+        : '',
+    },
+    additionalInstructions: extractedContext?.additional_instructions || '',
   });
+
+  // Apply extracted context on mount if provided (handles late prop updates)
+  useEffect(() => {
+    if (extractedContext) {
+      setWizardState(prev => ({
+        ...prev,
+        keyword: extractedContext.keyword || prev.keyword,
+        contentType: extractedContext.content_type || prev.contentType,
+        writingStyle: (extractedContext.writing_style as WizardState['writingStyle']) || prev.writingStyle,
+        contentBrief: {
+          targetAudience: extractedContext.target_audience || prev.contentBrief.targetAudience,
+          contentGoal: extractedContext.content_goal || prev.contentBrief.contentGoal,
+          tone: extractedContext.tone || prev.contentBrief.tone,
+          specificPoints: Array.isArray(extractedContext.specific_points) && extractedContext.specific_points.length > 0
+            ? extractedContext.specific_points.join(', ')
+            : prev.contentBrief.specificPoints,
+        },
+        additionalInstructions: extractedContext.additional_instructions || prev.additionalInstructions,
+      }));
+    }
+  }, [extractedContext]);
 
   const { isMobile } = useResponsiveBreakpoint();
   const quick = isQuickFormat(wizardState.contentType);
