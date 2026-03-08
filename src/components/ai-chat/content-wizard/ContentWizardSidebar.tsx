@@ -22,6 +22,7 @@ interface ContentWizardSidebarProps {
   keyword: string;
   solutionId?: string | null;
   contentType?: string;
+  extractedContext?: WizardContextExtraction;
 }
 
 export interface ContentBrief {
