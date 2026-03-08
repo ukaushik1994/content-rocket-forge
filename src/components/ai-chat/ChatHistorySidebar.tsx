@@ -233,7 +233,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <SidebarSection label="Engage" />
             <SidebarNavItem icon={<Mail className="h-4 w-4" />} label="Email" onClick={() => handleNavigation('/engage/email')} />
             <SidebarNavItem icon={<Share2 className="h-4 w-4" />} label="Social" onClick={() => handleNavigation('/engage/social')} />
-            <SidebarNavItem icon={<Users className="h-4 w-4" />} label="Contacts" onClick={() => handleNavigation('/engage/contacts')} />
+            <SidebarNavItem icon={<Users className="h-4 w-4" />} label="Contacts" onClick={() => handlePanel('contacts')} />
             <SidebarNavItem icon={<Zap className="h-4 w-4" />} label="Automations" onClick={() => handleNavigation('/engage/automations')} />
             <SidebarNavItem icon={<GitBranch className="h-4 w-4" />} label="Journeys" onClick={() => handleNavigation('/engage/journeys')} />
 

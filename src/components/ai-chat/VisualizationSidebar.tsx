@@ -931,6 +931,20 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     );
   }
 
+  // Panel modes — Phase 2
+  if (visualData?.type === 'repository') {
+    return <RepositoryPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'offerings') {
+    return <OfferingsPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'approvals') {
+    return <ApprovalsPanel isOpen={isOpen} onClose={onClose} />;
+  }
+  if (visualData?.type === 'contacts') {
+    return <ContactsPanel isOpen={isOpen} onClose={onClose} />;
+  }
+
   return (
     <AnimatePresence>
       {isOpen && (
