@@ -961,6 +961,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   if (visualData?.type === 'keywords') {
     return <KeywordsPanel isOpen={isOpen} onClose={onClose} />;
   }
+  if (visualData?.type === 'analytics') {
+    return <AnalyticsPanel isOpen={isOpen} onClose={onClose} />;
+  }
 
   return (
     <AnimatePresence>
