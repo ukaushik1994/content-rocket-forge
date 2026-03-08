@@ -282,7 +282,7 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
                     metaDescription: content.metadata?.metaDescription || '',
                     contentType: (content.metadata as any)?.contentType || 'blog',
                   }));
-                  navigate('/content-builder');
+                  navigate('/ai-chat');
                 }}
                 className="text-muted-foreground hover:text-primary transition-colors"
               >

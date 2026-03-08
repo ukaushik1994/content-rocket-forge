@@ -125,7 +125,7 @@ export const KeywordsHero: React.FC<KeywordsHeroProps> = ({
             type: "spring",
             stiffness: 200
           }}>
-              <Button onClick={() => navigate('/content-builder')} size="lg" className="relative overflow-hidden bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl">
+              <Button onClick={() => navigate('/ai-chat')} size="lg" className="relative overflow-hidden bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl">
                 <motion.div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" animate={{
                 x: [-100, 100]
               }} transition={{

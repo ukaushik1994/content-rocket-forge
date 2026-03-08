@@ -25,10 +25,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ selectedTab }) => {
         </div>
         <p className="text-xl font-medium mb-2">No {selectedTab === 'all' ? 'content items' : selectedTab} found</p>
         <p className="text-muted-foreground mb-6">
-          Create content in the builder to see it here.
+          Create content in the wizard to see it here.
         </p>
         <Button 
-          onClick={() => navigate('/content-builder')}
+          onClick={() => navigate('/ai-chat')}
           className="bg-gradient-to-r from-neon-purple to-neon-blue"
         >
           Create Your First Draft

@@ -675,7 +675,7 @@ export const useEnhancedAIChatDB = () => {
             navigate('/research/content-strategy');
             break;
           case 'navigate-content-builder':
-            navigate('/content-builder');
+            navigate('/ai-chat');
             break;
           case 'navigate-analytics':
             navigate('/analytics');
