@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip } from 'lucide-react';
+import { Send, X, PenLine } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
-import { MobileActionsSheet } from './MobileActionsSheet';
+import { PlusMenuDropdown } from './PlusMenuDropdown';
 import { FileUploadHandler } from './FileUploadHandler';
 import { VoiceInputHandler } from './VoiceInputHandler';
 
@@ -21,18 +21,21 @@ interface ContextAwareMessageInputProps {
   isLoading: boolean;
   placeholder?: string;
   onTypingChange?: (isTyping: boolean) => void;
+  onOpenProposals?: () => void;
 }
 
 export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> = ({
   onSendMessage,
   isLoading,
   placeholder = "Type your message...",
-  onTypingChange
+  onTypingChange,
+  onOpenProposals
 }) => {
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
+  const [wizardMode, setWizardMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -58,6 +61,25 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   // Handle attachment button click
   const handleAttachmentClick = useCallback(() => {
     setShowFileUpload(true);
+  }, []);
+
+  // Handle Content Wizard selection
+  const handleContentWizardClick = useCallback(() => {
+    setWizardMode(true);
+    setMessage('');
+    // Focus the textarea after state update
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  }, []);
+
+  // Handle AI Proposals selection
+  const handleAIProposalsClick = useCallback(() => {
+    onOpenProposals?.();
+  }, [onOpenProposals]);
+
+  // Cancel wizard mode
+  const handleCancelWizard = useCallback(() => {
+    setWizardMode(false);
+    setMessage('');
   }, []);
 
   // Handle typing broadcast with debounce
@@ -97,10 +119,16 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !isLoading) {
-      onSendMessage(message.trim());
+      if (wizardMode) {
+        // In wizard mode, prefix the message to trigger the content wizard intent
+        onSendMessage(`Create content about: ${message.trim()}`);
+        setWizardMode(false);
+      } else {
+        onSendMessage(message.trim());
+      }
       setMessage('');
       setShowSuggestions(false);
-      handleTypingBroadcast(false); // Stop typing indicator on send
+      handleTypingBroadcast(false);
     }
   };
 
@@ -110,7 +138,11 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
       handleSubmit(e);
     }
     if (e.key === 'Escape') {
-      setShowSuggestions(false);
+      if (wizardMode) {
+        handleCancelWizard();
+      } else {
+        setShowSuggestions(false);
+      }
     }
   };
 
@@ -163,11 +195,15 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
 
   // Show suggestions when user types solution-related terms
   useEffect(() => {
+    if (wizardMode) {
+      setShowSuggestions(false);
+      return;
+    }
     const shouldShowSuggestions = message.length >= 2 && (
       /\b(gl|sql|people|oracle|connect|analytics|solution|help|tell|what|how|create|analyze)\b/i.test(message)
     );
     setShowSuggestions(shouldShowSuggestions);
-  }, [message]);
+  }, [message, wizardMode]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -180,6 +216,10 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const activePlaceholder = wizardMode
+    ? "Enter a topic or keyword to write about..."
+    : placeholder;
 
   return (
     <motion.div
@@ -200,12 +240,40 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
         )}
       </AnimatePresence>
 
+      {/* Wizard Mode Chip */}
+      <AnimatePresence>
+        {wizardMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-2 mb-2 px-1"
+          >
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">
+              <PenLine className="h-3 w-3" />
+              <span>Content Wizard</span>
+              <span className="text-primary/60">— type a topic and press Enter</span>
+              <button
+                type="button"
+                onClick={handleCancelWizard}
+                className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <form onSubmit={handleSubmit} className="relative">
         <div 
           className={`relative flex items-end gap-2 p-2.5 bg-background/60 border rounded-2xl transition-all duration-200 ${
-            isFocused 
-              ? 'border-primary/30' 
-              : 'border-border/20 hover:border-border/40'
+            wizardMode
+              ? 'border-primary/30 ring-1 ring-primary/10'
+              : isFocused 
+                ? 'border-primary/30' 
+                : 'border-border/20 hover:border-border/40'
           }`}
         >
           {/* File Upload Handler */}
@@ -215,26 +283,13 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onCancel={() => setShowFileUpload(false)}
           />
 
-          {/* Mobile Actions Sheet - Shows on mobile only */}
-          <MobileActionsSheet
-            onAttachment={handleAttachmentClick}
-            onVoice={() => {}} // Handled by VoiceInputHandler on desktop
-            onImage={handleAttachmentClick} // Use same file handler - accepts images
-            onDocument={handleAttachmentClick} // Use same file handler - accepts documents
+          {/* Plus Menu Dropdown — unified for all breakpoints */}
+          <PlusMenuDropdown
+            onAttachFile={handleAttachmentClick}
+            onContentWizard={handleContentWizardClick}
+            onAIProposals={handleAIProposalsClick}
             disabled={isLoading}
           />
-
-          {/* Attachment Button - Hidden on mobile, shown on sm+ */}
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={handleAttachmentClick}
-            className="hidden sm:flex text-muted-foreground/40 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8"
-            disabled={isLoading}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
 
           {/* Message Input */}
           <Textarea
@@ -247,7 +302,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
               setIsFocused(false);
               handleTypingBroadcast(false); // Stop typing on blur
             }}
-            placeholder={placeholder}
+            placeholder={activePlaceholder}
             disabled={isLoading}
             className="flex-1 min-h-[24px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-sm"
             rows={1}
