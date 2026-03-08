@@ -71,7 +71,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           title: 'No social posts yet',
           description: 'Create engaging social media content to grow your online presence.',
           actionLabel: 'Create Social Post',
-          action: () => navigate('/content-builder?type=social_post')
+          action: () => navigate('/ai-chat')
         }
       };
 
