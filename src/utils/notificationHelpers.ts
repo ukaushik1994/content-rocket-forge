@@ -101,7 +101,7 @@ export class NotificationHelper {
           label: 'View Results',
           action: 'navigate',
           variant: 'primary',
-          url: `/content-builder?id=${contentId}&tab=analysis`
+          url: `/ai-chat`
         }
       ],
       previewData: { contentId, contentTitle, analysisType },
