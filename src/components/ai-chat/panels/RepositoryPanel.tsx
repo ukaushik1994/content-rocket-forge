@@ -3,7 +3,7 @@ import { PanelShell } from './PanelShell';
 import { RepositoryTabs } from '@/components/repository/RepositoryTabs';
 import { ContentDetailModal } from '@/components/repository/ContentDetailModal';
 import { ContentItemType } from '@/contexts/content/types';
-import { ContentProvider, useContent } from '@/contexts/content';
+import { ContentProvider } from '@/contexts/content';
 import { FileText } from 'lucide-react';
 
 const RepositoryPanelInner: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
@@ -21,7 +21,7 @@ const RepositoryPanelInner: React.FC<{ isOpen: boolean; onClose: () => void }> =
       <ContentDetailModal
         content={selectedContent}
         open={detailOpen}
-        onOpenChange={setDetailOpen}
+        onClose={() => setDetailOpen(false)}
       />
     </PanelShell>
   );
