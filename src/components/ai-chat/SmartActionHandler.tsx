@@ -70,8 +70,8 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
               contentBuilder.setContentTitle(data.strategy.title);
             }
             
-            // Navigate to content builder
-            navigate('/content-builder');
+            // Navigate to content wizard
+            navigate('/ai-chat');
             
             result = { 
               contentBuilderInitialized: true, 
