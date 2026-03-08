@@ -225,14 +225,14 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             {/* ── TOOLS ── */}
             <SidebarSection label="Tools" />
             <SidebarNavItem icon={<PenLine className="h-4 w-4" />} label="Content Wizard" onClick={() => handlePanel('content_wizard')} />
-            <SidebarNavItem icon={<Megaphone className="h-4 w-4" />} label="Campaigns" onClick={() => handleNavigation('/campaigns')} />
-            <SidebarNavItem icon={<Search className="h-4 w-4" />} label="Keywords" onClick={() => handleNavigation('/keywords')} />
+            <SidebarNavItem icon={<Megaphone className="h-4 w-4" />} label="Campaigns" onClick={() => handlePanel('campaigns')} />
+            <SidebarNavItem icon={<Search className="h-4 w-4" />} label="Keywords" onClick={() => handlePanel('keywords')} />
             <SidebarNavItem icon={<BarChart3 className="h-4 w-4" />} label="Analytics" onClick={() => handleNavigation('/analytics')} />
 
             {/* ── ENGAGE ── */}
             <SidebarSection label="Engage" />
-            <SidebarNavItem icon={<Mail className="h-4 w-4" />} label="Email" onClick={() => handleNavigation('/engage/email')} />
-            <SidebarNavItem icon={<Share2 className="h-4 w-4" />} label="Social" onClick={() => handleNavigation('/engage/social')} />
+            <SidebarNavItem icon={<Mail className="h-4 w-4" />} label="Email" onClick={() => handlePanel('email')} />
+            <SidebarNavItem icon={<Share2 className="h-4 w-4" />} label="Social" onClick={() => handlePanel('social')} />
             <SidebarNavItem icon={<Users className="h-4 w-4" />} label="Contacts" onClick={() => handlePanel('contacts')} />
             <SidebarNavItem icon={<Zap className="h-4 w-4" />} label="Automations" onClick={() => handleNavigation('/engage/automations')} />
             <SidebarNavItem icon={<GitBranch className="h-4 w-4" />} label="Journeys" onClick={() => handleNavigation('/engage/journeys')} />

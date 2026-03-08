@@ -29,6 +29,7 @@ const CampaignsPanelInner: React.FC<{ isOpen: boolean; onClose: () => void }> = 
             targetAudience: viewingCampaign.target_audience || '',
             timeline: (viewingCampaign.timeline as CampaignTimeline) || undefined,
           }}
+          onGenerateAssets={() => {}}
         />
       </PanelShell>
     );
