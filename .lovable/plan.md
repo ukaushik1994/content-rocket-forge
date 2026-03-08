@@ -1,45 +1,102 @@
 
 
-# Fix: Add Proper Spacing Between Sidebar and Chat Content
+# Plan: AI-Powered Context Extraction for Content Wizard
 
-## Problem
-When the sidebar is open, chat messages are cut off on the left because the main content area doesn't get enough left margin to clear the sidebar. The sidebar is `w-72` on small screens and `w-80` on desktop, but the margin (`lg:ml-80`) only applies at the `lg` breakpoint.
+## What We're Building
 
-## Fix
+When the user clicks "Content Wizard" from the + menu and types something (or triggers it mid-conversation), the system will use the AI backend to intelligently extract all wizard-relevant fields from:
+1. **The wizard-mode input** (what the user just typed)
+2. **Recent conversation history** (last ~10 messages)
 
-### File: `src/components/ai-chat/EnhancedChatInterface.tsx`
+The extracted data will be passed directly to the Content Wizard sidebar, **skipping the choice card**, opening the wizard pre-filled on Step 0.
 
-**Line 346** -- Update the margin logic to match the sidebar width at each breakpoint:
+## Data Flow
 
-Change:
+```text
+User clicks + → Content Wizard → Types: "Write a professional blog about AI in healthcare for our CRM product, target developers"
+                                        │
+                                        ▼
+                              ┌─────────────────────┐
+                              │  AI extraction call  │
+                              │  (edge function)     │
+                              │                      │
+                              │  Input:              │
+                              │  - user prompt       │
+                              │  - last 10 messages  │
+                              │  - user's solutions  │
+                              │                      │
+                              │  Output:             │
+                              │  - keyword           │
+                              │  - solution_id       │
+                              │  - content_type      │
+                              │  - tone              │
+                              │  - target_audience   │
+                              │  - content_goal      │
+                              │  - writing_style     │
+                              │  - specific_points   │
+                              └────────┬────────────┘
+                                       │
+                                       ▼
+                              Wizard sidebar opens
+                              with fields pre-filled
 ```
-showSidebar && isDesktop && "lg:ml-80"
-```
-To:
-```
-showSidebar && !isMobile && "sm:ml-72 lg:ml-80"
-```
 
-This ensures:
-- **Mobile**: No margin (sidebar overlays with backdrop, as intended)
-- **sm-md (tablet)**: `ml-72` margin matches the sidebar's `sm:w-72`
-- **lg+ (desktop)**: `ml-80` margin matches the sidebar's `lg:w-80`
+## Extractable Fields (mapped to WizardState + ContentBrief)
 
-### Also update the floating toggle position (Line 328)
+| Field | WizardState key | Example extraction |
+|-------|----------------|-------------------|
+| Topic/keyword | `keyword` | "AI in healthcare" |
+| Solution/offering | `selectedSolution` (matched by name) | "CRM product" → match to solution |
+| Content type | `contentType` | "blog", "landing-page", "social-post" |
+| Tone | `contentBrief.tone` | "professional", "casual" |
+| Target audience | `contentBrief.targetAudience` | "developers" |
+| Content goal | `contentBrief.contentGoal` | "educate", "generate leads" |
+| Writing style | `writingStyle` | "conversational", "academic" |
+| Specific points | `contentBrief.specificPoints` | "include pricing comparison" |
+| Additional instructions | `additionalInstructions` | Any extra directives |
 
-The toggle button position should also account for the `sm:w-72` sidebar:
+## Changes
 
-Change:
-```
-'top-[4.5rem] left-[18.5rem]'
-```
-To:
-```
-'top-[4.5rem] sm:left-[16.5rem] lg:left-[18.5rem]'
-```
+### 1. New edge function: `extract-wizard-context`
 
-This keeps the hamburger icon flush with the sidebar edge at each breakpoint.
+A lightweight edge function that:
+- Receives: user prompt + recent conversation history + list of user's solution names/IDs
+- Calls the user's AI provider via `ai-proxy` to extract structured JSON
+- Returns: `{ keyword, solution_id, content_type, tone, target_audience, content_goal, writing_style, specific_points, additional_instructions }`
 
-## Summary
-Two lines changed in `EnhancedChatInterface.tsx` -- margin and toggle position now respect all breakpoints, so content is never hidden behind the sidebar.
+The prompt instructs the AI to scan both the current input AND conversation history for any mentions of topics, audience, tone, solutions, etc.
+
+### 2. Update `ContextAwareMessageInput.tsx`
+
+When `wizardMode` submit happens:
+- Instead of sending `Create content about: ${message}` as a chat message...
+- Call `extract-wizard-context` with the message + recent conversation messages
+- Pass extracted data up via a new callback: `onLaunchWizard(extractedData)`
+
+### 3. Update `EnhancedChatInterface.tsx`
+
+- Add `onLaunchWizard` handler that receives extracted data
+- Directly opens the wizard sidebar with pre-filled data (no choice card)
+- Sets `visualizationData` to `{ type: 'content_wizard', keyword, solution_id, content_type, ...extractedBrief }`
+
+### 4. Update `VisualizationSidebar.tsx` → `ContentWizardSidebar`
+
+- Expand `ContentWizardSidebarProps` to accept optional pre-fill fields: `tone`, `targetAudience`, `contentGoal`, `writingStyle`, `specificPoints`, `additionalInstructions`
+- On mount, if these are provided, populate `wizardState` and `contentBrief` with them
+- If `solution_id` is provided, auto-select the matching solution (existing behavior, already works)
+
+### 5. Fallback behavior preserved
+
+- The existing intent detection ("create a blog about X" typed in normal chat) still works as before
+- The + menu wizard is the **primary explicit** path; typing naturally is the **fallback**
+
+## Files Changed
+
+| File | Action |
+|------|--------|
+| `supabase/functions/extract-wizard-context/index.ts` | **Create** -- AI extraction endpoint |
+| `src/components/ai-chat/ContextAwareMessageInput.tsx` | **Update** -- call extraction on wizard submit |
+| `src/components/ai-chat/EnhancedChatInterface.tsx` | **Update** -- handle `onLaunchWizard` with pre-fill |
+| `src/components/ai-chat/VisualizationSidebar.tsx` | **Update** -- pass new props through |
+| `src/components/ai-chat/content-wizard/ContentWizardSidebar.tsx` | **Update** -- accept and apply pre-fill data |
 
