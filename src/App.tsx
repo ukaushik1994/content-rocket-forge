@@ -137,7 +137,7 @@ const App = () => (
                   <Route path="/drafts" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/repository" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/repository/backfill" element={<ProtectedRoute><RepositoryBackfill /></ProtectedRoute>} />
-                  <Route path="/content-builder" element={<ProtectedRoute><ContentBuilderPage /></ProtectedRoute>} />
+                  <Route path="/content-builder" element={<Navigate to="/ai-chat" replace />} />
                   <Route path="/content-type-selection" element={<ProtectedRoute><ContentTypeSelection /></ProtectedRoute>} />
                   <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                   <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
