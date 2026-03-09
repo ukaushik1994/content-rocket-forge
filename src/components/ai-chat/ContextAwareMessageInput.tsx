@@ -335,7 +335,9 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             size="sm"
             variant="ghost"
             disabled={!message.trim() || isLoading}
-            className="text-muted-foreground hover:text-foreground hover:bg-transparent p-2 h-9 w-9 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+            aria-label="Send message"
+            className="text-muted-foreground hover:text-foreground hover:bg-transparent p-2 h-9 w-9 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-[color,opacity] duration-200"
+          >
           >
             {isLoading ? (
               <motion.div

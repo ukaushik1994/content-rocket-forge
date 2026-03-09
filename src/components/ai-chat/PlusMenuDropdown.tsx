@@ -58,6 +58,7 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
           size="sm"
           variant="ghost"
           disabled={disabled}
+          aria-label="Open tools menu"
           className={cn(
             "text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8 transition-colors",
             isOpen && "text-primary"

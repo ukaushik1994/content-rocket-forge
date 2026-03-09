@@ -315,8 +315,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200">
-                  <div className="w-7 h-7 rounded-full bg-muted ring-1 ring-border/10 flex items-center justify-center text-xs font-medium text-foreground">
+                  <button aria-label="User menu" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-[background-color,color] duration-200">
+                    <div className="w-7 h-7 rounded-full bg-muted ring-1 ring-border/10 flex items-center justify-center text-xs font-medium text-foreground">
                     {userInitials}
                   </div>
                 </button>
