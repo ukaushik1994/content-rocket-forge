@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { EngageBreadcrumb } from './shared/EngageBreadcrumb';
 import { EngageBackground } from './shared/EngageBackground';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
