@@ -818,9 +818,6 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, on
         <div className="flex items-center gap-2 mb-3">
           <Film className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium">Video Generation</span>
-          <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-300">
-            Coming Soon
-          </Badge>
         </div>
         
         <VideoPlaceholder 
@@ -855,9 +852,6 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, on
           <span className="text-sm font-medium">
             Video Generation ({videos.length} requested)
           </span>
-          <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-300">
-            Coming Soon
-          </Badge>
         </div>
         
         <VideoPlaceholder 

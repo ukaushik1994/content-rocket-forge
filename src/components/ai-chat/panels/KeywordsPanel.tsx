@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PanelShell } from './PanelShell';
-import { KeywordsHero } from '@/components/keywords/KeywordsHero';
+import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
+import { Database, TrendingUp, FileText, AlertTriangle } from 'lucide-react';
 import { KeywordsFilters } from '@/components/keywords/KeywordsFilters';
 import { KeywordCard } from '@/components/keywords/KeywordCard';
 import { KeywordListItem } from '@/components/keywords/KeywordListItem';
@@ -8,7 +9,7 @@ import { AddKeywordDialog } from '@/components/keywords/AddKeywordDialog';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Search, Database, Plus, Info } from 'lucide-react';
+import { Search, Plus, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
@@ -67,7 +68,23 @@ export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> =
   return (
     <PanelShell isOpen={isOpen} onClose={onClose} title="Keywords" icon={<Search className="h-4 w-4" />}>
       <div className="flex items-center justify-between mb-2">
-        <KeywordsHero keywordStats={keywordStats} onQuickFilter={setStatusFilter} activeFilter={statusFilter} />
+        <CompactPageHeader
+          icon={Database}
+          title="Keywords"
+          stats={[
+            { icon: TrendingUp, label: 'Total', value: keywordStats.total },
+            { icon: FileText, label: 'Published', value: keywordStats.inPublished },
+            { icon: AlertTriangle, label: 'Warnings', value: keywordStats.cannibalization },
+          ]}
+          quickFilters={[
+            { key: 'all', label: 'All', count: keywordStats.total },
+            { key: 'published', label: 'Published', count: keywordStats.inPublished },
+            { key: 'draft', label: 'Draft', count: keywordStats.inDraft },
+            { key: 'cannibalization', label: 'Warnings', count: keywordStats.cannibalization },
+          ]}
+          activeFilter={statusFilter}
+          onFilterChange={setStatusFilter}
+        />
         <Button size="sm" onClick={() => setShowAddDialog(true)} className="shrink-0">
           <Plus className="h-4 w-4 mr-1" /> Add
         </Button>

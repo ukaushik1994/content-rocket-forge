@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ContactDetailDialog } from './ContactDetailDialog';
 import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
-import { EngagePageHero } from '../shared/EngagePageHero';
+import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
 import { EngageFilterBar } from '../shared/EngageFilterBar';
 import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
 import { engageStagger } from '../shared/engageAnimations';
@@ -247,14 +247,10 @@ export const ContactsList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngagePageHero
+      <CompactPageHeader
         icon={Users}
-        badge="Contact Management"
         title="Contacts"
-        titleAccent="Hub"
-        subtitle={`${totalCount} contacts in your workspace — manage, segment, and engage`}
-        gradientFrom="from-emerald-400"
-        gradientTo="to-teal-400"
+        subtitle={`${totalCount} contacts in your workspace`}
         stats={[
           { icon: Users, label: 'Total', value: totalCount },
           { icon: UserCheck, label: 'Active', value: activeCount },
@@ -262,7 +258,7 @@ export const ContactsList = () => {
         ]}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => exportContacts(filtered)} className="bg-background/40 border-border/50">
+            <Button variant="outline" size="sm" onClick={() => exportContacts(filtered)}>
               <Download className="h-3.5 w-3.5 mr-1" /> Export
             </Button>
             {canEdit && (
