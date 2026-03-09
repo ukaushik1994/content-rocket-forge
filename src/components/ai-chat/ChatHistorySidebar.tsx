@@ -272,13 +272,6 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             onClick={onCreateConversation}
           />
 
-          {/* Search */}
-          <CollapsedIconButton
-            icon={<Search className="h-4 w-4" />}
-            label="Search"
-            onClick={() => {}}
-          />
-
           {/* Divider */}
           <div className="w-6 h-px bg-border/20 my-2" />
 
@@ -289,13 +282,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <CollapsedIconButton icon={<MessageCircle className="h-4 w-4" />} label="Engage" onClick={onToggleSidebar} />
           </div>
 
-          {/* Bottom: Calendar + Profile */}
+          {/* Bottom: Profile */}
           <div className="flex flex-col items-center gap-0.5 mt-2">
-            <CollapsedIconButton
-              icon={<CalendarDays className="h-4 w-4" />}
-              label="Content Calendar"
-              onClick={() => handleNavigation('/research/calendar')}
-            />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
