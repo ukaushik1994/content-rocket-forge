@@ -15,6 +15,9 @@ export function ProfileSettingsTab() {
   const [email, setEmail] = useState('');
   const [profileExpanded, setProfileExpanded] = useState(true);
   const [securityExpanded, setSecurityExpanded] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Set initial values from user metadata
   useEffect(() => {
