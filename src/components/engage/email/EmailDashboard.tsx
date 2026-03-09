@@ -12,8 +12,7 @@ import { CampaignsList } from './campaigns/CampaignsList';
 import { EmailReports } from './reports/EmailReports';
 import { Mail, Inbox, Send, Clock, FileText, Megaphone, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { EngageHero } from '../shared/EngageHero';
-import { EngageStatGrid } from '../shared/EngageStatCard';
+import { EngagePageHero } from '../shared/EngagePageHero';
 import { engageStagger } from '../shared/engageAnimations';
 
 export const EmailDashboard = () => {
@@ -56,47 +55,46 @@ export const EmailDashboard = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  const stats = [
-    { label: 'Threads', count: threadCount, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: Inbox },
-    { label: 'Templates', count: templateCount, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: FileText },
-    { label: 'Campaigns', count: campaignCount, color: 'from-cyan-500/20 to-cyan-500/5', text: 'text-cyan-400', icon: Megaphone },
-    { label: 'Emails Sent', count: emailsSent, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Send },
+  const quickFilters = [
+    { key: 'inbox', label: 'Inbox', icon: Inbox },
+    { key: 'sent', label: 'Sent', icon: Send },
+    { key: 'scheduled', label: 'Scheduled', icon: Clock },
+    { key: 'drafts', label: 'Drafts', icon: FileText },
+    { key: 'templates', label: 'Templates', icon: FileText },
+    { key: 'campaigns', label: 'Campaigns', icon: Megaphone },
+    { key: 'reports', label: 'Reports', icon: BarChart3 },
   ];
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngageHero
+      <EngagePageHero
         icon={Mail}
+        badge="Email Marketing Suite"
         title="Email"
-        subtitle="Inbox, campaigns, templates, and delivery"
+        titleAccent="Dashboard"
+        subtitle="Inbox, campaigns, templates, and delivery — all in one place"
         gradientFrom="from-blue-400"
         gradientTo="to-cyan-400"
-        glowFrom="from-blue-500/30"
-        glowTo="to-cyan-500/10"
+        stats={[
+          { icon: Inbox, label: 'Threads', value: threadCount },
+          { icon: FileText, label: 'Templates', value: templateCount },
+          { icon: Megaphone, label: 'Campaigns', value: campaignCount },
+          { icon: Send, label: 'Sent', value: emailsSent },
+        ]}
+        quickFilters={quickFilters}
+        activeFilter={tab}
+        onFilterChange={setTab}
       />
 
-      <EngageStatGrid stats={stats} columns={4} />
-
-      {/* Tabs */}
-      <motion.div variants={engageStagger.item}>
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm flex-wrap h-auto gap-0.5 p-1">
-            <TabsTrigger value="inbox" className="text-xs gap-1"><Inbox className="h-3 w-3" /> Inbox</TabsTrigger>
-            <TabsTrigger value="sent" className="text-xs gap-1"><Send className="h-3 w-3" /> Sent</TabsTrigger>
-            <TabsTrigger value="scheduled" className="text-xs gap-1"><Clock className="h-3 w-3" /> Scheduled</TabsTrigger>
-            <TabsTrigger value="drafts" className="text-xs gap-1"><FileText className="h-3 w-3" /> Drafts</TabsTrigger>
-            <TabsTrigger value="templates" className="text-xs">Templates</TabsTrigger>
-            <TabsTrigger value="campaigns" className="text-xs">Campaigns</TabsTrigger>
-            <TabsTrigger value="reports" className="text-xs gap-1"><BarChart3 className="h-3 w-3" /> Reports</TabsTrigger>
-          </TabsList>
-          <TabsContent value="inbox" className="mt-4"><EmailInbox /></TabsContent>
-          <TabsContent value="sent" className="mt-4"><SentList /></TabsContent>
-          <TabsContent value="scheduled" className="mt-4"><ScheduledList /></TabsContent>
-          <TabsContent value="drafts" className="mt-4"><DraftsList /></TabsContent>
-          <TabsContent value="templates" className="mt-4"><TemplatesList /></TabsContent>
-          <TabsContent value="campaigns" className="mt-4"><CampaignsList /></TabsContent>
-          <TabsContent value="reports" className="mt-4"><EmailReports /></TabsContent>
-        </Tabs>
+      {/* Tab Content */}
+      <motion.div variants={engageStagger.item} className="max-w-7xl mx-auto">
+        {tab === 'inbox' && <EmailInbox />}
+        {tab === 'sent' && <SentList />}
+        {tab === 'scheduled' && <ScheduledList />}
+        {tab === 'drafts' && <DraftsList />}
+        {tab === 'templates' && <TemplatesList />}
+        {tab === 'campaigns' && <CampaignsList />}
+        {tab === 'reports' && <EmailReports />}
       </motion.div>
     </motion.div>
   );

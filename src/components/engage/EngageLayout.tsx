@@ -1,6 +1,7 @@
 import React from 'react';
 import { EngageBreadcrumb } from './shared/EngageBreadcrumb';
 import { EngageBackground } from './shared/EngageBackground';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Loader2 } from 'lucide-react';
 
@@ -15,6 +16,7 @@ export const EngageLayout: React.FC<EngageLayoutProps> = ({ children }) => {
     <div className="min-h-screen relative">
       <div className="h-[calc(100vh-4rem)] overflow-auto relative">
         <EngageBackground />
+        <AnimatedBackground intensity="low" />
         <div className="relative z-0 p-6">
           {loading ? (
             <div className="flex items-center justify-center h-full">
