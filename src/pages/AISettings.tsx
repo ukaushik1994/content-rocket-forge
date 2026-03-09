@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import Navbar from '@/components/layout/Navbar';
+
 import { OpenRouterSettings } from '@/components/ai-chat/OpenRouterSettings';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
