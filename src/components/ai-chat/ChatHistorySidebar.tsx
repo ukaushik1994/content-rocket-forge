@@ -561,7 +561,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         </ScrollArea>
 
         {/* Bottom: Calendar + Profile */}
-        <div className="p-3 border-t border-border/10 space-y-1">
+        <div className="p-3 border-t border-border/8 space-y-0.5">
           <SidebarNavItem 
             icon={<CalendarDays className="h-4 w-4" />} 
             label="Content Calendar" 
@@ -571,8 +571,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors group">
-                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-foreground flex-shrink-0">
+              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-all duration-200 group">
+                <div className="w-6 h-6 rounded-full bg-muted ring-1 ring-border/10 flex items-center justify-center text-[10px] font-medium text-foreground flex-shrink-0">
                   {userInitials}
                 </div>
                 <span className="flex-1 text-left truncate">{userFullName}</span>
