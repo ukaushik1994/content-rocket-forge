@@ -189,3 +189,6 @@ verify_jwt = false
 
 [functions.extract-wizard-context]
 verify_jwt = false
+
+[functions.generate-strategy-recommendations]
+verify_jwt = false

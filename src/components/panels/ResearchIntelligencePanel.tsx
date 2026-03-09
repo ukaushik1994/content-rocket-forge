@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Brain, Target, Lightbulb, Plus, Trash2, Check, X, Loader2 } from 'lucide-react';
+import { Brain, Target, Lightbulb, Plus, Trash2, Check, X, Loader2, RefreshCw } from 'lucide-react';
 import { useClusters, useContentGaps, useRecommendations } from '@/hooks/useResearchIntelligence';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ResearchIntelligencePanelProps {
   isOpen: boolean;
@@ -169,6 +172,34 @@ const GapsTab: React.FC = () => {
 // ── Recommendations Tab ──
 const RecsTab: React.FC = () => {
   const { data: recs, isLoading, accept, dismiss } = useRecommendations();
+  const { data: gaps } = useContentGaps();
+  const { user } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefreshRecs = async () => {
+    if (!gaps?.length) {
+      toast.error('Save some content gaps first to generate recommendations');
+      return;
+    }
+    setRefreshing(true);
+    try {
+      const gapIds = gaps.map(g => g.id);
+      const { error } = await supabase.functions.invoke('generate-strategy-recommendations', {
+        body: JSON.stringify({ gap_ids: gapIds }),
+      });
+      if (error) throw error;
+      toast.success('New recommendations generated');
+    } catch {
+      toast.error('Failed to generate recommendations');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const getGapTitle = (gapId: string | null) => {
+    if (!gapId || !gaps) return null;
+    return gaps.find(g => g.id === gapId)?.title;
+  };
 
   if (isLoading) return <LoadingState />;
 
@@ -177,7 +208,19 @@ const RecsTab: React.FC = () => {
 
   return (
     <div className="space-y-3 mt-3">
-      <p className="text-xs text-muted-foreground">{active.length} active recommendations</p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">{active.length} active recommendations</p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs gap-1"
+          onClick={handleRefreshRecs}
+          disabled={refreshing}
+        >
+          <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />
+          {refreshing ? 'Generating...' : 'Refresh'}
+        </Button>
+      </div>
 
       {active.map(r => (
         <Card key={r.id} className="p-3">
@@ -205,6 +248,14 @@ const RecsTab: React.FC = () => {
                 <span className="text-[10px] text-muted-foreground">{r.effort_estimate}</span>
               )}
             </div>
+            {r.related_gap_id && getGapTitle(r.related_gap_id) && (
+              <div className="flex items-center gap-1 mt-1">
+                <Target className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[10px] text-muted-foreground truncate">
+                  Gap: {getGapTitle(r.related_gap_id)}
+                </span>
+              </div>
+            )}
             <div className="flex gap-1.5 pt-1">
               <Button size="sm" className="h-6 text-xs" onClick={() => accept(r.id)}>
                 <Check className="h-3 w-3 mr-1" /> Accept
@@ -229,7 +280,7 @@ const RecsTab: React.FC = () => {
         </div>
       )}
 
-      {!recs?.length && <EmptyState icon={Lightbulb} label="No recommendations yet" />}
+      {!recs?.length && <EmptyState icon={Lightbulb} label="No recommendations yet — save content gaps to auto-generate" />}
     </div>
   );
 };
