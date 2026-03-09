@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Sparkles, TrendingUp, BarChart3, Zap, Search, Filter, CheckCircle2, Clock, AlertCircle, FileText, Brain, Target } from 'lucide-react';
+import { Sparkles, TrendingUp, BarChart3, Zap, Search, Filter, CheckCircle2, Clock, AlertCircle, FileText, Brain, Target, XCircle } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 interface ContentStats {
   all: number;
