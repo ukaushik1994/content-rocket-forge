@@ -4,8 +4,7 @@ import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { ContextAwareMessageInput } from './ContextAwareMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
-
-import { VisualizationSidebar } from './VisualizationSidebar';
+bar';
 import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { SolutionContextCard } from './SolutionContextCard';
@@ -111,7 +110,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   const [showSidebar, setShowSidebar] = useState(false);
 
-  const { pendingPanel, setPendingPanel } = useSidebarContext();
+  ntext();
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
