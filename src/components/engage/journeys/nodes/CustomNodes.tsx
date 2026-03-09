@@ -1,9 +1,8 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Mail, Clock, GitBranch, User, Globe, Flag, Zap, TagIcon, Tags } from 'lucide-react';
+import { Mail, Clock, GitBranch, User, Globe, Flag, Zap, TagIcon, Tags, Trash2 } from 'lucide-react';
 
-const baseStyle = 'rounded-xl border border-border/50 bg-card/90 backdrop-blur-md shadow-lg min-w-[180px] transition-all duration-300 hover:shadow-xl hover:border-primary/30';
-
+const baseStyle = 'group/node rounded-xl border border-border/50 bg-card/90 backdrop-blur-md shadow-lg min-w-[180px] transition-all duration-300 hover:shadow-xl hover:border-primary/30 relative';
 const glowMap: Record<string, string> = {
   'bg-purple-500': 'hover:shadow-purple-500/20',
   'bg-blue-500': 'hover:shadow-blue-500/20',
