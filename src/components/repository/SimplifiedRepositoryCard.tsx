@@ -306,6 +306,18 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
                 <span className="text-xs">Edit</span>
               </Button>
               
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDeleteDialog(true);
+                }}
+                className="text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -324,6 +336,39 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this content?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this content item.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async (e) => {
+                e.preventDefault();
+                setIsDeleting(true);
+                try {
+                  await deleteContentItem(content.id);
+                  toast.success('Content deleted successfully');
+                  setShowDeleteDialog(false);
+                } catch (error: any) {
+                  toast.error(error.message || 'Failed to delete content');
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 };
