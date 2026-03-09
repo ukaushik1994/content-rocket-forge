@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { EnhancedStatCard } from './EnhancedStatCard';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { realTimeIntegrationService } from '@/services/realTimeIntegrationService';
 import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 import { useAuth } from '@/contexts/AuthContext';
