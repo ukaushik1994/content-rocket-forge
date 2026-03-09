@@ -114,7 +114,7 @@ export const RemoveTagNode = memo(({ data, selected }: NodeProps) => (
 ));
 
 export const WebhookNode = memo(({ data, selected }: NodeProps) => (
-  <NodeWrapper color="bg-pink-500" selected={selected}>
+  <NodeWrapper color="bg-pink-500" selected={selected} onDelete={(data as any)?.onDelete}>
     <Handle type="target" position={Position.Top} className="!bg-pink-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <Handle type="source" position={Position.Bottom} className="!bg-pink-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <NodeLabel icon={Globe} label={getLabel(data, 'Webhook')} summary={(data as any)?.config?.url ? new URL((data as any).config.url).hostname : 'Not set'} iconBg="bg-pink-500" execCount={(data as any)?.execCount} />
