@@ -659,143 +659,195 @@ export const AutomationsList = () => {
   }, [filteredAutomations, statusFilter]);
 
   return (
-    <motion.div className="space-y-4" initial="hidden" animate="visible" variants={engageStagger.container}>
-      {/* Compact Header */}
-      <motion.div variants={engageStagger.item} className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-border/50 flex items-center justify-center">
-            <Zap className="h-5 w-5 text-amber-400" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Automations</h1>
-            <p className="text-xs text-muted-foreground">Rule-based triggers and actions</p>
-          </div>
+    <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      {/* ── Centered Hero Section ── */}
+      <div className="text-center pt-12 pb-8 relative">
+        {/* Ambient glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-amber-500/[0.06] rounded-full blur-3xl" />
         </div>
-        {canEdit && (
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 bg-background/60 border-border/50">
-                  <MoreVertical className="h-3.5 w-3.5 mr-1" /> More
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate('/engage/automations/runs')}>
-                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> View All Runs
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={runNow} disabled={runningNow}>
-                  <RotateCw className={`h-3.5 w-3.5 mr-1 ${runningNow ? 'animate-spin' : ''}`} /> {runningNow ? 'Running...' : 'Run Now'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowTemplates(true)}>
-                  <BookTemplate className="h-3.5 w-3.5 mr-1" /> Templates
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <EngageButton size="sm" onClick={() => openDialog()}>
-              <Plus className="h-4 w-4 mr-1" /> New Automation
-            </EngageButton>
-          </div>
-        )}
-      </motion.div>
 
-      {/* Inline Stats Bar */}
-      {automations.length > 0 && (
-        <motion.div variants={engageStagger.item}>
-          <GlassCard className="px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <Play className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-sm font-semibold text-foreground">{stats.active}</span>
-                  <span className="text-xs text-muted-foreground">Active</span>
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0, type: 'spring', stiffness: 100, damping: 18 }}
+          className="flex justify-center mb-6"
+        >
+          <div className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 shadow-sm">
+            <Zap className="h-5 w-5 text-amber-400" />
+            <span className="text-sm font-medium text-foreground">Automation Hub</span>
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          </div>
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 100, damping: 18 }}
+          className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-foreground via-amber-500 to-orange-500 bg-clip-text text-transparent"
+        >
+          Automations
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, type: 'spring', stiffness: 100, damping: 18 }}
+          className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto mb-8"
+        >
+          Rule-based triggers and actions to automate your workflows
+        </motion.p>
+
+        {/* Action Buttons */}
+        {canEdit && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, type: 'spring', stiffness: 100, damping: 18 }}
+            className="flex items-center justify-center gap-3 mb-10"
+          >
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+              <Button
+                onClick={() => openDialog()}
+                className="h-11 px-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg hover:shadow-amber-500/25 transition-shadow border-0"
+              >
+                <Plus className="h-4 w-4 mr-2" /> New Automation
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+              <Button
+                variant="outline"
+                onClick={() => setShowTemplates(true)}
+                className="h-11 px-5 bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+              >
+                <BookTemplate className="h-4 w-4 mr-2" /> Templates
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+              <Button
+                variant="outline"
+                onClick={runNow}
+                disabled={runningNow}
+                className="h-11 px-5 bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+              >
+                <RotateCw className={`h-4 w-4 mr-2 ${runningNow ? 'animate-spin' : ''}`} />
+                {runningNow ? 'Running...' : 'Run Now'}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Stats Cards */}
+        {automations.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, type: 'spring', stiffness: 100, damping: 18 }}
+            className="flex justify-center gap-4 flex-wrap mb-8"
+          >
+            {[
+              { icon: Play, label: 'Active', value: stats.active, color: 'text-emerald-400' },
+              { icon: Pause, label: 'Paused', value: stats.paused, color: 'text-amber-400' },
+              { icon: BarChart3, label: 'Total Runs', value: overallStats.totalRuns, color: 'text-blue-400' },
+              { icon: TrendingUp, label: 'Success Rate', value: `${overallStats.successRate}%`, color: 'text-purple-400' },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="flex items-center gap-3 px-5 py-3 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 min-w-[140px]"
+              >
+                <div className="h-9 w-9 rounded-xl bg-background/80 border border-border/50 flex items-center justify-center">
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
-                <div className="h-4 w-px bg-border/50" />
-                <div className="flex items-center gap-2">
-                  <Pause className="h-3.5 w-3.5 text-amber-400" />
-                  <span className="text-sm font-semibold text-foreground">{stats.paused}</span>
-                  <span className="text-xs text-muted-foreground">Paused</span>
-                </div>
-                <div className="h-4 w-px bg-border/50" />
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-3.5 w-3.5 text-blue-400" />
-                  <span className="text-sm font-semibold text-foreground">{overallStats.totalRuns}</span>
-                  <span className="text-xs text-muted-foreground">Runs</span>
-                </div>
-                <div className="h-4 w-px bg-border/50" />
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-3.5 w-3.5 text-purple-400" />
-                  <span className="text-sm font-semibold text-foreground">{overallStats.successRate}%</span>
-                  <span className="text-xs text-muted-foreground">Success</span>
+                <div className="text-left">
+                  <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
                 </div>
               </div>
-              {dailyRuns.some(d => d.success > 0 || d.failed > 0) && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => setShowAnalytics(!showAnalytics)}>
-                  <BarChart3 className="h-3 w-3 mr-1" /> {showAnalytics ? 'Hide' : 'Show'} Analytics
+            ))}
+
+            {dailyRuns.some(d => d.success > 0 || d.failed > 0) && (
+              <button
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                className="flex items-center gap-2 px-4 py-3 bg-background/40 backdrop-blur-xl rounded-2xl border border-border/50 text-xs text-muted-foreground hover:bg-background/60 transition-colors"
+              >
+                <BarChart3 className="h-3.5 w-3.5" /> {showAnalytics ? 'Hide' : 'Show'} Analytics
+              </button>
+            )}
+          </motion.div>
+        )}
+
+        {/* Collapsible Chart */}
+        <AnimatePresence>
+          {showAnalytics && dailyRuns.some(d => d.success > 0 || d.failed > 0) && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-2xl mx-auto mb-6"
+            >
+              <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 p-5">
+                <p className="text-xs font-medium text-muted-foreground mb-3">Executions — Last 7 Days</p>
+                <ResponsiveContainer width="100%" height={120}>
+                  <BarChart data={dailyRuns}>
+                    <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                    <YAxis hide />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                      labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
+                    <Bar dataKey="success" stackId="a" fill="hsl(142, 71%, 45%)" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="failed" stackId="a" fill="hsl(0, 84%, 60%)" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Centered Filter Bar ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, type: 'spring', stiffness: 100, damping: 18 }}
+      >
+        <EngageFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search automations..."
+          extraActions={
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1 p-1 bg-background/40 backdrop-blur-xl rounded-xl border border-border/50">
+                {([['all', 'All', stats.total], ['active', 'Active', stats.active], ['paused', 'Paused', stats.paused]] as const).map(([key, label, count]) => (
+                  <motion.button
+                    key={key}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setStatusFilter(key)}
+                    className={`h-8 px-3 text-xs font-medium rounded-lg transition-all ${
+                      statusFilter === key
+                        ? 'bg-primary text-primary-foreground shadow-lg'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-background/60'
+                    }`}
+                  >
+                    {label} <span className="ml-1 opacity-60">{count}</span>
+                  </motion.button>
+                ))}
+              </div>
+              {filteredAutomations.length > 0 && canEdit && (
+                <Button variant="ghost" size="sm" className="h-9 px-2 shrink-0" onClick={selectAll}>
+                  <CheckSquare className="h-3.5 w-3.5 mr-1" />
+                  {selectedIds.size === filteredAutomations.length ? 'Deselect' : 'Select All'}
                 </Button>
               )}
             </div>
-          </GlassCard>
-
-          {/* Collapsible Chart */}
-          <AnimatePresence>
-            {showAnalytics && dailyRuns.some(d => d.success > 0 || d.failed > 0) && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <GlassCard className="mt-2 p-4">
-                  <p className="text-xs font-medium text-muted-foreground mb-3">Executions — Last 7 Days</p>
-                  <ResponsiveContainer width="100%" height={120}>
-                    <BarChart data={dailyRuns}>
-                      <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                      <YAxis hide />
-                      <Tooltip
-                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
-                        labelStyle={{ color: 'hsl(var(--foreground))' }}
-                      />
-                      <Bar dataKey="success" stackId="a" fill="hsl(142, 71%, 45%)" radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="failed" stackId="a" fill="hsl(0, 84%, 60%)" radius={[2, 2, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </GlassCard>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      )}
-
-      {/* Search + Status Filter Pills */}
-      <EngageFilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Search automations..."
-        extraActions={
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1 p-1 bg-background/40 rounded-lg border border-border/50">
-              {([['all', 'All', stats.total], ['active', 'Active', stats.active], ['paused', 'Paused', stats.paused]] as const).map(([key, label, count]) => (
-                <Button
-                  key={key}
-                  variant={statusFilter === key ? 'default' : 'ghost'}
-                  size="sm"
-                  className="h-7 text-xs px-3"
-                  onClick={() => setStatusFilter(key)}
-                >
-                  {label} <Badge variant="secondary" className="ml-1 text-[9px] h-4 px-1">{count}</Badge>
-                </Button>
-              ))}
-            </div>
-            {filteredAutomations.length > 0 && canEdit && (
-              <Button variant="ghost" size="sm" className="h-9 px-2 shrink-0" onClick={selectAll}>
-                <CheckSquare className="h-3.5 w-3.5 mr-1" />
-                {selectedIds.size === filteredAutomations.length ? 'Deselect' : 'Select All'}
-              </Button>
-            )}
-          </div>
-        }
-      />
-
+          }
+        />
+      </motion.div>
       {/* Template Picker Dialog */}
       <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
         <DialogContent className="max-w-md">
