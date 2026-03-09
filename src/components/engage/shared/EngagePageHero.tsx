@@ -52,10 +52,13 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      {/* Glow */}
+      {/* Radial ambient glow */}
       <motion.div
-        className={`absolute inset-0 bg-gradient-to-r ${gradientFrom} ${gradientTo} rounded-3xl blur-[100px] opacity-[0.08]`}
-        animate={{ opacity: [0.05, 0.12, 0.05] }}
+        className="absolute inset-0 rounded-3xl"
+        style={{
+          background: `radial-gradient(ellipse at 50% 40%, hsl(var(--primary) / 0.08) 0%, transparent 70%)`,
+        }}
+        animate={{ opacity: [0.6, 1, 0.6] }}
         transition={{ duration: 4, repeat: Infinity }}
       />
 
