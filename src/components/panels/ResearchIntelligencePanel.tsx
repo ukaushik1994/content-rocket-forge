@@ -134,7 +134,7 @@ const GapsTab: React.FC = () => {
               <SelectValue placeholder="All clusters" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All clusters</SelectItem>
+              <SelectItem value="all">All clusters</SelectItem>
               {clusters.map(c => (
                 <SelectItem key={c.id} value={c.id} className="text-xs">{c.cluster_name}</SelectItem>
               ))}
