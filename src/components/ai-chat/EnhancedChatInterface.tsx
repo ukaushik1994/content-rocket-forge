@@ -606,6 +606,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               });
             }}
             onOpenAnalyst={() => {
+              setAnalystActive(true);
               handleSetVisualization({
                 type: 'analyst',
                 title: 'Analyst',
