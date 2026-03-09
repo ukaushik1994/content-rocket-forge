@@ -118,7 +118,12 @@ export const RepositoryTabs = React.memo(({ onOpenDetailView }: RepositoryTabsPr
         {(['all', 'socials', 'email', 'blog', 'scripts'] as RepositoryCategory[]).map(cat => (
           <TabsContent key={cat} value={cat}>
             <GlassCard className="p-6">
-              <CategoryContent category={cat} onOpenDetailView={onOpenDetailView} />
+              <CategoryContent
+                category={cat}
+                onOpenDetailView={onOpenDetailView}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+              />
             </GlassCard>
           </TabsContent>
         ))}
