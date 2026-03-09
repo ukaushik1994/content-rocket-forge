@@ -669,7 +669,7 @@ const CampaignsInner = () => {
 
       {/* Content Generation Panel (real-time progress) */}
       <ContentGenerationPanel />
-    </div>
+    </PageContainer>
   );
 };
 
