@@ -16,6 +16,9 @@ export function ProfileSettings() {
   const [lastName, setLastName] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Set initial values from user metadata
   useEffect(() => {
