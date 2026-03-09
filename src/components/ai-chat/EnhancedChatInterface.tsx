@@ -157,6 +157,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setUserClosedSidebar(false);
   };
 
+  // Consume pending panel from SidebarContext (when navigating from other pages)
+  useEffect(() => {
+    if (pendingPanel) {
+      if (pendingPanel === 'content_wizard') {
+        handleSetVisualization({ type: 'content_wizard', keyword: '', content_type: 'blog' });
+      } else {
+        handleSetVisualization({ type: pendingPanel });
+      }
+      setPendingPanel(null);
+    }
+  }, [pendingPanel, setPendingPanel]);
+
   // AUTO-OPEN sidebar when AI response contains visual data
   // Respects user's explicit close intent (Issue #4 fix)
   useEffect(() => {
