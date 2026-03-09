@@ -75,7 +75,7 @@ export const WaitNode = memo(({ data, selected }: NodeProps) => {
 });
 
 export const ConditionNode = memo(({ data, selected }: NodeProps) => (
-  <NodeWrapper color="bg-emerald-500" selected={selected}>
+  <NodeWrapper color="bg-emerald-500" selected={selected} onDelete={(data as any)?.onDelete}>
     <Handle type="target" position={Position.Top} className="!bg-emerald-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <Handle type="source" position={Position.Bottom} id="yes" className="!bg-emerald-500 !w-2.5 !h-2.5 !border-2 !border-background !left-[30%]" />
     <Handle type="source" position={Position.Bottom} id="no" className="!bg-red-400 !w-2.5 !h-2.5 !border-2 !border-background !left-[70%]" />
