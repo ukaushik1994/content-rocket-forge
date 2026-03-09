@@ -61,7 +61,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     deleteMessage,
     handleConfirmAction,
     handleCancelAction
-  } = useEnhancedAIChatDB();
+  } = useSharedAIChatDB();
 
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
