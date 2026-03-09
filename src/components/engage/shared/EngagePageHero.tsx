@@ -69,7 +69,7 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
           <div className="relative">
             {/* Badge pill */}
             <motion.div
-              className="inline-flex items-center gap-3 px-5 py-2.5 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-6"
+              className="inline-flex items-center gap-3 px-5 py-2.5 glass-card rounded-full mb-6"
               whileHover={{ scale: 1.05 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
