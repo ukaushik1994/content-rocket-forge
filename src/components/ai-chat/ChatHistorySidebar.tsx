@@ -5,42 +5,50 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Search, 
   Plus, 
   MoreVertical, 
   Trash2, 
   ChevronDown,
+  ChevronRight,
   Loader2,
   Pin,
   Archive,
-  // Library section
   FileText,
   Puzzle,
   CheckCircle,
-  // Tools section
   PenLine,
   Megaphone,
   BarChart3,
-  // Engage section
   Mail,
   Share2,
   Users,
-  // Visual builders
   Zap,
   GitBranch,
+  CalendarDays,
+  UserCircle,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { AIConversation } from '@/hooks/useEnhancedAIChatDB';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
+import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { toast } from 'sonner';
 
 interface ChatHistorySidebarProps {
   conversations: AIConversation[];
@@ -78,12 +86,32 @@ const SidebarNavItem: React.FC<{
   </button>
 );
 
-// Section header
-const SidebarSection: React.FC<{ label: string }> = ({ label }) => (
-  <p className="text-[10px] uppercase tracking-widest text-muted-foreground/40 px-3 pt-4 pb-1.5 font-medium">
-    {label}
-  </p>
-);
+// Collapsible section
+const CollapsibleSection: React.FC<{
+  label: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}> = ({ label, defaultOpen = true, children }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger className="w-full flex items-center gap-1.5 px-3 pt-4 pb-1.5 group cursor-pointer">
+        {isOpen ? (
+          <ChevronDown className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors" />
+        ) : (
+          <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors" />
+        )}
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-medium group-hover:text-muted-foreground/60 transition-colors">
+          {label}
+        </span>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
 
 export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   conversations,
@@ -98,10 +126,25 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   className = ""
 }) => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { openSettings } = useSettings();
   const [searchTerm, setSearchTerm] = useState('');
   const [displayLimit, setDisplayLimit] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [showChats, setShowChats] = useState(true);
+
+  const userFullName = user?.user_metadata?.first_name 
+    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}` 
+    : user?.email?.split('@')[0] || 'User';
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('Signed out successfully');
+      navigate('/auth');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
 
   const filteredConversations = conversations
     .filter(conv => {
@@ -189,7 +232,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
       <motion.div 
         ref={sidebarRef}
         className={cn(
-          "fixed left-0 top-16 bottom-0 z-50",
+          "fixed left-0 top-0 bottom-0 z-50",
           "w-full sm:w-72 lg:w-80",
           "bg-background/95 backdrop-blur-xl",
           "border-r border-border/10 flex flex-col",
@@ -202,193 +245,223 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* New Chat Button */}
-        <div className="p-4 pb-2">
-          <Button
-            onClick={onCreateConversation}
-            variant="ghost"
-            className="w-full border border-border/20 text-muted-foreground hover:text-foreground hover:border-border/40 rounded-full h-9"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Chat
-          </Button>
+        {/* Top: Logo + New Chat + Notifications */}
+        <div className="p-3 pb-1 flex items-center justify-between">
+          <CreAiterLogo showText={true} size="sm" />
+          <div className="flex items-center gap-0.5">
+            <NotificationBell />
+            <Button
+              onClick={onCreateConversation}
+              variant="ghost"
+              size="icon"
+              className="rounded-full text-muted-foreground hover:text-foreground h-8 w-8"
+              title="New Chat"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="flex-1">
           <div className="px-2">
-            {/* ── LIBRARY ── */}
-            <SidebarSection label="Library" />
-            <SidebarNavItem icon={<FileText className="h-4 w-4" />} label="Repository" onClick={() => handlePanel('repository')} />
-            <SidebarNavItem icon={<Puzzle className="h-4 w-4" />} label="Offerings" onClick={() => handlePanel('offerings')} />
-            <SidebarNavItem icon={<CheckCircle className="h-4 w-4" />} label="Approvals" onClick={() => handlePanel('approvals')} />
+            {/* ── LIBRARY (collapsible) ── */}
+            <CollapsibleSection label="Library">
+              <SidebarNavItem icon={<FileText className="h-4 w-4" />} label="Repository" onClick={() => handlePanel('repository')} />
+              <SidebarNavItem icon={<Puzzle className="h-4 w-4" />} label="Offerings" onClick={() => handlePanel('offerings')} />
+              <SidebarNavItem icon={<CheckCircle className="h-4 w-4" />} label="Approvals" onClick={() => handlePanel('approvals')} />
+            </CollapsibleSection>
 
-            {/* ── TOOLS ── */}
-            <SidebarSection label="Tools" />
-            <SidebarNavItem icon={<PenLine className="h-4 w-4" />} label="Content Wizard" onClick={() => handlePanel('content_wizard')} />
-            <SidebarNavItem icon={<Megaphone className="h-4 w-4" />} label="Campaigns" onClick={() => handlePanel('campaigns')} />
-            <SidebarNavItem icon={<Search className="h-4 w-4" />} label="Keywords" onClick={() => handlePanel('keywords')} />
-            <SidebarNavItem icon={<BarChart3 className="h-4 w-4" />} label="Analytics" onClick={() => handlePanel('analytics')} />
+            {/* ── TOOLS (collapsible) ── */}
+            <CollapsibleSection label="Tools">
+              <SidebarNavItem icon={<PenLine className="h-4 w-4" />} label="Content Wizard" onClick={() => handlePanel('content_wizard')} />
+              <SidebarNavItem icon={<Megaphone className="h-4 w-4" />} label="Campaigns" onClick={() => handlePanel('campaigns')} />
+              <SidebarNavItem icon={<Search className="h-4 w-4" />} label="Keywords" onClick={() => handlePanel('keywords')} />
+              <SidebarNavItem icon={<BarChart3 className="h-4 w-4" />} label="Analytics" onClick={() => handlePanel('analytics')} />
+            </CollapsibleSection>
 
-            {/* ── ENGAGE ── */}
-            <SidebarSection label="Engage" />
-            <SidebarNavItem icon={<Mail className="h-4 w-4" />} label="Email" onClick={() => handlePanel('email')} />
-            <SidebarNavItem icon={<Share2 className="h-4 w-4" />} label="Social" onClick={() => handlePanel('social')} />
-            <SidebarNavItem icon={<Users className="h-4 w-4" />} label="Contacts" onClick={() => handlePanel('contacts')} />
-            <SidebarNavItem icon={<Zap className="h-4 w-4" />} label="Automations" onClick={() => handleNavigation('/engage/automations')} />
-            <SidebarNavItem icon={<GitBranch className="h-4 w-4" />} label="Journeys" onClick={() => handleNavigation('/engage/journeys')} />
+            {/* ── ENGAGE (collapsible) ── */}
+            <CollapsibleSection label="Engage">
+              <SidebarNavItem icon={<Mail className="h-4 w-4" />} label="Email" onClick={() => handlePanel('email')} />
+              <SidebarNavItem icon={<Share2 className="h-4 w-4" />} label="Social" onClick={() => handlePanel('social')} />
+              <SidebarNavItem icon={<Users className="h-4 w-4" />} label="Contacts" onClick={() => handlePanel('contacts')} />
+              <SidebarNavItem icon={<Zap className="h-4 w-4" />} label="Automations" onClick={() => handleNavigation('/engage/automations')} />
+              <SidebarNavItem icon={<GitBranch className="h-4 w-4" />} label="Journeys" onClick={() => handleNavigation('/engage/journeys')} />
+            </CollapsibleSection>
 
             {/* ── CHATS ── */}
-            <SidebarSection label="Chats" />
-            
-            {/* Search chats */}
-            <div className="px-2 pb-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                <Input
-                  placeholder="Search chats..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-transparent border-border/15 text-foreground placeholder:text-muted-foreground/40 focus:border-border/40 focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-xs rounded-lg"
-                />
+            <CollapsibleSection label="Chats">
+              {/* Search chats */}
+              <div className="px-2 pb-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+                  <Input
+                    placeholder="Search chats..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 bg-transparent border-border/15 text-foreground placeholder:text-muted-foreground/40 focus:border-border/40 focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-xs rounded-lg"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Conversations List */}
-            <AnimatePresence mode="wait">
-              {conversations && conversations.length > 0 ? (
-                filteredConversations.length > 0 ? (
-                  <>
-                    {displayedConversations.map((conversation) => (
-                      <div
-                        key={conversation.id}
-                        className={cn(
-                          "mx-1 mb-0.5 px-3 py-2.5 cursor-pointer transition-colors duration-150 rounded-lg group",
-                          activeConversation === conversation.id 
-                            ? 'bg-muted/40' 
-                            : 'hover:bg-muted/20'
-                        )}
-                        onClick={() => onSelectConversation(conversation.id)}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              {conversation.pinned && <Pin className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />}
-                              <h3 className="text-sm text-foreground truncate">
-                                {conversation.title}
-                              </h3>
-                            </div>
-                            <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-                              {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
-                            </p>
-                          </div>
-                          
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <MoreVertical className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-background border-border/20">
-                              {onPinConversation && (
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onPinConversation?.(conversation.id);
-                                  }}
-                                >
-                                  <Pin className="h-4 w-4 mr-2" />
-                                  {conversation.pinned ? 'Unpin' : 'Pin'}
-                                </DropdownMenuItem>
-                              )}
-                              {onArchiveConversation && (
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onArchiveConversation(conversation.id);
-                                  }}
-                                >
-                                  <Archive className="h-4 w-4 mr-2" />
-                                  {conversation.archived ? 'Unarchive' : 'Archive'}
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDeleteConversation(conversation.id);
-                                }}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Load More */}
-                    {hasMoreConversations && (
-                      <div className="mt-2 px-2">
-                        <Button
-                          onClick={handleLoadMore}
-                          disabled={isLoadingMore}
-                          variant="ghost"
-                          size="sm"
-                          className="w-full text-muted-foreground/60 hover:text-foreground h-7 text-xs"
-                        >
-                          {isLoadingMore ? (
-                            <>
-                              <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                              Loading...
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="h-3 w-3 mr-2" />
-                              Load More ({filteredConversations.length - displayLimit})
-                            </>
+              {/* Conversations List */}
+              <AnimatePresence mode="wait">
+                {conversations && conversations.length > 0 ? (
+                  filteredConversations.length > 0 ? (
+                    <>
+                      {displayedConversations.map((conversation) => (
+                        <div
+                          key={conversation.id}
+                          className={cn(
+                            "mx-1 mb-0.5 px-3 py-2.5 cursor-pointer transition-colors duration-150 rounded-lg group",
+                            activeConversation === conversation.id 
+                              ? 'bg-muted/40' 
+                              : 'hover:bg-muted/20'
                           )}
-                        </Button>
-                      </div>
-                    )}
-                  </>
+                          onClick={() => onSelectConversation(conversation.id)}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                {conversation.pinned && <Pin className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />}
+                                <h3 className="text-sm text-foreground truncate">
+                                  {conversation.title}
+                                </h3>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+                                {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
+                              </p>
+                            </div>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreVertical className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-background border-border/20">
+                                {onPinConversation && (
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onPinConversation?.(conversation.id);
+                                    }}
+                                  >
+                                    <Pin className="h-4 w-4 mr-2" />
+                                    {conversation.pinned ? 'Unpin' : 'Pin'}
+                                  </DropdownMenuItem>
+                                )}
+                                {onArchiveConversation && (
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onArchiveConversation(conversation.id);
+                                    }}
+                                  >
+                                    <Archive className="h-4 w-4 mr-2" />
+                                    {conversation.archived ? 'Unarchive' : 'Archive'}
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteConversation(conversation.id);
+                                  }}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Load More */}
+                      {hasMoreConversations && (
+                        <div className="mt-2 px-2">
+                          <Button
+                            onClick={handleLoadMore}
+                            disabled={isLoadingMore}
+                            variant="ghost"
+                            size="sm"
+                            className="w-full text-muted-foreground/60 hover:text-foreground h-7 text-xs"
+                          >
+                            {isLoadingMore ? (
+                              <>
+                                <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                                Loading...
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="h-3 w-3 mr-2" />
+                                Load More ({filteredConversations.length - displayLimit})
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-6"
+                    >
+                      <Search className="h-4 w-4 text-muted-foreground/30 mx-auto mb-2" />
+                      <p className="text-muted-foreground/50 text-xs">No results</p>
+                    </motion.div>
+                  )
                 ) : (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="text-center py-6"
                   >
-                    <Search className="h-4 w-4 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="text-muted-foreground/50 text-xs">No results</p>
+                    <p className="text-muted-foreground/40 text-xs">No conversations yet</p>
                   </motion.div>
-                )
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-6"
-                >
-                  <p className="text-muted-foreground/40 text-xs">No conversations yet</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                )}
+              </AnimatePresence>
+            </CollapsibleSection>
           </div>
         </ScrollArea>
 
-        {/* Settings at bottom */}
-        <div className="p-3 border-t border-border/10">
+        {/* Bottom: Calendar + Profile */}
+        <div className="p-3 border-t border-border/10 space-y-1">
           <SidebarNavItem 
-            icon={<Settings className="h-4 w-4" />} 
-            label="Settings" 
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('openSettings', { detail: { tab: 'api' } }));
-            }} 
+            icon={<CalendarDays className="h-4 w-4" />} 
+            label="Content Calendar" 
+            onClick={() => handleNavigation('/research/calendar')} 
           />
+          
+          {/* User Profile */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors group">
+                <UserCircle className="h-4 w-4 flex-shrink-0 text-muted-foreground/60 group-hover:text-foreground/80" />
+                <span className="flex-1 text-left truncate">{userFullName}</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="start" className="bg-card border border-border/20 w-56">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                {user?.email}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => openSettings()}>
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </motion.div>
     </>

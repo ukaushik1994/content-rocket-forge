@@ -420,7 +420,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       {/* Main Content Area - Chat and Visualization side by side */}
       <div className={cn(
-        "flex-1 flex transition-all duration-300 ease-out pt-20 pb-24 overflow-hidden",
+        "flex-1 flex transition-all duration-300 ease-out pt-4 pb-24 overflow-hidden",
         // Left sidebar margin - desktop only (sidebars overlay on mobile/tablet)
         showSidebar && !isMobile && "sm:ml-72 lg:ml-80"
       )}>
