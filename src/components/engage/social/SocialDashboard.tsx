@@ -400,19 +400,13 @@ export const SocialDashboard = () => {
       </motion.div>
 
       {/* Stat Cards */}
-      <motion.div variants={stagger.item} className="grid grid-cols-3 gap-3">
-        {statCards.map(s => (
-          <GlassCard key={s.label} className="p-4 hover:scale-[1.03] transition-transform duration-300">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl ${s.bg}`}><s.icon className={`h-4 w-4 ${s.color}`} /></div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-              </div>
-            </div>
-          </GlassCard>
-        ))}
-      </motion.div>
+      <EngageStatGrid
+        stats={[
+          { label: 'Scheduled', count: stats.scheduled, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: Clock },
+          { label: 'Posted', count: stats.posted, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: CheckCircle2 },
+          { label: 'Connected', count: stats.connected, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: Zap },
+        ]}
+      />
 
       {/* Connected Accounts */}
       <motion.div variants={stagger.item}>
