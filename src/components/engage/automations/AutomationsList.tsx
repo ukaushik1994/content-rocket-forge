@@ -22,11 +22,9 @@ import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format, subDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
-import { EngagePageHero } from '../shared/EngagePageHero';
 import { EngageFilterBar } from '../shared/EngageFilterBar';
 import { EngageContentCard } from '../shared/EngageContentCard';
 import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
-import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
 import { useNavigate } from 'react-router-dom';
 import { automationPresets } from './automationPresets';
@@ -99,6 +97,8 @@ export const AutomationsList = () => {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused'>('all');
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   // --- Data Queries ---
   const { data: automations = [], isLoading } = useQuery({
@@ -650,88 +650,151 @@ export const AutomationsList = () => {
     }
   };
 
+
+  const displayedAutomations = useMemo(() => {
+    let list = filteredAutomations;
+    if (statusFilter === 'active') list = list.filter((a: any) => a.status === 'active');
+    if (statusFilter === 'paused') list = list.filter((a: any) => a.status === 'paused');
+    return list;
+  }, [filteredAutomations, statusFilter]);
+
   return (
-    <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngagePageHero
-        icon={Zap}
-        badge="Automation Engine"
-        title="Automations"
-        titleAccent="Engine"
-        subtitle="Rule-based triggers and actions — automate your engagement"
-        gradientFrom="from-amber-400"
-        gradientTo="to-orange-400"
-        stats={[
-          { icon: Play, label: 'Active', value: stats.active },
-          { icon: Pause, label: 'Paused', value: stats.paused },
-          { icon: BarChart3, label: 'Total Runs', value: overallStats.totalRuns },
-          { icon: TrendingUp, label: 'Success', value: `${overallStats.successRate}%` },
-        ]}
-        actions={canEdit ? (
+    <motion.div className="space-y-4" initial="hidden" animate="visible" variants={engageStagger.container}>
+      {/* Compact Header */}
+      <motion.div variants={engageStagger.item} className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-border/50 flex items-center justify-center">
+            <Zap className="h-5 w-5 text-amber-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Automations</h1>
+            <p className="text-xs text-muted-foreground">Rule-based triggers and actions</p>
+          </div>
+        </div>
+        {canEdit && (
           <div className="flex items-center gap-2">
-            <EngageButton size="sm" variant="outline" gradient={false} onClick={() => navigate('/engage/automations/runs')}>
-              <ExternalLink className="h-3.5 w-3.5 mr-1" /> View All Runs
-            </EngageButton>
-            <EngageButton size="sm" variant="outline" gradient={false} onClick={runNow} disabled={runningNow}>
-              <RotateCw className={`h-3.5 w-3.5 mr-1 ${runningNow ? 'animate-spin' : ''}`} /> {runningNow ? 'Running...' : 'Run Now'}
-            </EngageButton>
-            <EngageButton size="sm" variant="outline" gradient={false} onClick={() => setShowTemplates(true)}>
-              <BookTemplate className="h-3.5 w-3.5 mr-1" /> Templates
-            </EngageButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 bg-background/60 border-border/50">
+                  <MoreVertical className="h-3.5 w-3.5 mr-1" /> More
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate('/engage/automations/runs')}>
+                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> View All Runs
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={runNow} disabled={runningNow}>
+                  <RotateCw className={`h-3.5 w-3.5 mr-1 ${runningNow ? 'animate-spin' : ''}`} /> {runningNow ? 'Running...' : 'Run Now'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowTemplates(true)}>
+                  <BookTemplate className="h-3.5 w-3.5 mr-1" /> Templates
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <EngageButton size="sm" onClick={() => openDialog()}>
               <Plus className="h-4 w-4 mr-1" /> New Automation
             </EngageButton>
           </div>
-        ) : undefined}
-      />
+        )}
+      </motion.div>
 
-      {/* Search + Select All */}
+      {/* Inline Stats Bar */}
+      {automations.length > 0 && (
+        <motion.div variants={engageStagger.item}>
+          <GlassCard className="px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Play className="h-3.5 w-3.5 text-emerald-400" />
+                  <span className="text-sm font-semibold text-foreground">{stats.active}</span>
+                  <span className="text-xs text-muted-foreground">Active</span>
+                </div>
+                <div className="h-4 w-px bg-border/50" />
+                <div className="flex items-center gap-2">
+                  <Pause className="h-3.5 w-3.5 text-amber-400" />
+                  <span className="text-sm font-semibold text-foreground">{stats.paused}</span>
+                  <span className="text-xs text-muted-foreground">Paused</span>
+                </div>
+                <div className="h-4 w-px bg-border/50" />
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-3.5 w-3.5 text-blue-400" />
+                  <span className="text-sm font-semibold text-foreground">{overallStats.totalRuns}</span>
+                  <span className="text-xs text-muted-foreground">Runs</span>
+                </div>
+                <div className="h-4 w-px bg-border/50" />
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-3.5 w-3.5 text-purple-400" />
+                  <span className="text-sm font-semibold text-foreground">{overallStats.successRate}%</span>
+                  <span className="text-xs text-muted-foreground">Success</span>
+                </div>
+              </div>
+              {dailyRuns.some(d => d.success > 0 || d.failed > 0) && (
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => setShowAnalytics(!showAnalytics)}>
+                  <BarChart3 className="h-3 w-3 mr-1" /> {showAnalytics ? 'Hide' : 'Show'} Analytics
+                </Button>
+              )}
+            </div>
+          </GlassCard>
+
+          {/* Collapsible Chart */}
+          <AnimatePresence>
+            {showAnalytics && dailyRuns.some(d => d.success > 0 || d.failed > 0) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <GlassCard className="mt-2 p-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-3">Executions — Last 7 Days</p>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <BarChart data={dailyRuns}>
+                      <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                      <YAxis hide />
+                      <Tooltip
+                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
+                      <Bar dataKey="success" stackId="a" fill="hsl(142, 71%, 45%)" radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="failed" stackId="a" fill="hsl(0, 84%, 60%)" radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </GlassCard>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+
+      {/* Search + Status Filter Pills */}
       <EngageFilterBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search automations..."
         extraActions={
-          filteredAutomations.length > 0 && canEdit ? (
-            <Button variant="ghost" size="sm" className="h-9 px-2 shrink-0" onClick={selectAll}>
-              <CheckSquare className="h-3.5 w-3.5 mr-1" />
-              {selectedIds.size === filteredAutomations.length ? 'Deselect' : 'Select All'}
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1 p-1 bg-background/40 rounded-lg border border-border/50">
+              {([['all', 'All', stats.total], ['active', 'Active', stats.active], ['paused', 'Paused', stats.paused]] as const).map(([key, label, count]) => (
+                <Button
+                  key={key}
+                  variant={statusFilter === key ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setStatusFilter(key)}
+                >
+                  {label} <Badge variant="secondary" className="ml-1 text-[9px] h-4 px-1">{count}</Badge>
+                </Button>
+              ))}
+            </div>
+            {filteredAutomations.length > 0 && canEdit && (
+              <Button variant="ghost" size="sm" className="h-9 px-2 shrink-0" onClick={selectAll}>
+                <CheckSquare className="h-3.5 w-3.5 mr-1" />
+                {selectedIds.size === filteredAutomations.length ? 'Deselect' : 'Select All'}
+              </Button>
+            )}
+          </div>
         }
       />
-
-      {/* Analytics Dashboard */}
-      {automations.length > 0 && (
-        <motion.div variants={engageStagger.item}>
-          <EngageStatGrid
-            stats={[
-              { label: 'Active', count: stats.active, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Play },
-              { label: 'Paused', count: stats.paused, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: Pause },
-              { label: 'Total Runs', count: overallStats.totalRuns, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: BarChart3 },
-              { label: 'Success Rate', count: `${overallStats.successRate}%`, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: TrendingUp },
-            ]}
-            columns={4}
-          />
-
-          {/* Executions Chart */}
-          {dailyRuns.some(d => d.success > 0 || d.failed > 0) && (
-            <GlassCard className="mt-3 p-4">
-              <p className="text-xs font-medium text-muted-foreground mb-3">Executions — Last 7 Days</p>
-              <ResponsiveContainer width="100%" height={120}>
-                <BarChart data={dailyRuns}>
-                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                  <YAxis hide />
-                  <Tooltip
-                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
-                    labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  />
-                  <Bar dataKey="success" stackId="a" fill="hsl(142, 71%, 45%)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="failed" stackId="a" fill="hsl(0, 84%, 60%)" radius={[2, 2, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </GlassCard>
-          )}
-        </motion.div>
-      )}
 
       {/* Template Picker Dialog */}
       <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
@@ -1016,124 +1079,83 @@ export const AutomationsList = () => {
       {/* List */}
       {isLoading ? (
         <EngageSkeletonCards count={4} layout="list" />
-      ) : filteredAutomations.length === 0 ? (
+      ) : displayedAutomations.length === 0 ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
           <div className="relative h-20 w-20 mx-auto">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-amber-500/30 to-orange-500/30 blur-xl" />
-            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-white/[0.08] flex items-center justify-center">
+            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-border/50 flex items-center justify-center">
               <Zap className="h-9 w-9 text-amber-400" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="font-semibold text-foreground">{searchQuery ? 'No matching automations' : 'No automations yet'}</p>
+            <p className="font-semibold text-foreground">{searchQuery || statusFilter !== 'all' ? 'No matching automations' : 'No automations yet'}</p>
             <p className="text-sm text-muted-foreground">Set up trigger-based automations to engage contacts</p>
           </div>
-          {canEdit && !searchQuery && <EngageButton size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</EngageButton>}
+          {canEdit && !searchQuery && statusFilter === 'all' && <EngageButton size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</EngageButton>}
         </motion.div>
       ) : (
-        <div className="grid gap-3 max-w-7xl mx-auto">
-          {filteredAutomations.map((a: any, i: number) => {
+        <div className="grid gap-2.5 max-w-7xl mx-auto">
+          {displayedAutomations.map((a: any, i: number) => {
             const triggerType = a.trigger_config?.type || 'none';
             const actions = (a.actions || []) as any[];
             const health = getHealthBadge(a.id);
-            const lastTriggered = a.updated_at;
             const isSelected = selectedIds.has(a.id);
+            const borderColor = a.status === 'active' ? 'border-l-emerald-500/60' : 'border-l-muted-foreground/20';
             return (
-              <EngageContentCard
-                key={a.id}
-                index={i}
-                selected={isSelected}
-              >
-                <div className="flex items-center justify-between">
+              <EngageContentCard key={a.id} index={i} selected={isSelected}>
+                <div className={`flex items-center justify-between border-l-2 ${borderColor} pl-3 -ml-1`}>
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {canEdit && (
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => toggleSelection(a.id)}
-                          className="shrink-0"
-                        />
-                      )}
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Zap className="h-4 w-4 text-amber-400" />
-                          <h3 className="font-medium text-foreground">{a.name}</h3>
-                          <Badge variant="outline" className={`text-[10px] gap-1 ${a.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-muted/50 text-muted-foreground border-border/50'}`}>
-                            <span className="relative flex h-1.5 w-1.5">
-                              {a.status === 'active' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
-                              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${a.status === 'active' ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
-                            </span>
-                            {a.status}
+                    {canEdit && (
+                      <Checkbox checked={isSelected} onCheckedChange={() => toggleSelection(a.id)} className="shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-foreground text-sm">{a.name}</h3>
+                        {health && (
+                          <Badge variant="outline" className={`text-[10px] gap-1 ${health.color}`} title={`${health.success}/${health.total} runs succeeded`}>
+                            {health.rate}%
                           </Badge>
-                          {/* Health Badge */}
-                          {health && (
-                            <Badge variant="outline" className={`text-[10px] gap-1 ${health.color}`} title={`${health.success} success / ${health.failed} failed (${health.rate}%)`}>
-                              {health.rate}% • {health.total}×
-                            </Badge>
-                          )}
-                          {!health && (execStats[a.id]?.total || 0) > 0 && (
-                            <Badge variant="secondary" className="text-[10px] gap-1 cursor-pointer hover:bg-secondary/80" onClick={() => setShowExecLog(a.id)}>
-                              <Zap className="h-2.5 w-2.5" /> {execStats[a.id].total}×
-                            </Badge>
-                          )}
-                        </div>
-                        {a.description && <p className="text-xs text-muted-foreground truncate">{a.description}</p>}
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>Trigger: {triggerLabels[triggerType] || triggerType}{a.trigger_config?.value ? ` (${a.trigger_config.value})` : ''}</span>
-                          <span>•</span>
-                          <span>{actions.map((act: any) => actionLabels[act.type] || act.type).join(', ')}</span>
-                          {a.conditions && (a.conditions as any[]).length > 0 && (
-                            <>
-                              <span>•</span>
-                              <span className="flex items-center gap-0.5"><Filter className="h-2.5 w-2.5" /> {(a.conditions as any[]).length} conditions</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
-                          <Clock className="h-2.5 w-2.5" />
-                          <span>Created {format(new Date(a.created_at), 'MMM d')}</span>
-                          {lastTriggered && lastTriggered !== a.created_at && (
-                            <span>• Last active {format(new Date(lastTriggered), 'MMM d, HH:mm')}</span>
-                          )}
-                        </div>
+                        )}
+                      </div>
+                      {a.description && <p className="text-xs text-muted-foreground truncate">{a.description}</p>}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{triggerLabels[triggerType] || triggerType}</span>
+                        <span className="text-border">→</span>
+                        <span>{actions.map((act: any) => actionLabels[act.type] || act.type).join(', ')}</span>
+                        {a.conditions && (a.conditions as any[]).length > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-0.5"><Filter className="h-2.5 w-2.5" /> {(a.conditions as any[]).length}</span>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {canEdit && (
-                        <Switch
-                          checked={a.status === 'active'}
-                          onCheckedChange={() => toggleStatus.mutate({ id: a.id, currentStatus: a.status })}
-                        />
-                      )}
-                      {canEdit && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openDialog(a)}>
-                              <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => duplicateAutomation.mutate(a)}>
-                              <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => runDryRun(a.id)}>
-                              <TestTube2 className="h-3.5 w-3.5 mr-1" /> Dry Run
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setShowExecLog(a.id)}>
-                              <List className="h-3.5 w-3.5 mr-1" /> View Runs
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setShowVersionHistory(a.id)}>
-                              <History className="h-3.5 w-3.5 mr-1" /> Version History
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={() => deleteAutomation.mutate(a.id)}>
-                              <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
                   </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {canEdit && (
+                      <Switch
+                        checked={a.status === 'active'}
+                        onCheckedChange={() => toggleStatus.mutate({ id: a.id, currentStatus: a.status })}
+                      />
+                    )}
+                    {canEdit && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openDialog(a)}><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => duplicateAutomation.mutate(a)}><Copy className="h-3.5 w-3.5 mr-1" /> Duplicate</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => runDryRun(a.id)}><TestTube2 className="h-3.5 w-3.5 mr-1" /> Dry Run</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setShowExecLog(a.id)}><List className="h-3.5 w-3.5 mr-1" /> View Runs</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setShowVersionHistory(a.id)}><History className="h-3.5 w-3.5 mr-1" /> Version History</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => deleteAutomation.mutate(a.id)}><Trash2 className="h-3.5 w-3.5 mr-1" /> Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                </div>
               </EngageContentCard>
             );
           })}
