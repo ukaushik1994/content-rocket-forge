@@ -539,7 +539,6 @@ export const SocialDashboard = () => {
             actionLabel={!searchQuery && statusFilter === 'all' ? 'Create First Post' : undefined}
             onAction={!searchQuery && statusFilter === 'all' ? () => { setEditingPostId(null); setShowCreate(true); } : undefined}
           />
-          </GlassCard>
         </motion.div>
       ) : (
         <motion.div variants={stagger.item} className="grid gap-3">
