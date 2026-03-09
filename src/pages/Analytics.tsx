@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PageContainer } from '@/components/ui/PageContainer';
 import { cn } from '@/lib/utils';
 
 const Analytics = () => {
