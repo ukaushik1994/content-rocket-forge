@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PageContainer } from '@/components/ui/PageContainer';
+import { UnifiedEmptyState } from '@/components/ui/UnifiedEmptyState';
 import { KeywordsHero } from '@/components/keywords/KeywordsHero';
 import { KeywordsFilters } from '@/components/keywords/KeywordsFilters';
 import { KeywordCard } from '@/components/keywords/KeywordCard';
