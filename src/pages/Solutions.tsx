@@ -358,7 +358,6 @@ const Solutions = () => {
   if (loading) {
     return (
       <motion.div className="min-h-screen bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
-        <Navbar />
         <main className="pt-20 container py-8 rounded-3xl">
           <LoadingFallback />
         </main>
