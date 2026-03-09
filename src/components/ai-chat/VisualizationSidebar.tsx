@@ -965,6 +965,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   if (visualData?.type === 'analytics') {
     return <AnalyticsPanel isOpen={isOpen} onClose={onClose} />;
   }
+  if (visualData?.type === 'research_intelligence') {
+    return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;
+  }
 
   return (
     <AnimatePresence>
