@@ -36,7 +36,7 @@ export const EngageStatGrid: React.FC<EngageStatGridProps> = ({ stats, columns }
                 <p className="text-xs text-muted-foreground font-medium">{s.label}</p>
                 <p className={`text-2xl font-bold ${s.text} mt-1`}>{s.count}</p>
               </div>
-              <div className={`h-10 w-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center
+              <div className={`h-10 w-10 rounded-xl bg-white/[0.04] border border-border/10 flex items-center justify-center
                 group-hover:bg-white/[0.08] transition-colors`}>
                 <s.icon className={`h-5 w-5 ${s.text} opacity-70`} />
               </div>

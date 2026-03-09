@@ -32,7 +32,7 @@ export const EngageSkeletonCards: React.FC<EngageSkeletonCardsProps> = ({
   return (
     <div className="space-y-3">
       {[...Array(count)].map((_, i) => (
-        <Card key={i} className="p-4 bg-background/60 backdrop-blur-xl border-border/50">
+        <Card key={i} className="p-4 glass-card">
           <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
             <div className="flex-1 space-y-2">
