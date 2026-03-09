@@ -496,7 +496,7 @@ export const SocialDashboard = () => {
 
       {/* Content Area */}
       {isLoading ? (
-        <motion.div variants={stagger.item} className="text-center py-12 text-muted-foreground">Loading...</motion.div>
+        <motion.div variants={stagger.item}><EngageSkeletonCards count={4} layout="list" /></motion.div>
       ) : view === 'calendar' ? (
         <motion.div variants={stagger.item}>
           <SocialCalendar posts={posts} onDayClick={handleDayClick} />
