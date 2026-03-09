@@ -520,11 +520,11 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
         </div>
       ) : campaigns.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto">
-            <Megaphone className="h-8 w-8 text-blue-400" />
+          <div className="h-12 w-12 rounded-2xl bg-muted/40 flex items-center justify-center mx-auto">
+            <Megaphone className="h-6 w-6 text-muted-foreground/40" />
           </div>
-          <p className="text-muted-foreground">No campaigns yet</p>
-          {canEdit && <Button size="sm" onClick={() => openWizard()}><Plus className="h-4 w-4 mr-1" /> Create First Campaign</Button>}
+          <p className="text-muted-foreground text-sm">No campaigns yet</p>
+          {canEdit && <Button size="sm" className="text-xs bg-foreground text-background hover:bg-foreground/90" onClick={() => openWizard()}><Plus className="h-3.5 w-3.5 mr-1" /> Create First Campaign</Button>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
