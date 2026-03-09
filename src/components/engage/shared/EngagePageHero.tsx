@@ -159,20 +159,28 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
                 <motion.button
                   key={filter.key}
                   onClick={() => onFilterChange(filter.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${
+                  className={cn(
+                    'relative flex items-center gap-2 px-4 py-2.5 rounded-xl transition-colors duration-200 text-sm',
                     activeFilter === filter.key
-                      ? 'bg-primary text-primary-foreground shadow-lg'
+                      ? 'text-primary-foreground'
                       : 'hover:bg-background/80 text-muted-foreground'
-                  }`}
+                  )}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {filter.icon && <filter.icon className="h-4 w-4" />}
-                  <span className="font-medium">{filter.label}</span>
+                  {activeFilter === filter.key && (
+                    <motion.div
+                      layoutId="engage-hero-filter-indicator"
+                      className="absolute inset-0 bg-primary rounded-xl shadow-lg"
+                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  {filter.icon && <filter.icon className="h-4 w-4 relative z-10" />}
+                  <span className="font-medium relative z-10">{filter.label}</span>
                   {filter.count !== undefined && (
                     <Badge
                       variant={activeFilter === filter.key ? 'secondary' : 'outline'}
-                      className={activeFilter === filter.key ? 'bg-primary-foreground/20' : ''}
+                      className={cn('relative z-10', activeFilter === filter.key ? 'bg-primary-foreground/20' : '')}
                     >
                       {filter.count}
                     </Badge>
