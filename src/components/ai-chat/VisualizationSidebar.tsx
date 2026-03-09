@@ -20,6 +20,7 @@ import { EmailPanel } from './panels/EmailPanel';
 import { SocialPanel } from './panels/SocialPanel';
 import { KeywordsPanel } from './panels/KeywordsPanel';
 import { AnalyticsPanel } from './panels/AnalyticsPanel';
+import { ResearchIntelligencePanel } from '@/components/panels/ResearchIntelligencePanel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
