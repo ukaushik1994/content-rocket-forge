@@ -969,6 +969,94 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;
   }
 
+  // Analyst mode — empty state when no chart data, otherwise falls through to default chart view
+  if (visualData?.type === 'analyst' && chartData.length === 0) {
+    const suggestedPrompts = [
+      'Show content performance',
+      'Campaign health overview',
+      'Keyword rankings analysis',
+      'Content pipeline status',
+    ];
+
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <TooltipProvider delayDuration={300}>
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed top-16 bottom-24 left-0 right-0 bg-black/40 backdrop-blur-sm z-[35] lg:hidden"
+                onClick={onClose}
+              />
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className={cn(
+                  "fixed top-20 right-0 bottom-24 z-[35]",
+                  "w-full sm:w-[400px] lg:w-[520px] xl:w-[600px]",
+                  "bg-background/90 backdrop-blur-md",
+                  "border-l border-border/10",
+                  "flex flex-col overflow-hidden"
+                )}
+              >
+                {/* Header */}
+                <div className="flex-shrink-0 px-6 py-5 border-b border-border/10">
+                  <div className="flex items-start gap-3">
+                    <BarChart3 className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-base font-medium text-foreground">Analyst</h2>
+                      <p className="text-sm text-muted-foreground mt-0.5">Charts & insights companion</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onClose}
+                      className="flex-shrink-0 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Empty State */}
+                <div className="flex-1 flex items-center justify-center p-8">
+                  <div className="text-center max-w-xs space-y-6">
+                    <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/30 border border-border/20 flex items-center justify-center">
+                      <BarChart3 className="w-8 h-8 text-muted-foreground/60" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-medium text-foreground">Ask about your data</h3>
+                      <p className="text-sm text-muted-foreground">
+                        I'll visualize your metrics, trends, and insights right here as we chat.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {suggestedPrompts.map((prompt, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            onSendMessage?.(prompt);
+                          }}
+                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          </TooltipProvider>
+        )}
+      </AnimatePresence>
+    );
+  }
+
   return (
     <AnimatePresence>
       {isOpen && (
