@@ -65,8 +65,9 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     const approved = contentItems.filter(item => item.approval_status === 'approved').length;
     const published = contentItems.filter(item => item.approval_status === 'published').length;
     const needs_changes = contentItems.filter(item => item.approval_status === 'needs_changes').length;
+    const rejected = contentItems.filter(item => item.approval_status === 'rejected').length;
 
-    return { all, draft, pending_review, approved, published, needs_changes };
+    return { all, draft, pending_review, approved, published, needs_changes, rejected };
   }, [contentItems]);
 
   // Filter and sort content
