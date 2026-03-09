@@ -143,11 +143,30 @@ const KeywordsPage = () => {
       {/* Spacing for fixed navbar */}
       <div className="pt-16">
         {/* Hero Section */}
-        <KeywordsHero
-        keywordStats={keywordStats}
-        onQuickFilter={setStatusFilter}
-        activeFilter={statusFilter}
-      />
+        <CompactPageHeader
+          icon={Database}
+          title="Keywords"
+          subtitle="Track keyword usage and optimize content strategy"
+          stats={[
+            { icon: TrendingUp, label: 'Total', value: keywordStats.total },
+            { icon: FileText, label: 'Published', value: keywordStats.inPublished },
+            { icon: AlertTriangle, label: 'Warnings', value: keywordStats.cannibalization },
+          ]}
+          actions={
+            <Button onClick={() => navigate('/ai-chat')} size="sm">
+              <PlusCircle className="h-3.5 w-3.5 mr-1.5" />
+              Create Content
+            </Button>
+          }
+          quickFilters={[
+            { key: 'all', label: 'All', count: keywordStats.total, icon: Database },
+            { key: 'published', label: 'Published', count: keywordStats.inPublished, icon: FileText },
+            { key: 'draft', label: 'Draft', count: keywordStats.inDraft, icon: BarChart3 },
+            { key: 'cannibalization', label: 'Warnings', count: keywordStats.cannibalization, icon: AlertTriangle },
+          ]}
+          activeFilter={statusFilter}
+          onFilterChange={setStatusFilter}
+        />
 
       {/* Content Management Section */}
       <div className="relative z-10 px-6 pb-12">
