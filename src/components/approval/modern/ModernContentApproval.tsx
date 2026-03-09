@@ -543,6 +543,16 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
         contentTitle={historyTarget?.title}
         history={historyItems}
       />
+
+      {/* Approval Notes Dialog */}
+      {notesDialog && (
+        <ApprovalNotesDialog
+          open={notesDialog.open}
+          action={notesDialog.action}
+          onClose={() => setNotesDialog(null)}
+          onSubmit={handleNotesSubmit}
+        />
+      )}
     </div>
   );
 };
