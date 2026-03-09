@@ -17,7 +17,8 @@ export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
   solution,
   onUseInContent,
   onEdit,
-  onDelete
+  onDelete,
+  onViewDetail
 }) => {
   const {
     name,
