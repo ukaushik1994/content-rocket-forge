@@ -19,7 +19,10 @@ import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EngageHero } from '../shared/EngageHero';
+import { EngagePageHero } from '../shared/EngagePageHero';
+import { EngageFilterBar } from '../shared/EngageFilterBar';
+import { EngageContentCard } from '../shared/EngageContentCard';
+import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
 
