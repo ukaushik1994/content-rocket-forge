@@ -662,8 +662,7 @@ const Analytics = () => {
           content={selectedContent}
         />
       </main>
-    </motion.div>
-  );
+    </PageContainer>
 };
 
 export default Analytics;
