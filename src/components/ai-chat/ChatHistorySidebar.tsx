@@ -72,18 +72,30 @@ interface ChatHistorySidebarProps {
   className?: string;
 }
 
-// Sidebar nav item — flat, minimal style
+// Sidebar nav item — premium style with active indicator
 const SidebarNavItem: React.FC<{
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   badge?: string;
-}> = ({ icon, label, onClick, badge }) => (
+  isActive?: boolean;
+}> = ({ icon, label, onClick, badge, isActive }) => (
   <button
     onClick={onClick}
-    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors group"
+    className={cn(
+      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
+      isActive
+        ? "bg-accent/60 text-foreground"
+        : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+    )}
   >
-    <span className="flex-shrink-0 text-muted-foreground group-hover:text-foreground transition-colors">
+    {isActive && (
+      <div className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full bg-primary" />
+    )}
+    <span className={cn(
+      "flex-shrink-0 transition-colors duration-200",
+      isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+    )}>
       {icon}
     </span>
     <span className="flex-1 text-left truncate">{label}</span>
@@ -95,7 +107,7 @@ const SidebarNavItem: React.FC<{
   </button>
 );
 
-// Collapsed icon button with tooltip
+// Collapsed icon button with tooltip — premium
 const CollapsedIconButton: React.FC<{
   icon: React.ReactNode;
   label: string;
@@ -105,7 +117,7 @@ const CollapsedIconButton: React.FC<{
     <TooltipTrigger asChild>
       <button
         onClick={onClick}
-        className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+        className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
       >
         {icon}
       </button>
@@ -116,29 +128,30 @@ const CollapsedIconButton: React.FC<{
   </Tooltip>
 );
 
-// Collapsible section
+// Collapsible section — refined headers with divider
 const CollapsibleSection: React.FC<{
   label: string;
   icon?: React.ReactNode;
   defaultOpen?: boolean;
   children: React.ReactNode;
-}> = ({ label, icon, defaultOpen = true, children }) => {
+  showDivider?: boolean;
+}> = ({ label, defaultOpen = true, children, showDivider = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger className="w-full flex items-center gap-1.5 px-3 pt-4 pb-1.5 group cursor-pointer">
+      {showDivider && <div className="mx-3 border-t border-border/5 mt-1" />}
+      <CollapsibleTrigger className="w-full flex items-center gap-1.5 px-3 pt-5 pb-2 group cursor-pointer">
         {isOpen ? (
-          <ChevronDown className="h-3 w-3 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors duration-200" />
         ) : (
-          <ChevronRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+          <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors duration-200" />
         )}
-        {icon && <span className="text-muted-foreground/60 group-hover:text-muted-foreground transition-colors">{icon}</span>}
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50 font-semibold group-hover:text-muted-foreground transition-colors">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground/50 font-semibold group-hover:text-muted-foreground/80 transition-colors duration-200">
           {label}
         </span>
       </CollapsibleTrigger>
-      <CollapsibleContent>
+      <CollapsibleContent className="space-y-0.5">
         {children}
       </CollapsibleContent>
     </Collapsible>
@@ -249,10 +262,11 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     return (
       <TooltipProvider delayDuration={0}>
         <div
-          className={cn(
+         className={cn(
             "fixed left-0 top-0 bottom-0 z-50",
-            "w-14 bg-background/95 backdrop-blur-xl",
+            "w-14 bg-background backdrop-blur-xl",
             "border-r border-border/10 flex flex-col items-center py-3",
+            "shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.05)]",
             className
           )}
         >
@@ -261,7 +275,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <TooltipTrigger asChild>
               <button
                 onClick={onToggleSidebar}
-                className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
               >
                 <PanelLeftOpen className="h-5 w-5" />
               </button>
@@ -291,8 +305,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors">
-                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-foreground">
+                <button className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200">
+                  <div className="w-7 h-7 rounded-full bg-muted ring-1 ring-border/10 flex items-center justify-center text-xs font-medium text-foreground">
                     {userInitials}
                   </div>
                 </button>
@@ -336,8 +350,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         className={cn(
           "fixed left-0 top-0 bottom-0 z-50",
           "w-full sm:w-72 lg:w-80",
-          "bg-background/95 backdrop-blur-xl",
+          "bg-background backdrop-blur-xl",
           "border-r border-border/10 flex flex-col",
+          "shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.05)]",
           className
         )}
         initial={isMobile ? { x: -320, opacity: 0 } : false}
@@ -345,11 +360,11 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         exit={isMobile ? { x: -320, opacity: 0, transition: { duration: 0.2 } } : undefined}
       >
         {/* Top: Logo + Toggle + New Chat + Notifications */}
-        <div className="p-3 pb-1 flex items-center justify-between">
+        <div className="p-3 pb-2 flex items-center justify-between border-b border-border/5">
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleSidebar}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
             >
               <PanelLeftClose className="h-4 w-4" />
             </button>
@@ -366,7 +381,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             onClick={onCreateConversation}
           />
           {searchActive ? (
-            <div className="flex items-center gap-2 px-3 py-2">
+            <div className="flex items-center gap-2 px-3 py-2 mx-1 rounded-lg bg-accent/30">
               <Search className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
               <input
                 autoFocus
@@ -389,28 +404,28 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         <ScrollArea className="flex-1">
           <div className="px-2">
             {/* ── LIBRARY (collapsible) ── */}
-            <CollapsibleSection label="Library" icon={<BookOpen className="h-3.5 w-3.5" />} defaultOpen={true}>
+            <CollapsibleSection label="Library" defaultOpen={true}>
               {libraryItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── TOOLS (collapsible) ── */}
-            <CollapsibleSection label="Tools" icon={<Wrench className="h-3.5 w-3.5" />} defaultOpen={true}>
+            <CollapsibleSection label="Tools" defaultOpen={true} showDivider>
               {toolsItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── ENGAGE (collapsible) ── */}
-            <CollapsibleSection label="Engage" icon={<MessageCircle className="h-3.5 w-3.5" />} defaultOpen={true}>
+            <CollapsibleSection label="Engage" defaultOpen={true} showDivider>
               {engageItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── CHATS ── */}
-            <CollapsibleSection label="Chats">
+            <CollapsibleSection label="Chats" showDivider>
               {/* Conversations List */}
               <AnimatePresence mode="wait">
                 {conversations && conversations.length > 0 ? (
@@ -420,22 +435,28 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                         <div
                           key={conversation.id}
                           className={cn(
-                            "mx-1 mb-0.5 px-3 py-2.5 cursor-pointer transition-colors duration-150 rounded-lg group",
+                            "mx-1 mb-0.5 px-3 py-2 cursor-pointer transition-all duration-200 rounded-lg group relative overflow-hidden",
                             activeConversation === conversation.id 
-                              ? 'bg-muted/40' 
-                              : 'hover:bg-muted/20'
+                              ? 'bg-accent/50' 
+                              : 'hover:bg-accent/30'
                           )}
                           onClick={() => onSelectConversation(conversation.id)}
                         >
+                          {activeConversation === conversation.id && (
+                            <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-primary" />
+                          )}
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
-                                {conversation.pinned && <Pin className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />}
-                                <h3 className="text-sm text-foreground truncate">
+                                {conversation.pinned && <Pin className="h-3 w-3 text-primary/60 flex-shrink-0" />}
+                                <h3 className={cn(
+                                  "text-[13px] truncate",
+                                  activeConversation === conversation.id ? "text-foreground font-medium" : "text-foreground/80"
+                                )}>
                                   {conversation.title}
                                 </h3>
                               </div>
-                              <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+                              <p className="text-[11px] text-muted-foreground/60 mt-0.5">
                                 {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
                               </p>
                             </div>
@@ -540,7 +561,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         </ScrollArea>
 
         {/* Bottom: Calendar + Profile */}
-        <div className="p-3 border-t border-border/10 space-y-1">
+        <div className="p-3 border-t border-border/8 space-y-0.5">
           <SidebarNavItem 
             icon={<CalendarDays className="h-4 w-4" />} 
             label="Content Calendar" 
@@ -550,8 +571,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors group">
-                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-foreground flex-shrink-0">
+              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-all duration-200 group">
+                <div className="w-6 h-6 rounded-full bg-muted ring-1 ring-border/10 flex items-center justify-center text-[10px] font-medium text-foreground flex-shrink-0">
                   {userInitials}
                 </div>
                 <span className="flex-1 text-left truncate">{userFullName}</span>
