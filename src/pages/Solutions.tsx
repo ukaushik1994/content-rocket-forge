@@ -334,7 +334,7 @@ const Solutions = () => {
     );
   }
   
-  return <motion.div className="min-h-screen bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+  return <PageContainer>
       <Helmet>
         <title>Business Offerings Hub | Creaiter</title>
         <meta name="description" content="Manage your business offerings for content creation" />
@@ -343,7 +343,7 @@ const Solutions = () => {
       
       
       <main className="pt-20 container py-8 rounded-3xl">
-        <motion.div variants={itemVariants} className="mb-8 space-y-12">
+        <motion.div variants={pageItemVariants} className="mb-8 space-y-12">
           {/* Company Section - Moved to top */}
           <CompanySection 
             companyInfo={companyInfo}
