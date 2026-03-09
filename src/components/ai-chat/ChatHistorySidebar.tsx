@@ -83,7 +83,7 @@ const SidebarNavItem: React.FC<{
   <button
     onClick={onClick}
     className={cn(
-      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
+      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-[background-color,color] duration-200 group relative overflow-hidden",
       isActive
         ? "bg-accent/60 text-foreground"
         : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
