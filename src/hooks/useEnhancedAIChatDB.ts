@@ -420,7 +420,7 @@ export const useEnhancedAIChatDB = () => {
           },
           body: JSON.stringify({
             messages: conversationHistory,
-            context: { conversationId },
+            context: { conversationId, analystActive: analystActiveRef.current },
             userId: user.id,
             features: ['streaming'],
           }),
