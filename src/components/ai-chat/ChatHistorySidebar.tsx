@@ -400,19 +400,6 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
             {/* ── CHATS ── */}
             <CollapsibleSection label="Chats">
-              {/* Search chats */}
-              <div className="px-2 pb-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                  <Input
-                    placeholder="Search chats..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 bg-transparent border-border/15 text-foreground placeholder:text-muted-foreground/40 focus:border-border/40 focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-xs rounded-lg"
-                  />
-                </div>
-              </div>
-
               {/* Conversations List */}
               <AnimatePresence mode="wait">
                 {conversations && conversations.length > 0 ? (
