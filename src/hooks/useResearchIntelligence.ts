@@ -48,7 +48,23 @@ export const useContentGaps = (clusterId?: string) => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['content_gaps'] }),
   });
 
-  return { ...query, create: createMutation.mutateAsync };
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<ContentGapInsert> }) =>
+      svc.updateContentGap(id, updates),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['content_gaps'] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: svc.deleteContentGap,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['content_gaps'] }),
+  });
+
+  return {
+    ...query,
+    create: createMutation.mutateAsync,
+    update: updateMutation.mutateAsync,
+    remove: deleteMutation.mutateAsync,
+  };
 };
 
 export const useRecommendations = (status?: string) => {

@@ -44,7 +44,28 @@ const TopicClusters = () => {
 
   const { data: dbRows, isLoading, refetch, create, remove } = useClusters();
   const { data: perfData } = useTopicPerformance();
-  const clusters = (dbRows ?? []).map(dbRowToTopicCluster);
+  // Group perf data by cluster_id for per-cluster metrics
+  const clusterPerfMap = React.useMemo(() => {
+    const map: Record<string, { totalTraffic: number; avgPosition: number }> = {};
+    if (!perfData) return map;
+    const grouped: Record<string, { clicks: number; positions: number[]; }> = {};
+    for (const p of perfData) {
+      const cid = p.cluster_id;
+      if (!cid) continue;
+      if (!grouped[cid]) grouped[cid] = { clicks: 0, positions: [] };
+      grouped[cid].clicks += p.clicks ?? 0;
+      if (p.average_position != null) grouped[cid].positions.push(p.average_position);
+    }
+    for (const [cid, g] of Object.entries(grouped)) {
+      map[cid] = {
+        totalTraffic: g.clicks,
+        avgPosition: g.positions.length > 0 ? g.positions.reduce((a, b) => a + b, 0) / g.positions.length : 0,
+      };
+    }
+    return map;
+  }, [perfData]);
+
+  const clusters = (dbRows ?? []).map(row => dbRowToTopicCluster(row, clusterPerfMap[row.id]));
 
   // Derive metrics from clusters + real performance data
   const metrics: ClusterPerformanceMetrics = (() => {

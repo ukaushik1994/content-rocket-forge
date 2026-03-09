@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService/aiService';
 import { useContentGaps, useClusters } from '@/hooks/useResearchIntelligence';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ContentGapsTabProps {
   serpMetrics?: any;
@@ -28,6 +29,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
   const { analyzeSERP, saveInsight } = useContentStrategy();
   const { data: savedGaps, isLoading: loadingGaps, create: createGap } = useContentGaps();
   const { data: clusters } = useClusters();
+  const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState(goals.mainKeyword || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -128,6 +130,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
             console.error('Recommendation generation failed:', error);
           } else {
             toast.success('Strategy recommendations generated');
+            queryClient.invalidateQueries({ queryKey: ['strategy_recommendations'] });
           }
         });
       }
