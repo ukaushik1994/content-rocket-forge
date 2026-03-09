@@ -128,29 +128,30 @@ const CollapsedIconButton: React.FC<{
   </Tooltip>
 );
 
-// Collapsible section
+// Collapsible section — refined headers with divider
 const CollapsibleSection: React.FC<{
   label: string;
   icon?: React.ReactNode;
   defaultOpen?: boolean;
   children: React.ReactNode;
-}> = ({ label, icon, defaultOpen = true, children }) => {
+  showDivider?: boolean;
+}> = ({ label, defaultOpen = true, children, showDivider = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger className="w-full flex items-center gap-1.5 px-3 pt-4 pb-1.5 group cursor-pointer">
+      {showDivider && <div className="mx-3 border-t border-border/5 mt-1" />}
+      <CollapsibleTrigger className="w-full flex items-center gap-1.5 px-3 pt-5 pb-2 group cursor-pointer">
         {isOpen ? (
-          <ChevronDown className="h-3 w-3 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors duration-200" />
         ) : (
-          <ChevronRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+          <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors duration-200" />
         )}
-        {icon && <span className="text-muted-foreground/60 group-hover:text-muted-foreground transition-colors">{icon}</span>}
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50 font-semibold group-hover:text-muted-foreground transition-colors">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground/50 font-semibold group-hover:text-muted-foreground/80 transition-colors duration-200">
           {label}
         </span>
       </CollapsibleTrigger>
-      <CollapsibleContent>
+      <CollapsibleContent className="space-y-0.5">
         {children}
       </CollapsibleContent>
     </Collapsible>
