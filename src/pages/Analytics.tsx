@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { cn } from '@/lib/utils';
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState('overview');
