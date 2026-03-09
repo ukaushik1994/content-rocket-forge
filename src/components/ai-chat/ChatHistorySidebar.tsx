@@ -224,8 +224,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
   // Navigation items for collapsed view
   const libraryItems = [
-    { icon: <FileText className="h-4 w-4" />, label: 'Repository', action: () => handlePanel('repository') },
-    { icon: <Puzzle className="h-4 w-4" />, label: 'Offerings', action: () => handlePanel('offerings') },
+    { icon: <FolderOpen className="h-4 w-4" />, label: 'Repository', action: () => handlePanel('repository') },
+    { icon: <Package className="h-4 w-4" />, label: 'Offerings', action: () => handlePanel('offerings') },
     { icon: <CheckCircle className="h-4 w-4" />, label: 'Approvals', action: () => handlePanel('approvals') },
   ];
 
