@@ -674,7 +674,7 @@ export const AutomationsList = () => {
           transition={{ delay: 0, type: 'spring', stiffness: 100, damping: 18 }}
           className="flex justify-center mb-6"
         >
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 shadow-sm">
+          <div className="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full shadow-sm">
             <Zap className="h-5 w-5 text-amber-400" />
             <span className="text-sm font-medium text-foreground">Automation Hub</span>
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
