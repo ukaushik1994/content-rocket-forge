@@ -280,11 +280,11 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
 
       <form onSubmit={handleSubmit} className="relative">
         <div 
-          className={`relative flex items-end gap-2 p-2.5 bg-background/60 border rounded-2xl transition-all duration-200 ${
+          className={`relative flex items-end gap-2 p-2.5 bg-background/60 backdrop-blur-xl border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
             wizardMode
               ? 'border-primary/30 ring-1 ring-primary/10'
               : isFocused 
-                ? 'border-primary/30' 
+                ? 'border-primary/30 shadow-[0_2px_12px_rgba(0,0,0,0.4)]' 
                 : 'border-border/20 hover:border-border/40'
           }`}
         >
@@ -317,7 +317,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             }}
             placeholder={activePlaceholder}
             disabled={isLoading}
-            className="flex-1 min-h-[24px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-sm"
+            className="flex-1 min-h-[24px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-[15px] leading-relaxed"
             rows={1}
           />
 
@@ -335,7 +335,8 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             size="sm"
             variant="ghost"
             disabled={!message.trim() || isLoading}
-            className="text-muted-foreground hover:text-foreground hover:bg-transparent p-2 h-9 w-9 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+            aria-label="Send message"
+            className="text-muted-foreground hover:text-foreground hover:bg-transparent p-2 h-9 w-9 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-[color,opacity] duration-200"
           >
             {isLoading ? (
               <motion.div

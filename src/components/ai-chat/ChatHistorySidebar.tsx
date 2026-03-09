@@ -83,7 +83,7 @@ const SidebarNavItem: React.FC<{
   <button
     onClick={onClick}
     className={cn(
-      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
+      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-[background-color,color] duration-200 group relative overflow-hidden",
       isActive
         ? "bg-accent/60 text-foreground"
         : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
@@ -117,7 +117,8 @@ const CollapsedIconButton: React.FC<{
     <TooltipTrigger asChild>
       <button
         onClick={onClick}
-        className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
+        aria-label={label}
+        className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-[background-color,color] duration-200"
       >
         {icon}
       </button>
@@ -144,7 +145,7 @@ const CollapsibleSection: React.FC<{
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       {showDivider && <div className="mx-3 border-t border-border/5 mt-1" />}
       <CollapsibleTrigger className={cn(
-        "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group cursor-pointer",
+        "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-[background-color,color] duration-200 group cursor-pointer",
         isOpen
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
@@ -154,7 +155,7 @@ const CollapsibleSection: React.FC<{
             {icon}
           </span>
         )}
-        <span className="flex-1 text-left">{label}</span>
+        <span className="flex-1 text-left text-[11px] font-semibold uppercase tracking-[0.06em]">{label}</span>
         <ChevronDown className={cn(
           "h-3 w-3 text-muted-foreground/50 transition-transform duration-200",
           !isOpen && "-rotate-90"
@@ -283,7 +284,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <TooltipTrigger asChild>
               <button
                 onClick={onToggleSidebar}
-                className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
+                aria-label="Expand sidebar"
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-[background-color,color] duration-200"
               >
                 <PanelLeftOpen className="h-5 w-5" />
               </button>
@@ -313,8 +315,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200">
-                  <div className="w-7 h-7 rounded-full bg-muted ring-1 ring-border/10 flex items-center justify-center text-xs font-medium text-foreground">
+                  <button aria-label="User menu" className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-[background-color,color] duration-200">
+                    <div className="w-7 h-7 rounded-full bg-muted ring-1 ring-border/10 flex items-center justify-center text-xs font-medium text-foreground">
                     {userInitials}
                   </div>
                 </button>
@@ -372,7 +374,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleSidebar}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
+              aria-label="Collapse sidebar"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-[background-color,color] duration-200"
             >
               <PanelLeftClose className="h-4 w-4" />
             </button>
@@ -445,7 +448,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                         <div
                           key={conversation.id}
                           className={cn(
-                            "mx-1 mb-0.5 px-3 py-2 cursor-pointer transition-all duration-200 rounded-lg group relative overflow-hidden",
+                            "mx-1 mb-0.5 px-3 py-2 cursor-pointer transition-[background-color,color] duration-200 rounded-lg group relative overflow-hidden",
                             activeConversation === conversation.id 
                               ? 'bg-accent/50' 
                               : 'hover:bg-accent/30'
