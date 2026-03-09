@@ -1031,7 +1031,7 @@ export const AutomationsList = () => {
           {canEdit && !searchQuery && <EngageButton size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</EngageButton>}
         </motion.div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 max-w-7xl mx-auto">
           {filteredAutomations.map((a: any, i: number) => {
             const triggerType = a.trigger_config?.type || 'none';
             const actions = (a.actions || []) as any[];
@@ -1039,9 +1039,10 @@ export const AutomationsList = () => {
             const lastTriggered = a.updated_at;
             const isSelected = selectedIds.has(a.id);
             return (
-              <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <GlassCard className={`p-4 hover:border-primary/30 hover:scale-[1.01] transition-all duration-200 ${isSelected ? 'border-primary/50 bg-primary/5' : ''}`}>
-                  <div className="flex items-center justify-between">
+              <EngageContentCard
+                key={a.id}
+                index={i}
+                selected={isSelected}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {canEdit && (
                         <Checkbox
