@@ -576,6 +576,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
         // Phase 5: Post-generation quality analysis
         setGenerationStage('Analyzing quality...');
+        setGenerationProgress(80);
         try {
           const detection = await detectAIContent(result);
           if (detection) {
