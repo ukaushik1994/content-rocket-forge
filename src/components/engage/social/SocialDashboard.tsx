@@ -267,23 +267,26 @@ export const SocialDashboard = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngageHero
+      <EngagePageHero
         icon={Share2}
+        badge="Social Command Center"
         title="Social"
+        titleAccent="Media"
         subtitle="Schedule and manage social posts across all channels"
         gradientFrom="from-pink-400"
         gradientTo="to-purple-400"
-        glowFrom="from-pink-500/30"
-        glowTo="to-purple-500/10"
-        actions={
-          <div className="flex items-center border border-white/[0.06] rounded-lg overflow-hidden bg-white/[0.03] backdrop-blur-sm">
-            {(['publish', 'inbox', 'analytics'] as const).map(t => (
-              <Button key={t} variant={mainTab === t ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-8 text-xs capitalize" onClick={() => setMainTab(t)}>
-                {t}
-              </Button>
-            ))}
-          </div>
-        }
+        stats={[
+          { icon: Clock, label: 'Scheduled', value: stats.scheduled },
+          { icon: CheckCircle2, label: 'Posted', value: stats.posted },
+          { icon: Zap, label: 'Connected', value: stats.connected },
+        ]}
+        quickFilters={[
+          { key: 'publish', label: 'Publish' },
+          { key: 'inbox', label: 'Inbox' },
+          { key: 'analytics', label: 'Analytics' },
+        ]}
+        activeFilter={mainTab}
+        onFilterChange={setMainTab}
       />
 
       {mainTab === 'inbox' && <SocialInbox />}
