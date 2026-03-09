@@ -374,7 +374,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleSidebar}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
+              aria-label="Collapse sidebar"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-[background-color,color] duration-200"
             >
               <PanelLeftClose className="h-4 w-4" />
             </button>
