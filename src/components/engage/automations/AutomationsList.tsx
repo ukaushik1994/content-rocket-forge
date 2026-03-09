@@ -1043,7 +1043,9 @@ export const AutomationsList = () => {
                 key={a.id}
                 index={i}
                 selected={isSelected}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                       {canEdit && (
                         <Checkbox
                           checked={isSelected}
