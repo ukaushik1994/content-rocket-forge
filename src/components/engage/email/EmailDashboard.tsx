@@ -10,9 +10,10 @@ import { TemplatesList } from './templates/TemplatesList';
 import { CampaignsList } from './campaigns/CampaignsList';
 import { EmailReports } from './reports/EmailReports';
 import { ComposeDialog } from './inbox/ComposeDialog';
-import { Mail, Plus, PenSquare, Inbox, Send, Clock, FileText, LayoutTemplate, Megaphone, BarChart3 } from 'lucide-react';
+import { Mail, Plus, PenSquare, Inbox, Send, Clock, FileText, LayoutTemplate, Megaphone, BarChart3, TrendingUp, Zap, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const allTabs = [
@@ -66,118 +67,160 @@ export const EmailDashboard = () => {
 
   const stats = emailStats || { total: 0, delivered: 0, queued: 0, rate: 0 };
 
-  const statPills = [
-    { label: 'Threads', value: threadCount, show: threadCount > 0 },
-    { label: 'Delivery', value: `${stats.rate}%`, show: stats.rate > 0 },
-    { label: 'Active', value: activeCampaigns, show: activeCampaigns > 0 },
-    { label: 'Queued', value: stats.queued, show: stats.queued > 0 },
-  ].filter(s => s.show);
+  const heroStats = [
+    { icon: TrendingUp, label: 'Threads', value: threadCount },
+    { icon: Zap, label: 'Delivery', value: `${stats.rate}%` },
+    { icon: Target, label: 'Campaigns', value: activeCampaigns },
+  ];
 
   return (
-    <div className="space-y-4">
-      {/* Hero Header Card */}
+    <div className="w-full relative">
+      {/* ─── Centered Hero Section ─── */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-        className="relative overflow-hidden rounded-2xl border border-border/50 bg-background/60 backdrop-blur-xl p-6"
+        className="text-center mb-12 relative pt-16 pb-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
       >
         {/* Ambient glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-accent/[0.04] pointer-events-none" />
-        <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-primary/[0.06] blur-3xl pointer-events-none" />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
+          animate={{ opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        />
 
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="h-11 w-11 rounded-xl bg-background/80 border border-border/50 backdrop-blur-sm flex items-center justify-center shadow-sm">
-              <Mail className="h-5 w-5 text-foreground" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent leading-tight">
-                  Email
-                </h1>
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Inbox, campaigns & delivery
-              </p>
-            </div>
+        <div className="relative">
+          {/* Badge */}
+          <motion.div
+            className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <Mail className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium">Email Hub</span>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          </motion.div>
 
-            {/* Stat pills */}
-            {statPills.length > 0 && (
-              <div className="hidden sm:flex items-center gap-2 ml-4">
-                {statPills.map((s) => (
-                  <span
-                    key={s.label}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-background/80 border border-border/50 backdrop-blur-sm text-muted-foreground"
-                  >
-                    <span className="text-foreground font-semibold">{s.value}</span>
-                    {s.label}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Title */}
+          <motion.h1
+            className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Email
+            <br />
+            <span className="text-primary">Dashboard</span>
+          </motion.h1>
 
-          <div className="flex items-center gap-2">
+          {/* Subtitle */}
+          <motion.p
+            className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            Manage your inbox, launch campaigns, and track delivery performance
+          </motion.p>
+
+          {/* CTA Buttons */}
+          <motion.div
+            className="flex gap-4 justify-center mb-12"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
+          >
             <Button
-              variant="outline"
-              size="sm"
-              className="h-9 text-xs gap-1.5 bg-background/40 border-border/50 backdrop-blur-sm hover:bg-background/80 transition-all"
-              onClick={() => { setShowCampaignWizard(true); setTab('campaigns'); }}
-            >
-              <Plus className="h-3.5 w-3.5" /> New Campaign
-            </Button>
-            <Button
-              size="sm"
-              className="h-9 text-xs gap-1.5 bg-foreground text-background hover:bg-foreground/90 shadow-lg shadow-foreground/10 transition-all"
               onClick={() => setShowCompose(true)}
+              size="lg"
+              className="relative overflow-hidden bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl"
             >
-              <PenSquare className="h-3.5 w-3.5" /> Compose
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"
+                animate={{ x: [-100, 100] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <div className="relative flex items-center gap-3">
+                <PenSquare className="h-5 w-5" />
+                Compose Email
+              </div>
             </Button>
-          </div>
+            <Button
+              onClick={() => { setShowCampaignWizard(true); setTab('campaigns'); }}
+              size="lg"
+              variant="outline"
+              className="px-8 py-4 text-lg font-semibold bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              New Campaign
+            </Button>
+          </motion.div>
+
+          {/* Quick Stats */}
+          <motion.div
+            className="flex justify-center gap-8 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            {heroStats.map((stat) => (
+              <motion.div
+                key={stat.label}
+                className="text-center"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: 'spring', stiffness: 300 }}
+              >
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
+                  <stat.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="text-sm font-bold text-foreground">{stat.value}</div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </motion.div>
 
-      {/* Glassmorphic Tab Bar */}
+      {/* ─── Quick Filters (Tab Bar) ─── */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        className="flex justify-center mb-8"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.1 }}
-        className="rounded-2xl border border-border/50 bg-background/60 backdrop-blur-xl p-1.5 flex items-center gap-1"
+        transition={{ delay: 0.8 }}
       >
-        {allTabs.map(t => {
-          const Icon = t.icon;
-          const isActive = tab === t.key;
-          return (
-            <motion.button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              className={cn(
-                'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-200',
-                isActive
-                  ? 'bg-foreground text-background shadow-lg shadow-foreground/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/80'
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {t.label}
-            </motion.button>
-          );
-        })}
+        <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
+          {allTabs.map((t) => {
+            const Icon = t.icon;
+            const isActive = tab === t.key;
+            return (
+              <motion.button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={cn(
+                  'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-lg'
+                    : 'hover:bg-background/80'
+                )}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="font-medium">{t.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
       </motion.div>
 
-      {/* Tab Content */}
+      {/* ─── Tab Content (open, no border wrapper) ─── */}
       <motion.div
+        className="max-w-7xl mx-auto"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.2 }}
-        className="rounded-2xl border border-border/50 bg-background/60 backdrop-blur-xl overflow-hidden"
+        transition={{ delay: 1.0 }}
       >
         <AnimatePresence mode="wait">
           <motion.div
