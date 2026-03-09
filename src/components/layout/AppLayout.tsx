@@ -65,6 +65,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         handleNavigation('/engage/automations');
       } else if (['journeys'].includes(panelType)) {
         handleNavigation('/engage/journeys');
+      } else if (panelType === 'repository') {
+        handleNavigation('/repository');
+      } else if (panelType === 'offerings') {
+        handleNavigation('/offerings');
+      } else if (panelType === 'approvals') {
+        handleNavigation('/content-approval');
       } else {
         handlePanel(panelType);
       }
