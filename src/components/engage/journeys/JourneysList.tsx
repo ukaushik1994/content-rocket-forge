@@ -19,7 +19,10 @@ import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EngageHero } from '../shared/EngageHero';
+import { EngagePageHero } from '../shared/EngagePageHero';
+import { EngageFilterBar } from '../shared/EngageFilterBar';
+import { EngageContentCard } from '../shared/EngageContentCard';
+import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
 
@@ -316,14 +319,20 @@ export const JourneysList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngageHero
+      <EngagePageHero
         icon={GitBranch}
+        badge="Journey Builder"
         title="Journeys"
-        subtitle="Visual customer journey flows"
+        titleAccent="Builder"
+        subtitle="Visual customer journey flows — automate engagement at scale"
         gradientFrom="from-purple-400"
         gradientTo="to-blue-400"
-        glowFrom="from-purple-500/30"
-        glowTo="to-blue-500/10"
+        stats={[
+          { icon: Play, label: 'Active', value: stats.active },
+          { icon: GitBranch, label: 'Draft', value: stats.draft },
+          { icon: Users, label: 'Enrolled', value: totalEnrolled },
+          { icon: TrendingUp, label: 'Completion', value: `${avgCompletion}%` },
+        ]}
         actions={
           canEdit ? (
             <Dialog open={showCreate} onOpenChange={o => { setShowCreate(o); if (!o) { setName(''); setDescription(''); setSelectedTemplate(null); } }}>
@@ -366,10 +375,11 @@ export const JourneysList = () => {
       />
 
       {/* Search */}
-      <motion.div variants={engageStagger.item} className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search journeys..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-white/[0.03] border-white/[0.06] backdrop-blur-sm" />
-      </motion.div>
+      <EngageFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search journeys..."
+      />
 
       {/* F3: Rename + Description Dialog */}
       <Dialog open={!!renamingId} onOpenChange={() => setRenamingId(null)}>
@@ -388,17 +398,17 @@ export const JourneysList = () => {
         <EngageStatGrid
           stats={[
             { label: 'Active', count: stats.active, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Play },
-            { label: 'Draft', count: stats.draft, color: 'from-muted/40 to-muted/10', text: 'text-muted-foreground', icon: GitBranch },
             { label: 'Paused', count: stats.paused, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: Pause },
             { label: 'Enrolled', count: totalEnrolled, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: Users },
             { label: 'Completion', count: `${avgCompletion}%`, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: TrendingUp },
           ]}
+          columns={4}
         />
       )}
 
       {/* List */}
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        <EngageSkeletonCards count={4} layout="list" />
       ) : filteredJourneys.length === 0 ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
           <div className="relative h-20 w-20 mx-auto">
@@ -415,7 +425,7 @@ export const JourneysList = () => {
           {canEdit && !searchQuery && <EngageButton size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</EngageButton>}
         </motion.div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 max-w-7xl mx-auto">
           {filteredJourneys.map((j: any, i: number) => {
             const sc = statusConfig[j.status] || statusConfig.draft;
             const enrolled = enrollmentCounts[j.id] || 0;
@@ -424,79 +434,87 @@ export const JourneysList = () => {
             const completionPct = rate && rate.total > 0 ? Math.round((rate.completed / rate.total) * 100) : null;
             const isSelected = selectedIds.has(j.id);
             return (
-              <motion.div key={j.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <GlassCard
-                  className={`p-4 cursor-pointer hover:border-primary/30 hover:scale-[1.01] transition-all duration-200 ${isSelected ? 'ring-1 ring-primary/50' : ''}`}
-                  onClick={() => navigate(`/engage/journeys/${j.id}`)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {/* E2: Checkbox */}
-                      {canEdit && (
-                        <div onClick={e => e.stopPropagation()}>
-                          <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(j.id)} />
-                        </div>
-                      )}
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-medium text-foreground">{j.name}</h3>
-                          <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
-                            <span className="relative flex h-1.5 w-1.5">
-                              {sc.pulse && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${sc.dot}`} />}
-                              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${sc.dot}`} />
-                            </span>
-                            {j.status}
-                          </Badge>
-                          {enrolled > 0 && (
-                            <Badge variant="secondary" className="text-[10px] gap-1">
-                              <Users className="h-2.5 w-2.5" /> {enrolled} active
-                            </Badge>
-                          )}
-                          {nodeCount > 0 && (
-                            <Badge variant="secondary" className="text-[10px] gap-1 bg-purple-500/10 text-purple-400 border-purple-500/30">
-                              <Workflow className="h-2.5 w-2.5" /> {nodeCount} nodes
-                            </Badge>
-                          )}
-                          {/* E1: Completion rate badge */}
-                          {completionPct !== null && (
-                            <Badge variant="secondary" className="text-[10px] gap-1 bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                              <TrendingUp className="h-2.5 w-2.5" /> {completionPct}% complete
-                            </Badge>
-                          )}
-                        </div>
-                        {j.description && <p className="text-xs text-muted-foreground truncate">{j.description}</p>}
-                        <p className="text-xs text-muted-foreground">{format(new Date(j.created_at), 'MMM d, yyyy')}</p>
+              <EngageContentCard
+                key={j.id}
+                index={i}
+                onClick={() => navigate(`/engage/journeys/${j.id}`)}
+                selected={isSelected}
+                statusBadge={{
+                  label: j.status,
+                  className: sc.class,
+                  pulse: sc.pulse,
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {canEdit && (
+                      <div onClick={e => e.stopPropagation()}>
+                        <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(j.id)} />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                      {canEdit && j.status !== 'draft' && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleStatus.mutate({ id: j.id, current: j.status })}>
-                          {j.status === 'active' ? <Pause className="h-3.5 w-3.5 text-amber-400" /> : <Play className="h-3.5 w-3.5 text-emerald-400" />}
-                        </Button>
+                    )}
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-medium text-foreground">{j.name}</h3>
+                        {enrolled > 0 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Users className="h-2.5 w-2.5" /> {enrolled} active
+                          </Badge>
+                        )}
+                        {nodeCount > 0 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1 bg-purple-500/10 text-purple-400 border-purple-500/30">
+                            <Workflow className="h-2.5 w-2.5" /> {nodeCount} nodes
+                          </Badge>
+                        )}
+                        {completionPct !== null && (
+                          <Badge variant="secondary" className="text-[10px] gap-1 bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                            <TrendingUp className="h-2.5 w-2.5" /> {completionPct}% complete
+                          </Badge>
+                        )}
+                      </div>
+                      {/* Mini flow preview */}
+                      {nodeCount > 0 && (
+                        <div className="flex items-center gap-1 py-1">
+                          {Array.from({ length: Math.min(nodeCount, 5) }).map((_, idx) => (
+                            <React.Fragment key={idx}>
+                              <div className="w-2 h-2 rounded-full bg-primary/40 border border-primary/20" />
+                              {idx < Math.min(nodeCount, 5) - 1 && <div className="w-4 h-px bg-primary/20" />}
+                            </React.Fragment>
+                          ))}
+                          {nodeCount > 5 && <span className="text-[9px] text-muted-foreground ml-1">+{nodeCount - 5}</span>}
+                        </div>
                       )}
-                      {canEdit && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { setRenamingId(j.id); setRenameValue(j.name); setRenameDesc(j.description || ''); }}>
-                              <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => duplicateJourney.mutate(j)}>
-                              <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => deleteJourney.mutate(j.id)}>
-                              <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      {j.description && <p className="text-xs text-muted-foreground truncate">{j.description}</p>}
+                      <p className="text-xs text-muted-foreground">{format(new Date(j.created_at), 'MMM d, yyyy')}</p>
                     </div>
                   </div>
-                </GlassCard>
-              </motion.div>
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    {canEdit && j.status !== 'draft' && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleStatus.mutate({ id: j.id, current: j.status })}>
+                        {j.status === 'active' ? <Pause className="h-3.5 w-3.5 text-amber-400" /> : <Play className="h-3.5 w-3.5 text-emerald-400" />}
+                      </Button>
+                    )}
+                    {canEdit && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => { setRenamingId(j.id); setRenameValue(j.name); setRenameDesc(j.description || ''); }}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => duplicateJourney.mutate(j)}>
+                            <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => deleteJourney.mutate(j.id)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+              </EngageContentCard>
             );
           })}
         </div>

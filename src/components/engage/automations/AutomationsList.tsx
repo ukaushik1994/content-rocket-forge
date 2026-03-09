@@ -22,7 +22,11 @@ import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format, subDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
-import { EngageHero } from '../shared/EngageHero';
+import { EngagePageHero } from '../shared/EngagePageHero';
+import { EngageFilterBar } from '../shared/EngageFilterBar';
+import { EngageContentCard } from '../shared/EngageContentCard';
+import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
+import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
 import { useNavigate } from 'react-router-dom';
 import { automationPresets } from './automationPresets';
@@ -648,14 +652,20 @@ export const AutomationsList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngageHero
+      <EngagePageHero
         icon={Zap}
+        badge="Automation Engine"
         title="Automations"
-        subtitle="Rule-based triggers and actions"
+        titleAccent="Engine"
+        subtitle="Rule-based triggers and actions — automate your engagement"
         gradientFrom="from-amber-400"
         gradientTo="to-orange-400"
-        glowFrom="from-amber-500/30"
-        glowTo="to-orange-500/10"
+        stats={[
+          { icon: Play, label: 'Active', value: stats.active },
+          { icon: Pause, label: 'Paused', value: stats.paused },
+          { icon: BarChart3, label: 'Total Runs', value: overallStats.totalRuns },
+          { icon: TrendingUp, label: 'Success', value: `${overallStats.successRate}%` },
+        ]}
         actions={canEdit ? (
           <div className="flex items-center gap-2">
             <EngageButton size="sm" variant="outline" gradient={false} onClick={() => navigate('/engage/automations/runs')}>
@@ -675,42 +685,32 @@ export const AutomationsList = () => {
       />
 
       {/* Search + Select All */}
-      <motion.div variants={engageStagger.item} className="flex gap-2 items-center">
-        {filteredAutomations.length > 0 && canEdit && (
-          <Button variant="ghost" size="sm" className="h-9 px-2 shrink-0" onClick={selectAll}>
-            <CheckSquare className="h-3.5 w-3.5 mr-1" />
-            {selectedIds.size === filteredAutomations.length ? 'Deselect' : 'Select All'}
-          </Button>
-        )}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search automations..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-white/[0.03] border-white/[0.06] backdrop-blur-sm" />
-        </div>
-      </motion.div>
+      <EngageFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search automations..."
+        extraActions={
+          filteredAutomations.length > 0 && canEdit ? (
+            <Button variant="ghost" size="sm" className="h-9 px-2 shrink-0" onClick={selectAll}>
+              <CheckSquare className="h-3.5 w-3.5 mr-1" />
+              {selectedIds.size === filteredAutomations.length ? 'Deselect' : 'Select All'}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Analytics Dashboard */}
       {automations.length > 0 && (
         <motion.div variants={engageStagger.item}>
-          <div className="grid grid-cols-4 gap-3">
-            {[
+          <EngageStatGrid
+            stats={[
               { label: 'Active', count: stats.active, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Play },
               { label: 'Paused', count: stats.paused, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: Pause },
               { label: 'Total Runs', count: overallStats.totalRuns, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: BarChart3 },
               { label: 'Success Rate', count: `${overallStats.successRate}%`, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: TrendingUp },
-            ].map((s, i) => (
-              <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
-                      <p className={`text-xl font-bold ${s.text}`}>{s.count}</p>
-                    </div>
-                    <s.icon className={`h-5 w-5 ${s.text} opacity-50`} />
-                  </div>
-                </GlassCard>
-              </motion.div>
-            ))}
-          </div>
+            ]}
+            columns={4}
+          />
 
           {/* Executions Chart */}
           {dailyRuns.some(d => d.success > 0 || d.failed > 0) && (
@@ -1015,7 +1015,7 @@ export const AutomationsList = () => {
 
       {/* List */}
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        <EngageSkeletonCards count={4} layout="list" />
       ) : filteredAutomations.length === 0 ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
           <div className="relative h-20 w-20 mx-auto">
@@ -1031,7 +1031,7 @@ export const AutomationsList = () => {
           {canEdit && !searchQuery && <EngageButton size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</EngageButton>}
         </motion.div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 max-w-7xl mx-auto">
           {filteredAutomations.map((a: any, i: number) => {
             const triggerType = a.trigger_config?.type || 'none';
             const actions = (a.actions || []) as any[];
@@ -1039,10 +1039,13 @@ export const AutomationsList = () => {
             const lastTriggered = a.updated_at;
             const isSelected = selectedIds.has(a.id);
             return (
-              <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <GlassCard className={`p-4 hover:border-primary/30 hover:scale-[1.01] transition-all duration-200 ${isSelected ? 'border-primary/50 bg-primary/5' : ''}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+              <EngageContentCard
+                key={a.id}
+                index={i}
+                selected={isSelected}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                       {canEdit && (
                         <Checkbox
                           checked={isSelected}
@@ -1131,8 +1134,7 @@ export const AutomationsList = () => {
                       )}
                     </div>
                   </div>
-                </GlassCard>
-              </motion.div>
+              </EngageContentCard>
             );
           })}
         </div>

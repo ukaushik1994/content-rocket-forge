@@ -4,9 +4,10 @@ import { SocialInbox } from './SocialInbox';
 import { SocialAnalytics } from './SocialAnalytics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { EngageHero } from '../shared/EngageHero';
+import { EngagePageHero } from '../shared/EngagePageHero';
+import { EngageFilterBar } from '../shared/EngageFilterBar';
+import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
 import { EngageStatGrid } from '../shared/EngageStatCard';
-import { engageStagger } from '../shared/engageAnimations';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +46,7 @@ const commonHashtags = ['#marketing', '#socialmedia', '#growth', '#brand', '#con
 
 const statusFilters = ['all', 'draft', 'scheduled', 'posted', 'failed'] as const;
 
+import { engageStagger } from '../shared/engageAnimations';
 const stagger = engageStagger;
 
 export const SocialDashboard = () => {
@@ -265,23 +267,26 @@ export const SocialDashboard = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngageHero
+      <EngagePageHero
         icon={Share2}
+        badge="Social Command Center"
         title="Social"
+        titleAccent="Media"
         subtitle="Schedule and manage social posts across all channels"
         gradientFrom="from-pink-400"
         gradientTo="to-purple-400"
-        glowFrom="from-pink-500/30"
-        glowTo="to-purple-500/10"
-        actions={
-          <div className="flex items-center border border-white/[0.06] rounded-lg overflow-hidden bg-white/[0.03] backdrop-blur-sm">
-            {(['publish', 'inbox', 'analytics'] as const).map(t => (
-              <Button key={t} variant={mainTab === t ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-8 text-xs capitalize" onClick={() => setMainTab(t)}>
-                {t}
-              </Button>
-            ))}
-          </div>
-        }
+        stats={[
+          { icon: Clock, label: 'Scheduled', value: stats.scheduled },
+          { icon: CheckCircle2, label: 'Posted', value: stats.posted },
+          { icon: Zap, label: 'Connected', value: stats.connected },
+        ]}
+        quickFilters={[
+          { key: 'publish', label: 'Publish' },
+          { key: 'inbox', label: 'Inbox' },
+          { key: 'analytics', label: 'Analytics' },
+        ]}
+        activeFilter={mainTab}
+        onFilterChange={setMainTab}
       />
 
       {mainTab === 'inbox' && <SocialInbox />}
@@ -395,19 +400,13 @@ export const SocialDashboard = () => {
       </motion.div>
 
       {/* Stat Cards */}
-      <motion.div variants={stagger.item} className="grid grid-cols-3 gap-3">
-        {statCards.map(s => (
-          <GlassCard key={s.label} className="p-4 hover:scale-[1.03] transition-transform duration-300">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl ${s.bg}`}><s.icon className={`h-4 w-4 ${s.color}`} /></div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-              </div>
-            </div>
-          </GlassCard>
-        ))}
-      </motion.div>
+      <EngageStatGrid
+        stats={[
+          { label: 'Scheduled', count: stats.scheduled, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: Clock },
+          { label: 'Posted', count: stats.posted, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: CheckCircle2 },
+          { label: 'Connected', count: stats.connected, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: Zap },
+        ]}
+      />
 
       {/* Connected Accounts */}
       <motion.div variants={stagger.item}>
@@ -470,31 +469,34 @@ export const SocialDashboard = () => {
 
       {/* Search & Filters (for list view) */}
       {view === 'list' && (
-        <motion.div variants={stagger.item} className="space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search posts..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-background/40" />
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40">
-              {statusFilters.map(s => (
-                <Button key={s} variant={statusFilter === s ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-7 text-xs capitalize" onClick={() => setStatusFilter(s)}>
-                  {s}
-                </Button>
-              ))}
-            </div>
-            {selectedPosts.size > 0 && (
-              <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={() => bulkDeletePosts.mutate()}>
-                <Trash2 className="h-3 w-3" /> Delete {selectedPosts.size} selected
-              </Button>
-            )}
-          </div>
+        <motion.div variants={stagger.item}>
+          <EngageFilterBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search posts..."
+            extraActions={
+              <div className="flex items-center gap-2">
+                <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40">
+                  {statusFilters.map(s => (
+                    <Button key={s} variant={statusFilter === s ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-7 text-xs capitalize" onClick={() => setStatusFilter(s)}>
+                      {s}
+                    </Button>
+                  ))}
+                </div>
+                {selectedPosts.size > 0 && (
+                  <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={() => bulkDeletePosts.mutate()}>
+                    <Trash2 className="h-3 w-3" /> Delete {selectedPosts.size} selected
+                  </Button>
+                )}
+              </div>
+            }
+          />
         </motion.div>
       )}
 
       {/* Content Area */}
       {isLoading ? (
-        <motion.div variants={stagger.item} className="text-center py-12 text-muted-foreground">Loading...</motion.div>
+        <motion.div variants={stagger.item}><EngageSkeletonCards count={4} layout="list" /></motion.div>
       ) : view === 'calendar' ? (
         <motion.div variants={stagger.item}>
           <SocialCalendar posts={posts} onDayClick={handleDayClick} />
