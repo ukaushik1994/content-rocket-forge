@@ -1,47 +1,53 @@
 
 
-# Phase 3 Batch 2: Wire TopicClusters Page to Supabase
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Problem
-The `TopicClusters.tsx` page and its child components (`CreateClusterModal`, `ClusterDetailsModal`) use `topicClusterService.ts` which stores everything in **localStorage**. Meanwhile, the Supabase `topic_clusters` table exists and the new `researchIntelligenceService.ts` + `useResearchIntelligence.ts` hooks already provide proper DB CRUD. These two systems are disconnected.
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-## Plan
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-### 1. Rewrite `topicClusterService.ts` to use Supabase
-Replace the localStorage-based `TopicClusterService` class with functions that delegate to `researchIntelligenceService.ts` (or call Supabase directly). Map the `TopicCluster` frontend interface to/from DB rows using the existing `dbRowToTopicCluster` mapper.
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-Key changes:
-- `getClusters()` becomes async, calls `fetchTopicClusters(userId)`
-- `createCluster()` calls `createTopicCluster()` with mapped fields
-- `deleteCluster()` calls `deleteTopicCluster()`
-- `updateCluster()` calls `updateTopicCluster()`
-- `getCluster()` fetches single cluster by ID
-- `getPerformanceMetrics()` computes from real cluster data
-- Remove all `localStorage` usage
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### 2. Update `TopicClusters.tsx` page
-- Replace `topicClusterService.getClusters()` (sync) with the `useClusters()` hook from `useResearchIntelligence.ts`
-- Remove manual `useState` for clusters/metrics and `loadClusters()` effect
-- Wire create/delete/update through the hook's mutation functions
-- Derive `ClusterPerformanceMetrics` from the query data
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### 3. Update `CreateClusterModal.tsx`
-- Accept an `onCreate` callback prop instead of importing `topicClusterService` directly
-- Parent passes `clusters.create()` from the hook
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
-### 4. Update `ClusterDetailsModal.tsx`
-- Accept cluster data as a prop (parent already has it from the query)
-- Remove direct `topicClusterService.getCluster()` call
-- Generate content opportunities client-side from cluster data
+---
 
-### Summary
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-| File | Change |
-|------|--------|
-| `src/services/topicClusterService.ts` | Rewrite to Supabase-backed async service |
-| `src/pages/research/TopicClusters.tsx` | Use `useClusters()` hook, remove manual state |
-| `src/components/research/topic-clusters/CreateClusterModal.tsx` | Accept `onCreate` prop |
-| `src/components/research/topic-clusters/ClusterDetailsModal.tsx` | Accept cluster as prop |
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` (208 lines, simple DB CRUD) was shadowing `useEnhancedAIChatDB.ts` (1136 lines, full chat logic with messages/sendMessage/streaming)
+- **Fix**: Deleted the `.tsx` duplicate so the context correctly uses the full `.ts` version
+- Messages, sendMessage, isTyping, and all chat state now properly shared via AIChatDBContext
 
-4 files. No new dependencies. No DB migrations needed.
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx` for both title and content preview
+- Strips all HTML tags, returns plain text only
 
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
+- Total Content + Published → `/ai-chat` (Repository panel)
+- Total Views + Revenue → `/analytics`

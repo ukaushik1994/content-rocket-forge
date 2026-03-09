@@ -1,0 +1,1 @@
+ALTER TABLE public.topic_clusters ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb;
