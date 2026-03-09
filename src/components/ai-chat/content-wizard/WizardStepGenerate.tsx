@@ -247,6 +247,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   // Phase 2B: Image generation state
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
+  // Abort controller for generation cancellation
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Load company & brand context on mount
   useEffect(() => {
     if (!user) return;
