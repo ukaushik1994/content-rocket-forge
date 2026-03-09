@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { CampaignSettingsPanel } from './CampaignSettingsPanel';
 import { useCampaignStats } from '@/hooks/useCampaignStats';
+import { toast } from 'sonner';
 
 interface CampaignsHeroProps {
   onCreateClick?: () => void;
@@ -74,7 +75,12 @@ export const CampaignsHero = React.memo(({
     }
   }, []);
   const handleSubmit = () => {
-    if (campaignIdea.trim() && onStartConversation) {
+    if (!campaignIdea.trim()) return;
+    if (!selectedSolutionId) {
+      toast.error('Please select an offering before starting');
+      return;
+    }
+    if (onStartConversation) {
       onStartConversation(campaignIdea.trim(), {
         solutionId: selectedSolutionId,
         platformPreferences: platformPreferences
@@ -83,7 +89,12 @@ export const CampaignsHero = React.memo(({
     }
   };
   const handleExpressSubmit = () => {
-    if (expressData.idea.trim() && onExpressMode) {
+    if (!expressData.idea.trim()) return;
+    if (!selectedSolutionId) {
+      toast.error('Please select an offering before starting');
+      return;
+    }
+    if (onExpressMode) {
       onExpressMode({
         ...expressData,
         solutionId: selectedSolutionId,

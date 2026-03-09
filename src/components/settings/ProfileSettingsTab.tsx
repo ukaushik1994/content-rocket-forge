@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +15,9 @@ export function ProfileSettingsTab() {
   const [email, setEmail] = useState('');
   const [profileExpanded, setProfileExpanded] = useState(true);
   const [securityExpanded, setSecurityExpanded] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Set initial values from user metadata
   useEffect(() => {
@@ -214,7 +218,7 @@ export function ProfileSettingsTab() {
             
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
-                Coming soon
+                Secure
               </span>
             </div>
           </div>
@@ -224,16 +228,26 @@ export function ProfileSettingsTab() {
           <div className="space-y-4 pl-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="current_password" className="text-sm font-medium">Current password</Label>
-                <Input id="current_password" type="password" className="text-sm" />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="new_password" className="text-sm font-medium">New password</Label>
-                <Input id="new_password" type="password" className="text-sm" />
+                <Input
+                  id="new_password"
+                  type="password"
+                  className="text-sm"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Min 6 characters"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm_password" className="text-sm font-medium">Confirm password</Label>
-                <Input id="confirm_password" type="password" className="text-sm" />
+                <Input
+                  id="confirm_password"
+                  type="password"
+                  className="text-sm"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                />
               </div>
               
               <div className="flex justify-end pt-2">
@@ -241,8 +255,31 @@ export function ProfileSettingsTab() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => toast.info('Password change functionality will be implemented soon!')}
+                  disabled={isChangingPassword}
+                  onClick={async () => {
+                    if (newPassword.length < 6) {
+                      toast.error('Password must be at least 6 characters');
+                      return;
+                    }
+                    if (newPassword !== confirmPassword) {
+                      toast.error('Passwords do not match');
+                      return;
+                    }
+                    setIsChangingPassword(true);
+                    try {
+                      const { error } = await supabase.auth.updateUser({ password: newPassword });
+                      if (error) throw error;
+                      toast.success('Password updated successfully');
+                      setNewPassword('');
+                      setConfirmPassword('');
+                    } catch (error: any) {
+                      toast.error(error.message || 'Failed to update password');
+                    } finally {
+                      setIsChangingPassword(false);
+                    }
+                  }}
                 >
+                  {isChangingPassword && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
                   Change Password
                 </Button>
               </div>

@@ -1,66 +1,53 @@
 
 
-# Phase 1 Remaining + Phase 2 Quick Wins — Implementation Plan
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Audit Status After Previous Session
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-Already done or already existed:
-- 1.1/1.2 AI Chat blank screen + no visible message — **Fixed** (deleted duplicate hook)
-- 1.3 Campaigns tab spinner — **Already has** empty state + loading fallback
-- 1.4 Repository delete — **Already exists** in ContentDetailModal
-- 1.5 Approvals reject/request changes — **Already implemented** in ModernContentApproval
-- 1.7 HTML sanitize titles — **Fixed** (DOMPurify in ContentCardPreview)
-- 1.8 Dashboard stats clickable — **Fixed** (navigate on click)
-- 1.9 Notifications dedup — **Already has** `groupNotifications()` function
-- 2.2 Collapsed sidebar tooltips — **Already has** `CollapsedIconButton` with `Tooltip`
-- 2.7 Journey Builder node deletion — **Already has** Delete key + button in inspector
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## What Still Needs Implementation (3 items)
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-### 1. Password Change — Replace "Coming Soon" with real Supabase Auth
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-**Files:** `ProfileSettingsTab.tsx`, `ProfileSettings.tsx`
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-Both files have identical pattern: `onClick={() => toast.info('Password change functionality will be implemented soon!')}`. Replace with:
-- Validate new password ≥ 6 chars and matches confirm field
-- Call `supabase.auth.updateUser({ password: newPass })`
-- Show success/error toast, clear inputs on success
-- Add `import { supabase } from '@/integrations/supabase/client'` to `ProfileSettingsTab.tsx` (ProfileSettings already has it)
-
-### 2. Delete Button on Repository Cards
-
-**File:** `SimplifiedRepositoryCard.tsx`
-
-Add a delete button (Trash2 icon) next to the Edit button in the footer (line ~269). On click:
-- Show `AlertDialog` confirmation ("Delete this content? This cannot be undone.")
-- Call `deleteContentItem(content.id)` from `useContent()`
-- Show success toast
-- Need to accept `onDelete` prop or use `useContent` directly
-
-### 3. Campaign Conversation Validation
-
-**File:** `CampaignsHero.tsx`
-
-In `handleSubmit` (line 76), the code already checks `campaignIdea.trim()` but doesn't validate solution selection. Add:
-```tsx
-if (!selectedSolutionId) {
-  toast.error('Please select an offering before starting');
-  return;
-}
-```
-
-Same for `handleExpressSubmit` (line 85).
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-## Summary
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-| File | Change |
-|------|--------|
-| `ProfileSettingsTab.tsx` | Wire password change to `supabase.auth.updateUser` |
-| `ProfileSettings.tsx` | Same password change wiring |
-| `SimplifiedRepositoryCard.tsx` | Add Trash2 delete button + AlertDialog |
-| `CampaignsHero.tsx` | Add solution validation before submit |
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` (208 lines, simple DB CRUD) was shadowing `useEnhancedAIChatDB.ts` (1136 lines, full chat logic with messages/sendMessage/streaming)
+- **Fix**: Deleted the `.tsx` duplicate so the context correctly uses the full `.ts` version
+- Messages, sendMessage, isTyping, and all chat state now properly shared via AIChatDBContext
 
-4 files. No new dependencies. No database changes needed.
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx` for both title and content preview
+- Strips all HTML tags, returns plain text only
 
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
+- Total Content + Published → `/ai-chat` (Repository panel)
+- Total Views + Revenue → `/analytics`
