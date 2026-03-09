@@ -606,7 +606,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     } finally {
       setIsGeneratingContent(false);
       setGenerationStage('');
-    }
+      setGenerationProgress(0);
   };
 
   // Phase 5: Refinement loop
