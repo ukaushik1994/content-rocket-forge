@@ -163,16 +163,14 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
         <CardHeader className="relative pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {hasCannibalization && (
                   <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
                     <AlertTriangle className="h-3 w-3 mr-1" />
                     Warning
                   </Badge>
                 )}
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                  Content Keyword
-                </Badge>
+                <DifficultyBadge count={totalPieces} />
               </div>
               <CardTitle className="text-lg font-semibold text-foreground line-clamp-2 leading-tight">
                 {keyword.keyword}
