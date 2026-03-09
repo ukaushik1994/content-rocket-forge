@@ -239,7 +239,6 @@ const Analytics = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <Navbar />
         <main className="pt-20 container py-8">
           <Card className="bg-red-50 border-red-200">
             <CardContent className="p-6 text-center">
