@@ -123,14 +123,10 @@ export const AutomationRuns = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngageHero
+      <CompactPageHeader
         icon={Zap}
         title="Automation Runs"
         subtitle="Execution audit trail"
-        gradientFrom="from-amber-400"
-        gradientTo="to-orange-400"
-        glowFrom="from-amber-500/30"
-        glowTo="to-orange-500/10"
         actions={
           <div className="flex items-center gap-2">
             <EngageButton size="sm" variant="outline" gradient={false} onClick={() => window.history.back()}>
