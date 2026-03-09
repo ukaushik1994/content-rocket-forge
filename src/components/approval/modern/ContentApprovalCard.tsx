@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -18,7 +19,8 @@ import {
   Zap,
   Loader2,
   Image as ImageIcon,
-  Film
+  Film,
+  RotateCcw
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -30,8 +32,9 @@ interface ContentApprovalCardProps {
   content: ContentItemType;
   onView: (content: ContentItemType) => void;
   onApprove?: (id: string) => void;
-  onReject?: (id: string, reason: string) => void;
-  onRequestChanges?: (id: string, reason: string) => void;
+  onReject?: (id: string) => void;
+  onRequestChanges?: (id: string) => void;
+  onRevertToDraft?: (id: string) => void;
   onAnalyzeAI?: (content: ContentItemType) => void;
   onAssignReviewer?: (content: ContentItemType) => void;
   onViewHistory?: (content: ContentItemType) => void;
@@ -39,6 +42,8 @@ interface ContentApprovalCardProps {
   aiScore?: number;
   analyzedAt?: string;
   isAnalyzing?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 const statusConfig = {
@@ -92,13 +97,16 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
   onApprove,
   onReject,
   onRequestChanges,
+  onRevertToDraft,
   onAnalyzeAI,
   onAssignReviewer,
   onViewHistory,
   onSubmitForReview,
   aiScore,
   analyzedAt,
-  isAnalyzing = false
+  isAnalyzing = false,
+  isSelected = false,
+  onToggleSelect
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   
@@ -130,7 +138,17 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="h-full"
     >
-      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full flex flex-col">
+      <Card className={`relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full flex flex-col ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+        {/* Selection Checkbox */}
+        {onToggleSelect && (
+          <div className="absolute top-3 left-3 z-20">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelect(content.id)}
+              className="bg-background/80 border-border"
+            />
+          </div>
+        )}
         {/* Animated Background Gradient */}
         <motion.div
           className={`absolute inset-0 bg-gradient-to-br ${statusInfo.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
@@ -308,7 +326,20 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               ) : (
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-semibold text-muted-foreground/60">AI ANALYSIS</h4>
-                  <span className="text-xs text-muted-foreground/60 italic">Not analyzed</span>
+                  {onAnalyzeAI ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs text-primary hover:text-primary/80"
+                      onClick={() => onAnalyzeAI(content)}
+                      disabled={isAnalyzing}
+                    >
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Run Analysis
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground/60 italic">Not analyzed</span>
+                  )}
                 </div>
               )}
             </motion.div>
@@ -433,7 +464,69 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span className="text-xs">Approve Content</span>
+                    <span className="text-xs">Approve</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {(status === 'pending_review' || status === 'in_review') && onRequestChanges && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onRequestChanges(content.id)}
+                      className="bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 text-orange-400"
+                    >
+                      <AlertCircle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Request Changes</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {(status === 'pending_review' || status === 'in_review') && onReject && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onReject(content.id)}
+                      className="bg-destructive/10 hover:bg-destructive/20 border-destructive/30 text-destructive"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Reject</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {/* Revert to Draft for approved/rejected/needs_changes */}
+            {(status === 'approved' || status === 'rejected' || status === 'needs_changes') && onRevertToDraft && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onRevertToDraft(content.id)}
+                      className="bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/30 text-slate-400"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Draft</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Revert to Draft</span>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

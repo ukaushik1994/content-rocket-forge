@@ -52,7 +52,13 @@ Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterfa
 | 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
 | 10 | Campaign count mismatch | Investigate |
 
-## Batch 2: Approvals Workflow — TODO
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 ## Batch 3: Content Wizard & Campaigns Polish — TODO
 ## Batch 4: API-Ready Scaffolding — TODO
 ## Batch 5: Analytics & Reporting — TODO

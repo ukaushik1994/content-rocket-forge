@@ -1,14 +1,16 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentApprovalHero } from './ContentApprovalHero';
 import { ContentApprovalCard } from './ContentApprovalCard';
 import { ReviewEditorModal } from './ReviewEditorModal';
 import { AssignReviewerDialog } from './AssignReviewerDialog';
 import { ApprovalHistoryDialog } from './ApprovalHistoryDialog';
+import { ApprovalNotesDialog } from './ApprovalNotesDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Search, 
   Filter, 
@@ -16,6 +18,9 @@ import {
   Grid3X3, 
   List,
   SlidersHorizontal,
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -45,6 +50,10 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [historyTarget, setHistoryTarget] = useState<ContentItemType | null>(null);
   const [historyItems, setHistoryItems] = useState<any[]>([]);
+  // Batch selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Approval notes dialog
+  const [notesDialog, setNotesDialog] = useState<{ open: boolean; action: 'approve' | 'reject' | 'request_changes'; contentId: string } | null>(null);
   
 
   const { 
@@ -65,8 +74,9 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     const approved = contentItems.filter(item => item.approval_status === 'approved').length;
     const published = contentItems.filter(item => item.approval_status === 'published').length;
     const needs_changes = contentItems.filter(item => item.approval_status === 'needs_changes').length;
+    const rejected = contentItems.filter(item => item.approval_status === 'rejected').length;
 
-    return { all, draft, pending_review, approved, published, needs_changes };
+    return { all, draft, pending_review, approved, published, needs_changes, rejected };
   }, [contentItems]);
 
   // Filter and sort content
@@ -269,6 +279,17 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     }
   };
 
+  const handleRevertToDraft = async (id: string) => {
+    try {
+      await updateContentItem(id, { approval_status: 'draft' });
+      await refreshContent();
+      toast.success('Content reverted to draft');
+    } catch (error) {
+      toast.error('Failed to revert content');
+      console.error(error);
+    }
+  };
+
   const handleAssign = (content: ContentItemType) => {
     setAssignTarget(content);
     setShowAssignDialog(true);
@@ -281,8 +302,74 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     setShowHistoryDialog(true);
   };
 
+  // Batch selection handlers
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredAndSortedContent.map(i => i.id)));
+  }, [filteredAndSortedContent]);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+  const handleBatchApprove = async () => {
+    const ids = Array.from(selectedIds);
+    toast.info(`Approving ${ids.length} items...`);
+    let success = 0;
+    for (const id of ids) {
+      try {
+        await approveContent(id, 'Batch approved');
+        success++;
+      } catch { /* continue */ }
+    }
+    await refreshContent();
+    clearSelection();
+    toast.success(`${success} of ${ids.length} items approved`);
+  };
+
+  // Notes dialog handlers
+  const openNotesDialog = (action: 'approve' | 'reject' | 'request_changes', contentId: string) => {
+    setNotesDialog({ open: true, action, contentId });
+  };
+
+  const handleNotesSubmit = async (notes: string) => {
+    if (!notesDialog) return;
+    const { action, contentId } = notesDialog;
+    if (action === 'approve') await handleApprove(contentId, notes);
+    else if (action === 'reject') await handleReject(contentId, notes);
+    else if (action === 'request_changes') await handleRequestChanges(contentId, notes);
+    setNotesDialog(null);
+  };
+
   return (
     <div className="min-h-screen w-full">
+      {/* Batch Selection Bar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -40 }}
+            className="fixed top-16 left-0 right-0 z-50 flex items-center justify-center"
+          >
+            <div className="flex items-center gap-3 px-6 py-3 bg-background/90 backdrop-blur-xl rounded-full border border-primary/30 shadow-xl">
+              <span className="text-sm font-medium">{selectedIds.size} selected</span>
+              <Button size="sm" variant="outline" onClick={selectAll}>Select All</Button>
+              <Button size="sm" variant="ghost" onClick={clearSelection}>Clear</Button>
+              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleBatchApprove}>
+                <CheckCircle2 className="h-4 w-4 mr-1" />
+                Approve Selected
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
       <ContentApprovalHero
         contentStats={contentStats}
@@ -406,9 +493,10 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                     <ContentApprovalCard
                       content={item}
                       onView={handleViewContent}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
-                      onRequestChanges={handleRequestChanges}
+                      onApprove={(id) => openNotesDialog('approve', id)}
+                      onReject={(id) => openNotesDialog('reject', id)}
+                      onRequestChanges={(id) => openNotesDialog('request_changes', id)}
+                      onRevertToDraft={handleRevertToDraft}
                       onAnalyzeAI={handleAnalyzeContent}
                       onAssignReviewer={handleAssign}
                       onViewHistory={handleViewHistory}
@@ -416,6 +504,8 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                       aiScore={aiScores[item.id]}
                       isAnalyzing={analyzingItems.has(item.id)}
                       analyzedAt={aiAnalyzedAt[item.id]}
+                      isSelected={selectedIds.has(item.id)}
+                      onToggleSelect={toggleSelect}
                     />
                   </motion.div>
                 ))}
@@ -453,6 +543,16 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
         contentTitle={historyTarget?.title}
         history={historyItems}
       />
+
+      {/* Approval Notes Dialog */}
+      {notesDialog && (
+        <ApprovalNotesDialog
+          open={notesDialog.open}
+          action={notesDialog.action}
+          onClose={() => setNotesDialog(null)}
+          onSubmit={handleNotesSubmit}
+        />
+      )}
     </div>
   );
 };
