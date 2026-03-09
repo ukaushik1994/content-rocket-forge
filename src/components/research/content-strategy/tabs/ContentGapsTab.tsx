@@ -109,6 +109,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
             opportunity_score: Math.max(0, Math.min(100, baseScore - i * 3)),
             keywords: keyword ? [keyword] : [],
             status: 'identified',
+            target_cluster_id: selectedClusterId || null,
           })
         )
       );
