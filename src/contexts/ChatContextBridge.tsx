@@ -136,16 +136,34 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
       if (!user || Object.keys(state.persistentContext).length === 0) return;
       
       try {
-        await supabase
+        // First try to check if a row exists
+        const { data: existing } = await supabase
           .from('ai_context_state' as any)
-          .upsert({
-            user_id: user.id,
-            context: state.persistentContext,
-            workflow_state: state.workflowState,
-            updated_at: new Date().toISOString()
-          });
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('ai_context_state' as any)
+            .update({
+              context: state.persistentContext,
+              workflow_state: state.workflowState,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id);
+        } else {
+          await supabase
+            .from('ai_context_state' as any)
+            .insert({
+              user_id: user.id,
+              context: state.persistentContext,
+              workflow_state: state.workflowState,
+              updated_at: new Date().toISOString()
+            });
+        }
       } catch (error) {
-        console.error('Error saving persistent context:', error);
+        // Silently handle - context persistence is best-effort
       }
     }, 30000); // Save every 30 seconds
 
