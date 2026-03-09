@@ -702,26 +702,15 @@ export const AutomationsList = () => {
       {/* Analytics Dashboard */}
       {automations.length > 0 && (
         <motion.div variants={engageStagger.item}>
-          <div className="grid grid-cols-4 gap-3">
-            {[
+          <EngageStatGrid
+            stats={[
               { label: 'Active', count: stats.active, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Play },
               { label: 'Paused', count: stats.paused, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: Pause },
               { label: 'Total Runs', count: overallStats.totalRuns, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: BarChart3 },
               { label: 'Success Rate', count: `${overallStats.successRate}%`, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: TrendingUp },
-            ].map((s, i) => (
-              <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
-                      <p className={`text-xl font-bold ${s.text}`}>{s.count}</p>
-                    </div>
-                    <s.icon className={`h-5 w-5 ${s.text} opacity-50`} />
-                  </div>
-                </GlassCard>
-              </motion.div>
-            ))}
-          </div>
+            ]}
+            columns={4}
+          />
 
           {/* Executions Chart */}
           {dailyRuns.some(d => d.success > 0 || d.failed > 0) && (
