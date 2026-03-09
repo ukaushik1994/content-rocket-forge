@@ -45,7 +45,12 @@ const defaultForm: WizardForm = {
   name: '', template_id: '', audience_type: 'all', segment_id: '', tags: '', schedule_type: 'now', scheduled_at: '',
 };
 
-export const CampaignsList = () => {
+interface CampaignsListProps {
+  openWizardOnMount?: boolean;
+  onWizardOpened?: () => void;
+}
+
+export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsListProps) => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
   const { user } = useAuth();
   const queryClient = useQueryClient();
