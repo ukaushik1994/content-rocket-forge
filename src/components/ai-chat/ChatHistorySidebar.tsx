@@ -444,9 +444,12 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                 {conversations && conversations.length > 0 ? (
                   filteredConversations.length > 0 ? (
                     <>
+              <div role="list">
                       {displayedConversations.map((conversation) => (
                         <div
                           key={conversation.id}
+                          role="listitem"
+                          aria-selected={activeConversation === conversation.id}
                           className={cn(
                             "mx-1 mb-0.5 px-3 py-2 cursor-pointer transition-[background-color,color] duration-200 rounded-lg group relative overflow-hidden",
                             activeConversation === conversation.id 
@@ -523,6 +526,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                           </div>
                         </div>
                       ))}
+                      </div>
                       
                       {/* Load More */}
                       {hasMoreConversations && (
@@ -584,7 +588,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-all duration-200 group">
+              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-colors duration-200 group" aria-label="User menu">
                 <div className="w-6 h-6 rounded-full bg-muted ring-1 ring-border/10 flex items-center justify-center text-[10px] font-medium text-foreground flex-shrink-0">
                   {userInitials}
                 </div>

@@ -31,6 +31,8 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
   return (
     <motion.div
       className="flex flex-wrap justify-center gap-2"
+      role="group"
+      aria-label="Quick actions"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.1, duration: 0.4 }}
@@ -38,7 +40,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
       {suggestions.map((item, index) => (
         <motion.button
           key={item.text}
-          className="px-4 py-2 rounded-full border border-border/40 bg-card/50 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all duration-200 cursor-pointer"
+          className="px-4 py-2 rounded-full border border-border/40 bg-card/50 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors duration-200 cursor-pointer"
           onClick={() => handleClick(item)}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}

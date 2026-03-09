@@ -183,8 +183,9 @@ export const VoiceInputHandler: React.FC<VoiceInputHandlerProps> = ({
         variant="ghost"
         onClick={toggleListening}
         disabled={disabled}
+        aria-label={isListening ? "Stop voice input" : "Start voice input"}
         className={cn(
-          "p-2 h-8 w-8 transition-all",
+          "p-2 h-8 w-8 transition-colors",
           isListening 
             ? "text-red-500 bg-red-500/10 hover:bg-red-500/20" 
             : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent",
