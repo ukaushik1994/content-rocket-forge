@@ -105,6 +105,16 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
   const publishedCount = keyword.content_pieces?.filter(p => p.status === 'published').length || 0;
   const draftCount = keyword.content_pieces?.filter(p => p.status === 'draft').length || 0;
   const hasCannibalization = publishedCount > 1;
+  const totalPieces = (keyword.content_pieces?.length || 0);
+
+  // Generate sparkline data from usage pattern (simulate trend from content pieces)
+  const sparkData = useMemo(() => {
+    const pieces = keyword.content_pieces || [];
+    if (pieces.length === 0) return [0, 0];
+    // Create a simple cumulative usage line
+    const sorted = [...pieces].sort((a, b) => a.id.localeCompare(b.id));
+    return sorted.map((_, i) => i + 1);
+  }, [keyword.content_pieces]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(keyword.keyword);
