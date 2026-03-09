@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,6 @@ import {
   Search, 
   Zap, 
   TrendingUp, 
-  Globe,
-  Users,
-  Clock,
   ArrowRight,
   Sparkles,
   Brain,
@@ -32,8 +29,8 @@ import { CreateClusterModal } from '@/components/research/topic-clusters/CreateC
 import { ClusterDetailsModal } from '@/components/research/topic-clusters/ClusterDetailsModal';
 import { SerpAnalysisPanel } from '@/components/research/topic-clusters/SerpAnalysisPanel';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
-import { topicClusterService } from '@/services/topicClusterService';
-import { TopicCluster, ClusterPerformanceMetrics } from '@/types/topicCluster';
+import { useClusters } from '@/hooks/useResearchIntelligence';
+import { dbRowToTopicCluster, ClusterPerformanceMetrics } from '@/types/topicCluster';
 
 const TopicClusters = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,31 +39,20 @@ const TopicClusters = () => {
   const [serpData, setSerpData] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [clusters, setClusters] = useState<TopicCluster[]>([]);
-  const [metrics, setMetrics] = useState<ClusterPerformanceMetrics | null>(null);
   const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Load clusters and metrics on component mount
-  useEffect(() => {
-    loadClusters();
-  }, []);
+  const { data: dbRows, isLoading, refetch, create, remove } = useClusters();
+  const clusters = (dbRows ?? []).map(dbRowToTopicCluster);
 
-  const loadClusters = async () => {
-    setIsLoading(true);
-    try {
-      const clustersData = topicClusterService.getClusters();
-      const metricsData = topicClusterService.getPerformanceMetrics();
-      
-      setClusters(clustersData);
-      setMetrics(metricsData);
-    } catch (error) {
-      console.error('Error loading clusters:', error);
-      toast.error('Failed to load topic clusters');
-    } finally {
-      setIsLoading(false);
-    }
+  // Derive metrics from clusters
+  const metrics: ClusterPerformanceMetrics = {
+    totalClusters: clusters.length,
+    totalTraffic: '0',
+    avgPosition: '0',
+    activeArticles: clusters.reduce((s, c) => s + c.articles, 0).toString(),
+    monthlyGrowth: 0,
+    topPerformingCluster: clusters[0]?.name || 'None',
   };
 
   const handleKeywordAnalysis = async (keyword: string) => {
@@ -76,11 +62,8 @@ const TopicClusters = () => {
     setIsAnalyzing(true);
     
     try {
-      console.log(`🔍 Starting SERP analysis for: ${keyword}`);
-      
       const data = await analyzeKeywordSerp(keyword);
       setSerpData(data);
-      
       toast.success(`Analysis complete for "${keyword}"`);
       setActiveTab('analysis');
     } catch (error) {
@@ -91,22 +74,31 @@ const TopicClusters = () => {
     }
   };
 
-  const handleCreateClusterSuccess = () => {
+  const handleCreateCluster = async (formData: { name: string; mainKeyword: string; description?: string; keywords: string[]; targetAudience?: string; contentPillars?: string[] }) => {
+    await create({
+      cluster_name: formData.name,
+      description: formData.description || null,
+      importance_score: 0,
+      topic_count: formData.keywords.length,
+      metadata: {
+        mainKeyword: formData.mainKeyword,
+        keywords: formData.keywords,
+        targetAudience: formData.targetAudience,
+        contentPillars: formData.contentPillars,
+      },
+    });
     setIsCreating(false);
-    loadClusters(); // Reload clusters after creation
     toast.success('Topic cluster created successfully!');
   };
 
   const handleEditCluster = (clusterId: string) => {
-    // For now, just show a toast - could implement edit modal
     toast.info('Edit functionality coming soon');
   };
 
   const handleDeleteCluster = async (clusterId: string) => {
     if (confirm('Are you sure you want to delete this cluster?')) {
       try {
-        await topicClusterService.deleteCluster(clusterId);
-        loadClusters();
+        await remove(clusterId);
         toast.success('Cluster deleted successfully');
       } catch (error) {
         toast.error('Failed to delete cluster');
@@ -133,7 +125,6 @@ const TopicClusters = () => {
     }
   };
 
-  // Store SERP selections for content builder integration
   const handleStoreForContentBuilder = (selections: any[]) => {
     if (selections.length > 0) {
       localStorage.setItem('pendingSerpSelections', JSON.stringify(selections));
@@ -141,58 +132,21 @@ const TopicClusters = () => {
     }
   };
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.3
-      }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.3 } }
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5
-      }
-    }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
   };
 
   const metricsData = [
-    {
-      title: "Total Clusters",
-      value: metrics?.totalClusters || 0,
-      icon: Network,
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/10"
-    },
-    {
-      title: "Total Traffic",
-      value: metrics?.totalTraffic || "0",
-      icon: TrendingUp,
-      color: "text-green-400",
-      bgColor: "bg-green-500/10"
-    },
-    {
-      title: "Avg. Position",
-      value: metrics?.avgPosition || "0",
-      icon: Target,
-      color: "text-purple-400",
-      bgColor: "bg-purple-500/10"
-    },
-    {
-      title: "Active Articles",
-      value: metrics?.activeArticles || "0",
-      icon: BookOpen,
-      color: "text-orange-400",
-      bgColor: "bg-orange-500/10"
-    }
+    { title: "Total Clusters", value: metrics.totalClusters, icon: Network, color: "text-blue-400", bgColor: "bg-blue-500/10" },
+    { title: "Total Traffic", value: metrics.totalTraffic, icon: TrendingUp, color: "text-green-400", bgColor: "bg-green-500/10" },
+    { title: "Avg. Position", value: metrics.avgPosition, icon: Target, color: "text-purple-400", bgColor: "bg-purple-500/10" },
+    { title: "Active Articles", value: metrics.activeArticles, icon: BookOpen, color: "text-orange-400", bgColor: "bg-orange-500/10" }
   ];
 
   return (
@@ -201,8 +155,6 @@ const TopicClusters = () => {
         <title>Topic Clusters | Creaiter</title>
       </Helmet>
       
-      
-      {/* Background Effects */}
       <div className="fixed inset-0 pt-20 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full filter blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
@@ -210,12 +162,7 @@ const TopicClusters = () => {
       </div>
       
       <main className="container mx-auto px-4 pt-24 pb-8 relative z-10">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-8"
-        >
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
           {/* Hero Section */}
           <motion.div variants={itemVariants} className="text-center space-y-6">
             <div className="space-y-4">
@@ -242,11 +189,7 @@ const TopicClusters = () => {
               </p>
             </div>
 
-            {/* Search Section */}
-            <motion.div
-              variants={itemVariants}
-              className="max-w-2xl mx-auto"
-            >
+            <motion.div variants={itemVariants} className="max-w-2xl mx-auto">
               <Card className="bg-white/5 backdrop-blur-md border-white/10 p-6">
                 <div className="space-y-4">
                   <div className="relative">
@@ -267,11 +210,7 @@ const TopicClusters = () => {
                   >
                     {isAnalyzing ? (
                       <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                          className="mr-2"
-                        >
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="mr-2">
                           <Zap className="h-4 w-4" />
                         </motion.div>
                         Analyzing SERP Data...
@@ -289,10 +228,7 @@ const TopicClusters = () => {
           </motion.div>
 
           {/* Metrics Cards */}
-          <motion.div
-            variants={itemVariants}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-          >
+          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {metricsData.map((metric, index) => (
               <motion.div
                 key={metric.title}
@@ -323,24 +259,15 @@ const TopicClusters = () => {
           <motion.div variants={itemVariants}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid w-full grid-cols-3 bg-white/5 backdrop-blur-md border-white/10">
-                <TabsTrigger
-                  value="overview"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600"
-                >
+                <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600">
                   <Network className="h-4 w-4 mr-2" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger
-                  value="analysis"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600"
-                >
+                <TabsTrigger value="analysis" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   SERP Analysis
                 </TabsTrigger>
-                <TabsTrigger
-                  value="create"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600"
-                >
+                <TabsTrigger value="create" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Content
                 </TabsTrigger>
@@ -350,28 +277,16 @@ const TopicClusters = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-white">Your Topic Clusters</h2>
                   <div className="flex gap-3">
-                    <Button
-                      onClick={loadClusters}
-                      variant="outline"
-                      size="sm"
-                      disabled={isLoading}
-                      className="border-white/20"
-                    >
+                    <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading} className="border-white/20">
                       {isLoading ? (
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        >
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
                           <RefreshCw className="h-4 w-4" />
                         </motion.div>
                       ) : (
                         <RefreshCw className="h-4 w-4" />
                       )}
                     </Button>
-                    <Button
-                      onClick={() => setIsCreating(true)}
-                      className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
-                    >
+                    <Button onClick={() => setIsCreating(true)} className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700">
                       <Plus className="h-4 w-4 mr-2" />
                       Create New Cluster
                     </Button>
@@ -416,11 +331,7 @@ const TopicClusters = () => {
                     </AnimatePresence>
                     
                     {clusters.length === 0 && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-16"
-                      >
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
                         <div className="space-y-4">
                           <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center">
                             <Network className="h-8 w-8 text-blue-400" />
@@ -429,10 +340,7 @@ const TopicClusters = () => {
                           <p className="text-gray-400 max-w-md mx-auto">
                             Create your first topic cluster to start organizing your content strategy
                           </p>
-                          <Button
-                            onClick={() => setIsCreating(true)}
-                            className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
-                          >
+                          <Button onClick={() => setIsCreating(true)} className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700">
                             <Plus className="h-4 w-4 mr-2" />
                             Create First Cluster
                           </Button>
@@ -446,28 +354,11 @@ const TopicClusters = () => {
               <TabsContent value="analysis" className="space-y-6">
                 <AnimatePresence mode="wait">
                   {selectedKeyword ? (
-                    <motion.div
-                      key="analysis-panel"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <SerpAnalysisPanel
-                        keyword={selectedKeyword}
-                        serpData={serpData}
-                        isLoading={isAnalyzing}
-                        onStoreSelections={handleStoreForContentBuilder}
-                      />
+                    <motion.div key="analysis-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }}>
+                      <SerpAnalysisPanel keyword={selectedKeyword} serpData={serpData} isLoading={isAnalyzing} onStoreSelections={handleStoreForContentBuilder} />
                     </motion.div>
                   ) : (
-                    <motion.div
-                      key="empty-state"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="text-center py-16"
-                    >
+                    <motion.div key="empty-state" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-16">
                       <div className="space-y-4">
                         <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center">
                           <BarChart3 className="h-8 w-8 text-blue-400" />
@@ -483,28 +374,19 @@ const TopicClusters = () => {
               </TabsContent>
 
               <TabsContent value="create" className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                   <Card className="bg-white/5 backdrop-blur-md border-white/10 p-8 text-center">
                     <div className="space-y-6">
                       <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-500/20 to-teal-500/20 rounded-full flex items-center justify-center">
                         <Lightbulb className="h-8 w-8 text-green-400" />
                       </div>
-                      
                       <div className="space-y-2">
                         <h3 className="text-2xl font-bold text-white">Ready to Create Content?</h3>
                         <p className="text-gray-400 max-w-2xl mx-auto">
                           Use your SERP analysis to create comprehensive content that ranks higher
                         </p>
                       </div>
-
-                      <Button
-                        onClick={() => window.location.href = '/ai-chat'}
-                        className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 h-12 px-8"
-                      >
+                      <Button onClick={() => window.location.href = '/ai-chat'} className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 h-12 px-8">
                         <ArrowRight className="h-4 w-4 mr-2" />
                         Go to Content Builder
                       </Button>
@@ -517,15 +399,14 @@ const TopicClusters = () => {
         </motion.div>
       </main>
 
-      {/* Modals */}
       <CreateClusterModal
         isOpen={isCreating}
         onClose={() => setIsCreating(false)}
-        onSuccess={handleCreateClusterSuccess}
+        onCreate={handleCreateCluster}
       />
 
       <ClusterDetailsModal
-        clusterId={selectedClusterId}
+        cluster={clusters.find(c => c.id === selectedClusterId) || null}
         isOpen={isDetailsOpen}
         onClose={() => {
           setIsDetailsOpen(false);
