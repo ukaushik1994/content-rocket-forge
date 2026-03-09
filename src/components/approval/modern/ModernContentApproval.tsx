@@ -376,13 +376,36 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Hero Section */}
-      <ContentApprovalHero
-        contentStats={contentStats}
-        onAnalyzeAll={handleAnalyzeAll}
-        onQuickFilter={setStatusFilter}
+      {/* Compact Header */}
+      <CompactPageHeader
+        icon={FileCheck}
+        title="Content Approval"
+        subtitle="AI-powered content review & approval workflows"
+        stats={[
+          { icon: FileText, label: 'Total', value: contentStats.all },
+          { icon: Clock, label: 'Pending', value: contentStats.pending_review },
+          { icon: CheckCircle2, label: 'Approved', value: contentStats.approved },
+        ]}
+        actions={
+          <Button
+            onClick={handleAnalyzeAll}
+            disabled={isAnalyzingAll || contentStats.all === 0}
+            size="sm"
+          >
+            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+            {isAnalyzingAll ? 'Analyzing...' : 'Analyze All'}
+          </Button>
+        }
+        quickFilters={[
+          { key: 'all', label: 'All', count: contentStats.all, icon: FileText },
+          { key: 'draft', label: 'Draft', count: contentStats.draft },
+          { key: 'pending_review', label: 'Pending', count: contentStats.pending_review, icon: Clock },
+          { key: 'needs_changes', label: 'Changes', count: contentStats.needs_changes, icon: AlertCircle },
+          { key: 'approved', label: 'Approved', count: contentStats.approved, icon: CheckCircle2 },
+          { key: 'rejected', label: 'Rejected', count: contentStats.rejected, icon: XCircle },
+        ]}
         activeFilter={statusFilter}
-        isAnalyzing={isAnalyzingAll}
+        onFilterChange={setStatusFilter}
       />
 
       {/* Content Management Section */}
