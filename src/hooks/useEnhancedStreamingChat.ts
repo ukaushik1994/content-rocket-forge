@@ -59,30 +59,37 @@ export const useEnhancedStreamingChat = (): ReturnType<typeof useStreamingChatDB
     if (!user) return;
 
     try {
-      await supabase
+      const { data: existing } = await supabase
         .from('ai_context_state')
-        .upsert({
-          user_id: user.id,
-          context: contextData,
-          workflow_state: contextState,
-          updated_at: new Date().toISOString()
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('ai_context_state')
+          .update({
+            context: contextData,
+            workflow_state: contextState,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+      } else {
+        await supabase
+          .from('ai_context_state')
+          .insert({
+            user_id: user.id,
+            context: contextData,
+            workflow_state: contextState,
+            updated_at: new Date().toISOString()
+          });
+      }
 
       setContextState(prev => ({ ...prev, ...contextData }));
-      
-      toast({
-        title: "Context Saved",
-        description: "Your conversation context has been saved.",
-      });
     } catch (error) {
-      console.error('Error saving context state:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save context state.",
-        variant: "destructive"
-      });
+      // Silently handle - context persistence is best-effort
     }
-  }, [user, contextState, toast]);
+  }, [user, contextState]);
 
   const loadContextState = useCallback(async (): Promise<Record<string, any>> => {
     if (!user) return {};
@@ -109,18 +116,35 @@ export const useEnhancedStreamingChat = (): ReturnType<typeof useStreamingChatDB
     if (!user) return;
 
     try {
-      await supabase
+      const { data: existing } = await supabase
         .from('ai_context_state')
-        .upsert({
-          user_id: user.id,
-          context: contextState,
-          workflow_state: workflowData,
-          updated_at: new Date().toISOString()
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('ai_context_state')
+          .update({
+            context: contextState,
+            workflow_state: workflowData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+      } else {
+        await supabase
+          .from('ai_context_state')
+          .insert({
+            user_id: user.id,
+            context: contextState,
+            workflow_state: workflowData,
+            updated_at: new Date().toISOString()
+          });
+      }
 
       setContextState(prev => ({ ...prev, workflowState: workflowData }));
     } catch (error) {
-      console.error('Error updating workflow state:', error);
+      // Silently handle - context persistence is best-effort
     }
   }, [user, contextState]);
 
