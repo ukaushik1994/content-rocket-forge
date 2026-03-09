@@ -4,12 +4,15 @@ import { KeywordsHero } from '@/components/keywords/KeywordsHero';
 import { KeywordsFilters } from '@/components/keywords/KeywordsFilters';
 import { KeywordCard } from '@/components/keywords/KeywordCard';
 import { KeywordListItem } from '@/components/keywords/KeywordListItem';
+import { AddKeywordDialog } from '@/components/keywords/AddKeywordDialog';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Database } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, Database, Plus, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('usage_count');
