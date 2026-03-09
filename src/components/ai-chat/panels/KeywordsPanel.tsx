@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PanelShell } from './PanelShell';
-import { KeywordsHero } from '@/components/keywords/KeywordsHero';
+import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
+import { Database, TrendingUp, FileText, AlertTriangle } from 'lucide-react';
 import { KeywordsFilters } from '@/components/keywords/KeywordsFilters';
 import { KeywordCard } from '@/components/keywords/KeywordCard';
 import { KeywordListItem } from '@/components/keywords/KeywordListItem';
