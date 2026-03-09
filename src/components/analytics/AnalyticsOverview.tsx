@@ -308,7 +308,7 @@ export const AnalyticsOverview = () => {
 
       {/* Additional Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Bounce Rate</p>
             <p className="text-2xl font-bold">{(avgBounceRate * 100).toFixed(1)}%</p>
