@@ -298,6 +298,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onAttachFile={handleAttachmentClick}
             onContentWizard={handleContentWizardClick}
             onResearchIntelligence={onOpenResearch}
+            onAnalyst={onOpenAnalyst}
             disabled={isLoading}
           />
 
