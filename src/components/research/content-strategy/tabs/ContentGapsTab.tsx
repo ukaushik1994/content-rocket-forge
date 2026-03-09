@@ -186,21 +186,24 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                 ))}
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setSelectedGaps(gapAnalysis.gaps)}
-                  variant="outline"
-                  size="sm"
-                >
-                  Select All
-                </Button>
-                <Button
-                  onClick={() => setSelectedGaps([])}
-                  variant="outline" 
-                  size="sm"
-                >
-                  Clear Selection
-                </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={() => setSelectedGaps(gapAnalysis.gaps)} variant="outline" size="sm">Select All</Button>
+                <Button onClick={() => setSelectedGaps([])} variant="outline" size="sm">Clear Selection</Button>
+
+                {selectedGaps.length > 0 && clusters && clusters.length > 0 && (
+                  <Select value={selectedClusterId} onValueChange={setSelectedClusterId}>
+                    <SelectTrigger className="w-[180px] h-8 text-xs">
+                      <SelectValue placeholder="Link to cluster…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No cluster</SelectItem>
+                      {clusters.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.cluster_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
                 {selectedGaps.length > 0 && (
                   <Button
                     onClick={handleSaveSelectedGaps}

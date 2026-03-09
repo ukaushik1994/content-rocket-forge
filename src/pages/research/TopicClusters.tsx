@@ -43,17 +43,25 @@ const TopicClusters = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const { data: dbRows, isLoading, refetch, create, remove } = useClusters();
+  const { data: perfData } = useTopicPerformance();
   const clusters = (dbRows ?? []).map(dbRowToTopicCluster);
 
-  // Derive metrics from clusters
-  const metrics: ClusterPerformanceMetrics = {
-    totalClusters: clusters.length,
-    totalTraffic: '0',
-    avgPosition: '0',
-    activeArticles: clusters.reduce((s, c) => s + c.articles, 0).toString(),
-    monthlyGrowth: 0,
-    topPerformingCluster: clusters[0]?.name || 'None',
-  };
+  // Derive metrics from clusters + real performance data
+  const metrics: ClusterPerformanceMetrics = (() => {
+    const totalClicks = perfData?.reduce((s, p) => s + (p.clicks ?? 0), 0) ?? 0;
+    const positions = perfData?.filter(p => p.average_position != null) ?? [];
+    const avgPos = positions.length > 0
+      ? positions.reduce((s, p) => s + (p.average_position ?? 0), 0) / positions.length
+      : 0;
+    return {
+      totalClusters: clusters.length,
+      totalTraffic: totalClicks >= 1000 ? `${(totalClicks / 1000).toFixed(1)}K` : totalClicks.toString(),
+      avgPosition: avgPos > 0 ? avgPos.toFixed(1) : '—',
+      activeArticles: clusters.reduce((s, c) => s + c.articles, 0).toString(),
+      monthlyGrowth: 0,
+      topPerformingCluster: clusters[0]?.name || 'None',
+    };
+  })();
 
   const handleKeywordAnalysis = async (keyword: string) => {
     if (!keyword.trim()) return;

@@ -109,13 +109,30 @@ const ClustersTab: React.FC = () => {
 
 // ── Content Gaps Tab ──
 const GapsTab: React.FC = () => {
-  const { data: gaps, isLoading } = useContentGaps();
+  const { data: clusters } = useClusters();
+  const [filterCluster, setFilterCluster] = useState<string>('');
+  const { data: gaps, isLoading } = useContentGaps(filterCluster || undefined);
 
   if (isLoading) return <LoadingState />;
 
   return (
     <div className="space-y-3 mt-3">
-      <p className="text-xs text-muted-foreground">{gaps?.length ?? 0} gaps identified</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">{gaps?.length ?? 0} gaps</p>
+        {clusters && clusters.length > 0 && (
+          <Select value={filterCluster} onValueChange={setFilterCluster}>
+            <SelectTrigger className="w-[140px] h-7 text-[10px]">
+              <SelectValue placeholder="All clusters" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All clusters</SelectItem>
+              {clusters.map(c => (
+                <SelectItem key={c.id} value={c.id} className="text-xs">{c.cluster_name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
 
       {gaps?.map(g => (
         <Card key={g.id} className="p-3">
