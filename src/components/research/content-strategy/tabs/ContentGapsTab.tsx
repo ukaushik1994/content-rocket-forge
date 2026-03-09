@@ -130,6 +130,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
             console.error('Recommendation generation failed:', error);
           } else {
             toast.success('Strategy recommendations generated');
+            queryClient.invalidateQueries({ queryKey: ['strategy_recommendations'] });
           }
         });
       }

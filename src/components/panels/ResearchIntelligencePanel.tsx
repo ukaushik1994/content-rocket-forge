@@ -111,10 +111,16 @@ const ClustersTab: React.FC = () => {
 };
 
 // ── Content Gaps Tab ──
+const GAP_STATUSES = ['identified', 'in_progress', 'resolved'] as const;
+const nextStatus = (current: string) => {
+  const idx = GAP_STATUSES.indexOf(current as any);
+  return GAP_STATUSES[(idx + 1) % GAP_STATUSES.length];
+};
+
 const GapsTab: React.FC = () => {
   const { data: clusters } = useClusters();
   const [filterCluster, setFilterCluster] = useState<string>('');
-  const { data: gaps, isLoading } = useContentGaps(filterCluster || undefined);
+  const { data: gaps, isLoading, update, remove: removeGap } = useContentGaps(filterCluster || undefined);
 
   if (isLoading) return <LoadingState />;
 
@@ -138,7 +144,7 @@ const GapsTab: React.FC = () => {
       </div>
 
       {gaps?.map(g => (
-        <Card key={g.id} className="p-3">
+        <Card key={g.id} className="p-3 group hover:border-primary/20 transition-colors">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <h4 className="text-sm font-medium text-foreground">{g.title}</h4>
@@ -159,6 +165,29 @@ const GapsTab: React.FC = () => {
                   <span className="text-[10px] text-muted-foreground">{g.search_volume.toLocaleString()} vol</span>
                 )}
               </div>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                size="sm"
+                variant="ghost"
+                className={cn(
+                  'h-5 px-1.5 text-[10px] font-medium rounded-full',
+                  (g.status ?? 'identified') === 'resolved' ? 'text-green-500' :
+                  (g.status ?? 'identified') === 'in_progress' ? 'text-yellow-500' :
+                  'text-muted-foreground'
+                )}
+                onClick={() => update({ id: g.id, updates: { status: nextStatus(g.status ?? 'identified') } })}
+              >
+                {g.status ?? 'identified'}
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                onClick={() => removeGap(g.id)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
             </div>
           </div>
         </Card>

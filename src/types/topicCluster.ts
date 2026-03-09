@@ -20,15 +20,18 @@ export interface TopicCluster {
 }
 
 /** Maps a DB topic_clusters row to the legacy TopicCluster shape used by UI cards */
-export function dbRowToTopicCluster(row: {
-  id: string;
-  cluster_name: string;
-  description?: string | null;
-  importance_score?: number | null;
-  topic_count?: number | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-}): TopicCluster {
+export function dbRowToTopicCluster(
+  row: {
+    id: string;
+    cluster_name: string;
+    description?: string | null;
+    importance_score?: number | null;
+    topic_count?: number | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  },
+  perf?: { totalTraffic?: number; avgPosition?: number }
+): TopicCluster {
   return {
     id: row.id,
     name: row.cluster_name,
@@ -37,8 +40,8 @@ export function dbRowToTopicCluster(row: {
     completion: row.importance_score ?? 0,
     keywords: [],
     articles: row.topic_count ?? 0,
-    totalTraffic: 0,
-    avgPosition: 0,
+    totalTraffic: perf?.totalTraffic ?? 0,
+    avgPosition: perf?.avgPosition ?? 0,
     lastUpdated: row.updated_at ?? row.created_at ?? new Date().toISOString(),
     color: '#6366f1',
     createdAt: row.created_at ?? new Date().toISOString(),
