@@ -147,7 +147,8 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
       whileTap={{ scale: 0.96 }}
       className="h-full"
     >
-      <Card className="glass-card hover:neon-border transition-all duration-500 overflow-hidden group h-full card-3d relative
+      <Card className={`glass-card hover:neon-border transition-all duration-500 overflow-hidden group h-full card-3d relative
+        ${selected ? 'ring-2 ring-primary/60 bg-primary/5' : ''}
         hover:shadow-[0_20px_40px_rgba(155,135,245,0.4),0_0_0_1px_rgba(255,255,255,0.1)_inset]
         before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:to-transparent before:opacity-0 
         hover:before:opacity-100 before:transition-opacity before:duration-500 before:pointer-events-none">
