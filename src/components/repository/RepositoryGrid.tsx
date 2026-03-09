@@ -17,7 +17,7 @@ export const RepositoryGrid: React.FC<RepositoryGridProps> = ({
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.05
       }
     }
   };
