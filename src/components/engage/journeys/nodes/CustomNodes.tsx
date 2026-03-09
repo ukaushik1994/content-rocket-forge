@@ -106,7 +106,7 @@ export const AddTagNode = memo(({ data, selected }: NodeProps) => (
 
 // E7: Dedicated Remove Tag node
 export const RemoveTagNode = memo(({ data, selected }: NodeProps) => (
-  <NodeWrapper color="bg-rose-500" selected={selected}>
+  <NodeWrapper color="bg-rose-500" selected={selected} onDelete={(data as any)?.onDelete}>
     <Handle type="target" position={Position.Top} className="!bg-rose-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <Handle type="source" position={Position.Bottom} className="!bg-rose-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <NodeLabel icon={Tags} label={getLabel(data, 'Remove Tag')} summary={(data as any)?.config?.tag || 'No tag'} iconBg="bg-rose-500" execCount={(data as any)?.execCount} />
