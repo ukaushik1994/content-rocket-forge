@@ -223,7 +223,7 @@ const KeywordsPage = () => {
         </div>
       </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 
