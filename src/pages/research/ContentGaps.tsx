@@ -1,5 +1,5 @@
 import React from 'react';
-import Navbar from '@/components/layout/Navbar';
+
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Sparkles, FileSearch, Zap, BarChart3, TrendingUp } from 'lucide-react';
