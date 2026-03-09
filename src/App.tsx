@@ -140,8 +140,8 @@ const App = () => (
                   <Route path="/content-builder" element={<Navigate to="/ai-chat" replace />} />
                   <Route path="/solutions" element={<Navigate to="/offerings" replace />} />
 
-                  {/* AI Chat - keeps its own layout with built-in sidebar */}
-                  <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+                  {/* AI Chat - uses AppLayout for persistent sidebar */}
+                  <Route path="/ai-chat" element={<ProtectedRoute><AppLayout><AIChat /></AppLayout></ProtectedRoute>} />
                   <Route path="/ai-streaming-chat" element={<ProtectedRoute><AIStreamingChatPage /></ProtectedRoute>} />
                   <Route path="/shared-conversation/:conversationId" element={<SharedConversation />} />
 
