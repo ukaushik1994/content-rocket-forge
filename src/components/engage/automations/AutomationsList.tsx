@@ -97,6 +97,8 @@ export const AutomationsList = () => {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused'>('all');
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   // --- Data Queries ---
   const { data: automations = [], isLoading } = useQuery({
