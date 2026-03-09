@@ -273,12 +273,7 @@ const Analytics = () => {
   }
 
   return (
-    <motion.div 
-      className="min-h-screen w-full bg-background relative overflow-hidden"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <PageContainer className="w-full relative overflow-hidden">
       <AnimatedBackground intensity="medium" />
       
       
