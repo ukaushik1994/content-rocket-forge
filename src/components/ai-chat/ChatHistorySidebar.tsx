@@ -419,7 +419,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             </CollapsibleSection>
 
             {/* ── TOOLS (collapsible) ── */}
-            <CollapsibleSection label="Tools" defaultOpen={false} showDivider>
+            <CollapsibleSection label="Tools" icon={<Wrench className="h-4 w-4" />} defaultOpen={false} showDivider>
               {toolsItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
