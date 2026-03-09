@@ -17,12 +17,13 @@ import {
   Loader2,
   Pin,
   Archive,
-  FileText,
-  Puzzle,
+  FolderOpen,
+  Package,
   CheckCircle,
-  PenLine,
+  Wand2,
   Megaphone,
   BarChart3,
+  Key,
   Mail,
   Share2,
   Users,
@@ -82,7 +83,7 @@ const SidebarNavItem: React.FC<{
     onClick={onClick}
     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors group"
   >
-    <span className="flex-shrink-0 text-muted-foreground/60 group-hover:text-foreground/80 transition-colors">
+    <span className="flex-shrink-0 text-muted-foreground group-hover:text-foreground transition-colors">
       {icon}
     </span>
     <span className="flex-1 text-left truncate">{label}</span>
@@ -118,20 +119,22 @@ const CollapsedIconButton: React.FC<{
 // Collapsible section
 const CollapsibleSection: React.FC<{
   label: string;
+  icon?: React.ReactNode;
   defaultOpen?: boolean;
   children: React.ReactNode;
-}> = ({ label, defaultOpen = true, children }) => {
+}> = ({ label, icon, defaultOpen = true, children }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger className="w-full flex items-center gap-1.5 px-3 pt-4 pb-1.5 group cursor-pointer">
         {isOpen ? (
-          <ChevronDown className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
         ) : (
-          <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors" />
+          <ChevronRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
         )}
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-medium group-hover:text-muted-foreground/60 transition-colors">
+        {icon && <span className="text-muted-foreground/60 group-hover:text-muted-foreground transition-colors">{icon}</span>}
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50 font-semibold group-hover:text-muted-foreground transition-colors">
           {label}
         </span>
       </CollapsibleTrigger>
@@ -221,15 +224,15 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
   // Navigation items for collapsed view
   const libraryItems = [
-    { icon: <FileText className="h-4 w-4" />, label: 'Repository', action: () => handlePanel('repository') },
-    { icon: <Puzzle className="h-4 w-4" />, label: 'Offerings', action: () => handlePanel('offerings') },
+    { icon: <FolderOpen className="h-4 w-4" />, label: 'Repository', action: () => handlePanel('repository') },
+    { icon: <Package className="h-4 w-4" />, label: 'Offerings', action: () => handlePanel('offerings') },
     { icon: <CheckCircle className="h-4 w-4" />, label: 'Approvals', action: () => handlePanel('approvals') },
   ];
 
   const toolsItems = [
-    { icon: <PenLine className="h-4 w-4" />, label: 'Content Wizard', action: () => handlePanel('content_wizard') },
+    { icon: <Wand2 className="h-4 w-4" />, label: 'Content Wizard', action: () => handlePanel('content_wizard') },
     { icon: <Megaphone className="h-4 w-4" />, label: 'Campaigns', action: () => handlePanel('campaigns') },
-    { icon: <Search className="h-4 w-4" />, label: 'Keywords', action: () => handlePanel('keywords') },
+    { icon: <Key className="h-4 w-4" />, label: 'Keywords', action: () => handlePanel('keywords') },
     { icon: <BarChart3 className="h-4 w-4" />, label: 'Analytics', action: () => handlePanel('analytics') },
   ];
 
@@ -386,21 +389,21 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         <ScrollArea className="flex-1">
           <div className="px-2">
             {/* ── LIBRARY (collapsible) ── */}
-            <CollapsibleSection label="Library" defaultOpen={false}>
+            <CollapsibleSection label="Library" icon={<BookOpen className="h-3.5 w-3.5" />} defaultOpen={true}>
               {libraryItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── TOOLS (collapsible) ── */}
-            <CollapsibleSection label="Tools" defaultOpen={false}>
+            <CollapsibleSection label="Tools" icon={<Wrench className="h-3.5 w-3.5" />} defaultOpen={true}>
               {toolsItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── ENGAGE (collapsible) ── */}
-            <CollapsibleSection label="Engage" defaultOpen={false}>
+            <CollapsibleSection label="Engage" icon={<MessageCircle className="h-3.5 w-3.5" />} defaultOpen={true}>
               {engageItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}

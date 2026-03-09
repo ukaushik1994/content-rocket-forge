@@ -1,29 +1,35 @@
 
 
-# Make Library, Tools, Engage Items Visible with Icons
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Problem
-The Library, Tools, and Engage sections are set to `defaultOpen={false}`, so they appear collapsed and the user never sees the icon+text items. The reference image shows these items displayed openly in a flat list with clear icons — like "Projects" with a folder icon, "Artifacts" with a grid icon, "Code" with a `</>` icon.
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-## Changes — `src/components/ai-chat/ChatHistorySidebar.tsx`
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-### 1. Make sections open by default
-Change `defaultOpen={false}` to `defaultOpen={true}` for Library, Tools, and Engage sections (lines 389, 396, 403).
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-### 2. Add section header icons
-Update `CollapsibleSection` component to accept an optional `icon` prop, and display it next to the label — matching the reference style where section groups have a visual identifier.
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### 3. Refine item icon styling
-Make the icons slightly more prominent (remove the `/60` opacity reduction on the icon span in `SidebarNavItem`) so they match the reference image's clear, visible icon style.
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### 4. Update specific icons to better match reference
-- Repository → `FolderOpen` (folder icon like "Projects" in reference)
-- Offerings → `Package` (product/package icon)  
-- Content Wizard → `Wand2` (creative tool)
-- Keywords → `Key` (more distinct than reusing Search)
-
-### Files Changed
-| File | Change |
-|------|--------|
-| `src/components/ai-chat/ChatHistorySidebar.tsx` | Open sections by default, add section icons, refine icon visibility, update specific icons |
-
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
