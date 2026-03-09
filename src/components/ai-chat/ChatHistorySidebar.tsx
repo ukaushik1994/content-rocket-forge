@@ -404,28 +404,28 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         <ScrollArea className="flex-1">
           <div className="px-2">
             {/* ── LIBRARY (collapsible) ── */}
-            <CollapsibleSection label="Library" icon={<BookOpen className="h-3.5 w-3.5" />} defaultOpen={true}>
+            <CollapsibleSection label="Library" defaultOpen={true}>
               {libraryItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── TOOLS (collapsible) ── */}
-            <CollapsibleSection label="Tools" icon={<Wrench className="h-3.5 w-3.5" />} defaultOpen={true}>
+            <CollapsibleSection label="Tools" defaultOpen={true} showDivider>
               {toolsItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── ENGAGE (collapsible) ── */}
-            <CollapsibleSection label="Engage" icon={<MessageCircle className="h-3.5 w-3.5" />} defaultOpen={true}>
+            <CollapsibleSection label="Engage" defaultOpen={true} showDivider>
               {engageItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── CHATS ── */}
-            <CollapsibleSection label="Chats">
+            <CollapsibleSection label="Chats" showDivider>
               {/* Conversations List */}
               <AnimatePresence mode="wait">
                 {conversations && conversations.length > 0 ? (
