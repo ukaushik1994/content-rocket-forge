@@ -1082,18 +1082,37 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       {/* Generate Button */}
       {!wizardState.generatedContent ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Button onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-2">
             {isGeneratingContent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {isGeneratingContent ? 'Generating...' : 'Generate Content'}
           </Button>
           {isGeneratingContent && (
-            <Button variant="outline" size="sm" onClick={abortGeneration} className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10">
-              <X className="w-3.5 h-3.5" /> Cancel Generation
-            </Button>
-          )}
-          {generationStage && (
-            <p className="text-[10px] text-muted-foreground text-center animate-pulse">{generationStage}</p>
+            <>
+              <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-foreground">{generationStage || 'Preparing...'}</span>
+                  <span className="text-xs text-muted-foreground">{generationProgress}%</span>
+                </div>
+                <Progress value={generationProgress} className="h-1.5" />
+                <div className="flex gap-1.5 mt-1">
+                  {['Building prompt', 'Generating content', 'Analyzing quality', 'Finalizing'].map((phase, i) => {
+                    const thresholds = [0, 25, 75, 90];
+                    const isActive = generationProgress >= thresholds[i] && (i === 3 || generationProgress < thresholds[i + 1]);
+                    const isDone = i < 3 && generationProgress >= thresholds[i + 1];
+                    return (
+                      <div key={phase} className={cn(
+                        "flex-1 h-1 rounded-full transition-colors",
+                        isDone ? "bg-primary" : isActive ? "bg-primary/50 animate-pulse" : "bg-muted"
+                      )} />
+                    );
+                  })}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={abortGeneration} className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10">
+                <X className="w-3.5 h-3.5" /> Cancel Generation
+              </Button>
+            </>
           )}
         </div>
       ) : (
