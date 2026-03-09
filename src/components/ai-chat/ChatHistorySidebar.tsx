@@ -425,6 +425,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
               ))}
             </CollapsibleSection>
 
+            <div className="mb-4" />
+
             {/* ── CHATS ── */}
             <CollapsibleSection label="Chats" showDivider>
               {/* Conversations List */}
