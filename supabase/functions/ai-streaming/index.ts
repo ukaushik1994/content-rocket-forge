@@ -506,7 +506,8 @@ ${contextInfo}
 - Use markdown formatting for readability (headers, bold, lists).
 - Be conversational but action-oriented.
 - For read-only queries (show me, list, how many, analyze), provide data insights directly.
-- Keep responses focused and avoid unnecessary preamble.`;
+- Keep responses focused and avoid unnecessary preamble.
+${analystMode}`;
 }
 
 serve(async (req) => {
