@@ -228,7 +228,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const handleCloseSidebar = () => {
     setShowVisualizationSidebar(false);
     setSidebarInteracted(false);
-    setUserClosedSidebar(true); // Remember user explicitly closed
+    setUserClosedSidebar(true);
+    setAnalystActive(false);
   };
   
   // Handle manual open (resets close intent)
