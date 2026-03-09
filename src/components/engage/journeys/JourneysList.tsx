@@ -393,18 +393,7 @@ export const JourneysList = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Stats + E1 Analytics */}
-      {journeys.length > 0 && (
-        <EngageStatGrid
-          stats={[
-            { label: 'Active', count: stats.active, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Play },
-            { label: 'Paused', count: stats.paused, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: Pause },
-            { label: 'Enrolled', count: totalEnrolled, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: Users },
-            { label: 'Completion', count: `${avgCompletion}%`, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: TrendingUp },
-          ]}
-          columns={4}
-        />
-      )}
+      {/* Stats removed — already in hero */}
 
       {/* List */}
       {isLoading ? (
