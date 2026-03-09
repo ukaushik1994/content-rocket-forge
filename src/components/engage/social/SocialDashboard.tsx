@@ -46,6 +46,7 @@ const commonHashtags = ['#marketing', '#socialmedia', '#growth', '#brand', '#con
 
 const statusFilters = ['all', 'draft', 'scheduled', 'posted', 'failed'] as const;
 
+import { engageStagger } from '../shared/engageAnimations';
 const stagger = engageStagger;
 
 export const SocialDashboard = () => {
