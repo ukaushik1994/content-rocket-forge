@@ -1146,8 +1146,7 @@ export const AutomationsList = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
-              >
-                <div className="flex items-center justify-between">
+          >
             <GlassCard className="px-4 py-3 flex items-center gap-3 border-primary/30 shadow-2xl shadow-black/40">
               <span className="text-xs font-medium text-foreground">{selectedIds.size} selected</span>
               <div className="h-4 w-px bg-white/[0.1]" />
