@@ -9,6 +9,7 @@ import { AssetGenerationModal } from '@/components/campaigns/assets/AssetGenerat
 import { ContentGenerationPanel } from '@/components/campaigns/ContentGenerationPanel';
 import { ContentGenerationProvider, useContentGeneration } from '@/contexts/ContentGenerationContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PageContainer } from '@/components/ui/PageContainer';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignStrategies } from '@/hooks/useCampaignStrategies';
