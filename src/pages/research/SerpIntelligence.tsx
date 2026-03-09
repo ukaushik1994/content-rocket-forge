@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-port { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
+import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';

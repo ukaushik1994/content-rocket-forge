@@ -1,5 +1,5 @@
 import React from 'react';
-mponent } from '@/components/notifications/NotificationDemo';
+import { NotificationDemo as NotificationDemoComponent } from '@/components/notifications/NotificationDemo';
 import { Helmet } from 'react-helmet-async';
 
 export default function NotificationDemo() {

@@ -1,5 +1,6 @@
 import React from 'react';
-port { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
+import { motion } from 'framer-motion';
 import { Sparkles, CalendarDays, Plus, BarChart3, Zap } from 'lucide-react';
 import { ContentStrategyProvider, useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { EditorialCalendar } from '@/components/research/content-strategy/calendar/EditorialCalendar';

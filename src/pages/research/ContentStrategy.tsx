@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-port { ContentStrategyHero } from '@/components/research/content-strategy/ContentStrategyHero';
+import { Helmet } from 'react-helmet-async';
+import { ContentStrategyHero } from '@/components/research/content-strategy/ContentStrategyHero';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';

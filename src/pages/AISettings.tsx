@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-s/ai-chat/OpenRouterSettings';
+import { OpenRouterSettings } from '@/components/ai-chat/OpenRouterSettings';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Brain, Zap, Shield } from 'lucide-react';

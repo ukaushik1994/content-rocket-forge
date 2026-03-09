@@ -1,5 +1,5 @@
 import { useState } from 'react';
-ess';
+import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlossaryBuilderProvider } from '@/contexts/glossary-builder/GlossaryBuilderContext';
