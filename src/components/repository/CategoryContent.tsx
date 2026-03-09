@@ -13,6 +13,8 @@ import { LoadingState } from './LoadingState';
 interface CategoryContentProps {
   category: RepositoryCategory;
   onOpenDetailView: (content: ContentItemType) => void;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 const CONTENT_TYPE_CHIPS = [
