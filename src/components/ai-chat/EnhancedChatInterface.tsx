@@ -376,16 +376,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const { isMobile, isTablet, isDesktop } = useResponsiveBreakpoint();
 
   return <div className={cn("h-full flex flex-col", className)}>
-      {/* Chat History Sidebar */}
-      <AnimatePresence>
-      {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} onOpenPanel={(panelType) => {
-              if (panelType === 'content_wizard') {
-                handleSetVisualization({ type: 'content_wizard', keyword: '', content_type: 'blog' });
-              } else {
-                handleSetVisualization({ type: panelType });
-              }
-            }} />}
-      </AnimatePresence>
 
       {/* Visualization Sidebar (Right) - positioned within chat area */}
       <VisualizationSidebar
