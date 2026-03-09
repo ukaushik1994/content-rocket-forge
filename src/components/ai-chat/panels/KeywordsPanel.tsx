@@ -4,12 +4,15 @@ import { KeywordsHero } from '@/components/keywords/KeywordsHero';
 import { KeywordsFilters } from '@/components/keywords/KeywordsFilters';
 import { KeywordCard } from '@/components/keywords/KeywordCard';
 import { KeywordListItem } from '@/components/keywords/KeywordListItem';
+import { AddKeywordDialog } from '@/components/keywords/AddKeywordDialog';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Database } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, Database, Plus, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('usage_count');
@@ -59,9 +62,23 @@ export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> =
     return result.sort((a: any, b: any) => (b[sortBy] || 0) - (a[sortBy] || 0));
   }, [keywords, searchQuery, statusFilter, sortBy]);
 
+  const hasNoVolumeData = keywords.length > 0 && keywords.every(k => !k.search_volume);
+
   return (
     <PanelShell isOpen={isOpen} onClose={onClose} title="Keywords" icon={<Search className="h-4 w-4" />}>
-      <KeywordsHero keywordStats={keywordStats} onQuickFilter={setStatusFilter} activeFilter={statusFilter} />
+      <div className="flex items-center justify-between mb-2">
+        <KeywordsHero keywordStats={keywordStats} onQuickFilter={setStatusFilter} activeFilter={statusFilter} />
+        <Button size="sm" onClick={() => setShowAddDialog(true)} className="shrink-0">
+          <Plus className="h-4 w-4 mr-1" /> Add
+        </Button>
+      </div>
+
+      {hasNoVolumeData && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-muted/30 text-xs text-muted-foreground mt-2">
+          <Info className="h-4 w-4 shrink-0" />
+          <span>Connect a SERP API in Settings for live search volume &amp; difficulty data.</span>
+        </div>
+      )}
       
       <div className="mt-4">
         <KeywordsFilters
@@ -95,6 +112,7 @@ export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> =
           </div>
         )}
       </div>
+      <AddKeywordDialog open={showAddDialog} onClose={() => setShowAddDialog(false)} onAdded={loadKeywords} />
     </PanelShell>
   );
 };
