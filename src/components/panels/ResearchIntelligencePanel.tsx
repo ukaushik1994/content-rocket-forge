@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Brain, Target, Lightbulb, Plus, Trash2, Check, X, Loader2 } from 'lucide-react';
+import { Brain, Target, Lightbulb, Plus, Trash2, Check, X, Loader2, RefreshCw } from 'lucide-react';
 import { useClusters, useContentGaps, useRecommendations } from '@/hooks/useResearchIntelligence';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ResearchIntelligencePanelProps {
   isOpen: boolean;
