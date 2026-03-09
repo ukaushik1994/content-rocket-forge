@@ -29,9 +29,7 @@ export const EngageStatGrid: React.FC<EngageStatGridProps> = ({ stats, columns }
       {stats.map((s) => (
         <motion.div key={s.label} variants={engageStagger.item}>
           <div
-            className={`rounded-2xl border border-white/[0.06] bg-gradient-to-br ${s.color} backdrop-blur-sm p-4
-              hover:border-white/[0.12] hover:scale-[1.02] hover:-translate-y-1
-              transition-all duration-300 group cursor-default`}
+            className={`glass-card glass-card-hover bg-gradient-to-br ${s.color} p-4 group cursor-default`}
           >
             <div className="flex items-center justify-between">
               <div>
