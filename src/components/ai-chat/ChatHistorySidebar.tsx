@@ -20,7 +20,7 @@ import {
   FolderOpen,
   Package,
   CheckCircle,
-  Wand2,
+  
   Megaphone,
   BarChart3,
   Key,
