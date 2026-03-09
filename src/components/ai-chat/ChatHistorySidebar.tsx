@@ -72,18 +72,30 @@ interface ChatHistorySidebarProps {
   className?: string;
 }
 
-// Sidebar nav item — flat, minimal style
+// Sidebar nav item — premium style with active indicator
 const SidebarNavItem: React.FC<{
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   badge?: string;
-}> = ({ icon, label, onClick, badge }) => (
+  isActive?: boolean;
+}> = ({ icon, label, onClick, badge, isActive }) => (
   <button
     onClick={onClick}
-    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors group"
+    className={cn(
+      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
+      isActive
+        ? "bg-accent/60 text-foreground"
+        : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+    )}
   >
-    <span className="flex-shrink-0 text-muted-foreground group-hover:text-foreground transition-colors">
+    {isActive && (
+      <div className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full bg-primary" />
+    )}
+    <span className={cn(
+      "flex-shrink-0 transition-colors duration-200",
+      isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+    )}>
       {icon}
     </span>
     <span className="flex-1 text-left truncate">{label}</span>
