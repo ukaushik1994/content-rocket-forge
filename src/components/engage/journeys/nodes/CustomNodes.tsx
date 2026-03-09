@@ -2,12 +2,24 @@ import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Mail, Clock, GitBranch, User, Globe, Flag, Zap, TagIcon, Tags } from 'lucide-react';
 
-const baseStyle = 'rounded-xl border border-border/50 bg-card/90 backdrop-blur-md shadow-lg min-w-[160px] transition-all duration-200 hover:shadow-xl hover:border-primary/30';
+const baseStyle = 'rounded-xl border border-border/50 bg-card/90 backdrop-blur-md shadow-lg min-w-[180px] transition-all duration-300 hover:shadow-xl hover:border-primary/30';
+
+const glowMap: Record<string, string> = {
+  'bg-purple-500': 'hover:shadow-purple-500/20',
+  'bg-blue-500': 'hover:shadow-blue-500/20',
+  'bg-amber-500': 'hover:shadow-amber-500/20',
+  'bg-emerald-500': 'hover:shadow-emerald-500/20',
+  'bg-indigo-500': 'hover:shadow-indigo-500/20',
+  'bg-teal-500': 'hover:shadow-teal-500/20',
+  'bg-rose-500': 'hover:shadow-rose-500/20',
+  'bg-pink-500': 'hover:shadow-pink-500/20',
+  'bg-gray-500': 'hover:shadow-gray-500/20',
+};
 
 const NodeWrapper = ({ children, color, selected }: { children: React.ReactNode; color: string; selected?: boolean }) => (
-  <div className={`${baseStyle} ${selected ? 'ring-2 ring-primary/50' : ''}`}>
+  <div className={`${baseStyle} ${glowMap[color] || ''} ${selected ? 'ring-2 ring-primary/50 shadow-xl' : ''}`}>
     <div className={`h-1.5 rounded-t-xl ${color}`} />
-    <div className="px-3 py-2.5">{children}</div>
+    <div className="px-3 py-3">{children}</div>
   </div>
 );
 

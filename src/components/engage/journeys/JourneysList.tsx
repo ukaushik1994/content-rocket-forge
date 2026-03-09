@@ -428,6 +428,7 @@ export const JourneysList = () => {
                 index={i}
                 onClick={() => navigate(`/engage/journeys/${j.id}`)}
                 selected={isSelected}
+                className={`border-l-[3px] ${j.status === 'active' ? 'border-l-emerald-500' : j.status === 'paused' ? 'border-l-amber-500' : 'border-l-muted-foreground/30'}`}
                 statusBadge={{
                   label: j.status,
                   className: sc.class,
