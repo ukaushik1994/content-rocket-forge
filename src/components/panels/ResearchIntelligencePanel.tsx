@@ -119,8 +119,8 @@ const nextStatus = (current: string) => {
 
 const GapsTab: React.FC = () => {
   const { data: clusters } = useClusters();
-  const [filterCluster, setFilterCluster] = useState<string>('');
-  const { data: gaps, isLoading, update, remove: removeGap } = useContentGaps(filterCluster || undefined);
+  const [filterCluster, setFilterCluster] = useState<string>('all');
+  const { data: gaps, isLoading, update, remove: removeGap } = useContentGaps(filterCluster === 'all' ? undefined : filterCluster);
 
   if (isLoading) return <LoadingState />;
 
