@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Puzzle, Book, FileText, Users, Sparkles, Zap, Target, TrendingUp, BarChart3, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Navbar from '@/components/layout/Navbar';
+
 
 const ContentTypeSelection = () => {
   const navigate = useNavigate();
