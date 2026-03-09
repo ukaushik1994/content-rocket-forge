@@ -19,10 +19,8 @@ const ContentStrategy = () => {
           <link rel="canonical" href={canonicalUrl} />
         </Helmet>
         
-        <Navbar />
         
-        
-        {/* Animatend - matching Repository design */}
+        {/* Animated Background - matching Repository design */}
         <AnimatedBackground intensity="medium" />
         
         <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">

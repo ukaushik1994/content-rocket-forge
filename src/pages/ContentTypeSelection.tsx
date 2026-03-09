@@ -109,9 +109,8 @@ const ContentTypeSelection = () => {
           ))}
         </div>
 
-        <Navbar />
         
-        <div className="relaw-full px-6 pt-24 pb-12">
+        <div className="relative z-10 w-full px-6 pt-24 pb-12">
           {/* Hero Section */}
           <motion.div 
             className="text-center mb-16 relative"

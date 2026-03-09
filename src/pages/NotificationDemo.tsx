@@ -10,9 +10,8 @@ export default function NotificationDemo() {
         <meta name="description" content="Try out the notification system with interactive demos" />
       </Helmet>
       
-      <Navbar />
       
-      <main className="contain px-4 pt-24 pb-8">
+      <main className="container mx-auto px-4 pt-24 pb-8">
         <NotificationDemoComponent />
       </main>
     </div>
