@@ -29,7 +29,7 @@ import { CreateClusterModal } from '@/components/research/topic-clusters/CreateC
 import { ClusterDetailsModal } from '@/components/research/topic-clusters/ClusterDetailsModal';
 import { SerpAnalysisPanel } from '@/components/research/topic-clusters/SerpAnalysisPanel';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
-import { useClusters } from '@/hooks/useResearchIntelligence';
+import { useClusters, useTopicPerformance } from '@/hooks/useResearchIntelligence';
 import { dbRowToTopicCluster, ClusterPerformanceMetrics } from '@/types/topicCluster';
 
 const TopicClusters = () => {
