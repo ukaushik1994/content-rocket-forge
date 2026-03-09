@@ -21,6 +21,12 @@ import {
   CheckCircle2,
   XCircle,
   RotateCcw,
+  FileCheck,
+  Clock,
+  FileText,
+  Sparkles,
+  Target,
+  AlertCircle,
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
