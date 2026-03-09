@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { 
   Search, 
   Plus, 
@@ -31,6 +32,9 @@ import {
   UserCircle,
   Settings,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  MessageSquarePlus,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -60,6 +64,7 @@ interface ChatHistorySidebarProps {
   onArchiveConversation?: (id: string) => void;
   onPinConversation?: (id: string) => void;
   onOpenPanel?: (panelType: string) => void;
+  isCollapsed?: boolean;
   className?: string;
 }
 
@@ -84,6 +89,27 @@ const SidebarNavItem: React.FC<{
       </Badge>
     )}
   </button>
+);
+
+// Collapsed icon button with tooltip
+const CollapsedIconButton: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}> = ({ icon, label, onClick }) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <button
+        onClick={onClick}
+        className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+      >
+        {icon}
+      </button>
+    </TooltipTrigger>
+    <TooltipContent side="right" sideOffset={8}>
+      {label}
+    </TooltipContent>
+  </Tooltip>
 );
 
 // Collapsible section
@@ -123,6 +149,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   onArchiveConversation,
   onPinConversation,
   onOpenPanel,
+  isCollapsed = false,
   className = ""
 }) => {
   const navigate = useNavigate();
@@ -135,6 +162,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   const userFullName = user?.user_metadata?.first_name 
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}` 
     : user?.email?.split('@')[0] || 'User';
+
+  const userInitials = userFullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const handleSignOut = async () => {
     try {
@@ -174,6 +203,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     setDisplayLimit(10);
   }, [searchTerm]);
 
+  const { isMobile } = useResponsiveBreakpoint();
+
   const handleNavigation = (path: string) => {
     navigate(path);
     if (isMobile) onToggleSidebar();
@@ -184,38 +215,132 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     if (isMobile) onToggleSidebar();
   };
 
-  const sidebarVariants = {
-    hidden: { x: -320, opacity: 0 },
-    visible: { 
-      x: 0, 
-      opacity: 1,
-      transition: { type: "spring", damping: 25, stiffness: 300 }
-    },
-    exit: { 
-      x: -320, 
-      opacity: 0,
-      transition: { duration: 0.2 }
-    }
-  };
+  // Navigation items for collapsed view
+  const libraryItems = [
+    { icon: <FileText className="h-4 w-4" />, label: 'Repository', action: () => handlePanel('repository') },
+    { icon: <Puzzle className="h-4 w-4" />, label: 'Offerings', action: () => handlePanel('offerings') },
+    { icon: <CheckCircle className="h-4 w-4" />, label: 'Approvals', action: () => handlePanel('approvals') },
+  ];
 
-  const { isMobile } = useResponsiveBreakpoint();
-  const sidebarRef = useRef<HTMLDivElement>(null);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const toolsItems = [
+    { icon: <PenLine className="h-4 w-4" />, label: 'Content Wizard', action: () => handlePanel('content_wizard') },
+    { icon: <Megaphone className="h-4 w-4" />, label: 'Campaigns', action: () => handlePanel('campaigns') },
+    { icon: <Search className="h-4 w-4" />, label: 'Keywords', action: () => handlePanel('keywords') },
+    { icon: <BarChart3 className="h-4 w-4" />, label: 'Analytics', action: () => handlePanel('analytics') },
+  ];
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStartX(e.touches[0].clientX);
-  };
+  const engageItems = [
+    { icon: <Mail className="h-4 w-4" />, label: 'Email', action: () => handlePanel('email') },
+    { icon: <Share2 className="h-4 w-4" />, label: 'Social', action: () => handlePanel('social') },
+    { icon: <Users className="h-4 w-4" />, label: 'Contacts', action: () => handlePanel('contacts') },
+    { icon: <Zap className="h-4 w-4" />, label: 'Automations', action: () => handleNavigation('/engage/automations') },
+    { icon: <GitBranch className="h-4 w-4" />, label: 'Journeys', action: () => handleNavigation('/engage/journeys') },
+  ];
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX - touchEndX;
-    if (diff > 50) {
-      onToggleSidebar();
-    }
-    setTouchStartX(null);
-  };
+  // ─── COLLAPSED ICON-ONLY STRIP ───
+  if (isCollapsed && !isMobile) {
+    return (
+      <TooltipProvider delayDuration={0}>
+        <div
+          className={cn(
+            "fixed left-0 top-0 bottom-0 z-50",
+            "w-14 bg-background/95 backdrop-blur-xl",
+            "border-r border-border/10 flex flex-col items-center py-3",
+            className
+          )}
+        >
+          {/* Toggle (expand) */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onToggleSidebar}
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+              >
+                <PanelLeftOpen className="h-5 w-5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>Open sidebar</TooltipContent>
+          </Tooltip>
 
+          {/* New Chat */}
+          <CollapsedIconButton
+            icon={<MessageSquarePlus className="h-5 w-5" />}
+            label="New Chat"
+            onClick={onCreateConversation}
+          />
+
+          {/* Search */}
+          <CollapsedIconButton
+            icon={<Search className="h-4 w-4" />}
+            label="Search"
+            onClick={() => {}}
+          />
+
+          {/* Divider */}
+          <div className="w-6 h-px bg-border/20 my-2" />
+
+          {/* Scrollable icon area */}
+          <ScrollArea className="flex-1 w-full">
+            <div className="flex flex-col items-center gap-0.5">
+              {/* Library */}
+              {libraryItems.map((item) => (
+                <CollapsedIconButton key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
+              ))}
+
+              <div className="w-6 h-px bg-border/10 my-1.5" />
+
+              {/* Tools */}
+              {toolsItems.map((item) => (
+                <CollapsedIconButton key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
+              ))}
+
+              <div className="w-6 h-px bg-border/10 my-1.5" />
+
+              {/* Engage */}
+              {engageItems.map((item) => (
+                <CollapsedIconButton key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
+              ))}
+            </div>
+          </ScrollArea>
+
+          {/* Bottom: Calendar + Profile */}
+          <div className="flex flex-col items-center gap-0.5 mt-2">
+            <CollapsedIconButton
+              icon={<CalendarDays className="h-4 w-4" />}
+              label="Content Calendar"
+              onClick={() => handleNavigation('/research/calendar')}
+            />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors">
+                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-foreground">
+                    {userInitials}
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" className="bg-card border border-border/20 w-56">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  {user?.email}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => openSettings()}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </TooltipProvider>
+    );
+  }
+
+  // ─── EXPANDED SIDEBAR ───
   return (
     <>
       {/* Mobile Backdrop */}
@@ -230,7 +355,6 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
       )}
       
       <motion.div 
-        ref={sidebarRef}
         className={cn(
           "fixed left-0 top-0 bottom-0 z-50",
           "w-full sm:w-72 lg:w-80",
@@ -238,16 +362,21 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           "border-r border-border/10 flex flex-col",
           className
         )}
-        variants={sidebarVariants}
-        initial="hidden"
-        animate="visible"
-        exit="hidden"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        initial={isMobile ? { x: -320, opacity: 0 } : false}
+        animate={isMobile ? { x: 0, opacity: 1, transition: { type: "spring", damping: 25, stiffness: 300 } } : undefined}
+        exit={isMobile ? { x: -320, opacity: 0, transition: { duration: 0.2 } } : undefined}
       >
-        {/* Top: Logo + New Chat + Notifications */}
+        {/* Top: Logo + Toggle + New Chat + Notifications */}
         <div className="p-3 pb-1 flex items-center justify-between">
-          <CreAiterLogo showText={true} size="sm" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onToggleSidebar}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+            <CreAiterLogo showText={true} size="sm" />
+          </div>
           <div className="flex items-center gap-0.5">
             <NotificationBell />
             <Button
@@ -266,26 +395,23 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           <div className="px-2">
             {/* ── LIBRARY (collapsible) ── */}
             <CollapsibleSection label="Library">
-              <SidebarNavItem icon={<FileText className="h-4 w-4" />} label="Repository" onClick={() => handlePanel('repository')} />
-              <SidebarNavItem icon={<Puzzle className="h-4 w-4" />} label="Offerings" onClick={() => handlePanel('offerings')} />
-              <SidebarNavItem icon={<CheckCircle className="h-4 w-4" />} label="Approvals" onClick={() => handlePanel('approvals')} />
+              {libraryItems.map((item) => (
+                <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
+              ))}
             </CollapsibleSection>
 
             {/* ── TOOLS (collapsible) ── */}
             <CollapsibleSection label="Tools">
-              <SidebarNavItem icon={<PenLine className="h-4 w-4" />} label="Content Wizard" onClick={() => handlePanel('content_wizard')} />
-              <SidebarNavItem icon={<Megaphone className="h-4 w-4" />} label="Campaigns" onClick={() => handlePanel('campaigns')} />
-              <SidebarNavItem icon={<Search className="h-4 w-4" />} label="Keywords" onClick={() => handlePanel('keywords')} />
-              <SidebarNavItem icon={<BarChart3 className="h-4 w-4" />} label="Analytics" onClick={() => handlePanel('analytics')} />
+              {toolsItems.map((item) => (
+                <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
+              ))}
             </CollapsibleSection>
 
             {/* ── ENGAGE (collapsible) ── */}
             <CollapsibleSection label="Engage">
-              <SidebarNavItem icon={<Mail className="h-4 w-4" />} label="Email" onClick={() => handlePanel('email')} />
-              <SidebarNavItem icon={<Share2 className="h-4 w-4" />} label="Social" onClick={() => handlePanel('social')} />
-              <SidebarNavItem icon={<Users className="h-4 w-4" />} label="Contacts" onClick={() => handlePanel('contacts')} />
-              <SidebarNavItem icon={<Zap className="h-4 w-4" />} label="Automations" onClick={() => handleNavigation('/engage/automations')} />
-              <SidebarNavItem icon={<GitBranch className="h-4 w-4" />} label="Journeys" onClick={() => handleNavigation('/engage/journeys')} />
+              {engageItems.map((item) => (
+                <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
+              ))}
             </CollapsibleSection>
 
             {/* ── CHATS ── */}
@@ -443,7 +569,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors group">
-                <UserCircle className="h-4 w-4 flex-shrink-0 text-muted-foreground/60 group-hover:text-foreground/80" />
+                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-foreground flex-shrink-0">
+                  {userInitials}
+                </div>
                 <span className="flex-1 text-left truncate">{userFullName}</span>
               </button>
             </DropdownMenuTrigger>

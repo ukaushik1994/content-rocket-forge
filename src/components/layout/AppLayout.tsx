@@ -4,9 +4,8 @@ import { AnimatePresence } from 'framer-motion';
 import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
 import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { useSidebarContext } from '@/contexts/SidebarContext';
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -16,6 +15,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isSidebarOpen, toggleSidebar, setPendingPanel } = useSidebarContext();
+  const { isMobile } = useResponsiveBreakpoint();
 
   const {
     conversations,
@@ -50,58 +50,50 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     }
   };
 
+  const sidebarProps = {
+    conversations,
+    activeConversation,
+    onSelectConversation: handleSelectConversation,
+    onCreateConversation: handleCreateConversation,
+    onDeleteConversation: deleteConversation,
+    onToggleSidebar: toggleSidebar,
+    onPinConversation: togglePinConversation,
+    onArchiveConversation: toggleArchiveConversation,
+    onOpenPanel: (panelType: string) => {
+      if (['automations'].includes(panelType)) {
+        handleNavigation('/engage/automations');
+      } else if (['journeys'].includes(panelType)) {
+        handleNavigation('/engage/journeys');
+      } else {
+        handlePanel(panelType);
+      }
+    },
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex-1 flex relative">
-        {/* Persistent Sidebar */}
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <ChatHistorySidebar
-              conversations={conversations}
-              activeConversation={activeConversation}
-              onSelectConversation={handleSelectConversation}
-              onCreateConversation={handleCreateConversation}
-              onDeleteConversation={deleteConversation}
-              onToggleSidebar={toggleSidebar}
-              onPinConversation={togglePinConversation}
-              onArchiveConversation={toggleArchiveConversation}
-              onOpenPanel={(panelType) => {
-                if (['automations'].includes(panelType)) {
-                  handleNavigation('/engage/automations');
-                } else if (['journeys'].includes(panelType)) {
-                  handleNavigation('/engage/journeys');
-                } else {
-                  handlePanel(panelType);
-                }
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {/* On mobile: only show expanded sidebar via AnimatePresence when open */}
+        {isMobile ? (
+          <AnimatePresence>
+            {isSidebarOpen && (
+              <ChatHistorySidebar {...sidebarProps} />
+            )}
+          </AnimatePresence>
+        ) : (
+          /* On desktop: always render, toggle between expanded and collapsed */
+          <ChatHistorySidebar {...sidebarProps} isCollapsed={!isSidebarOpen} />
+        )}
 
-        {/* Floating Sidebar Toggle */}
-        <div
-          className={cn(
-            "fixed z-[60] transition-all duration-300",
-            isSidebarOpen
-              ? 'top-3 sm:left-[16.5rem] lg:left-[18.5rem]'
-              : 'top-3 left-4'
-          )}
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="rounded-full border border-border/20 hover:border-border/40 hover:bg-muted/30 bg-transparent text-muted-foreground hover:text-foreground"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Main content with responsive margin for sidebar */}
+        {/* Main content with responsive margin */}
         <main
           className={cn(
             "flex-1 transition-all duration-300 min-w-0",
-            isSidebarOpen ? 'sm:ml-72 lg:ml-80' : 'ml-0'
+            isMobile
+              ? 'ml-0'
+              : isSidebarOpen
+                ? 'sm:ml-72 lg:ml-80'
+                : 'sm:ml-14'
           )}
         >
           {children}
