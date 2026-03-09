@@ -13,7 +13,8 @@ import {
   Image as ImageIcon,
   Film,
   Pencil,
-  Trash2
+  Trash2,
+  Check
 } from 'lucide-react';
 import { useContent } from '@/contexts/content';
 import {
