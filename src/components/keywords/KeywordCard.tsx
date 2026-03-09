@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,45 @@ import { formatDistanceToNow } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+
+// Simple SVG sparkline component
+const Sparkline: React.FC<{ data: number[]; className?: string }> = ({ data, className = '' }) => {
+  if (data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const w = 80;
+  const h = 24;
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return `${x},${y}`;
+  }).join(' ');
+  const trending = data[data.length - 1] >= data[0];
+  return (
+    <svg width={w} height={h} className={className} viewBox={`0 0 ${w} ${h}`}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={trending ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+// Difficulty badge
+const DifficultyBadge: React.FC<{ count: number }> = ({ count }) => {
+  const level = count <= 1 ? 'Easy' : count <= 3 ? 'Medium' : 'Hard';
+  const cls = count <= 1
+    ? 'bg-green-500/15 text-green-400 border-green-500/30'
+    : count <= 3
+    ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30'
+    : 'bg-red-500/15 text-red-400 border-red-500/30';
+  return <Badge className={cls + ' text-[10px] px-1.5 py-0'}>{level}</Badge>;
+};
 
 interface ContentPiece {
   id: string;
