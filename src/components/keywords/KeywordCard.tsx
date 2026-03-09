@@ -149,6 +149,7 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm border border-border/50">
+                  <Sparkline data={sparkData} />
                   <TrendingUp className="h-3 w-3 text-primary" />
                   <span className="text-xs font-bold">{keyword.usage_count}</span>
                 </div>
