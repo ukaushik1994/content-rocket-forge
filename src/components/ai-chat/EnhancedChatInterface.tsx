@@ -268,17 +268,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   }, [messages, isTyping, scrollToBottom]);
 
 
-  // Handle escape key to close sidebar
-  useEffect(() => {
-    const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showSidebar) {
-        setShowSidebar(false);
-      }
-    };
 
-    document.addEventListener('keydown', handleEscapeKey);
-    return () => document.removeEventListener('keydown', handleEscapeKey);
-  }, [showSidebar]);
+
   const handleSendMessage = async (message: string) => {
     await sendMessage(message);
   };
