@@ -88,9 +88,6 @@ export const SocialPostCard: React.FC<SocialPostCardProps> = ({ post, index, onE
               <span className="text-muted-foreground/60">{charCount} chars</span>
             </div>
 
-            {/* Analytics placeholder for posted items */}
-            {post.status === 'posted' && (
-            )}
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
