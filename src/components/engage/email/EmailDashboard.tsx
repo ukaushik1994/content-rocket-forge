@@ -92,7 +92,7 @@ export const EmailDashboard = () => {
         <div className="relative">
           {/* Badge */}
           <motion.div
-            className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
+            className="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0 }}
