@@ -90,11 +90,6 @@ export const SocialPostCard: React.FC<SocialPostCardProps> = ({ post, index, onE
 
             {/* Analytics placeholder for posted items */}
             {post.status === 'posted' && (
-              <div className="flex items-center gap-1.5">
-                <Badge variant="outline" className="text-[10px] gap-1 bg-muted/30 text-muted-foreground border-border/30">
-                  <BarChart3 className="h-2.5 w-2.5" /> Engagement: Coming Soon
-                </Badge>
-              </div>
             )}
           </div>
 

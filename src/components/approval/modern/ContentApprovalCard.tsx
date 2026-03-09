@@ -212,12 +212,6 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
                     {imageCount}
                   </Badge>
                 )}
-                {imageCount === 0 && (
-                  <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
-                    <Film className="h-3 w-3" />
-                    Video Soon
-                  </Badge>
-                )}
               </div>
               <div className="flex items-start gap-3">
                 {/* Thumbnail preview */}
