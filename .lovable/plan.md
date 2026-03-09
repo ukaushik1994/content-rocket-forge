@@ -33,3 +33,21 @@
 ## Panel Architecture
 All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
 Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+
+---
+
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` (208 lines, simple DB CRUD) was shadowing `useEnhancedAIChatDB.ts` (1136 lines, full chat logic with messages/sendMessage/streaming)
+- **Fix**: Deleted the `.tsx` duplicate so the context correctly uses the full `.ts` version
+- Messages, sendMessage, isTyping, and all chat state now properly shared via AIChatDBContext
+
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx` for both title and content preview
+- Strips all HTML tags, returns plain text only
+
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
+- Total Content + Published → `/ai-chat` (Repository panel)
+- Total Views + Revenue → `/analytics`
