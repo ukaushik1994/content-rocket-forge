@@ -530,6 +530,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     setIsGeneratingContent(true);
     setGenerationStage('Building prompt...');
     setGenerationProgress(5);
+    try {
       const outlineText = wizardState.outline.map(s => `${'#'.repeat(s.level + 1)} ${s.title}`).join('\n');
 
       const serpSelections = [
