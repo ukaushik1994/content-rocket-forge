@@ -425,7 +425,7 @@ export const JourneysList = () => {
           {canEdit && !searchQuery && <EngageButton size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</EngageButton>}
         </motion.div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 max-w-7xl mx-auto">
           {filteredJourneys.map((j: any, i: number) => {
             const sc = statusConfig[j.status] || statusConfig.draft;
             const enrolled = enrollmentCounts[j.id] || 0;
@@ -434,79 +434,87 @@ export const JourneysList = () => {
             const completionPct = rate && rate.total > 0 ? Math.round((rate.completed / rate.total) * 100) : null;
             const isSelected = selectedIds.has(j.id);
             return (
-              <motion.div key={j.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <GlassCard
-                  className={`p-4 cursor-pointer hover:border-primary/30 hover:scale-[1.01] transition-all duration-200 ${isSelected ? 'ring-1 ring-primary/50' : ''}`}
-                  onClick={() => navigate(`/engage/journeys/${j.id}`)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {/* E2: Checkbox */}
-                      {canEdit && (
-                        <div onClick={e => e.stopPropagation()}>
-                          <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(j.id)} />
-                        </div>
-                      )}
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-medium text-foreground">{j.name}</h3>
-                          <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
-                            <span className="relative flex h-1.5 w-1.5">
-                              {sc.pulse && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${sc.dot}`} />}
-                              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${sc.dot}`} />
-                            </span>
-                            {j.status}
-                          </Badge>
-                          {enrolled > 0 && (
-                            <Badge variant="secondary" className="text-[10px] gap-1">
-                              <Users className="h-2.5 w-2.5" /> {enrolled} active
-                            </Badge>
-                          )}
-                          {nodeCount > 0 && (
-                            <Badge variant="secondary" className="text-[10px] gap-1 bg-purple-500/10 text-purple-400 border-purple-500/30">
-                              <Workflow className="h-2.5 w-2.5" /> {nodeCount} nodes
-                            </Badge>
-                          )}
-                          {/* E1: Completion rate badge */}
-                          {completionPct !== null && (
-                            <Badge variant="secondary" className="text-[10px] gap-1 bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                              <TrendingUp className="h-2.5 w-2.5" /> {completionPct}% complete
-                            </Badge>
-                          )}
-                        </div>
-                        {j.description && <p className="text-xs text-muted-foreground truncate">{j.description}</p>}
-                        <p className="text-xs text-muted-foreground">{format(new Date(j.created_at), 'MMM d, yyyy')}</p>
+              <EngageContentCard
+                key={j.id}
+                index={i}
+                onClick={() => navigate(`/engage/journeys/${j.id}`)}
+                selected={isSelected}
+                statusBadge={{
+                  label: j.status,
+                  className: sc.class,
+                  pulse: sc.pulse,
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {canEdit && (
+                      <div onClick={e => e.stopPropagation()}>
+                        <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(j.id)} />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                      {canEdit && j.status !== 'draft' && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleStatus.mutate({ id: j.id, current: j.status })}>
-                          {j.status === 'active' ? <Pause className="h-3.5 w-3.5 text-amber-400" /> : <Play className="h-3.5 w-3.5 text-emerald-400" />}
-                        </Button>
+                    )}
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-medium text-foreground">{j.name}</h3>
+                        {enrolled > 0 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Users className="h-2.5 w-2.5" /> {enrolled} active
+                          </Badge>
+                        )}
+                        {nodeCount > 0 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1 bg-purple-500/10 text-purple-400 border-purple-500/30">
+                            <Workflow className="h-2.5 w-2.5" /> {nodeCount} nodes
+                          </Badge>
+                        )}
+                        {completionPct !== null && (
+                          <Badge variant="secondary" className="text-[10px] gap-1 bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                            <TrendingUp className="h-2.5 w-2.5" /> {completionPct}% complete
+                          </Badge>
+                        )}
+                      </div>
+                      {/* Mini flow preview */}
+                      {nodeCount > 0 && (
+                        <div className="flex items-center gap-1 py-1">
+                          {Array.from({ length: Math.min(nodeCount, 5) }).map((_, idx) => (
+                            <React.Fragment key={idx}>
+                              <div className="w-2 h-2 rounded-full bg-primary/40 border border-primary/20" />
+                              {idx < Math.min(nodeCount, 5) - 1 && <div className="w-4 h-px bg-primary/20" />}
+                            </React.Fragment>
+                          ))}
+                          {nodeCount > 5 && <span className="text-[9px] text-muted-foreground ml-1">+{nodeCount - 5}</span>}
+                        </div>
                       )}
-                      {canEdit && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { setRenamingId(j.id); setRenameValue(j.name); setRenameDesc(j.description || ''); }}>
-                              <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => duplicateJourney.mutate(j)}>
-                              <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => deleteJourney.mutate(j.id)}>
-                              <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      {j.description && <p className="text-xs text-muted-foreground truncate">{j.description}</p>}
+                      <p className="text-xs text-muted-foreground">{format(new Date(j.created_at), 'MMM d, yyyy')}</p>
                     </div>
                   </div>
-                </GlassCard>
-              </motion.div>
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    {canEdit && j.status !== 'draft' && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleStatus.mutate({ id: j.id, current: j.status })}>
+                        {j.status === 'active' ? <Pause className="h-3.5 w-3.5 text-amber-400" /> : <Play className="h-3.5 w-3.5 text-emerald-400" />}
+                      </Button>
+                    )}
+                    {canEdit && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => { setRenamingId(j.id); setRenameValue(j.name); setRenameDesc(j.description || ''); }}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => duplicateJourney.mutate(j)}>
+                            <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => deleteJourney.mutate(j.id)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+              </EngageContentCard>
             );
           })}
         </div>
