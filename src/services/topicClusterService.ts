@@ -19,7 +19,7 @@ class TopicClusterService {
       return [];
     }
 
-    return (data ?? []).map(dbRowToTopicCluster);
+    return (data ?? []).map(row => dbRowToTopicCluster(row));
   }
 
   // Create a new cluster
