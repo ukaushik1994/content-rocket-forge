@@ -454,7 +454,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                                 {conversation.pinned && <Pin className="h-3 w-3 text-primary/60 flex-shrink-0" />}
                                 <h3 className={cn(
                                   "text-[13px] truncate",
-                                  activeConversation === conversation.id ? "text-foreground font-medium" : "text-foreground/80"
+                                  activeConversation === conversation.id ? "text-foreground font-medium" : "text-foreground/90"
                                 )}>
                                   {conversation.title}
                                 </h3>
