@@ -9,7 +9,7 @@ import { AddKeywordDialog } from '@/components/keywords/AddKeywordDialog';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Search, Database, Plus, Info } from 'lucide-react';
+import { Search, Plus, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
