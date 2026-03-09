@@ -66,24 +66,24 @@ export const EmailDashboard = () => {
 
   const stats = emailStats || { total: 0, delivered: 0, queued: 0, rate: 0 };
 
-  const miniStats = [
-    { icon: Inbox, label: 'Threads', value: threadCount },
-    { icon: TrendingUp, label: 'Delivery Rate', value: `${stats.rate}%` },
-    { icon: Megaphone, label: 'Active Campaigns', value: activeCampaigns },
-    { icon: Clock, label: 'Queued', value: stats.queued },
-  ];
+  // Build inline subtitle with key metrics
+  const subtitleParts: string[] = [];
+  if (threadCount > 0) subtitleParts.push(`${threadCount} threads`);
+  if (stats.rate > 0) subtitleParts.push(`${stats.rate}% delivery`);
+  if (activeCampaigns > 0) subtitleParts.push(`${activeCampaigns} active`);
+  const subtitle = subtitleParts.length > 0 ? subtitleParts.join(' · ') : 'Inbox, campaigns & delivery';
 
   return (
-    <motion.div className="space-y-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      {/* Compact Header */}
+    <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      {/* Header — single row with inline metrics */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-muted/60 flex items-center justify-center">
-            <Mail className="h-5 w-5 text-foreground" />
+          <div className="h-9 w-9 rounded-xl bg-muted/60 flex items-center justify-center">
+            <Mail className="h-4.5 w-4.5 text-foreground" />
           </div>
           <div>
             <h1 className="text-lg font-semibold text-foreground leading-tight">Email</h1>
-            <p className="text-xs text-muted-foreground">Inbox, campaigns & delivery</p>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -96,54 +96,19 @@ export const EmailDashboard = () => {
         </div>
       </div>
 
-      {/* Mini Stats Row */}
-      <GlassCard className="p-4">
-        <div className="flex items-center justify-between gap-6">
-          {miniStats.map((s, i) => (
-            <div key={s.label} className="flex items-center gap-3 flex-1">
-              <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-                <s.icon className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-base font-semibold text-foreground leading-none">{s.value}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
-              </div>
-              {i < miniStats.length - 1 && <div className="h-8 w-px bg-border/30 ml-auto" />}
-            </div>
-          ))}
-        </div>
-      </GlassCard>
-
-      {/* Tab Bar with hierarchy */}
-      <div className="flex items-center gap-1 flex-wrap">
-        {primaryTabs.map(t => (
+      {/* Flat tab bar — single tier, no icons */}
+      <div className="flex items-center gap-1">
+        {allTabs.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all',
-              tab === t.key
-                ? 'bg-foreground text-background shadow-sm'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            )}
-          >
-            <t.icon className="h-3.5 w-3.5" />
-            {t.label}
-          </button>
-        ))}
-        <div className="h-4 w-px bg-border/40 mx-1.5" />
-        {secondaryTabs.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all',
+              'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
               tab === t.key
                 ? 'bg-muted text-foreground'
-                : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-muted/30'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
             )}
           >
-            <t.icon className="h-3 w-3" />
             {t.label}
           </button>
         ))}

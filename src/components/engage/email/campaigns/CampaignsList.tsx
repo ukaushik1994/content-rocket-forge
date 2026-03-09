@@ -529,12 +529,10 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
                           return null;
                         })()}
                       </p>
-                      {c.status !== 'draft' && (
-                        <div className="flex gap-3 text-xs text-muted-foreground">
-                          <span>Sent: {campaignStats.sent || 0}</span>
-                          <span>Delivered: {campaignStats.delivered || 0}</span>
-                          <span>Failed: {campaignStats.failed || 0}</span>
-                        </div>
+                      {c.status !== 'draft' && (campaignStats.sent > 0 || campaignStats.delivered > 0 || campaignStats.failed > 0) && (
+                        <p className="text-xs text-muted-foreground">
+                          {campaignStats.sent || 0} sent · {campaignStats.delivered || 0} delivered · {campaignStats.failed || 0} failed
+                        </p>
                       )}
                     </div>
                     <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
