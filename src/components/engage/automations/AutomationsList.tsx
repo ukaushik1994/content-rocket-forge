@@ -652,14 +652,20 @@ export const AutomationsList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngageHero
+      <EngagePageHero
         icon={Zap}
+        badge="Automation Engine"
         title="Automations"
-        subtitle="Rule-based triggers and actions"
+        titleAccent="Engine"
+        subtitle="Rule-based triggers and actions — automate your engagement"
         gradientFrom="from-amber-400"
         gradientTo="to-orange-400"
-        glowFrom="from-amber-500/30"
-        glowTo="to-orange-500/10"
+        stats={[
+          { icon: Play, label: 'Active', value: stats.active },
+          { icon: Pause, label: 'Paused', value: stats.paused },
+          { icon: BarChart3, label: 'Total Runs', value: overallStats.totalRuns },
+          { icon: TrendingUp, label: 'Success', value: `${overallStats.successRate}%` },
+        ]}
         actions={canEdit ? (
           <div className="flex items-center gap-2">
             <EngageButton size="sm" variant="outline" gradient={false} onClick={() => navigate('/engage/automations/runs')}>
@@ -679,18 +685,19 @@ export const AutomationsList = () => {
       />
 
       {/* Search + Select All */}
-      <motion.div variants={engageStagger.item} className="flex gap-2 items-center">
-        {filteredAutomations.length > 0 && canEdit && (
-          <Button variant="ghost" size="sm" className="h-9 px-2 shrink-0" onClick={selectAll}>
-            <CheckSquare className="h-3.5 w-3.5 mr-1" />
-            {selectedIds.size === filteredAutomations.length ? 'Deselect' : 'Select All'}
-          </Button>
-        )}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search automations..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-white/[0.03] border-white/[0.06] backdrop-blur-sm" />
-        </div>
-      </motion.div>
+      <EngageFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search automations..."
+        extraActions={
+          filteredAutomations.length > 0 && canEdit ? (
+            <Button variant="ghost" size="sm" className="h-9 px-2 shrink-0" onClick={selectAll}>
+              <CheckSquare className="h-3.5 w-3.5 mr-1" />
+              {selectedIds.size === filteredAutomations.length ? 'Deselect' : 'Select All'}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Analytics Dashboard */}
       {automations.length > 0 && (
