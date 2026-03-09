@@ -36,18 +36,37 @@ Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterfa
 
 ---
 
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
+
+## Batch 2: Approvals Workflow — TODO
+## Batch 3: Content Wizard & Campaigns Polish — TODO
+## Batch 4: API-Ready Scaffolding — TODO
+## Batch 5: Analytics & Reporting — TODO
+
+---
+
 # Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
 ## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` (208 lines, simple DB CRUD) was shadowing `useEnhancedAIChatDB.ts` (1136 lines, full chat logic with messages/sendMessage/streaming)
-- **Fix**: Deleted the `.tsx` duplicate so the context correctly uses the full `.ts` version
-- Messages, sendMessage, isTyping, and all chat state now properly shared via AIChatDBContext
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
 
 ## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx` for both title and content preview
-- Strips all HTML tags, returns plain text only
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
 
 ## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
 - Wrapped stat cards in `onClick` handlers with `useNavigate`
-- Total Content + Published → `/ai-chat` (Repository panel)
-- Total Views + Revenue → `/analytics`
