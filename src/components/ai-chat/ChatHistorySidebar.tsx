@@ -284,7 +284,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <TooltipTrigger asChild>
               <button
                 onClick={onToggleSidebar}
-                className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
+                aria-label="Expand sidebar"
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-[background-color,color] duration-200"
               >
                 <PanelLeftOpen className="h-5 w-5" />
               </button>
