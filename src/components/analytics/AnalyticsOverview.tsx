@@ -182,7 +182,7 @@ export const AnalyticsOverview = () => {
   if (analyticsData.length === 0 && searchConsoleData.length === 0) {
     return (
       <div className="space-y-6">
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 max-w-md mx-auto">
+        <Card className="glass-card max-w-md mx-auto">
           <CardContent className="pt-12 pb-12 text-center">
             <motion.div
               initial={{ scale: 0 }}
