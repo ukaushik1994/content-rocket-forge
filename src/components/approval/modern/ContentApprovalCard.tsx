@@ -97,13 +97,16 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
   onApprove,
   onReject,
   onRequestChanges,
+  onRevertToDraft,
   onAnalyzeAI,
   onAssignReviewer,
   onViewHistory,
   onSubmitForReview,
   aiScore,
   analyzedAt,
-  isAnalyzing = false
+  isAnalyzing = false,
+  isSelected = false,
+  onToggleSelect
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   
