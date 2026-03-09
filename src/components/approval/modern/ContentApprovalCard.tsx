@@ -19,7 +19,8 @@ import {
   Zap,
   Loader2,
   Image as ImageIcon,
-  Film
+  Film,
+  RotateCcw
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
