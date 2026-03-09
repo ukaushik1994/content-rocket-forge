@@ -217,6 +217,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
   // Phase 5 state
   const [generationStage, setGenerationStage] = useState<string>('');
+  const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [seoScore, setSeoScore] = useState<number | null>(null);
   const [aiHumanScore, setAiHumanScore] = useState<number | null>(null);
   const [refinementInstruction, setRefinementInstruction] = useState('');
@@ -519,6 +520,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     }
     setIsGeneratingContent(false);
     setGenerationStage('');
+    setGenerationProgress(0);
     toast.info('Generation cancelled');
   };
 
@@ -527,6 +529,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     abortControllerRef.current = controller;
     setIsGeneratingContent(true);
     setGenerationStage('Building prompt...');
+    setGenerationProgress(5);
     try {
       const outlineText = wizardState.outline.map(s => `${'#'.repeat(s.level + 1)} ${s.title}`).join('\n');
 
@@ -540,6 +543,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       const targetLength = wizardState.wordCount || 1500;
       const additionalInstructions = await buildAdditionalInstructions();
+      setGenerationProgress(20);
 
       const config: ContentGenerationConfig = {
         mainKeyword: wizardState.keyword,
@@ -562,7 +566,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       if (controller.signal.aborted) return;
       setGenerationStage('Generating content...');
+      setGenerationProgress(30);
       const result = await generateAdvancedContent(config);
+      setGenerationProgress(75);
 
       if (result) {
         onContentGenerated(result);
@@ -570,6 +576,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
         // Phase 5: Post-generation quality analysis
         setGenerationStage('Analyzing quality...');
+        setGenerationProgress(80);
         try {
           const detection = await detectAIContent(result);
           if (detection) {
@@ -577,9 +584,11 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           }
         } catch { /* non-critical */ }
 
-        // Phase 1A+1B: Run quality & compliance analysis
+        setGenerationStage('Finalizing...');
+        setGenerationProgress(92);
         runQualityAnalysis(result);
 
+        setGenerationProgress(100);
         toast.success('Content generated successfully!');
       } else {
         const fallback = buildKeywordRichFallback();
@@ -597,6 +606,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     } finally {
       setIsGeneratingContent(false);
       setGenerationStage('');
+      setGenerationProgress(0);
     }
   };
 
@@ -1079,18 +1089,37 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       {/* Generate Button */}
       {!wizardState.generatedContent ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Button onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-2">
             {isGeneratingContent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {isGeneratingContent ? 'Generating...' : 'Generate Content'}
           </Button>
           {isGeneratingContent && (
-            <Button variant="outline" size="sm" onClick={abortGeneration} className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10">
-              <X className="w-3.5 h-3.5" /> Cancel Generation
-            </Button>
-          )}
-          {generationStage && (
-            <p className="text-[10px] text-muted-foreground text-center animate-pulse">{generationStage}</p>
+            <>
+              <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-foreground">{generationStage || 'Preparing...'}</span>
+                  <span className="text-xs text-muted-foreground">{generationProgress}%</span>
+                </div>
+                <Progress value={generationProgress} className="h-1.5" />
+                <div className="flex gap-1.5 mt-1">
+                  {['Building prompt', 'Generating content', 'Analyzing quality', 'Finalizing'].map((phase, i) => {
+                    const thresholds = [0, 25, 75, 90];
+                    const isActive = generationProgress >= thresholds[i] && (i === 3 || generationProgress < thresholds[i + 1]);
+                    const isDone = i < 3 && generationProgress >= thresholds[i + 1];
+                    return (
+                      <div key={phase} className={cn(
+                        "flex-1 h-1 rounded-full transition-colors",
+                        isDone ? "bg-primary" : isActive ? "bg-primary/50 animate-pulse" : "bg-muted"
+                      )} />
+                    );
+                  })}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={abortGeneration} className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10">
+                <X className="w-3.5 h-3.5" /> Cancel Generation
+              </Button>
+            </>
           )}
         </div>
       ) : (
