@@ -471,7 +471,7 @@ const CampaignsInner = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <PageContainer className="relative overflow-hidden">
       <Helmet>
         <title>Campaigns — AI-Powered Multi-Channel Campaign Builder</title>
         <meta 
