@@ -543,6 +543,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       const targetLength = wizardState.wordCount || 1500;
       const additionalInstructions = await buildAdditionalInstructions();
+      setGenerationProgress(20);
 
       const config: ContentGenerationConfig = {
         mainKeyword: wizardState.keyword,
