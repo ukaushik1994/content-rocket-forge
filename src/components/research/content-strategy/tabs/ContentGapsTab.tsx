@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Lightbulb, Plus, TrendingUp } from 'lucide-react';
+import { Search, Lightbulb, Save, TrendingUp, Loader2, Trash2 } from 'lucide-react';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService/aiService';
+import { useContentGaps } from '@/hooks/useResearchIntelligence';
 
 interface ContentGapsTabProps {
   serpMetrics?: any;
@@ -23,8 +24,10 @@ interface ContentGapsTabProps {
 
 export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goals }) => {
   const { analyzeSERP, saveInsight } = useContentStrategy();
+  const { data: savedGaps, isLoading: loadingGaps, create: createGap } = useContentGaps();
   const [keyword, setKeyword] = useState(goals.mainKeyword || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [gapAnalysis, setGapAnalysis] = useState<any>(null);
   const [selectedGaps, setSelectedGaps] = useState<string[]>([]);
 
@@ -41,11 +44,9 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
         throw new Error('No SERP data available');
       }
       
-      // Generate content gaps using AI based on SERP analysis
       const ai = await generateGapsFromAi(serpData);
       setGapAnalysis({ keyword, gaps: ai.gaps, serpData, opportunityScore: ai.opportunityScore });
       
-      // Save the insight
       await saveInsight({
         keyword,
         serp_data: serpData,
@@ -79,12 +80,42 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
       return { gaps: [], opportunityScore: undefined };
     }
   };
+
   const toggleGapSelection = (gap: string) => {
     setSelectedGaps(prev => 
       prev.includes(gap) 
         ? prev.filter(g => g !== gap)
         : [...prev, gap]
     );
+  };
+
+  const handleSaveSelectedGaps = async () => {
+    if (selectedGaps.length === 0) {
+      toast.error('Select at least one gap to save');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const baseScore = gapAnalysis?.opportunityScore ?? 50;
+      await Promise.all(
+        selectedGaps.map((gap, i) =>
+          createGap({
+            title: gap,
+            gap_type: 'content',
+            opportunity_score: Math.max(0, Math.min(100, baseScore - i * 3)),
+            keywords: keyword ? [keyword] : [],
+            status: 'identified',
+          })
+        )
+      );
+      toast.success(`${selectedGaps.length} gap(s) saved to database`);
+      setSelectedGaps([]);
+    } catch (error) {
+      toast.error('Failed to save gaps');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -136,15 +167,13 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                       <div className="flex items-start gap-3">
                         <Checkbox
                           checked={selectedGaps.includes(gap)}
-                          onChange={() => toggleGapSelection(gap)}
+                          onCheckedChange={() => toggleGapSelection(gap)}
                           className="mt-1"
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <Lightbulb className="h-4 w-4 text-yellow-400" />
                             <span className="font-medium">{gap}</span>
-                          </div>
-                          <div className="flex items-center gap-4 mt-2">
                           </div>
                         </div>
                       </div>
@@ -168,11 +197,64 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                 >
                   Clear Selection
                 </Button>
+                {selectedGaps.length > 0 && (
+                  <Button
+                    onClick={handleSaveSelectedGaps}
+                    disabled={isSaving}
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 ml-auto"
+                  >
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                    Save {selectedGaps.length} Gap{selectedGaps.length > 1 ? 's' : ''}
+                  </Button>
+                )}
               </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Saved Gaps from DB */}
+      {!loadingGaps && savedGaps && savedGaps.length > 0 && (
+        <Card className="bg-background/60 backdrop-blur-sm border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Saved Content Gaps ({savedGaps.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2">
+              {savedGaps.map((gap) => (
+                <div
+                  key={gap.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-background/40 border border-border/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{gap.title}</span>
+                    {gap.keywords && (gap.keywords as string[]).length > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {(gap.keywords as string[])[0]}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {gap.opportunity_score != null && (
+                      <Badge variant="secondary" className="text-xs">
+                        {gap.opportunity_score}%
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {gap.status ?? 'identified'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {selectedGaps.length > 0 && (
         <StrategyWorkflowActions 

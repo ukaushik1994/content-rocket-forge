@@ -1,35 +1,53 @@
 
 
-# Phase 3 Batch 3: Wire Content Gaps to DB + Clean Up Dead Code
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## What We're Doing
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-Two focused changes to complete the Research Intelligence data layer:
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-### 1. Persist Content Gaps to Supabase
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-**File: `src/components/research/content-strategy/tabs/ContentGapsTab.tsx`**
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-Currently, AI-generated content gaps are displayed but never saved to the `content_gaps` DB table. After analysis completes:
-- Call `createContentGap()` from `researchIntelligenceService` for each gap returned by AI
-- Map each gap string + opportunity score to a `content_gaps` row with `user_id`, `gap_title`, `opportunity_score`, and `target_cluster_id` (optional)
-- Show previously saved gaps from DB below the analysis section using `useContentGaps()` hook
-- Add a "Save Selected Gaps" action that persists only checked gaps
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### 2. Delete Unused `TopicClustersTab.tsx`
-
-**File: `src/components/research/content-strategy/tabs/TopicClustersTab.tsx`**
-
-This component is entirely hardcoded mock data and is not imported anywhere. Remove it.
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-## Summary
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-| File | Action |
-|------|--------|
-| `ContentGapsTab.tsx` | Wire to `content_gaps` DB via hooks — persist + show saved gaps |
-| `TopicClustersTab.tsx` | Delete (unused dead code) |
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` (208 lines, simple DB CRUD) was shadowing `useEnhancedAIChatDB.ts` (1136 lines, full chat logic with messages/sendMessage/streaming)
+- **Fix**: Deleted the `.tsx` duplicate so the context correctly uses the full `.ts` version
+- Messages, sendMessage, isTyping, and all chat state now properly shared via AIChatDBContext
 
-2 files. No new dependencies. No DB migrations needed.
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx` for both title and content preview
+- Strips all HTML tags, returns plain text only
 
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
+- Total Content + Published → `/ai-chat` (Repository panel)
+- Total Views + Revenue → `/analytics`
