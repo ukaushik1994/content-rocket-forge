@@ -34,6 +34,12 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
       description: 'Create content from a topic',
       onClick: onContentWizard,
     },
+    ...(onResearchIntelligence ? [{
+      icon: BookOpen,
+      label: 'Research Intelligence',
+      description: 'Plan content strategy & gaps',
+      onClick: onResearchIntelligence,
+    }] : []),
   ];
 
   return (

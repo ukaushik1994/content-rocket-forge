@@ -295,7 +295,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
           <PlusMenuDropdown
             onAttachFile={handleAttachmentClick}
             onContentWizard={handleContentWizardClick}
-            onAIProposals={handleAIProposalsClick}
+            onResearchIntelligence={onOpenResearch}
             disabled={isLoading}
           />
 
