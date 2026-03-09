@@ -1,35 +1,39 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Sidebar Cleanup — Adversarial Audit
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## What to remove / change
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+### Collapsed sidebar (icon strip)
+**Remove:**
+- **Search icon** (line 276-280) — no-op, does nothing when clicked, wastes space
+- **Calendar icon** (line 294-298) — not a primary action; accessible from expanded sidebar
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
+**Keep:** Toggle, New Chat, Library/Tools/Engage section icons, User avatar dropdown
 
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
+### Expanded sidebar
+**Restructure order — move New Chat + Search above Library:**
 
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
+Current order: Logo+Toggle+Notifications+NewChat → Library → Tools → Engage → Chats → Calendar+Profile
 
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+New order: Logo+Toggle+Notifications → **New Chat button (full-width)** → **Search input** → Library → Tools → Engage → Chats → Calendar+Profile
+
+- Remove the `+` icon button from the header row (line 368-376); replace with a full-width "New Chat" button placed between the header and the search input
+- Move the search input (currently inside the Chats collapsible, line 406-415) up to sit just below the New Chat button, above Library — this becomes a global search for both nav items and chats
+- Remove the duplicate search inside the Chats section
+
+**Sections collapsed by default:**
+- Change `CollapsibleSection` `defaultOpen` from `true` to `false` for Library, Tools, and Engage (lines 383, 390, 397)
+
+## Files changed
+
+| File | Change |
+|------|--------|
+| `src/components/ai-chat/ChatHistorySidebar.tsx` | Remove Search + Calendar from collapsed strip; restructure expanded sidebar order (New Chat → Search → Library/Tools/Engage collapsed by default → Chats); remove duplicate search from Chats section |
+
+## Summary of collapsed strip (after cleanup)
+Toggle → New Chat → divider → Library / Tools / Engage → spacer → User avatar
+
+## Summary of expanded sidebar (after cleanup)  
+Logo + Toggle + Notifications (header) → New Chat button → Search input → Library (collapsed) → Tools (collapsed) → Engage (collapsed) → Chats → Calendar + Profile (footer)
+
