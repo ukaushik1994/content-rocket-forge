@@ -151,7 +151,7 @@ export const EmailDashboard = () => {
               onClick={() => { setShowCampaignWizard(true); setTab('campaigns'); }}
               size="lg"
               variant="outline"
-              className="px-8 py-4 text-lg font-semibold bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+              className="px-8 py-4 text-lg font-semibold glass-card hover:bg-white/[0.08]"
             >
               <Plus className="h-5 w-5 mr-2" />
               New Campaign
