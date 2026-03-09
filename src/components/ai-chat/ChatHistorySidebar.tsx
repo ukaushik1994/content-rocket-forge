@@ -272,13 +272,6 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             onClick={onCreateConversation}
           />
 
-          {/* Search */}
-          <CollapsedIconButton
-            icon={<Search className="h-4 w-4" />}
-            label="Search"
-            onClick={() => {}}
-          />
-
           {/* Divider */}
           <div className="w-6 h-px bg-border/20 my-2" />
 
@@ -289,13 +282,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <CollapsedIconButton icon={<MessageCircle className="h-4 w-4" />} label="Engage" onClick={onToggleSidebar} />
           </div>
 
-          {/* Bottom: Calendar + Profile */}
+          {/* Bottom: Profile */}
           <div className="flex flex-col items-center gap-0.5 mt-2">
-            <CollapsedIconButton
-              icon={<CalendarDays className="h-4 w-4" />}
-              label="Content Calendar"
-              onClick={() => handleNavigation('/research/calendar')}
-            />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -363,38 +351,48 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             </button>
             <CreAiterLogo showText={true} size="sm" />
           </div>
-          <div className="flex items-center gap-0.5">
-            <NotificationBell />
-            <Button
-              onClick={onCreateConversation}
-              variant="ghost"
-              size="icon"
-              className="rounded-full text-muted-foreground hover:text-foreground h-8 w-8"
-              title="New Chat"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+          <NotificationBell />
+        </div>
+
+        {/* New Chat + Search */}
+        <div className="px-3 py-2 space-y-2">
+          <Button
+            onClick={onCreateConversation}
+            variant="outline"
+            className="w-full justify-start gap-2 h-9 text-sm text-muted-foreground hover:text-foreground border-border/15"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+            New Chat
+          </Button>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+            <Input
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-transparent border-border/15 text-foreground placeholder:text-muted-foreground/40 focus:border-border/40 focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-xs rounded-lg"
+            />
           </div>
         </div>
 
         <ScrollArea className="flex-1">
           <div className="px-2">
             {/* ── LIBRARY (collapsible) ── */}
-            <CollapsibleSection label="Library">
+            <CollapsibleSection label="Library" defaultOpen={false}>
               {libraryItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── TOOLS (collapsible) ── */}
-            <CollapsibleSection label="Tools">
+            <CollapsibleSection label="Tools" defaultOpen={false}>
               {toolsItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
             </CollapsibleSection>
 
             {/* ── ENGAGE (collapsible) ── */}
-            <CollapsibleSection label="Engage">
+            <CollapsibleSection label="Engage" defaultOpen={false}>
               {engageItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
@@ -402,19 +400,6 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
             {/* ── CHATS ── */}
             <CollapsibleSection label="Chats">
-              {/* Search chats */}
-              <div className="px-2 pb-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                  <Input
-                    placeholder="Search chats..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 bg-transparent border-border/15 text-foreground placeholder:text-muted-foreground/40 focus:border-border/40 focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-xs rounded-lg"
-                  />
-                </div>
-              </div>
-
               {/* Conversations List */}
               <AnimatePresence mode="wait">
                 {conversations && conversations.length > 0 ? (
