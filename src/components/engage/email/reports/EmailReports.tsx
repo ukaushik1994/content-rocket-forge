@@ -1,25 +1,42 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Mail, CheckCircle, MousePointer, AlertTriangle, Send, TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { Mail, CheckCircle, TrendingUp, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { subDays } from 'date-fns';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(142, 71%, 45%)', 'hsl(217, 91%, 60%)', 'hsl(0, 84%, 60%)'];
 
+const DATE_RANGES = [
+  { key: '7d', label: '7 days', days: 7 },
+  { key: '30d', label: '30 days', days: 30 },
+  { key: '90d', label: '90 days', days: 90 },
+  { key: 'all', label: 'All time', days: null },
+] as const;
+
 export const EmailReports = () => {
   const { currentWorkspaceId } = useWorkspace();
+  const [dateRange, setDateRange] = useState<string>('30d');
+
+  const selectedRange = DATE_RANGES.find(r => r.key === dateRange)!;
+  const cutoffDate = selectedRange.days ? subDays(new Date(), selectedRange.days).toISOString() : null;
 
   const { data: messageStats } = useQuery({
-    queryKey: ['email-reports-stats', currentWorkspaceId],
+    queryKey: ['email-reports-stats', currentWorkspaceId, dateRange],
     queryFn: async () => {
-      const { data } = await supabase
+      let query = supabase
         .from('email_messages')
-        .select('status')
+        .select('status, sent_at')
         .eq('workspace_id', currentWorkspaceId!);
+      if (cutoffDate) {
+        query = query.gte('created_at', cutoffDate);
+      }
+      const { data } = await query;
       const stats = { total: 0, sent: 0, delivered: 0, failed: 0, queued: 0 };
       (data || []).forEach((m: any) => {
         stats.total++;
@@ -34,15 +51,19 @@ export const EmailReports = () => {
   });
 
   const { data: campaignPerformance = [] } = useQuery({
-    queryKey: ['email-reports-campaigns', currentWorkspaceId],
+    queryKey: ['email-reports-campaigns', currentWorkspaceId, dateRange],
     queryFn: async () => {
-      const { data } = await supabase
+      let query = supabase
         .from('email_campaigns')
         .select('name, stats, status')
         .eq('workspace_id', currentWorkspaceId!)
         .neq('status', 'draft')
         .order('created_at', { ascending: false })
         .limit(10);
+      if (cutoffDate) {
+        query = query.gte('created_at', cutoffDate);
+      }
+      const { data } = await query;
       return (data || []).map((c: any) => {
         const s = c.stats || {};
         return {
@@ -96,13 +117,31 @@ export const EmailReports = () => {
 
   return (
     <div className="space-y-4">
+      {/* Date Range Filter */}
+      <div className="flex items-center gap-1">
+        {DATE_RANGES.map(r => (
+          <button
+            key={r.key}
+            onClick={() => setDateRange(r.key)}
+            className={cn(
+              'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+              dateRange === r.key
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            )}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-3">
         {summaryCards.map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <GlassCard className="p-3">
               <div className="flex items-center gap-2">
-                <s.icon className={`h-4 w-4 ${s.color}`} />
+                <s.icon className={cn('h-4 w-4', s.color)} />
                 <div>
                   <p className="text-lg font-bold text-foreground">{s.value}</p>
                   <p className="text-[10px] text-muted-foreground">{s.label}</p>
@@ -131,7 +170,7 @@ export const EmailReports = () => {
           )}
         </GlassCard>
 
-        {/* Campaign performance */}
+        {/* Campaign performance with opens/clicks */}
         <GlassCard className="p-4">
           <h4 className="text-sm font-semibold text-foreground mb-3">Campaign Performance</h4>
           {campaignPerformance.length > 0 ? (
@@ -140,8 +179,11 @@ export const EmailReports = () => {
                 <XAxis dataKey="name" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
                 <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
                 <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
-                <Bar dataKey="sent" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="failed" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="sent" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Sent" />
+                <Bar dataKey="opened" fill="hsl(142, 71%, 45%)" radius={[4, 4, 0, 0]} name="Opened" />
+                <Bar dataKey="clicked" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]} name="Clicked" />
+                <Bar dataKey="failed" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} name="Failed" />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
               </BarChart>
             </ResponsiveContainer>
           ) : (

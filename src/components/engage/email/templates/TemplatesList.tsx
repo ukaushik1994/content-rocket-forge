@@ -11,6 +11,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, FileText, Trash2, Eye, Variable, Send, Copy, Bold, Italic, Link, Heading, Image, Sparkles, BarChart3, Paintbrush } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -234,7 +235,16 @@ export const TemplatesList = () => {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[...Array(4)].map((_, i) => (
+            <GlassCard key={i} className="p-4 space-y-2">
+              <Skeleton className="w-full h-[120px] rounded-md" />
+              <Skeleton className="h-4 w-[160px]" />
+              <Skeleton className="h-3 w-[120px]" />
+              <Skeleton className="h-3 w-[80px]" />
+            </GlassCard>
+          ))}
+        </div>
       ) : templates.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 space-y-3">
           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto">
