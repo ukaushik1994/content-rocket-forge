@@ -35,6 +35,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageSquarePlus,
+  BookOpen,
+  Wrench,
+  MessageCircle,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -279,29 +282,12 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           {/* Divider */}
           <div className="w-6 h-px bg-border/20 my-2" />
 
-          {/* Scrollable icon area */}
-          <ScrollArea className="flex-1 w-full">
-            <div className="flex flex-col items-center gap-0.5">
-              {/* Library */}
-              {libraryItems.map((item) => (
-                <CollapsedIconButton key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
-              ))}
-
-              <div className="w-6 h-px bg-border/10 my-1.5" />
-
-              {/* Tools */}
-              {toolsItems.map((item) => (
-                <CollapsedIconButton key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
-              ))}
-
-              <div className="w-6 h-px bg-border/10 my-1.5" />
-
-              {/* Engage */}
-              {engageItems.map((item) => (
-                <CollapsedIconButton key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
-              ))}
-            </div>
-          </ScrollArea>
+          {/* Section icons */}
+          <div className="flex flex-col items-center gap-1 flex-1">
+            <CollapsedIconButton icon={<BookOpen className="h-4 w-4" />} label="Library" onClick={onToggleSidebar} />
+            <CollapsedIconButton icon={<Wrench className="h-4 w-4" />} label="Tools" onClick={onToggleSidebar} />
+            <CollapsedIconButton icon={<MessageCircle className="h-4 w-4" />} label="Engage" onClick={onToggleSidebar} />
+          </div>
 
           {/* Bottom: Calendar + Profile */}
           <div className="flex flex-col items-center gap-0.5 mt-2">
