@@ -55,7 +55,7 @@ export const TriggerNode = memo(({ data, selected }: NodeProps) => (
 ));
 
 export const SendEmailNode = memo(({ data, selected }: NodeProps) => (
-  <NodeWrapper color="bg-blue-500" selected={selected}>
+  <NodeWrapper color="bg-blue-500" selected={selected} onDelete={(data as any)?.onDelete}>
     <Handle type="target" position={Position.Top} className="!bg-blue-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <Handle type="source" position={Position.Bottom} className="!bg-blue-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <NodeLabel icon={Mail} label={getLabel(data, 'Send Email')} summary={(data as any)?.config?.template_name || 'No template'} iconBg="bg-blue-500" execCount={(data as any)?.execCount} />
