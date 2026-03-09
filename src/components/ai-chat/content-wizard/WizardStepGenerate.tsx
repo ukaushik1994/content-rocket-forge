@@ -566,7 +566,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
       if (controller.signal.aborted) return;
       setGenerationStage('Generating content...');
+      setGenerationProgress(30);
       const result = await generateAdvancedContent(config);
+      setGenerationProgress(75);
 
       if (result) {
         onContentGenerated(result);
