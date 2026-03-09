@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Brain, Target, Lightbulb, Plus, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { useClusters, useContentGaps, useRecommendations } from '@/hooks/useResearchIntelligence';
 import { cn } from '@/lib/utils';
