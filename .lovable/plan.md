@@ -1,35 +1,31 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Fix: Remove Duplicate Sidebar from EnhancedChatInterface
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## Root Cause
+`EnhancedChatInterface.tsx` renders its **own** `ChatHistorySidebar` (line 382) with `AnimatePresence` that fully hides it when closed, plus a **floating hamburger button** (lines 403-419) using local `showSidebar` state. This completely overrides the persistent collapsed sidebar from `AppLayout.tsx`.
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+The user sees the hamburger from `EnhancedChatInterface`, not the collapsed icon strip from `AppLayout`.
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
+## Fix
 
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
+**File: `src/components/ai-chat/EnhancedChatInterface.tsx`**
 
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
+1. **Remove** the duplicate `ChatHistorySidebar` block (lines 380-389)
+2. **Remove** the floating sidebar toggle button (lines 403-419)
+3. **Remove** the `showSidebar` local state (line 112)
+4. **Connect** the hamburger (if still needed anywhere) to `useSidebarContext().toggleSidebar` instead of local state
+5. Remove unused imports (`ChatHistorySidebar`, `Menu`, etc.)
 
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+This lets `AppLayout`'s sidebar take over — which already handles the collapsed icon strip correctly.
+
+## Result
+- Collapsed state: persistent icon strip from `AppLayout` is visible
+- Expanded state: full sidebar from `AppLayout` slides in
+- No more floating hamburger competing with the sidebar toggle
+
+## Files Changed
+| File | Change |
+|------|--------|
+| `src/components/ai-chat/EnhancedChatInterface.tsx` | Remove duplicate sidebar, floating toggle, and `showSidebar` state |
+
