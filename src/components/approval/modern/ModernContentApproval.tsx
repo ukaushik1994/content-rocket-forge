@@ -279,6 +279,17 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     }
   };
 
+  const handleRevertToDraft = async (id: string) => {
+    try {
+      await updateContentItem(id, { approval_status: 'draft' });
+      await refreshContent();
+      toast.success('Content reverted to draft');
+    } catch (error) {
+      toast.error('Failed to revert content');
+      console.error(error);
+    }
+  };
+
   const handleAssign = (content: ContentItemType) => {
     setAssignTarget(content);
     setShowAssignDialog(true);
@@ -291,7 +302,49 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     setShowHistoryDialog(true);
   };
 
-  return (
+  // Batch selection handlers
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredAndSortedContent.map(i => i.id)));
+  }, [filteredAndSortedContent]);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+  const handleBatchApprove = async () => {
+    const ids = Array.from(selectedIds);
+    toast.info(`Approving ${ids.length} items...`);
+    let success = 0;
+    for (const id of ids) {
+      try {
+        await approveContent(id, 'Batch approved');
+        success++;
+      } catch { /* continue */ }
+    }
+    await refreshContent();
+    clearSelection();
+    toast.success(`${success} of ${ids.length} items approved`);
+  };
+
+  // Notes dialog handlers
+  const openNotesDialog = (action: 'approve' | 'reject' | 'request_changes', contentId: string) => {
+    setNotesDialog({ open: true, action, contentId });
+  };
+
+  const handleNotesSubmit = async (notes: string) => {
+    if (!notesDialog) return;
+    const { action, contentId } = notesDialog;
+    if (action === 'approve') await handleApprove(contentId, notes);
+    else if (action === 'reject') await handleReject(contentId, notes);
+    else if (action === 'request_changes') await handleRequestChanges(contentId, notes);
+    setNotesDialog(null);
+  };
     <div className="min-h-screen w-full">
       {/* Hero Section */}
       <ContentApprovalHero
