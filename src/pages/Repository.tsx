@@ -140,7 +140,17 @@ const Repository = () => {
           transition={{ duration: 0.8 }}
           className="max-w-7xl mx-auto space-y-8"
         >
-          <RepositoryHero />
+          <CompactPageHeader
+            icon={FileText}
+            title="Content Repository"
+            subtitle="Your unified content hub"
+            actions={
+              <Button onClick={() => navigate('/ai-chat')} size="sm">
+                <FileText className="h-4 w-4 mr-1.5" />
+                Create Content
+              </Button>
+            }
+          />
           <RepositoryTabs onOpenDetailView={handleOpenDetailView} />
         </motion.div>
       </div>
