@@ -1084,6 +1084,11 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             {isGeneratingContent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {isGeneratingContent ? 'Generating...' : 'Generate Content'}
           </Button>
+          {isGeneratingContent && (
+            <Button variant="outline" size="sm" onClick={abortGeneration} className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10">
+              <X className="w-3.5 h-3.5" /> Cancel Generation
+            </Button>
+          )}
           {generationStage && (
             <p className="text-[10px] text-muted-foreground text-center animate-pulse">{generationStage}</p>
           )}

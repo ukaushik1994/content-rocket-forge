@@ -194,6 +194,9 @@ export const CategoryContent: React.FC<CategoryContentProps> = ({ category, onOp
                 content={item.originalItem!}
                 onView={() => onOpenDetailView(item.originalItem!)}
                 repurposedFormats={repurposedFormatsMap.get(item.id)}
+                selectable={!!selectedIds}
+                selected={selectedIds?.has(item.id) || false}
+                onToggleSelect={onToggleSelect}
               />
             )
           )}
