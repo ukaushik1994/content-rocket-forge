@@ -29,6 +29,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
   const { analyzeSERP, saveInsight } = useContentStrategy();
   const { data: savedGaps, isLoading: loadingGaps, create: createGap } = useContentGaps();
   const { data: clusters } = useClusters();
+  const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState(goals.mainKeyword || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
