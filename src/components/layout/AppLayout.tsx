@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import Navbar from './Navbar';
 import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
 import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { useSidebarContext } from '@/contexts/SidebarContext';
@@ -33,14 +32,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   const handlePanel = (panelType: string) => {
-    // Navigate to /ai-chat and set pending panel so it auto-opens
     setPendingPanel(panelType);
     navigate('/ai-chat');
   };
 
   const handleSelectConversation = (id: string) => {
     selectConversation(id);
-    // Navigate to chat if not already there
     if (location.pathname !== '/ai-chat') {
       navigate('/ai-chat');
     }
@@ -55,9 +52,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-
-      <div className="flex-1 flex pt-16 relative">
+      <div className="flex-1 flex relative">
         {/* Persistent Sidebar */}
         <AnimatePresence>
           {isSidebarOpen && (
@@ -88,8 +83,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           className={cn(
             "fixed z-[60] transition-all duration-300",
             isSidebarOpen
-              ? 'top-[4.5rem] sm:left-[16.5rem] lg:left-[18.5rem]'
-              : 'top-20 left-4'
+              ? 'top-3 sm:left-[16.5rem] lg:left-[18.5rem]'
+              : 'top-3 left-4'
           )}
         >
           <Button

@@ -404,8 +404,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       <div
         className={`fixed z-[60] transition-all duration-300 ${
           showSidebar 
-            ? 'top-[4.5rem] sm:left-[16.5rem] lg:left-[18.5rem]' 
-            : 'top-20 left-4'
+            ? 'top-3 sm:left-[16.5rem] lg:left-[18.5rem]' 
+            : 'top-3 left-4'
         }`}
       >
         <Button
@@ -420,7 +420,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       {/* Main Content Area - Chat and Visualization side by side */}
       <div className={cn(
-        "flex-1 flex transition-all duration-300 ease-out pt-20 pb-24 overflow-hidden",
+        "flex-1 flex transition-all duration-300 ease-out pt-4 pb-24 overflow-hidden",
         // Left sidebar margin - desktop only (sidebars overlay on mobile/tablet)
         showSidebar && !isMobile && "sm:ml-72 lg:ml-80"
       )}>

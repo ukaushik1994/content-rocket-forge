@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Navbar from '@/components/layout/Navbar';
+
 import { EnhancedChatInterface } from '@/components/ai-chat/EnhancedChatInterface';
 import { EnhancedChatIntegration } from '@/components/ai-chat/EnhancedChatIntegration';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -94,10 +94,8 @@ const AIChat = () => {
         ))}
       </div>
 
-      <Navbar />
-      
       <motion.main 
-        className="flex-1 flex overflow-hidden pt-20"
+        className="flex-1 flex overflow-hidden pt-4"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
