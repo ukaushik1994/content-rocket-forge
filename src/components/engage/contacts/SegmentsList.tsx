@@ -182,14 +182,10 @@ export const SegmentsList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngageHero
+      <CompactPageHeader
         icon={Layers}
         title="Segments"
         subtitle="Group contacts by rules"
-        gradientFrom="from-violet-400"
-        gradientTo="to-purple-400"
-        glowFrom="from-violet-500/30"
-        glowTo="to-purple-500/10"
         actions={
           canEdit ? (
             <Dialog open={showAdd || !!editingSegment} onOpenChange={open => { if (!open) { setShowAdd(false); resetForm(); } else setShowAdd(true); }}>
