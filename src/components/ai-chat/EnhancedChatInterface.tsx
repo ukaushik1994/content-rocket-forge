@@ -4,7 +4,6 @@ import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { ContextAwareMessageInput } from './ContextAwareMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
-import { ChatHistorySidebar } from './ChatHistorySidebar';
 import { VisualizationSidebar } from './VisualizationSidebar';
 import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
 import { SolutionSuggestions } from './SolutionSuggestions';
@@ -21,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
 import { RateLimitBanner } from '@/components/common/RateLimitBanner';
 import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
-import { Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2, Search } from 'lucide-react';
+import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { cn } from '@/lib/utils';
@@ -108,8 +107,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [currentMatchIndex, messageSearchResults]);
-
-  const [showSidebar, setShowSidebar] = useState(false);
 
   const { pendingPanel, setPendingPanel } = useSidebarContext();
   const [contextSources, setContextSources] = useState<any[]>([]);
@@ -271,17 +268,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   }, [messages, isTyping, scrollToBottom]);
 
 
-  // Handle escape key to close sidebar
-  useEffect(() => {
-    const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showSidebar) {
-        setShowSidebar(false);
-      }
-    };
 
-    document.addEventListener('keydown', handleEscapeKey);
-    return () => document.removeEventListener('keydown', handleEscapeKey);
-  }, [showSidebar]);
+
   const handleSendMessage = async (message: string) => {
     await sendMessage(message);
   };
@@ -377,16 +365,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const { isMobile, isTablet, isDesktop } = useResponsiveBreakpoint();
 
   return <div className={cn("h-full flex flex-col", className)}>
-      {/* Chat History Sidebar */}
-      <AnimatePresence>
-      {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} onOpenPanel={(panelType) => {
-              if (panelType === 'content_wizard') {
-                handleSetVisualization({ type: 'content_wizard', keyword: '', content_type: 'blog' });
-              } else {
-                handleSetVisualization({ type: panelType });
-              }
-            }} />}
-      </AnimatePresence>
 
       {/* Visualization Sidebar (Right) - positioned within chat area */}
       <VisualizationSidebar
@@ -400,29 +378,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         onInteract={handleSidebarInteraction}
       />
 
-      {/* Floating Sidebar Toggle */}
-      <div
-        className={`fixed z-[60] transition-all duration-300 ${
-          showSidebar 
-            ? 'top-3 sm:left-[16.5rem] lg:left-[18.5rem]' 
-            : 'top-3 left-4'
-        }`}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowSidebar(!showSidebar)}
-          className="rounded-full border border-border/20 hover:border-border/40 hover:bg-muted/30 bg-transparent text-muted-foreground hover:text-foreground"
-        >
-          <Menu className="h-4 w-4" />
-        </Button>
-      </div>
-
       {/* Main Content Area - Chat and Visualization side by side */}
       <div className={cn(
-        "flex-1 flex transition-all duration-300 ease-out pt-4 pb-24 overflow-hidden",
-        // Left sidebar margin - desktop only (sidebars overlay on mobile/tablet)
-        showSidebar && !isMobile && "sm:ml-72 lg:ml-80"
+        "flex-1 flex transition-all duration-300 ease-out pt-4 pb-24 overflow-hidden"
       )}>
         {/* Chat Messages Area - shrinks when visualization sidebar is open */}
         <motion.div 
@@ -610,7 +568,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         "border-t border-border/20 bg-background/80 backdrop-blur-md",
         "transition-all duration-300 ease-out",
         // Left padding only on desktop when sidebar is open (sidebars overlay on mobile/tablet)
-        showSidebar && !isMobile && "sm:pl-72 lg:pl-80"
+        false
       )}>
         <div className="max-w-6xl mx-auto px-4 py-3">
           {/* Context Indicator */}
