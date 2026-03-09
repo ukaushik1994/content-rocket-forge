@@ -355,24 +355,31 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         </div>
 
         {/* New Chat + Search */}
-        <div className="px-3 py-2 space-y-2">
-          <Button
+        <div className="px-2 pt-2 pb-1">
+          <SidebarNavItem
+            icon={<Plus className="h-4 w-4" />}
+            label="New chat"
             onClick={onCreateConversation}
-            variant="outline"
-            className="w-full justify-start gap-2 h-9 text-sm text-muted-foreground hover:text-foreground border-border/15"
-          >
-            <MessageSquarePlus className="h-4 w-4" />
-            New Chat
-          </Button>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-            <Input
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-transparent border-border/15 text-foreground placeholder:text-muted-foreground/40 focus:border-border/40 focus-visible:ring-0 focus-visible:ring-offset-0 h-8 text-xs rounded-lg"
+          />
+          {searchActive ? (
+            <div className="flex items-center gap-2 px-3 py-2">
+              <Search className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+              <input
+                autoFocus
+                placeholder="Search chats..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onBlur={() => { if (!searchTerm) setSearchActive(false); }}
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 outline-none border-none"
+              />
+            </div>
+          ) : (
+            <SidebarNavItem
+              icon={<Search className="h-4 w-4" />}
+              label="Search"
+              onClick={() => setSearchActive(true)}
             />
-          </div>
+          )}
         </div>
 
         <ScrollArea className="flex-1">
