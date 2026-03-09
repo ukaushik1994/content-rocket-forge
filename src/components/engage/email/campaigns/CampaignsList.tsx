@@ -473,30 +473,7 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
         </DialogContent>
       </Dialog>
 
-      {/* Stats */}
-      {campaigns.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Draft', count: stats.draft, icon: Clock },
-            { label: 'Sending', count: stats.sending, icon: Send },
-            { label: 'Complete', count: stats.complete, icon: CheckCircle },
-          ].map((s, i) => (
-            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <GlassCard className="p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground">{s.label}</p>
-                    <p className="text-xl font-semibold text-foreground">{s.count}</p>
-                  </div>
-                  <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                    <s.icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          ))}
-        </div>
-      )}
+      {/* Stats removed — status badges on cards are sufficient */}
 
       {/* List */}
       {isLoading ? (
