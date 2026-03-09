@@ -444,9 +444,12 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                 {conversations && conversations.length > 0 ? (
                   filteredConversations.length > 0 ? (
                     <>
+              <div role="list">
                       {displayedConversations.map((conversation) => (
                         <div
                           key={conversation.id}
+                          role="listitem"
+                          aria-selected={activeConversation === conversation.id}
                           className={cn(
                             "mx-1 mb-0.5 px-3 py-2 cursor-pointer transition-[background-color,color] duration-200 rounded-lg group relative overflow-hidden",
                             activeConversation === conversation.id 
