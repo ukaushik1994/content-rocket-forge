@@ -12,8 +12,21 @@ import {
   Eye,
   Image as ImageIcon,
   Film,
-  Pencil
+  Pencil,
+  Trash2
 } from 'lucide-react';
+import { useContent } from '@/contexts/content';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
