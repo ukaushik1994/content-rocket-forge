@@ -1895,6 +1895,19 @@ serve(async (req) => {
       // Add platform knowledge for comprehensive understanding
       systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
     }
+
+    // Inject Analyst context if active (user has Analyst panel open)
+    if (context?.analystActive) {
+      systemPrompt += `\n\n## 📊 ANALYST MODE ACTIVE
+The user has the Analyst sidebar panel open. They expect data-rich, visual responses.
+CRITICAL: For EVERY response while Analyst is active:
+1. ALWAYS include visualData with charts showing relevant metrics
+2. ALWAYS include summaryInsights.metricCards (2-4 key stats)
+3. ALWAYS include actionableItems and deepDivePrompts
+4. Proactively surface data insights even if the user asks a general question
+5. Default to multi-chart analysis when possible
+Make every response a mini-dashboard. The Analyst panel will auto-render your chart data.`;
+    }
     
     // Inject real data context
     systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;

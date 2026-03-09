@@ -31,6 +31,7 @@ export const useEnhancedAIChatDB = () => {
     conversationId: string;
     conversationHistory: Array<{ role: string; content: string }>;
   } | null>(null);
+  const analystActiveRef = useRef(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -419,7 +420,7 @@ export const useEnhancedAIChatDB = () => {
           },
           body: JSON.stringify({
             messages: conversationHistory,
-            context: { conversationId },
+            context: { conversationId, analystActive: analystActiveRef.current },
             userId: user.id,
             features: ['streaming'],
           }),
@@ -1105,6 +1106,10 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [activeConversation, loadMessages]);
 
+  const setAnalystActive = useCallback((active: boolean) => {
+    analystActiveRef.current = active;
+  }, []);
+
   return {
     conversations,
     activeConversation,
@@ -1131,6 +1136,7 @@ export const useEnhancedAIChatDB = () => {
     editMessage,
     deleteMessage,
     handleConfirmAction,
-    handleCancelAction
+    handleCancelAction,
+    setAnalystActive
   };
 };

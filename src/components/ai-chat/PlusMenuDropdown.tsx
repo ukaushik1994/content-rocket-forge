@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Paperclip, PenLine, BookOpen, X } from 'lucide-react';
+import { Plus, Paperclip, PenLine, BookOpen, BarChart3, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PlusMenuDropdownProps {
   onAttachFile: () => void;
   onContentWizard: () => void;
   onResearchIntelligence?: () => void;
+  onAnalyst?: () => void;
   onAIProposals?: () => void;
   disabled?: boolean;
 }
@@ -17,6 +18,7 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
   onAttachFile,
   onContentWizard,
   onResearchIntelligence,
+  onAnalyst,
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,6 +41,12 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
       label: 'Research Intelligence',
       description: 'Plan content strategy & gaps',
       onClick: onResearchIntelligence,
+    }] : []),
+    ...(onAnalyst ? [{
+      icon: BarChart3,
+      label: 'Analyst',
+      description: 'Charts & insights companion',
+      onClick: onAnalyst,
     }] : []),
   ];
 

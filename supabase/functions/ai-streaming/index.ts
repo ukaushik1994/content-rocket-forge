@@ -454,6 +454,19 @@ CURRENT USER DATA:
 - Contacts: ${context.contactCount ?? 'unknown'}
 ` : '';
 
+  const analystMode = context?.analystActive ? `
+
+## 📊 ANALYST MODE ACTIVE
+The user has the Analyst sidebar panel open. They expect data-rich, visual responses.
+CRITICAL: For EVERY response while Analyst is active:
+1. ALWAYS include visualData JSON blocks with charts showing relevant metrics
+2. ALWAYS include summaryInsights.metricCards (2-4 key stats)
+3. ALWAYS include actionableItems and deepDivePrompts
+4. Proactively surface data insights even if the user asks a general question
+5. Default to multi-chart analysis when possible
+Make every response a mini-dashboard. The Analyst panel will auto-render your chart data.
+` : '';
+
   return `You are creAIter, an AI-powered content strategy assistant and the central intelligence of an end-to-end content marketing platform. You have full access to the user's workspace and can take real actions on their behalf.
 
 ${contextInfo}
@@ -493,7 +506,8 @@ ${contextInfo}
 - Use markdown formatting for readability (headers, bold, lists).
 - Be conversational but action-oriented.
 - For read-only queries (show me, list, how many, analyze), provide data insights directly.
-- Keep responses focused and avoid unnecessary preamble.`;
+- Keep responses focused and avoid unnecessary preamble.
+${analystMode}`;
 }
 
 serve(async (req) => {

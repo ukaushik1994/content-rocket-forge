@@ -60,7 +60,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     editMessage,
     deleteMessage,
     handleConfirmAction,
-    handleCancelAction
+    handleCancelAction,
+    setAnalystActive
   } = useSharedAIChatDB();
 
   // Message search state
@@ -227,7 +228,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const handleCloseSidebar = () => {
     setShowVisualizationSidebar(false);
     setSidebarInteracted(false);
-    setUserClosedSidebar(true); // Remember user explicitly closed
+    setUserClosedSidebar(true);
+    setAnalystActive(false);
   };
   
   // Handle manual open (resets close intent)
@@ -601,6 +603,14 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 type: 'research_intelligence',
                 title: 'Research Intelligence',
                 description: 'Plan content strategy & identify gaps',
+              });
+            }}
+            onOpenAnalyst={() => {
+              setAnalystActive(true);
+              handleSetVisualization({
+                type: 'analyst',
+                title: 'Analyst',
+                description: 'Charts & insights companion',
               });
             }}
           />

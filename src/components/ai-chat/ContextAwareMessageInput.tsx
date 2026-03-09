@@ -23,6 +23,7 @@ interface ContextAwareMessageInputProps {
   onTypingChange?: (isTyping: boolean) => void;
   onOpenProposals?: () => void;
   onOpenResearch?: () => void;
+  onOpenAnalyst?: () => void;
   onLaunchWizard?: (userPrompt: string) => void;
 }
 
@@ -33,6 +34,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   onTypingChange,
   onOpenProposals,
   onOpenResearch,
+  onOpenAnalyst,
   onLaunchWizard
 }) => {
   const [message, setMessage] = useState('');
@@ -296,6 +298,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onAttachFile={handleAttachmentClick}
             onContentWizard={handleContentWizardClick}
             onResearchIntelligence={onOpenResearch}
+            onAnalyst={onOpenAnalyst}
             disabled={isLoading}
           />
 

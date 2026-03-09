@@ -1,53 +1,97 @@
 
 
-# Analyst Panel — Plus Menu Integration
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## What It Does
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-Adds an **"Analyst"** item to the chat `+` menu that opens the existing `VisualizationSidebar` in its default chart/analytics mode. When first opened, it shows an empty state prompting the user to ask data questions. As the conversation progresses and the AI generates analytics responses, the sidebar auto-populates with relevant charts, metrics, and insights. The AI's context is enriched with the fact that the Analyst panel is open, so it can proactively provide structured chart data in responses.
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## How It Works
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-The sidebar already renders charts/metrics/insights as its **default mode** (when `visualData.type` is not `content_wizard`, `research_intelligence`, etc.). The "Analyst" toggle simply opens the sidebar with `type: 'analyst'` — which falls through to the default chart view. The key addition is:
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-1. **Empty state**: When opened via the menu with no chart data, show a clean empty state with suggested prompts
-2. **Context injection**: When Analyst is active, flag it in the chat context so the AI knows to return structured `visual_data` 
-3. **Coexistence**: Analyst coexists with other panels — opening it replaces what's currently in the sidebar (same swap behavior as Content Wizard vs Research Intelligence)
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-## Files to Change
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
-### 1. `src/components/ai-chat/PlusMenuDropdown.tsx`
-- Add `onAnalyst` prop
-- Add "Analyst" menu item with `BarChart3` icon, label "Analyst", description "Charts & insights companion"
+---
 
-### 2. `src/components/ai-chat/ContextAwareMessageInput.tsx`
-- Add `onOpenAnalyst` prop
-- Pass it to `PlusMenuDropdown` as `onAnalyst`
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-### 3. `src/components/ai-chat/EnhancedChatInterface.tsx`
-- Add `onOpenAnalyst` handler that calls `handleSetVisualization({ type: 'analyst' })`
-- Pass it to `ContextAwareMessageInput`
-- Track `analystActive` state — set true when Analyst is opened, false when sidebar closes
-- Inject analyst context flag into `sendMessage` so the edge function knows to return chart data
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-### 4. `src/components/ai-chat/VisualizationSidebar.tsx`
-- Add `type === 'analyst'` handling — falls through to the default chart view but with a custom empty state
-- When `visualData?.type === 'analyst'` and there's no chart data, show a premium empty state with:
-  - `BarChart3` icon (48px)
-  - Title: "Analyst"
-  - Subtitle: "Ask me about your data and I'll visualize it here"
-  - 3-4 suggested prompt pills (e.g., "Show content performance", "Campaign health", "Keyword rankings")
-  - Clicking a pill sends the message via `onSendMessage`
-- When chart data exists (from subsequent AI responses), render the standard chart view
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-### 5. `supabase/functions/enhanced-ai-chat/index.ts` (context injection)
-- When the request includes `analystActive: true`, append a system instruction telling the AI to include structured `visual_data` in responses with chart configurations, metric cards, and insights
-- This ensures the AI proactively returns data that auto-populates the sidebar
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
-## Technical Notes
-- No new dependencies needed
-- No database changes needed
-- The sidebar swap behavior is already handled — opening Analyst replaces any current panel
-- The auto-open logic in `EnhancedChatInterface` (lines 171-180) already handles updating the sidebar when new messages contain `visual_data`
-- The Analyst empty state uses the same `glass-card` styling from Round 1
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
 
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+
+---
+
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
+
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
