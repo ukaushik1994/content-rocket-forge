@@ -1,35 +1,35 @@
 
 
-# Sidebar Style Cleanup — Match Reference Design
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## What Changes
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-The reference images show a minimal, flat list style:
-- **New Chat**: plain text item with a `+` icon, not a full-width outlined button
-- **Search**: plain text item with a magnifying glass icon, not an input field (clicking it could activate search mode)
-- **Library / Tools / Engage**: displayed as simple section labels (like current) but their child items use a clean icon + text row style — no button backgrounds, no badges, just clean rows
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## Specific Changes in `ChatHistorySidebar.tsx`
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-### 1. New Chat — change from `<Button>` to a plain nav item
-Replace the outlined button (lines 359-366) with a `SidebarNavItem`-style row:
-- `+` icon + "New chat" text, same style as other nav items
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### 2. Search — change from `<Input>` to a clickable nav item
-Replace the search input (lines 367-375) with a clickable row:
-- Magnifying glass icon + "Search" text
-- Clicking it toggles a search input inline (or activates search mode)
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### 3. Section items (Library, Tools, Engage) — keep collapsible but refine styling
-- Keep `CollapsibleSection` structure but make the section label style match the reference (lighter, smaller)
-- Items already use `SidebarNavItem` which is close to the reference — just ensure consistent spacing
-
-### 4. SidebarNavItem refinement
-- Slightly increase vertical padding to match the reference image spacing
-- Keep icon + label layout as-is (already matches)
-
-## File Changed
-| File | Change |
-|------|--------|
-| `src/components/ai-chat/ChatHistorySidebar.tsx` | Replace New Chat button and Search input with plain nav-item rows; refine item spacing |
-
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
