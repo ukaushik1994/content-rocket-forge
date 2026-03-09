@@ -464,7 +464,69 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span className="text-xs">Approve Content</span>
+                    <span className="text-xs">Approve</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {(status === 'pending_review' || status === 'in_review') && onRequestChanges && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onRequestChanges(content.id)}
+                      className="bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 text-orange-400"
+                    >
+                      <AlertCircle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Request Changes</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {(status === 'pending_review' || status === 'in_review') && onReject && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onReject(content.id)}
+                      className="bg-destructive/10 hover:bg-destructive/20 border-destructive/30 text-destructive"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Reject</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {/* Revert to Draft for approved/rejected/needs_changes */}
+            {(status === 'approved' || status === 'rejected' || status === 'needs_changes') && onRevertToDraft && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onRevertToDraft(content.id)}
+                      className="bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/30 text-slate-400"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Draft</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Revert to Draft</span>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
