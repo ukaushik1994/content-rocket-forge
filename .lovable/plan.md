@@ -1,35 +1,43 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Automations Page — Keywords-Style Visual Overhaul
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## Current State
+The Automations page uses a compact left-aligned header (icon + title + dropdown), an inline stats bar (`GlassCard`), and `EngageFilterBar` — functional but visually flat compared to the Email Dashboard's new immersive hero.
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+## Plan — 1 File
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
+### Transform the header section (lines 662–797) to mirror the Email/Keywords centered hero layout:
 
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
+**1. Centered Hero with Glassmorphic Badge**
+- Replace the compact `flex items-center justify-between` header with a centered hero section
+- Glassmorphic badge pill: `Zap` icon + "Automation Hub" + pulsing amber dot
+- Large gradient title: `text-4xl md:text-6xl font-bold bg-gradient-to-r from-foreground via-amber-500 to-orange-500 bg-clip-text text-transparent`
+- Centered subtitle paragraph
+- Centered action buttons (New Automation, Templates, Run Now) with glassmorphic styling and hover animations
 
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
+**2. Centered Stats as Glassmorphic Icon-Cards**
+- Replace the inline stats bar with centered glassmorphic stat cards (like Email Dashboard)
+- 4 cards: Active, Paused, Total Runs, Success Rate — each with icon, value, and label
+- `bg-background/60 backdrop-blur-xl border-border/50 rounded-2xl` styling
 
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+**3. Glassmorphic Filter Bar**
+- Keep existing `EngageFilterBar` but wrap in the same centered layout
+- Status filter pills (All/Active/Paused) stay but get the same glassmorphic treatment
+
+**4. Staggered Entry Animations**
+- Badge: delay 0, Title: delay 0.2, CTAs: delay 0.4, Stats: delay 0.6, Filters: delay 0.8
+- Consistent with Email Dashboard timing
+
+**5. Analytics Chart Section**
+- Keep the collapsible analytics chart but move the toggle into the stats row area
+- Chart container gets the same glassmorphic treatment
+
+### File to edit
+
+| File | Changes |
+|------|---------|
+| `AutomationsList.tsx` | Replace compact header + stats bar with centered hero, glassmorphic stats cards, animated entry — lines ~662-797 |
+
+1 file. No new dependencies. Same pattern as Email Dashboard overhaul.
+
