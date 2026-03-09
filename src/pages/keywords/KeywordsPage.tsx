@@ -127,16 +127,13 @@ const KeywordsPage = () => {
   }, [keywords, searchQuery, statusFilter, sortBy]);
 
   return (
-    <div className="min-h-screen w-full bg-background relative overflow-hidden">
+    <PageContainer className="relative overflow-hidden">
       <Helmet>
         <title>Keywords — Keyword Repository & Management</title>
         <meta name="description" content="Manage your keyword library with comprehensive metrics, track keyword usage across content, and identify cannibalization issues." />
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
       
-      
-      
-      {/* Animated Background */}
       <AnimatedBackground intensity="medium" />
       
       {/* Spacing for fixed navbar */}
