@@ -315,11 +315,11 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Campaigns</h2>
+          <h2 className="text-lg font-semibold text-foreground">Campaigns</h2>
           <p className="text-sm text-muted-foreground">{campaigns.length} campaigns</p>
         </div>
         {canEdit && (
-          <EngageButton size="sm" onClick={() => openWizard()}><Plus className="h-4 w-4 mr-1" /> New Campaign</EngageButton>
+          <Button size="sm" className="text-xs gap-1.5 bg-foreground text-background hover:bg-foreground/90" onClick={() => openWizard()}><Plus className="h-3.5 w-3.5" /> New Campaign</Button>
         )}
       </div>
 
