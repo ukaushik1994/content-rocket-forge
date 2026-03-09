@@ -319,14 +319,20 @@ export const JourneysList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngageHero
+      <EngagePageHero
         icon={GitBranch}
+        badge="Journey Builder"
         title="Journeys"
-        subtitle="Visual customer journey flows"
+        titleAccent="Builder"
+        subtitle="Visual customer journey flows — automate engagement at scale"
         gradientFrom="from-purple-400"
         gradientTo="to-blue-400"
-        glowFrom="from-purple-500/30"
-        glowTo="to-blue-500/10"
+        stats={[
+          { icon: Play, label: 'Active', value: stats.active },
+          { icon: GitBranch, label: 'Draft', value: stats.draft },
+          { icon: Users, label: 'Enrolled', value: totalEnrolled },
+          { icon: TrendingUp, label: 'Completion', value: `${avgCompletion}%` },
+        ]}
         actions={
           canEdit ? (
             <Dialog open={showCreate} onOpenChange={o => { setShowCreate(o); if (!o) { setName(''); setDescription(''); setSelectedTemplate(null); } }}>
@@ -369,10 +375,11 @@ export const JourneysList = () => {
       />
 
       {/* Search */}
-      <motion.div variants={engageStagger.item} className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search journeys..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-white/[0.03] border-white/[0.06] backdrop-blur-sm" />
-      </motion.div>
+      <EngageFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search journeys..."
+      />
 
       {/* F3: Rename + Description Dialog */}
       <Dialog open={!!renamingId} onOpenChange={() => setRenamingId(null)}>
