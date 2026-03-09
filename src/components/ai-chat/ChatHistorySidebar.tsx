@@ -249,6 +249,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     { icon: <Megaphone className="h-4 w-4" />, label: 'Campaigns', action: () => handleNavigation('/campaigns') },
     { icon: <Key className="h-4 w-4" />, label: 'Keywords', action: () => handleNavigation('/keywords') },
     { icon: <BarChart3 className="h-4 w-4" />, label: 'Analytics', action: () => handleNavigation('/analytics') },
+    { icon: <BookOpen className="h-4 w-4" />, label: 'Research', action: () => handlePanel('research_intelligence') },
   ];
 
   const engageItems = [

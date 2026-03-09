@@ -1,66 +1,53 @@
 
 
-# Phase 3: Research Intelligence — Wire DB + Service Layer + Sidebar Access
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Current State
-- **DB tables exist**: `topic_clusters`, `content_gaps`, `strategy_recommendations`, `topic_performance` — all with RLS and proper schemas
-- **UI components exist**: `TopicClusterCard`, `CreateClusterModal`, `ClusterDetailsModal`, `ContentGapsTab`, `StrategyDashboard`
-- **Zero DB queries** — no file calls `.from('topic_clusters')`, `.from('content_gaps')`, or `.from('strategy_recommendations')`
-- **Frontend type mismatch** — `TopicCluster` interface in `src/types/topicCluster.ts` doesn't match the DB schema (e.g., DB has `cluster_name`, frontend has `name`)
-- **No sidebar entry** — Topic Clusters and Research Intelligence aren't accessible from the chat sidebar
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-## Implementation Plan (3 batches)
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-### Batch 1: Service Layer + Type Alignment (this batch)
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-**1. Create `src/services/researchIntelligenceService.ts`**
-CRUD service for all three tables:
-- `fetchTopicClusters(userId)` → query `topic_clusters` with `content_gaps` count
-- `createTopicCluster(data)` / `updateTopicCluster` / `deleteTopicCluster`
-- `fetchContentGaps(userId, clusterId?)` → query `content_gaps` ordered by opportunity_score
-- `createContentGap(data)` / `updateContentGap` / `deleteContentGap`
-- `fetchStrategyRecommendations(userId)` → query `strategy_recommendations` with status filter
-- `acceptRecommendation(id)` / `dismissRecommendation(id)`
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-**2. Update `src/types/topicCluster.ts`**
-Align the `TopicCluster` interface to match DB columns:
-- `name` → `cluster_name`
-- Add `user_id`, `importance_score`, `parent_cluster_id`, `topic_count`
-- Add mapper functions `dbToTopicCluster()` and `topicClusterToDb()` for backward compat with existing card components
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-**3. Create `src/hooks/useResearchIntelligence.ts`**
-React Query hook wrapping the service:
-- `useClusters()` — fetch + create + delete with cache invalidation
-- `useContentGaps(clusterId?)` — fetch gaps with optional cluster filter
-- `useRecommendations()` — fetch + accept/dismiss
-
-**4. Add sidebar entry in `ChatHistorySidebar.tsx`**
-Add "Research" item to the `toolsItems` array:
-```
-{ icon: <Brain />, label: 'Research', action: () => handlePanel('research_intelligence') }
-```
-
-**5. Create `src/components/panels/ResearchIntelligencePanel.tsx`**
-Panel with 3 tabs:
-- **Clusters** — list of `TopicClusterCard` items + "Create Cluster" button, wired to real DB
-- **Content Gaps** — reuses `ContentGapsTab` but also shows saved gaps from DB
-- **Recommendations** — cards showing AI strategy recommendations with Accept/Dismiss actions
-
-**6. Register panel in `VisualizationSidebar.tsx`**
-Add `case 'research_intelligence'` rendering `ResearchIntelligencePanel`
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-### Summary
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-| File | Action |
-|------|--------|
-| New `src/services/researchIntelligenceService.ts` | CRUD for 3 DB tables |
-| New `src/hooks/useResearchIntelligence.ts` | React Query wrapper |
-| New `src/components/panels/ResearchIntelligencePanel.tsx` | 3-tab panel |
-| `src/types/topicCluster.ts` | Align types to DB schema + mappers |
-| `src/components/ai-chat/ChatHistorySidebar.tsx` | Add Research sidebar item |
-| `src/components/ai-chat/VisualizationSidebar.tsx` | Register panel |
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` (208 lines, simple DB CRUD) was shadowing `useEnhancedAIChatDB.ts` (1136 lines, full chat logic with messages/sendMessage/streaming)
+- **Fix**: Deleted the `.tsx` duplicate so the context correctly uses the full `.ts` version
+- Messages, sendMessage, isTyping, and all chat state now properly shared via AIChatDBContext
 
-6 files. No new dependencies. No DB migrations needed — tables already exist.
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx` for both title and content preview
+- Strips all HTML tags, returns plain text only
 
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
+- Total Content + Published → `/ai-chat` (Repository panel)
+- Total Views + Revenue → `/analytics`
