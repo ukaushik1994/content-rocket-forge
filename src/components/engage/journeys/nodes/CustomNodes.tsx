@@ -15,8 +15,16 @@ const glowMap: Record<string, string> = {
   'bg-gray-500': 'hover:shadow-gray-500/20',
 };
 
-const NodeWrapper = ({ children, color, selected }: { children: React.ReactNode; color: string; selected?: boolean }) => (
+const NodeWrapper = ({ children, color, selected, onDelete }: { children: React.ReactNode; color: string; selected?: boolean; onDelete?: () => void }) => (
   <div className={`${baseStyle} ${glowMap[color] || ''} ${selected ? 'ring-2 ring-primary/50 shadow-xl' : ''}`}>
+    {onDelete && (
+      <button
+        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        className="absolute -top-2 -right-2 z-10 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover/node:opacity-100 transition-opacity shadow-md hover:scale-110"
+      >
+        <Trash2 className="h-3 w-3" />
+      </button>
+    )}
     <div className={`h-1.5 rounded-t-xl ${color}`} />
     <div className="px-3 py-3">{children}</div>
   </div>
