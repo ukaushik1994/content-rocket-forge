@@ -70,7 +70,10 @@ interface SimplifiedRepositoryCardProps {
 export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> = ({ 
   content, 
   onView,
-  repurposedFormats 
+  repurposedFormats,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
 }) => {
   const navigate = useNavigate();
   const { deleteContentItem } = useContent();
