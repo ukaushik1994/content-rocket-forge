@@ -94,10 +94,8 @@ const AIChat = () => {
         ))}
       </div>
 
-      <Navbar />
-      
       <motion.main 
-        className="flex-1 flex overflow-hidden pt-20"
+        className="flex-1 flex overflow-hidden pt-4"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
