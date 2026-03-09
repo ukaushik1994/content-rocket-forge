@@ -370,7 +370,6 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
         )}
       </AnimatePresence>
 
-    <div className="min-h-screen w-full">
       {/* Hero Section */}
       <ContentApprovalHero
         contentStats={contentStats}
