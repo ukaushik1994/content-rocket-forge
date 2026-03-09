@@ -587,7 +587,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         setEditableContent(fallback);
         toast.warning('AI returned empty content. A keyword-rich draft outline has been created.');
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError' || controller.signal.aborted) return;
       console.error('Content generation failed:', err);
       const fallback = buildKeywordRichFallback();
       onContentGenerated(fallback);

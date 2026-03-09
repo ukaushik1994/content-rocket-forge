@@ -153,6 +153,20 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
         before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:to-transparent before:opacity-0 
         hover:before:opacity-100 before:transition-opacity before:duration-500 before:pointer-events-none">
         
+        {/* Selection checkbox */}
+        {selectable && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleSelect?.(content.id); }}
+            className={`absolute top-3 left-3 z-20 h-5 w-5 rounded border-2 flex items-center justify-center transition-all
+              ${selected
+                ? 'bg-primary border-primary text-primary-foreground'
+                : 'border-muted-foreground/40 bg-background/60 backdrop-blur-sm hover:border-primary/60'
+              }`}
+          >
+            {selected && <Check className="h-3 w-3" />}
+          </button>
+        )}
+
         {/* Image preview banner if has generated images */}
         {hasImages && firstImageUrl && (
           <div className="relative h-32 overflow-hidden border-b border-border/30">
