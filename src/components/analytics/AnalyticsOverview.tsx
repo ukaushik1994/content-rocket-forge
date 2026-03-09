@@ -329,7 +329,7 @@ export const AnalyticsOverview = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Search Position</p>
             <p className="text-2xl font-bold">{avgPosition.toFixed(1)}</p>
