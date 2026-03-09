@@ -62,6 +62,14 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
   const [detailCampaign, setDetailCampaign] = useState<any>(null);
 
+  // Open wizard when triggered from dashboard
+  useEffect(() => {
+    if (openWizardOnMount && !showWizard) {
+      openWizard();
+      onWizardOpened?.();
+    }
+  }, [openWizardOnMount]);
+
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['email-campaigns', currentWorkspaceId],
     queryFn: async () => {
