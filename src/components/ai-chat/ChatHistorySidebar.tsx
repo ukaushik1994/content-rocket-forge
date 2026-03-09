@@ -526,6 +526,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                           </div>
                         </div>
                       ))}
+                      </div>
                       
                       {/* Load More */}
                       {hasMoreConversations && (
