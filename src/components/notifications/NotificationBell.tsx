@@ -26,11 +26,11 @@ export const NotificationBell: React.FC = () => {
   }, [refresh]);
 
   return (
-    <div className="relative p-1">
+    <div className="fixed top-4 right-4 z-50right-4 z-50">
       <Button
         variant="ghost"
         size="icon"
-        className="rounded-full border border-border relative hover:bg-accent/50 transition-colors"
+        className="rounded-full border border-border relative hover:bg-accent/50 trans bg-background/80 backdrop-blur-md shadow-lgition-colors"
         onClick={() => setOpen((v) => !v)}
         title="Notifications"
       >

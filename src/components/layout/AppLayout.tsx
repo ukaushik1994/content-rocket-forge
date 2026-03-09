@@ -6,6 +6,7 @@ import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { useSidebarContext } from '@/contexts/SidebarContext';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -72,6 +73,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <NotificationBell />
       <div className="flex-1 flex relative">
         {/* On mobile: only show expanded sidebar via AnimatePresence when open */}
         {isMobile ? (

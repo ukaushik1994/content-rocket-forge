@@ -1,30 +1,35 @@
 
 
-# Floating Notification Bell — Top Right
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Current State
-The `NotificationBell` is rendered in two places: inside `ChatHistorySidebar` header and inside `Navbar`. Neither is floating — they're inline within their parent layouts.
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-## Plan
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-### 1. Make NotificationBell fixed/floating (`NotificationBell.tsx`)
-- Change the wrapper `div` from `relative p-1` to `fixed top-4 right-4 z-50`
-- Add a subtle background blur and shadow for the floating button: `bg-background/80 backdrop-blur-md rounded-full shadow-lg`
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-### 2. Remove from ChatHistorySidebar (`ChatHistorySidebar.tsx`)
-- Remove the `<NotificationBell />` from the sidebar header area (around line 375) to avoid duplication
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### 3. Remove from Navbar (`Navbar.tsx`)
-- Remove `<NotificationBell />` (line 61) since it will now float independently
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### 4. Mount independently in AppLayout or App root
-- Add `<NotificationBell />` directly in `AppLayout.tsx` so it floats globally above all content, independent of sidebar or navbar state
-
-### Files Changed
-| File | Change |
-|------|--------|
-| `src/components/notifications/NotificationBell.tsx` | Make wrapper `fixed top-4 right-4 z-50` with blur/shadow |
-| `src/components/ai-chat/ChatHistorySidebar.tsx` | Remove `NotificationBell` from sidebar header |
-| `src/components/layout/Navbar.tsx` | Remove `NotificationBell` from navbar |
-| `src/components/layout/AppLayout.tsx` | Add `<NotificationBell />` as a floating global element |
-
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
