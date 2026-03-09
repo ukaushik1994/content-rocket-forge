@@ -403,7 +403,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             </CollapsibleSection>
 
             {/* ── ENGAGE (collapsible) ── */}
-            <CollapsibleSection label="Engage" defaultOpen={false}>
+            <CollapsibleSection label="Engage" icon={<MessageCircle className="h-3.5 w-3.5" />} defaultOpen={true}>
               {engageItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
