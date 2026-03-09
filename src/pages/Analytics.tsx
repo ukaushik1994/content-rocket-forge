@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
-import { AnalyticsHero } from '@/components/analytics/AnalyticsHero';
+import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
 import { ContentAnalyticsTab } from '@/components/analytics/ContentAnalyticsTab';
 import { CampaignAnalyticsTab } from '@/components/analytics/CampaignAnalyticsTab';
 import { DrilldownChart } from '@/components/analytics/DrilldownChart';
