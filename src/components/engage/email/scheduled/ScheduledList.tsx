@@ -5,10 +5,27 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Clock, Send, X, Calendar } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+
+const SkeletonCard = () => (
+  <GlassCard className="p-3">
+    <div className="flex items-center justify-between">
+      <div className="space-y-2 flex-1">
+        <Skeleton className="h-4 w-[200px]" />
+        <Skeleton className="h-3 w-[150px]" />
+        <Skeleton className="h-3 w-[100px]" />
+      </div>
+      <div className="flex gap-1">
+        <Skeleton className="h-7 w-20" />
+        <Skeleton className="h-7 w-16" />
+      </div>
+    </div>
+  </GlassCard>
+);
 
 export const ScheduledList = () => {
   const { currentWorkspaceId } = useWorkspace();
@@ -43,9 +60,17 @@ export const ScheduledList = () => {
 
   const sendNow = useMutation({
     mutationFn: async (id: string) => {
-      // Just keep as queued - the job runner will pick it up
-      toast.info('Email will be sent on next processing cycle');
+      const { error } = await supabase
+        .from('email_messages')
+        .update({ status: 'sending', queued_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scheduled-emails'] });
+      toast.success('Email moved to sending queue');
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   return (
@@ -55,7 +80,9 @@ export const ScheduledList = () => {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground text-sm">Loading...</div>
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
+        </div>
       ) : messages.length === 0 ? (
         <div className="text-center py-12 space-y-2">
           <Calendar className="h-8 w-8 mx-auto text-muted-foreground/30" />
@@ -79,7 +106,7 @@ export const ScheduledList = () => {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => sendNow.mutate(msg.id)}>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => sendNow.mutate(msg.id)} disabled={sendNow.isPending}>
                       <Send className="h-3 w-3 mr-0.5" /> Send Now
                     </Button>
                     <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive" onClick={() => cancelEmail.mutate(msg.id)}>

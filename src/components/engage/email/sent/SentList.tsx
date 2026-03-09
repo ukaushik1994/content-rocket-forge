@@ -59,7 +59,19 @@ export const SentList = () => {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground text-sm">Loading...</div>
+        <div className="space-y-2">
+          {[...Array(4)].map((_, i) => (
+            <GlassCard key={i} className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-3 w-[150px]" />
+                </div>
+                <Skeleton className="h-5 w-16" />
+              </div>
+            </GlassCard>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 space-y-2">
           <Send className="h-8 w-8 mx-auto text-muted-foreground/30" />
