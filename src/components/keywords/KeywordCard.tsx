@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,45 @@ import { formatDistanceToNow } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+
+// Simple SVG sparkline component
+const Sparkline: React.FC<{ data: number[]; className?: string }> = ({ data, className = '' }) => {
+  if (data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const w = 80;
+  const h = 24;
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return `${x},${y}`;
+  }).join(' ');
+  const trending = data[data.length - 1] >= data[0];
+  return (
+    <svg width={w} height={h} className={className} viewBox={`0 0 ${w} ${h}`}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={trending ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+// Difficulty badge
+const DifficultyBadge: React.FC<{ count: number }> = ({ count }) => {
+  const level = count <= 1 ? 'Easy' : count <= 3 ? 'Medium' : 'Hard';
+  const cls = count <= 1
+    ? 'bg-green-500/15 text-green-400 border-green-500/30'
+    : count <= 3
+    ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30'
+    : 'bg-red-500/15 text-red-400 border-red-500/30';
+  return <Badge className={cls + ' text-[10px] px-1.5 py-0'}>{level}</Badge>;
+};
 
 interface ContentPiece {
   id: string;
@@ -66,6 +105,16 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
   const publishedCount = keyword.content_pieces?.filter(p => p.status === 'published').length || 0;
   const draftCount = keyword.content_pieces?.filter(p => p.status === 'draft').length || 0;
   const hasCannibalization = publishedCount > 1;
+  const totalPieces = (keyword.content_pieces?.length || 0);
+
+  // Generate sparkline data from usage pattern (simulate trend from content pieces)
+  const sparkData = useMemo(() => {
+    const pieces = keyword.content_pieces || [];
+    if (pieces.length === 0) return [0, 0];
+    // Create a simple cumulative usage line
+    const sorted = [...pieces].sort((a, b) => a.id.localeCompare(b.id));
+    return sorted.map((_, i) => i + 1);
+  }, [keyword.content_pieces]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(keyword.keyword);
@@ -82,7 +131,7 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="h-full"
     >
-      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full flex flex-col">
+      <Card className="relative overflow-hidden glass-card glass-card-hover transition-all duration-300 group h-full flex flex-col">
         {/* Animated Background Gradient */}
         <motion.div
           className={`absolute inset-0 bg-gradient-to-br ${hasCannibalization ? 'from-orange-500/10 to-red-500/10' : 'from-primary/10 to-blue-500/10'} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
@@ -100,6 +149,7 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm border border-border/50">
+                  <Sparkline data={sparkData} />
                   <TrendingUp className="h-3 w-3 text-primary" />
                   <span className="text-xs font-bold">{keyword.usage_count}</span>
                 </div>
@@ -114,16 +164,14 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
         <CardHeader className="relative pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {hasCannibalization && (
                   <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
                     <AlertTriangle className="h-3 w-3 mr-1" />
                     Warning
                   </Badge>
                 )}
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                  Content Keyword
-                </Badge>
+                <DifficultyBadge count={totalPieces} />
               </div>
               <CardTitle className="text-lg font-semibold text-foreground line-clamp-2 leading-tight">
                 {keyword.keyword}

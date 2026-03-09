@@ -122,30 +122,32 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim() && !isLoading) {
-      if (wizardMode && onLaunchWizard) {
-        // In wizard mode, trigger AI extraction and direct wizard launch
-        onLaunchWizard(message.trim());
-        setWizardMode(false);
-      } else if (wizardMode) {
-        // Fallback if no onLaunchWizard handler
-        onSendMessage(`Create content about: ${message.trim()}`);
-        setWizardMode(false);
-      } else {
-        onSendMessage(message.trim());
-      }
-      setMessage('');
-      setShowSuggestions(false);
-      handleTypingBroadcast(false);
+  const handleSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
+    const trimmed = message.trim();
+    if (!trimmed || isLoading) return;
+    
+    if (wizardMode && onLaunchWizard) {
+      onLaunchWizard(trimmed);
+      setWizardMode(false);
+    } else if (wizardMode) {
+      onSendMessage(`Create content about: ${trimmed}`);
+      setWizardMode(false);
+    } else {
+      onSendMessage(trimmed);
     }
-  };
+    setMessage('');
+    setShowSuggestions(false);
+    handleTypingBroadcast(false);
+    
+    // Re-focus textarea after send to prevent needing to click again
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }, [message, isLoading, wizardMode, onLaunchWizard, onSendMessage, handleTypingBroadcast]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      handleSubmit();
     }
     if (e.key === 'Escape') {
       if (wizardMode) {
@@ -154,7 +156,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
         setShowSuggestions(false);
       }
     }
-  };
+  }, [handleSubmit, wizardMode, handleCancelWizard]);
 
   const handleSolutionSelect = (solution: Solution, action: string) => {
     let prompt = '';
@@ -307,7 +309,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             ref={textareaRef}
             value={message}
             onChange={(e) => handleMessageChange(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => {
               setIsFocused(false);

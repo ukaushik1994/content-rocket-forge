@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PageContainer } from '@/components/ui/PageContainer';
 import { cn } from '@/lib/utils';
 
 const Analytics = () => {
@@ -273,12 +274,7 @@ const Analytics = () => {
   }
 
   return (
-    <motion.div 
-      className="min-h-screen w-full bg-background relative overflow-hidden"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <PageContainer className="w-full relative overflow-hidden">
       <AnimatedBackground intensity="medium" />
       
       
@@ -667,7 +663,7 @@ const Analytics = () => {
           content={selectedContent}
         />
       </main>
-    </motion.div>
+    </PageContainer>
   );
 };
 

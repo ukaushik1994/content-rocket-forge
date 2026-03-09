@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { UnifiedEmptyState } from '@/components/ui/UnifiedEmptyState';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import {
@@ -532,23 +533,13 @@ export const SocialDashboard = () => {
         </motion.div>
       ) : filteredPosts.length === 0 ? (
         <motion.div variants={stagger.item}>
-          <GlassCard className="py-20 flex flex-col items-center justify-center space-y-4">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20, delay: 0.1 }} className="relative">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-pink-500/30 to-purple-500/30 blur-xl" />
-              <div className="relative p-5 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-white/[0.08]">
-                <Share2 className="h-9 w-9 text-pink-400" />
-              </div>
-            </motion.div>
-            <div className="text-center space-y-1">
-              <p className="font-semibold text-foreground">{searchQuery || statusFilter !== 'all' ? 'No matching posts' : 'No posts yet'}</p>
-              <p className="text-sm text-muted-foreground">Create your first social post to get started</p>
-            </div>
-            {!searchQuery && statusFilter === 'all' && (
-              <Button size="sm" className="gap-1.5 bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow" onClick={() => { setEditingPostId(null); setShowCreate(true); }}>
-                <Plus className="h-4 w-4" /> Create First Post
-              </Button>
-            )}
-          </GlassCard>
+          <UnifiedEmptyState
+            icon={Share2}
+            title={searchQuery || statusFilter !== 'all' ? 'No matching posts' : 'No posts yet'}
+            description={searchQuery || statusFilter !== 'all' ? 'Try adjusting your search or filters' : 'Create your first social post to get started'}
+            actionLabel={!searchQuery && statusFilter === 'all' ? 'Create First Post' : undefined}
+            onAction={!searchQuery && statusFilter === 'all' ? () => { setEditingPostId(null); setShowCreate(true); } : undefined}
+          />
         </motion.div>
       ) : (
         <motion.div variants={stagger.item} className="grid gap-3">
