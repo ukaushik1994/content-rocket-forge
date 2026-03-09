@@ -419,7 +419,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             </CollapsibleSection>
 
             {/* ── ENGAGE (collapsible) ── */}
-            <CollapsibleSection label="Engage" defaultOpen={true} showDivider>
+            <CollapsibleSection label="Engage" defaultOpen={false} showDivider>
               {engageItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
