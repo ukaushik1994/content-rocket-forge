@@ -99,7 +99,7 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
 
             {/* Subtitle */}
             <motion.p
-              className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed"
+              className="text-headline text-muted-foreground/60 max-w-2xl mx-auto mb-8 leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
