@@ -6,6 +6,8 @@ import { ContentItemType } from '@/contexts/content/types';
 import { RepositoryHero } from '@/components/repository/RepositoryHero';
 import { RepositoryTabs } from '@/components/repository/RepositoryTabs';
 import { ContentDetailModal } from '@/components/repository/ContentDetailModal';
+import { PageContainer } from '@/components/ui/PageContainer';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { toast } from 'sonner';
 
 const Repository = () => {
