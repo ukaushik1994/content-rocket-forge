@@ -1,29 +1,35 @@
 
 
-# Library Items → Separate Pages (Keep Sidebar)
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Problem
-Library sub-items (Repository, Offerings, Approvals) currently open as right-side panels via `handlePanel()`. They should navigate to their dedicated full-page routes instead, while the sidebar stays visible.
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-## Solution
-Routes already exist: `/repository`, `/offerings`, `/content-approval` — all wrapped in `AppLayout` so the sidebar persists. Just need to change Library items from panel-opening to page navigation.
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## Changes
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-### 1. `src/components/ai-chat/ChatHistorySidebar.tsx`
-Change `libraryItems` actions from `handlePanel(...)` to `handleNavigation(...)`:
-- Repository → `/repository`
-- Offerings → `/offerings`
-- Approvals → `/content-approval`
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### 2. `src/components/layout/AppLayout.tsx`
-Update `onOpenPanel` handler to route Library panel types to their pages instead of using `setPendingPanel`:
-- `repository` → `/repository`
-- `offerings` → `/offerings`
-- `approvals` → `/content-approval`
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-| File | Change |
-|------|--------|
-| `src/components/ai-chat/ChatHistorySidebar.tsx` | Library items use `handleNavigation` instead of `handlePanel` |
-| `src/components/layout/AppLayout.tsx` | Route library panel types to page navigation |
-
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
