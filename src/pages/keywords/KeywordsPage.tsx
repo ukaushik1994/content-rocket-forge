@@ -173,28 +173,15 @@ const KeywordsPage = () => {
               ))}
             </div>
           ) : filteredAndSortedKeywords.length === 0 ? (
-            // Empty State
-            <motion.div
-              className="text-center py-24"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card className="max-w-md mx-auto bg-background/60 backdrop-blur-xl border-border/50">
-                <div className="p-12">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Database className="h-8 w-8 text-primary/50" />
-                  </div>
-                  <h3 className="text-lg font-medium mb-2">
-                    {searchQuery || statusFilter !== 'all' ? 'No keywords found' : 'No keywords in your content yet'}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchQuery || statusFilter !== 'all' 
-                      ? 'Try adjusting your search or filters' 
-                      : 'Start creating content and adding keywords to build your repository'}
-                  </p>
-                </div>
-              </Card>
-            </motion.div>
+            <UnifiedEmptyState
+              icon={Database}
+              title={searchQuery || statusFilter !== 'all' ? 'No keywords found' : 'No keywords in your content yet'}
+              description={searchQuery || statusFilter !== 'all' 
+                ? 'Try adjusting your search or filters' 
+                : 'Start creating content and adding keywords to build your repository'}
+              actionLabel={!(searchQuery || statusFilter !== 'all') ? 'Sync Keywords' : undefined}
+              onAction={!(searchQuery || statusFilter !== 'all') ? handleBackfillKeywords : undefined}
+            />
           ) : viewMode === 'list' ? (
             // Keywords List View
             <motion.div
