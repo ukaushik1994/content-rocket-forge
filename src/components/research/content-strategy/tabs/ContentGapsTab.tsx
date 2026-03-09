@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Lightbulb, Save, TrendingUp, Loader2, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService/aiService';
-import { useContentGaps } from '@/hooks/useResearchIntelligence';
+import { useContentGaps, useClusters } from '@/hooks/useResearchIntelligence';
 
 interface ContentGapsTabProps {
   serpMetrics?: any;
@@ -25,11 +26,13 @@ interface ContentGapsTabProps {
 export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goals }) => {
   const { analyzeSERP, saveInsight } = useContentStrategy();
   const { data: savedGaps, isLoading: loadingGaps, create: createGap } = useContentGaps();
+  const { data: clusters } = useClusters();
   const [keyword, setKeyword] = useState(goals.mainKeyword || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [gapAnalysis, setGapAnalysis] = useState<any>(null);
   const [selectedGaps, setSelectedGaps] = useState<string[]>([]);
+  const [selectedClusterId, setSelectedClusterId] = useState<string>('');
 
   const handleAnalyzeGaps = async () => {
     if (!keyword.trim()) {
@@ -106,6 +109,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
             opportunity_score: Math.max(0, Math.min(100, baseScore - i * 3)),
             keywords: keyword ? [keyword] : [],
             status: 'identified',
+            target_cluster_id: selectedClusterId || null,
           })
         )
       );
@@ -182,21 +186,24 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                 ))}
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setSelectedGaps(gapAnalysis.gaps)}
-                  variant="outline"
-                  size="sm"
-                >
-                  Select All
-                </Button>
-                <Button
-                  onClick={() => setSelectedGaps([])}
-                  variant="outline" 
-                  size="sm"
-                >
-                  Clear Selection
-                </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={() => setSelectedGaps(gapAnalysis.gaps)} variant="outline" size="sm">Select All</Button>
+                <Button onClick={() => setSelectedGaps([])} variant="outline" size="sm">Clear Selection</Button>
+
+                {selectedGaps.length > 0 && clusters && clusters.length > 0 && (
+                  <Select value={selectedClusterId} onValueChange={setSelectedClusterId}>
+                    <SelectTrigger className="w-[180px] h-8 text-xs">
+                      <SelectValue placeholder="Link to cluster…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No cluster</SelectItem>
+                      {clusters.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.cluster_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
                 {selectedGaps.length > 0 && (
                   <Button
                     onClick={handleSaveSelectedGaps}

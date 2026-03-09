@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Brain, Target, Lightbulb, Plus, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { useClusters, useContentGaps, useRecommendations } from '@/hooks/useResearchIntelligence';
 import { cn } from '@/lib/utils';
@@ -108,13 +109,30 @@ const ClustersTab: React.FC = () => {
 
 // ── Content Gaps Tab ──
 const GapsTab: React.FC = () => {
-  const { data: gaps, isLoading } = useContentGaps();
+  const { data: clusters } = useClusters();
+  const [filterCluster, setFilterCluster] = useState<string>('');
+  const { data: gaps, isLoading } = useContentGaps(filterCluster || undefined);
 
   if (isLoading) return <LoadingState />;
 
   return (
     <div className="space-y-3 mt-3">
-      <p className="text-xs text-muted-foreground">{gaps?.length ?? 0} gaps identified</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">{gaps?.length ?? 0} gaps</p>
+        {clusters && clusters.length > 0 && (
+          <Select value={filterCluster} onValueChange={setFilterCluster}>
+            <SelectTrigger className="w-[140px] h-7 text-[10px]">
+              <SelectValue placeholder="All clusters" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All clusters</SelectItem>
+              {clusters.map(c => (
+                <SelectItem key={c.id} value={c.id} className="text-xs">{c.cluster_name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
 
       {gaps?.map(g => (
         <Card key={g.id} className="p-3">

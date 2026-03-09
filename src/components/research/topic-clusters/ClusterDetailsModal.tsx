@@ -7,10 +7,12 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  TrendingUp, FileText, Target, Calendar, BarChart3, Users, Lightbulb, ArrowRight, Plus
+  TrendingUp, FileText, Target, Calendar, BarChart3, Users, Lightbulb, ArrowRight, Plus, MousePointerClick, Eye
 } from 'lucide-react';
 import { TopicCluster } from '@/types/topicCluster';
 import { motion } from 'framer-motion';
+import { useTopicPerformance } from '@/hooks/useResearchIntelligence';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 interface ClusterDetailsModalProps {
   cluster: TopicCluster | null;
@@ -159,34 +161,100 @@ export function ClusterDetailsModal({ cluster, isOpen, onClose, onCreateContent 
           </TabsContent>
 
           <TabsContent value="performance" className="space-y-4">
-            <Card>
-              <CardHeader><CardTitle>Performance Metrics</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">Monthly Traffic</div>
-                      <div className="text-2xl font-bold text-green-500">{formatTraffic(cluster.totalTraffic)}</div>
-                      <div className="text-sm text-muted-foreground">visitors/month</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">Average Position</div>
-                      <div className="text-2xl font-bold text-blue-500">{cluster.avgPosition.toFixed(1)}</div>
-                      <div className="text-sm text-muted-foreground">search ranking</div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center"><span className="text-sm">Articles Published</span><span className="font-medium">{cluster.articles}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-sm">Keywords Covered</span><span className="font-medium">{cluster.keywords.length}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-sm">Last Updated</span><span className="font-medium">{cluster.lastUpdated}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-sm">Status</span><Badge className={getStatusColor(cluster.status)}>{cluster.status}</Badge></div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <PerformanceSection clusterId={cluster.id} cluster={cluster} getStatusColor={getStatusColor} formatTraffic={formatTraffic} />
           </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Performance Section (uses hook, rendered as child) ──
+function PerformanceSection({ clusterId, cluster, getStatusColor, formatTraffic }: {
+  clusterId: string;
+  cluster: TopicCluster;
+  getStatusColor: (s: string) => string;
+  formatTraffic: (t: number) => string;
+}) {
+  const { data: perfData, isLoading } = useTopicPerformance(clusterId);
+
+  const chartData = useMemo(() => {
+    if (!perfData?.length) return [];
+    return perfData.map(p => ({
+      date: new Date(p.metric_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      impressions: p.impressions ?? 0,
+      clicks: p.clicks ?? 0,
+      ctr: p.ctr ? +(p.ctr * 100).toFixed(1) : 0,
+      position: p.average_position ?? 0,
+    }));
+  }, [perfData]);
+
+  const totals = useMemo(() => {
+    if (!perfData?.length) return null;
+    const totalImpressions = perfData.reduce((s, p) => s + (p.impressions ?? 0), 0);
+    const totalClicks = perfData.reduce((s, p) => s + (p.clicks ?? 0), 0);
+    const avgPos = perfData.reduce((s, p) => s + (p.average_position ?? 0), 0) / perfData.length;
+    const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+    return { totalImpressions, totalClicks, avgPos, avgCtr };
+  }, [perfData]);
+
+  if (isLoading) {
+    return <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Loading performance data…</CardContent></Card>;
+  }
+
+  if (!perfData?.length) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center space-y-3">
+          <BarChart3 className="h-10 w-10 mx-auto text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">No performance data recorded yet</p>
+          <p className="text-xs text-muted-foreground/60">Performance metrics will appear here once data is tracked for this cluster.</p>
+          <div className="space-y-3 pt-4 border-t border-border/30">
+            <div className="flex justify-between items-center"><span className="text-sm">Articles Published</span><span className="font-medium">{cluster.articles}</span></div>
+            <div className="flex justify-between items-center"><span className="text-sm">Keywords Covered</span><span className="font-medium">{cluster.keywords.length}</span></div>
+            <div className="flex justify-between items-center"><span className="text-sm">Status</span><Badge className={getStatusColor(cluster.status)}>{cluster.status}</Badge></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Impressions', value: formatTraffic(totals!.totalImpressions), icon: Eye, color: 'text-blue-500' },
+          { label: 'Clicks', value: formatTraffic(totals!.totalClicks), icon: MousePointerClick, color: 'text-green-500' },
+          { label: 'Avg CTR', value: `${totals!.avgCtr.toFixed(1)}%`, icon: TrendingUp, color: 'text-yellow-500' },
+          { label: 'Avg Position', value: totals!.avgPos.toFixed(1), icon: Target, color: 'text-purple-500' },
+        ].map(m => (
+          <Card key={m.label}>
+            <CardContent className="p-3 text-center">
+              <m.icon className={`h-5 w-5 ${m.color} mx-auto mb-1`} />
+              <div className="text-lg font-bold">{m.value}</div>
+              <div className="text-[10px] text-muted-foreground">{m.label}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-sm">Impressions & Clicks Trend</CardTitle></CardHeader>
+        <CardContent>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
+                <Area type="monotone" dataKey="impressions" stroke="hsl(217 91% 60%)" fill="hsl(217 91% 60% / 0.15)" name="Impressions" />
+                <Area type="monotone" dataKey="clicks" stroke="hsl(142 71% 45%)" fill="hsl(142 71% 45% / 0.15)" name="Clicks" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
