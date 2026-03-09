@@ -267,14 +267,10 @@ export const SocialDashboard = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngagePageHero
+      <CompactPageHeader
         icon={Share2}
-        badge="Social Command Center"
-        title="Social"
-        titleAccent="Media"
-        subtitle="Schedule and manage social posts across all channels"
-        gradientFrom="from-pink-400"
-        gradientTo="to-purple-400"
+        title="Social Media"
+        subtitle="Schedule and manage social posts"
         stats={[
           { icon: Clock, label: 'Scheduled', value: stats.scheduled },
           { icon: CheckCircle2, label: 'Posted', value: stats.posted },
