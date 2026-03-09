@@ -372,7 +372,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             </button>
             <CreAiterLogo showText={true} size="sm" />
           </div>
-          <NotificationBell />
+          
         </div>
 
         {/* New Chat + Search */}

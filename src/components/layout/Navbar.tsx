@@ -58,7 +58,7 @@ const Navbar = () => {
             <CalendarDays className="h-4 w-4" />
           </Button>
           
-          <NotificationBell />
+          
 
           {/* User profile dropdown */}
           <DropdownMenu>

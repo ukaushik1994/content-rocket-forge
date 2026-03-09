@@ -73,6 +73,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <NotificationBell />
       <div className="flex-1 flex relative">
         {/* On mobile: only show expanded sidebar via AnimatePresence when open */}
         {isMobile ? (
