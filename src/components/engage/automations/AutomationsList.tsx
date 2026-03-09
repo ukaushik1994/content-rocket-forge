@@ -650,8 +650,6 @@ export const AutomationsList = () => {
     }
   };
 
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused'>('all');
-  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const displayedAutomations = useMemo(() => {
     let list = filteredAutomations;
