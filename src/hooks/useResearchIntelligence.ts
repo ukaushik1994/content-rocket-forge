@@ -74,3 +74,16 @@ export const useRecommendations = (status?: string) => {
 
   return { ...query, accept: acceptMutation.mutateAsync, dismiss: dismissMutation.mutateAsync };
 };
+
+export const useTopicPerformance = (clusterId?: string) => {
+  const { user } = useAuth();
+  const uid = user?.id;
+
+  const query = useQuery({
+    queryKey: ['topic_performance', uid, clusterId],
+    queryFn: () => svc.fetchTopicPerformance(uid!, clusterId),
+    enabled: !!uid,
+  });
+
+  return query;
+};

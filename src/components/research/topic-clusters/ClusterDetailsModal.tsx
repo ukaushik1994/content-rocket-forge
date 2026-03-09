@@ -161,31 +161,7 @@ export function ClusterDetailsModal({ cluster, isOpen, onClose, onCreateContent 
           </TabsContent>
 
           <TabsContent value="performance" className="space-y-4">
-            <Card>
-              <CardHeader><CardTitle>Performance Metrics</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">Monthly Traffic</div>
-                      <div className="text-2xl font-bold text-green-500">{formatTraffic(cluster.totalTraffic)}</div>
-                      <div className="text-sm text-muted-foreground">visitors/month</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">Average Position</div>
-                      <div className="text-2xl font-bold text-blue-500">{cluster.avgPosition.toFixed(1)}</div>
-                      <div className="text-sm text-muted-foreground">search ranking</div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center"><span className="text-sm">Articles Published</span><span className="font-medium">{cluster.articles}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-sm">Keywords Covered</span><span className="font-medium">{cluster.keywords.length}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-sm">Last Updated</span><span className="font-medium">{cluster.lastUpdated}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-sm">Status</span><Badge className={getStatusColor(cluster.status)}>{cluster.status}</Badge></div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <PerformanceSection clusterId={cluster.id} cluster={cluster} getStatusColor={getStatusColor} formatTraffic={formatTraffic} />
           </TabsContent>
         </Tabs>
       </DialogContent>

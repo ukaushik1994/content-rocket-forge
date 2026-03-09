@@ -120,3 +120,37 @@ export const dismissRecommendation = async (id: string): Promise<StrategyRecomme
   if (error) throw error;
   return data;
 };
+
+// ── Topic Performance ──
+
+type TopicPerformanceRow = Database['public']['Tables']['topic_performance']['Row'];
+type TopicPerformanceInsert = Database['public']['Tables']['topic_performance']['Insert'];
+
+export const fetchTopicPerformance = async (
+  userId: string,
+  clusterId?: string,
+  dateRange?: { from: string; to: string }
+): Promise<TopicPerformanceRow[]> => {
+  let query = supabase
+    .from('topic_performance')
+    .select('*')
+    .eq('user_id', userId)
+    .order('metric_date', { ascending: true });
+  if (clusterId) query = query.eq('cluster_id', clusterId);
+  if (dateRange) {
+    query = query.gte('metric_date', dateRange.from).lte('metric_date', dateRange.to);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+};
+
+export const createTopicPerformance = async (perf: TopicPerformanceInsert): Promise<TopicPerformanceRow> => {
+  const { data, error } = await supabase
+    .from('topic_performance')
+    .insert(perf)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
