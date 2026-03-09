@@ -70,6 +70,9 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
   repurposedFormats 
 }) => {
   const navigate = useNavigate();
+  const { deleteContentItem } = useContent();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getContentTypeIcon = (type: string) => {
     switch (type) {
