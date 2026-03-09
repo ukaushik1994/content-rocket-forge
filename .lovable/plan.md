@@ -1,53 +1,47 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Phase 4: Topic Performance Tracking + Cluster-Gap Linking
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## Context
+Phase 3 is complete — topic clusters, content gaps, and strategy recommendations are all persisted to Supabase and accessible via the Research Intelligence sidebar panel. The `topic_performance` table exists in the DB but has zero frontend integration. Additionally, content gaps can be saved but aren't linked back to specific clusters.
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+## Plan
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
+### Batch 1: Wire `topic_performance` Table + Cluster Performance View (this batch)
 
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
+**1. Add `topic_performance` service functions to `researchIntelligenceService.ts`**
+- `fetchTopicPerformance(userId, clusterId?, dateRange?)` — query `topic_performance` with optional cluster/date filters
+- `createTopicPerformance(data)` — insert performance metrics
+- Add `useTopicPerformance(clusterId?)` hook to `useResearchIntelligence.ts`
 
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
+**2. Add Performance section to `ClusterDetailsModal.tsx`**
+Currently this modal shows static content opportunities. Enhance it with:
+- A "Performance" tab showing metrics from `topic_performance` (impressions, clicks, CTR, avg position) for the selected cluster
+- Simple sparkline/trend visualization using existing recharts dependency
+- Empty state when no performance data exists yet
 
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+**3. Link Content Gaps to Clusters**
+Update `ContentGapsTab.tsx` and `ResearchIntelligencePanel.tsx` GapsTab:
+- Add optional cluster selector dropdown when saving gaps (using `useClusters()` to populate options)
+- Pass `target_cluster_id` when creating gaps
+- In the Research Intelligence panel's Gaps tab, allow filtering by cluster
 
----
+**4. Enhance TopicClusters page metrics cards**
+Replace the hardcoded `'0'` values in the metrics cards on `TopicClusters.tsx` with aggregated data from `topic_performance`:
+- Total Traffic = sum of clicks across all clusters
+- Avg Position = weighted average from `topic_performance`
+- These become live queries instead of static zeros
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+### Summary
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` (208 lines, simple DB CRUD) was shadowing `useEnhancedAIChatDB.ts` (1136 lines, full chat logic with messages/sendMessage/streaming)
-- **Fix**: Deleted the `.tsx` duplicate so the context correctly uses the full `.ts` version
-- Messages, sendMessage, isTyping, and all chat state now properly shared via AIChatDBContext
+| File | Action |
+|------|--------|
+| `src/services/researchIntelligenceService.ts` | Add `topic_performance` CRUD |
+| `src/hooks/useResearchIntelligence.ts` | Add `useTopicPerformance` hook |
+| `src/components/research/topic-clusters/ClusterDetailsModal.tsx` | Add Performance tab with charts |
+| `src/components/research/content-strategy/tabs/ContentGapsTab.tsx` | Add cluster selector for gap linking |
+| `src/components/panels/ResearchIntelligencePanel.tsx` | Add cluster filter to Gaps tab |
+| `src/pages/research/TopicClusters.tsx` | Wire metrics cards to real performance data |
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx` for both title and content preview
-- Strips all HTML tags, returns plain text only
+6 files. No new dependencies. No DB migrations needed.
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
-- Total Content + Published → `/ai-chat` (Repository panel)
-- Total Views + Revenue → `/analytics`
