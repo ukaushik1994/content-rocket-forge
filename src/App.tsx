@@ -56,6 +56,8 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { SidebarProvider } from "@/contexts/SidebarContext";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 const queryClient = new QueryClient();
 
