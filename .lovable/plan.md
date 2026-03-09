@@ -1,35 +1,41 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Email Page — Keywords Page Theme Alignment
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## The Gap
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+The **Keywords page** uses an immersive centered layout: 60vh hero with large gradient text, a glassmorphic badge, centered stats, a CTA button, quick filter pills, and a glassmorphic filter/search bar — all centered with generous spacing.
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
+The **Email page** (screenshot) uses a compact left-aligned header card, a horizontal tab bar, and a bordered content box. It feels like a settings panel, not a feature page.
 
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
+## Plan — 1 File
 
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
+### Transform `EmailDashboard.tsx` to mirror Keywords structure:
 
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+**1. Replace header card with a centered hero section**
+- Glassmorphic badge pill: `Mail` icon + "Email Hub" + pulsing dot (matches Keywords' "Keyword Repository" badge)
+- Large gradient title: `text-4xl md:text-6xl font-bold bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent` centered
+- Subtitle paragraph centered below
+- Action buttons (Compose, New Campaign) centered like Keywords' "Create Content" CTA
+- Stats row (Threads, Delivery, Active) as centered icon+label cards below CTA
+
+**2. Convert tab bar into Keywords-style quick filters**
+- Centered `flex justify-center` with glassmorphic container (`bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50`)
+- Each tab styled as a filter pill with icon + label, active state = `bg-primary text-primary-foreground shadow-lg`
+- Same hover/tap animations as Keywords filters
+
+**3. Remove bordered content wrapper**
+- Content renders directly below filters with `max-w-7xl mx-auto` like Keywords
+- No glassmorphic border box around content — let it breathe
+- Keep `AnimatePresence` for tab transitions
+
+**4. Add staggered entry animations**
+- Badge: delay 0, Hero text: delay 0.2, CTA: delay 0.4, Stats: delay 0.6, Filters: delay 0.8 — matching Keywords page timing
+
+### File to edit
+| File | Changes |
+|------|---------|
+| `EmailDashboard.tsx` | Full restructure to centered hero + filter pills + open content area |
+
+1 file. No new dependencies. Pure layout transformation.
+
