@@ -756,7 +756,7 @@ export const AutomationsList = () => {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="flex items-center gap-3 px-5 py-3 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 min-w-[140px]"
+                className="flex items-center gap-3 px-5 py-3 glass-card rounded-2xl min-w-[140px]"
               >
                 <div className="h-9 w-9 rounded-xl bg-background/80 border border-border/50 flex items-center justify-center">
                   <stat.icon className={`h-4 w-4 ${stat.color}`} />
