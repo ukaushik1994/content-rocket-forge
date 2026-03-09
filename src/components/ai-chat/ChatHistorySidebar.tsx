@@ -448,7 +448,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                         <div
                           key={conversation.id}
                           className={cn(
-                            "mx-1 mb-0.5 px-3 py-2 cursor-pointer transition-all duration-200 rounded-lg group relative overflow-hidden",
+                            "mx-1 mb-0.5 px-3 py-2 cursor-pointer transition-[background-color,color] duration-200 rounded-lg group relative overflow-hidden",
                             activeConversation === conversation.id 
                               ? 'bg-accent/50' 
                               : 'hover:bg-accent/30'
