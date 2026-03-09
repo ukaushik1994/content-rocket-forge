@@ -7,6 +7,9 @@ interface RepositoryCardProps {
   content: ContentItemType;
   onView: () => void;
   repurposedFormats?: string[];
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 export const RepositoryCard: React.FC<RepositoryCardProps> = (props) => (
