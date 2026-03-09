@@ -665,5 +665,6 @@ const Analytics = () => {
       </main>
     </PageContainer>
   );
+};
 
 export default Analytics;
