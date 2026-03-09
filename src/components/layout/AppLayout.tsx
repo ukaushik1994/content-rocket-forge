@@ -61,16 +61,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     onPinConversation: togglePinConversation,
     onArchiveConversation: toggleArchiveConversation,
     onOpenPanel: (panelType: string) => {
-      if (['automations'].includes(panelType)) {
-        handleNavigation('/engage/automations');
-      } else if (['journeys'].includes(panelType)) {
-        handleNavigation('/engage/journeys');
-      } else if (panelType === 'repository') {
-        handleNavigation('/repository');
-      } else if (panelType === 'offerings') {
-        handleNavigation('/offerings');
-      } else if (panelType === 'approvals') {
-        handleNavigation('/content-approval');
+      const panelRouteMap: Record<string, string> = {
+        automations: '/engage/automations',
+        journeys: '/engage/journeys',
+        repository: '/repository',
+        offerings: '/offerings',
+        approvals: '/content-approval',
+        campaigns: '/campaigns',
+        keywords: '/keywords',
+        analytics: '/analytics',
+        email: '/engage/email',
+        social: '/engage/social',
+        contacts: '/engage/contacts',
+      };
+      const route = panelRouteMap[panelType];
+      if (route) {
+        handleNavigation(route);
       } else {
         handlePanel(panelType);
       }
