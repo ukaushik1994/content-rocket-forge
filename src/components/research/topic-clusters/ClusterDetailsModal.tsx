@@ -7,10 +7,12 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  TrendingUp, FileText, Target, Calendar, BarChart3, Users, Lightbulb, ArrowRight, Plus
+  TrendingUp, FileText, Target, Calendar, BarChart3, Users, Lightbulb, ArrowRight, Plus, MousePointerClick, Eye
 } from 'lucide-react';
 import { TopicCluster } from '@/types/topicCluster';
 import { motion } from 'framer-motion';
+import { useTopicPerformance } from '@/hooks/useResearchIntelligence';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 interface ClusterDetailsModalProps {
   cluster: TopicCluster | null;
