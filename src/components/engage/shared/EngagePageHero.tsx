@@ -151,7 +151,7 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
           >
-            <div className="flex gap-2 p-1.5 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
+            <div className="flex gap-2 p-1.5 glass-card rounded-2xl">
               {quickFilters.map((filter) => (
                 <motion.button
                   key={filter.key}

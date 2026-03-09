@@ -34,10 +34,8 @@ export const EngageContentCard: React.FC<EngageContentCardProps> = ({
       <div
         onClick={onClick}
         className={`
-          relative group rounded-2xl border bg-background/60 backdrop-blur-xl border-border/50
-          hover:border-primary/30 hover:scale-[1.02] hover:-translate-y-0.5
-          hover:shadow-lg hover:shadow-primary/5
-          transition-all duration-300 p-4
+          relative group glass-card glass-card-hover p-4
+          hover:border-primary/30
           ${onClick ? 'cursor-pointer' : ''}
           ${selected ? 'ring-1 ring-primary/50 border-primary/30 bg-primary/5' : ''}
           ${className}
