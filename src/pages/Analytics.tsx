@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
 import { AnalyticsHero } from '@/components/analytics/AnalyticsHero';
 import { ContentAnalyticsTab } from '@/components/analytics/ContentAnalyticsTab';

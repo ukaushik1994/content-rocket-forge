@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import Navbar from '@/components/layout/Navbar';
 import { ContentApprovalView } from '@/components/approval/ContentApprovalView';
 import { ContentProvider } from '@/contexts/content';
 import { motion } from 'framer-motion';

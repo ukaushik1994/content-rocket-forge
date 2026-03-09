@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
