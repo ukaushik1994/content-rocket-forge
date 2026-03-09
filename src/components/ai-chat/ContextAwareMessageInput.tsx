@@ -34,6 +34,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   onTypingChange,
   onOpenProposals,
   onOpenResearch,
+  onOpenAnalyst,
   onLaunchWizard
 }) => {
   const [message, setMessage] = useState('');
