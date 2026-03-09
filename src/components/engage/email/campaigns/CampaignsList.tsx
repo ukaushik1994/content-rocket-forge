@@ -312,12 +312,8 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Campaigns</h2>
-          <p className="text-sm text-muted-foreground">{campaigns.length} campaigns</p>
-        </div>
+      {/* Minimal header — no duplicate title, just action */}
+      <div className="flex justify-end items-center">
         {canEdit && (
           <Button size="sm" className="text-xs gap-1.5 bg-foreground text-background hover:bg-foreground/90" onClick={() => openWizard()}><Plus className="h-3.5 w-3.5" /> New Campaign</Button>
         )}
