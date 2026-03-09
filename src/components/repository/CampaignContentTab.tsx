@@ -79,10 +79,7 @@ export const CampaignContentTab = ({ onOpenDetailView }: CampaignContentTabProps
         })
       );
 
-      // Filter out campaigns with no content
-      const campaignsWithItems = campaignsWithContent.filter(c => c.content_items.length > 0);
-      
-      setCampaigns(campaignsWithItems);
+      setCampaigns(campaignsWithContent);
     } catch (error: any) {
       console.error('Error fetching campaign content:', error);
       toast.error('Failed to load campaign content');

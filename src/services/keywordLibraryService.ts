@@ -334,7 +334,7 @@ class KeywordLibraryService {
               .from('content_items')
               .select('id, title, status, content_type')
               .eq('user_id', user.id)
-              .or(`metadata->mainKeyword.eq.${keyword.keyword},metadata->secondaryKeywords.cs.["${keyword.keyword}"]`);
+              .or(`metadata->>mainKeyword.eq.${keyword.keyword},metadata->secondaryKeywords.cs.{"${keyword.keyword}"}`);
             
             return {
               ...keyword,
