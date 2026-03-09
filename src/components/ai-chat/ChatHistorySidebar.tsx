@@ -35,6 +35,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageSquarePlus,
+  BookOpen,
+  Wrench,
+  MessageCircle,
 } from 'lucide-react';
 import {
   DropdownMenu,
