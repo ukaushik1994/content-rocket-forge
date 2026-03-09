@@ -12,6 +12,7 @@ interface ContentStats {
   approved: number;
   published: number;
   needs_changes: number;
+  rejected: number;
 }
 interface ContentApprovalHeroProps {
   contentStats: ContentStats;
