@@ -33,10 +33,8 @@ const AISettings = () => {
         />
       </div>
 
-      <Navbar />
-      
       <motion.main 
-        cllex-1 pt-24 p-6"
+        className="flex-1 pt-24 p-6"
         initial="hidden"
         animate="visible"
         variants={containerVariants}

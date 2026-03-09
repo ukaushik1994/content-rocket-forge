@@ -44,8 +44,7 @@ const SerpIntelligence = () => {
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
       
-      <Navbar />
-      <AnimatedBackground intensity="
+      <AnimatedBackground intensity="medium" />
       
       <main className="flex-1 container pt-24 pb-8 z-10 relative max-w-7xl mx-auto">
         <motion.div 

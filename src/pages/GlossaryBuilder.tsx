@@ -138,9 +138,7 @@ export default function GlossaryBuilder() {
           <title>Glossary Builder | Creaiter</title>
         </Helmet>
         
-        <Navbar />
-        
-        <div className="flex
+        <div className="flex-1 pt-20">
           <GlossaryBuilderContent />
         </div>
       </div>
