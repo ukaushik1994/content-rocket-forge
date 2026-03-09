@@ -425,6 +425,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
               ))}
             </CollapsibleSection>
 
+            <div className="mb-4" />
+
             {/* ── CHATS ── */}
             <CollapsibleSection label="Chats" showDivider>
               {/* Conversations List */}
@@ -452,12 +454,12 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                                 {conversation.pinned && <Pin className="h-3 w-3 text-primary/60 flex-shrink-0" />}
                                 <h3 className={cn(
                                   "text-[13px] truncate",
-                                  activeConversation === conversation.id ? "text-foreground font-medium" : "text-foreground/80"
+                                  activeConversation === conversation.id ? "text-foreground font-medium" : "text-foreground/90"
                                 )}>
                                   {conversation.title}
                                 </h3>
                               </div>
-                              <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                              <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                                 {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
                               </p>
                             </div>
