@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Lightbulb, Save, TrendingUp, Loader2, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService/aiService';
-import { useContentGaps } from '@/hooks/useResearchIntelligence';
+import { useContentGaps, useClusters } from '@/hooks/useResearchIntelligence';
 
 interface ContentGapsTabProps {
   serpMetrics?: any;
