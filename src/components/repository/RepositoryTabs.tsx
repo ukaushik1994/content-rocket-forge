@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { CategoryContent } from './CategoryContent';
 import { CampaignContentTab } from './CampaignContentTab';
+import { RepositoryBulkBar } from './RepositoryBulkBar';
 import { ContentItemType } from '@/contexts/content/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Layers, Share2, Mail, FileText, Video, Target } from 'lucide-react';
