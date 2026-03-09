@@ -321,21 +321,7 @@ const Solutions = () => {
 
   // Animation variants removed — using PageContainer
   
-  const itemVariants = {
-    initial: {
-      y: 20,
-      opacity: 0
-    },
-    animate: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15
-      }
-    }
-  };
+  // Item variants removed — using pageItemVariants
   
   if (loading) {
     return (
