@@ -250,7 +250,7 @@ export const CampaignAnalyticsTab = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group">
+              <Card className="glass-card glass-card-hover group">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
