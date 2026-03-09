@@ -48,7 +48,7 @@ const NodeLabel = ({ icon: Icon, label, summary, iconBg, execCount }: { icon: an
 const getLabel = (data: any, fallback: string) => (data as any)?.config?.label || fallback;
 
 export const TriggerNode = memo(({ data, selected }: NodeProps) => (
-  <NodeWrapper color="bg-purple-500" selected={selected}>
+  <NodeWrapper color="bg-purple-500" selected={selected} onDelete={(data as any)?.onDelete}>
     <Handle type="source" position={Position.Bottom} className="!bg-purple-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <NodeLabel icon={Zap} label={getLabel(data, 'Trigger')} summary={(data as any)?.config?.type || 'Manual'} iconBg="bg-purple-500" execCount={(data as any)?.execCount} />
   </NodeWrapper>
