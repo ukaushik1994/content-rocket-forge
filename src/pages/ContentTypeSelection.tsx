@@ -6,10 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Puzzle, Book, FileText, Users, Sparkles, Zap, Target, TrendingUp, BarChart3, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-
-const ContentTypeSelection = () => {
-  const navigate = useNavigate();
+avigate = useNavigate();
 
   const contentTypes = [
     {
@@ -112,7 +109,7 @@ const ContentTypeSelection = () => {
 
         <Navbar />
         
-        <div className="relative z-10 w-full px-6 pt-24 pb-12">
+        <div className="relaw-full px-6 pt-24 pb-12">
           {/* Hero Section */}
           <motion.div 
             className="text-center mb-16 relative"

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-
-import { Button } from '@/components/ui/button';
+;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
@@ -39,7 +38,7 @@ export const RepositoryBackfill = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="containepx-4 py-8 max-w-4xl">
         <Card>
           <CardHeader>
             <CardTitle>Repository Meta Information Backfill</CardTitle>

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-
-import { Helmet } from 'react-helmet-async';
-import { motion } from 'framer-motion';
+port { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -46,7 +44,7 @@ const SerpIntelligence = () => {
       </Helmet>
       
       <Navbar />
-      <AnimatedBackground intensity="medium" />
+      <AnimatedBackground intensity="
       
       <main className="flex-1 container pt-24 pb-8 z-10 relative max-w-7xl mx-auto">
         <motion.div 

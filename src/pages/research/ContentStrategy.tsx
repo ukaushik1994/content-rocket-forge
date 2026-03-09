@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-
-import { Helmet } from 'react-helmet-async';
-import { ContentStrategyHero } from '@/components/research/content-strategy/ContentStrategyHero';
+port { ContentStrategyHero } from '@/components/research/content-strategy/ContentStrategyHero';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
@@ -23,7 +21,7 @@ const ContentStrategy = () => {
         <Navbar />
         
         
-        {/* Animated Background - matching Repository design */}
+        {/* Animatend - matching Repository design */}
         <AnimatedBackground intensity="medium" />
         
         <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">

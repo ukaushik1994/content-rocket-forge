@@ -1,6 +1,5 @@
 import React from 'react';
-
-import { NotificationDemo as NotificationDemoComponent } from '@/components/notifications/NotificationDemo';
+mponent } from '@/components/notifications/NotificationDemo';
 import { Helmet } from 'react-helmet-async';
 
 export default function NotificationDemo() {
@@ -13,7 +12,7 @@ export default function NotificationDemo() {
       
       <Navbar />
       
-      <main className="container mx-auto px-4 pt-24 pb-8">
+      <main className="contain px-4 pt-24 pb-8">
         <NotificationDemoComponent />
       </main>
     </div>

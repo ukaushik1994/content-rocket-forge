@@ -1,9 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-import { Helmet } from 'react-helmet-async';
-import { Button } from '@/components/ui/button';
+port { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -204,8 +202,7 @@ const TopicClusters = () => {
       
       <Navbar />
       
-      {/* Background Effects */}
-      <div className="fixed inset-0 pt-20 overflow-hidden pointer-events-none">
+      {/* Background Effects *div className="fixed inset-0 pt-20 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full filter blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-500/5 rounded-full filter blur-3xl animate-pulse delay-2000"></div>

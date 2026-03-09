@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-
-import { OpenRouterSettings } from '@/components/ai-chat/OpenRouterSettings';
+s/ai-chat/OpenRouterSettings';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Brain, Zap, Shield } from 'lucide-react';
@@ -37,7 +36,7 @@ const AISettings = () => {
       <Navbar />
       
       <motion.main 
-        className="flex-1 pt-24 p-6"
+        cllex-1 pt-24 p-6"
         initial="hidden"
         animate="visible"
         variants={containerVariants}

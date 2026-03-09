@@ -1,6 +1,5 @@
 import { useState } from 'react';
-
-import { Progress } from '@/components/ui/progress';
+ess';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlossaryBuilderProvider } from '@/contexts/glossary-builder/GlossaryBuilderContext';
@@ -141,7 +140,7 @@ export default function GlossaryBuilder() {
         
         <Navbar />
         
-        <div className="flex-1 pt-20">
+        <div className="flex
           <GlossaryBuilderContent />
         </div>
       </div>
