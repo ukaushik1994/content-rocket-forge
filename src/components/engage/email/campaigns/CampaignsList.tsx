@@ -15,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Send, Megaphone, MoreVertical, Trash2, Mail, CheckCircle, Clock, AlertTriangle, ChevronRight, ChevronLeft, Copy, Pencil, Users, CalendarIcon, BarChart3, X, XCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
