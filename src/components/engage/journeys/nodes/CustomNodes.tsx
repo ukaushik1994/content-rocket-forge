@@ -122,7 +122,7 @@ export const WebhookNode = memo(({ data, selected }: NodeProps) => (
 ));
 
 export const EndNode = memo(({ data, selected }: NodeProps) => (
-  <NodeWrapper color="bg-gray-500" selected={selected}>
+  <NodeWrapper color="bg-gray-500" selected={selected} onDelete={(data as any)?.onDelete}>
     <Handle type="target" position={Position.Top} className="!bg-gray-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <NodeLabel icon={Flag} label={getLabel(data, 'End')} iconBg="bg-gray-500" execCount={(data as any)?.execCount} />
   </NodeWrapper>

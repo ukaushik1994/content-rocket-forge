@@ -112,6 +112,7 @@ export const KeywordsPanel: React.FC<{ isOpen: boolean; onClose: () => void }> =
           </div>
         )}
       </div>
+      <AddKeywordDialog open={showAddDialog} onClose={() => setShowAddDialog(false)} onAdded={loadKeywords} />
     </PanelShell>
   );
 };

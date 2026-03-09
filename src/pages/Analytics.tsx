@@ -353,14 +353,24 @@ const Analytics = () => {
                     <TrendingUp className="h-5 w-5 ml-2" />
                   </Button>
                   <Button
-                    onClick={handleExport}
+                    onClick={handleExportCSV}
                     disabled={!realMetrics}
                     size="lg"
                     variant="outline"
                     className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
                   >
                     <Download className="h-5 w-5 mr-2" />
-                    Export Report
+                    Export CSV
+                  </Button>
+                  <Button
+                    onClick={handleExportPDF}
+                    disabled={!realMetrics}
+                    size="lg"
+                    variant="outline"
+                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
+                  >
+                    <FileText className="h-5 w-5 mr-2" />
+                    Export Image
                   </Button>
                 </motion.div>
 
