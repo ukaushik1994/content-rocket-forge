@@ -548,7 +548,7 @@ const JourneyBuilderInner = () => {
   );
 
   return (
-    <div className="h-full flex flex-col -m-6 relative">
+    <div className="h-full flex flex-col relative">
       {/* ─── Premium Toolbar ─── */}
       <div className="flex items-center justify-between px-6 h-16 border-b border-border/30 bg-background/60 backdrop-blur-2xl z-10">
         {/* Left: Navigation + Name + Status */}
