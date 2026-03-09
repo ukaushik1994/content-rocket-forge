@@ -1081,124 +1081,83 @@ export const AutomationsList = () => {
       {/* List */}
       {isLoading ? (
         <EngageSkeletonCards count={4} layout="list" />
-      ) : filteredAutomations.length === 0 ? (
+      ) : displayedAutomations.length === 0 ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
           <div className="relative h-20 w-20 mx-auto">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-amber-500/30 to-orange-500/30 blur-xl" />
-            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-white/[0.08] flex items-center justify-center">
+            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-border/50 flex items-center justify-center">
               <Zap className="h-9 w-9 text-amber-400" />
             </div>
           </div>
           <div className="space-y-1">
-            <p className="font-semibold text-foreground">{searchQuery ? 'No matching automations' : 'No automations yet'}</p>
+            <p className="font-semibold text-foreground">{searchQuery || statusFilter !== 'all' ? 'No matching automations' : 'No automations yet'}</p>
             <p className="text-sm text-muted-foreground">Set up trigger-based automations to engage contacts</p>
           </div>
-          {canEdit && !searchQuery && <EngageButton size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</EngageButton>}
+          {canEdit && !searchQuery && statusFilter === 'all' && <EngageButton size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</EngageButton>}
         </motion.div>
       ) : (
-        <div className="grid gap-3 max-w-7xl mx-auto">
-          {filteredAutomations.map((a: any, i: number) => {
+        <div className="grid gap-2.5 max-w-7xl mx-auto">
+          {displayedAutomations.map((a: any, i: number) => {
             const triggerType = a.trigger_config?.type || 'none';
             const actions = (a.actions || []) as any[];
             const health = getHealthBadge(a.id);
-            const lastTriggered = a.updated_at;
             const isSelected = selectedIds.has(a.id);
+            const borderColor = a.status === 'active' ? 'border-l-emerald-500/60' : 'border-l-muted-foreground/20';
             return (
-              <EngageContentCard
-                key={a.id}
-                index={i}
-                selected={isSelected}
-              >
-                <div className="flex items-center justify-between">
+              <EngageContentCard key={a.id} index={i} selected={isSelected}>
+                <div className={`flex items-center justify-between border-l-2 ${borderColor} pl-3 -ml-1`}>
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {canEdit && (
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => toggleSelection(a.id)}
-                          className="shrink-0"
-                        />
-                      )}
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Zap className="h-4 w-4 text-amber-400" />
-                          <h3 className="font-medium text-foreground">{a.name}</h3>
-                          <Badge variant="outline" className={`text-[10px] gap-1 ${a.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-muted/50 text-muted-foreground border-border/50'}`}>
-                            <span className="relative flex h-1.5 w-1.5">
-                              {a.status === 'active' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
-                              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${a.status === 'active' ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
-                            </span>
-                            {a.status}
+                    {canEdit && (
+                      <Checkbox checked={isSelected} onCheckedChange={() => toggleSelection(a.id)} className="shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-foreground text-sm">{a.name}</h3>
+                        {health && (
+                          <Badge variant="outline" className={`text-[10px] gap-1 ${health.color}`} title={`${health.success}/${health.total} runs succeeded`}>
+                            {health.rate}%
                           </Badge>
-                          {/* Health Badge */}
-                          {health && (
-                            <Badge variant="outline" className={`text-[10px] gap-1 ${health.color}`} title={`${health.success} success / ${health.failed} failed (${health.rate}%)`}>
-                              {health.rate}% • {health.total}×
-                            </Badge>
-                          )}
-                          {!health && (execStats[a.id]?.total || 0) > 0 && (
-                            <Badge variant="secondary" className="text-[10px] gap-1 cursor-pointer hover:bg-secondary/80" onClick={() => setShowExecLog(a.id)}>
-                              <Zap className="h-2.5 w-2.5" /> {execStats[a.id].total}×
-                            </Badge>
-                          )}
-                        </div>
-                        {a.description && <p className="text-xs text-muted-foreground truncate">{a.description}</p>}
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>Trigger: {triggerLabels[triggerType] || triggerType}{a.trigger_config?.value ? ` (${a.trigger_config.value})` : ''}</span>
-                          <span>•</span>
-                          <span>{actions.map((act: any) => actionLabels[act.type] || act.type).join(', ')}</span>
-                          {a.conditions && (a.conditions as any[]).length > 0 && (
-                            <>
-                              <span>•</span>
-                              <span className="flex items-center gap-0.5"><Filter className="h-2.5 w-2.5" /> {(a.conditions as any[]).length} conditions</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
-                          <Clock className="h-2.5 w-2.5" />
-                          <span>Created {format(new Date(a.created_at), 'MMM d')}</span>
-                          {lastTriggered && lastTriggered !== a.created_at && (
-                            <span>• Last active {format(new Date(lastTriggered), 'MMM d, HH:mm')}</span>
-                          )}
-                        </div>
+                        )}
+                      </div>
+                      {a.description && <p className="text-xs text-muted-foreground truncate">{a.description}</p>}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{triggerLabels[triggerType] || triggerType}</span>
+                        <span className="text-border">→</span>
+                        <span>{actions.map((act: any) => actionLabels[act.type] || act.type).join(', ')}</span>
+                        {a.conditions && (a.conditions as any[]).length > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-0.5"><Filter className="h-2.5 w-2.5" /> {(a.conditions as any[]).length}</span>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {canEdit && (
-                        <Switch
-                          checked={a.status === 'active'}
-                          onCheckedChange={() => toggleStatus.mutate({ id: a.id, currentStatus: a.status })}
-                        />
-                      )}
-                      {canEdit && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openDialog(a)}>
-                              <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => duplicateAutomation.mutate(a)}>
-                              <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => runDryRun(a.id)}>
-                              <TestTube2 className="h-3.5 w-3.5 mr-1" /> Dry Run
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setShowExecLog(a.id)}>
-                              <List className="h-3.5 w-3.5 mr-1" /> View Runs
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setShowVersionHistory(a.id)}>
-                              <History className="h-3.5 w-3.5 mr-1" /> Version History
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={() => deleteAutomation.mutate(a.id)}>
-                              <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
                   </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {canEdit && (
+                      <Switch
+                        checked={a.status === 'active'}
+                        onCheckedChange={() => toggleStatus.mutate({ id: a.id, currentStatus: a.status })}
+                      />
+                    )}
+                    {canEdit && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openDialog(a)}><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => duplicateAutomation.mutate(a)}><Copy className="h-3.5 w-3.5 mr-1" /> Duplicate</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => runDryRun(a.id)}><TestTube2 className="h-3.5 w-3.5 mr-1" /> Dry Run</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setShowExecLog(a.id)}><List className="h-3.5 w-3.5 mr-1" /> View Runs</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setShowVersionHistory(a.id)}><History className="h-3.5 w-3.5 mr-1" /> Version History</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => deleteAutomation.mutate(a.id)}><Trash2 className="h-3.5 w-3.5 mr-1" /> Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                </div>
               </EngageContentCard>
             );
           })}
