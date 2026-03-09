@@ -28,7 +28,7 @@ const CONTENT_TYPE_CHIPS = [
 type SortOption = 'date' | 'title';
 type StatusFilter = 'all' | 'draft' | 'published' | 'archived';
 
-export const CategoryContent: React.FC<CategoryContentProps> = ({ category, onOpenDetailView }) => {
+export const CategoryContent: React.FC<CategoryContentProps> = ({ category, onOpenDetailView, selectedIds, onToggleSelect }) => {
   const { unifiedItems, loading } = useRepositoryContent();
 
   // Build a map: originalContentId -> array of repurposed format codes
