@@ -97,7 +97,7 @@ export const UpdateContactNode = memo(({ data, selected }: NodeProps) => (
 
 // E7: Dedicated Add Tag node
 export const AddTagNode = memo(({ data, selected }: NodeProps) => (
-  <NodeWrapper color="bg-teal-500" selected={selected}>
+  <NodeWrapper color="bg-teal-500" selected={selected} onDelete={(data as any)?.onDelete}>
     <Handle type="target" position={Position.Top} className="!bg-teal-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <Handle type="source" position={Position.Bottom} className="!bg-teal-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <NodeLabel icon={TagIcon} label={getLabel(data, 'Add Tag')} summary={(data as any)?.config?.tag || 'No tag'} iconBg="bg-teal-500" execCount={(data as any)?.execCount} />
