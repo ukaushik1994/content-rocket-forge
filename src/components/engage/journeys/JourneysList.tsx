@@ -460,16 +460,19 @@ export const JourneysList = () => {
                           </Badge>
                         )}
                       </div>
-                      {/* Mini flow preview */}
+                      {/* Mini flow preview with colored node dots */}
                       {nodeCount > 0 && (
-                        <div className="flex items-center gap-1 py-1">
-                          {Array.from({ length: Math.min(nodeCount, 5) }).map((_, idx) => (
-                            <React.Fragment key={idx}>
-                              <div className="w-2 h-2 rounded-full bg-primary/40 border border-primary/20" />
-                              {idx < Math.min(nodeCount, 5) - 1 && <div className="w-4 h-px bg-primary/20" />}
-                            </React.Fragment>
-                          ))}
-                          {nodeCount > 5 && <span className="text-[9px] text-muted-foreground ml-1">+{nodeCount - 5}</span>}
+                        <div className="flex items-center gap-1.5 py-1">
+                          {(() => {
+                            const dotColors = ['bg-purple-400', 'bg-blue-400', 'bg-amber-400', 'bg-emerald-400', 'bg-indigo-400'];
+                            return Array.from({ length: Math.min(nodeCount, 6) }).map((_, idx) => (
+                              <React.Fragment key={idx}>
+                                <div className={`w-2.5 h-2.5 rounded-full ${dotColors[idx % dotColors.length]} shadow-sm shadow-current/20`} />
+                                {idx < Math.min(nodeCount, 6) - 1 && <div className="w-5 h-px bg-border" />}
+                              </React.Fragment>
+                            ));
+                          })()}
+                          {nodeCount > 6 && <span className="text-[9px] text-muted-foreground ml-1">+{nodeCount - 6} more</span>}
                         </div>
                       )}
                       {j.description && <p className="text-xs text-muted-foreground truncate">{j.description}</p>}
