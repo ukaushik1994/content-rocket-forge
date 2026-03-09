@@ -82,7 +82,7 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="h-full"
     >
-      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full flex flex-col">
+      <Card className="relative overflow-hidden glass-card glass-card-hover transition-all duration-300 group h-full flex flex-col">
         {/* Animated Background Gradient */}
         <motion.div
           className={`absolute inset-0 bg-gradient-to-br ${hasCannibalization ? 'from-orange-500/10 to-red-500/10' : 'from-primary/10 to-blue-500/10'} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}

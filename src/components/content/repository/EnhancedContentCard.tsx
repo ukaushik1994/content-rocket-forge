@@ -47,8 +47,8 @@ export const EnhancedContentCard: React.FC<EnhancedContentCardProps> = ({
   
   return (
     <Card
-      className={`p-4 cursor-pointer hover:shadow-md transition-all duration-200 group ${
-        isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'
+      className={`p-4 cursor-pointer glass-card glass-card-hover transition-all duration-200 group ${
+        isSelected ? 'border-primary bg-primary/5' : ''
       } animate-fade-in`}
       onClick={handleCardClick}
     >

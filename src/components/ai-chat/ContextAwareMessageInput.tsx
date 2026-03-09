@@ -309,7 +309,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             ref={textareaRef}
             value={message}
             onChange={(e) => handleMessageChange(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => {
               setIsFocused(false);
