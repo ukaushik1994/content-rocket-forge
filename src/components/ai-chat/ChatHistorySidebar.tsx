@@ -159,7 +159,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   const { user, signOut } = useAuth();
   const { openSettings } = useSettings();
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchActive, setSearchActive] = useState(false);
+  const [searchActive, setSearchActive] = useState<boolean>(false);
   const [displayLimit, setDisplayLimit] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
