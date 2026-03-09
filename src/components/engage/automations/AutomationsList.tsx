@@ -721,7 +721,7 @@ export const AutomationsList = () => {
               <Button
                 variant="outline"
                 onClick={() => setShowTemplates(true)}
-                className="h-11 px-5 bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+                className="h-11 px-5 glass-card hover:bg-white/[0.08]"
               >
                 <BookTemplate className="h-4 w-4 mr-2" /> Templates
               </Button>
