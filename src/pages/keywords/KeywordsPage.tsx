@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 
 import { Helmet } from 'react-helmet-async';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
