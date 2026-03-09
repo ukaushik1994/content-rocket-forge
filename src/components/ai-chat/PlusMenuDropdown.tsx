@@ -2,19 +2,21 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Paperclip, PenLine, X } from 'lucide-react';
+import { Plus, Paperclip, PenLine, BookOpen, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PlusMenuDropdownProps {
   onAttachFile: () => void;
   onContentWizard: () => void;
-  onAIProposals?: () => void; // kept for backward compat but not rendered
+  onResearchIntelligence?: () => void;
+  onAIProposals?: () => void;
   disabled?: boolean;
 }
 
 export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
   onAttachFile,
   onContentWizard,
+  onResearchIntelligence,
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
