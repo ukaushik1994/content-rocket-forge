@@ -92,7 +92,7 @@ export const EmailDashboard = () => {
         <div className="relative">
           {/* Badge */}
           <motion.div
-            className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
+            className="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0 }}
@@ -151,7 +151,7 @@ export const EmailDashboard = () => {
               onClick={() => { setShowCampaignWizard(true); setTab('campaigns'); }}
               size="lg"
               variant="outline"
-              className="px-8 py-4 text-lg font-semibold bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+              className="px-8 py-4 text-lg font-semibold glass-card hover:bg-white/[0.08]"
             >
               <Plus className="h-5 w-5 mr-2" />
               New Campaign
@@ -172,7 +172,7 @@ export const EmailDashboard = () => {
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: 'spring', stiffness: 300 }}
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
+                <div className="inline-flex items-center justify-center w-12 h-12 glass-card rounded-xl mb-2">
                   <stat.icon className="h-5 w-5 text-primary" />
                 </div>
                 <div className="text-sm font-bold text-foreground">{stat.value}</div>
@@ -190,7 +190,7 @@ export const EmailDashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
       >
-        <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
+        <div className="flex gap-3 p-2 glass-card rounded-2xl">
           {allTabs.map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.key;

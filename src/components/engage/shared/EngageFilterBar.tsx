@@ -43,7 +43,7 @@ export const EngageFilterBar: React.FC<EngageFilterBarProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+      <Card className="glass-card">
         <CardContent className="p-4">
           <div className="flex flex-col lg:flex-row gap-3">
             <div className="flex-1 relative">

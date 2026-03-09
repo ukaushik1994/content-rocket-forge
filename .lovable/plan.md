@@ -1,122 +1,97 @@
 
 
-# Apple Design Refinement Plan — Creaiter
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-Based on the DOM audit, the core problem is **5 different card recipes across 10 pages**, inconsistent typography hierarchy, and missing motion. The essence — dark theme, glassmorphism, bold heroes — stays. We unify and polish.
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-## Scope
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-This is a large effort. I recommend splitting into **3 implementation rounds** to keep changes reviewable and avoid regressions.
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
----
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-## Round 1: Design Token Unification (Foundation)
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### 1A. Unified Card System in `index.css`
-
-The existing `.glass-card` class is already close to the audit's "gold standard" (Repository-style). Update it to be THE single card recipe:
-
-```css
-.glass-card {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.glass-card-hover {
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.glass-card-hover:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-}
-```
-
-### 1B. Standardize border-radius
-
-All inline card styles across pages need to use `rounded-2xl` (16px) consistently. Email page uses `12px` — fix to `16px`.
-
-### 1C. Page-by-page card migration
-
-Replace inline card styles on these pages to use `glass-card`:
-- **Email** (`rgba(9,9,11,0.3)` + `blur(4px)` → `glass-card`)
-- **Social/Contacts/Automations/Journeys** (`rgba(9,9,11,0.6)` + `blur(24px)` → `glass-card`)
-- **Keywords** (solid `rgb(9,9,11)` → `glass-card`)
-- **Campaigns** (no card wrapping → add `glass-card` wrappers)
-- **Calendar** (already close, minor tweak to match)
-
-**Files affected:** `Engage.tsx` sub-components, keyword cards, campaign content containers, calendar card wrapper. Each page's main content components need identification and update.
-
-### 1D. Typography scale
-
-Add CSS custom properties and utility classes in `index.css`:
-- `--type-hero: 34px` / weight 700 / letter-spacing `-0.02em`
-- `--type-title: 22px` / weight 600
-- `--type-headline: 17px` / weight 500
-- `--type-body: 15px` / weight 400
-- `--type-subhead: 13px` / weight 400
-- `--type-caption: 11px` / weight 400
-
-Create `.text-hero`, `.text-title`, `.text-headline` utility classes. Apply to section headers across pages (sidebar labels already addressed in previous work).
-
-### 1E. Sidebar depth
-
-Add a `1px` right border on the sidebar: `border-right: 1px solid rgba(255, 255, 255, 0.06)`.
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-## Round 2: Motion & Depth
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-### 2A. Page transitions
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-Add a `fadeUp` animation to page content wrappers — `0.3s` ease with `translateY(8px)` origin. Apply via a shared `PageContainer` wrapper or directly on each page's root `motion.div`.
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-### 2B. Card entrance stagger
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
-On list pages (Repository, Keywords, Campaigns), add staggered `fadeUp` with `0.05s` delay per card using framer-motion's `staggerChildren`.
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
 
-### 2C. Button micro-interactions
-
-Add `active:scale-[0.97]` and `transition-transform duration-100` to the base Button component.
-
-### 2D. Tab transitions
-
-For segmented controls / tab switches, add an animated underline or pill indicator using framer-motion `layoutId`.
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
 ---
 
-## Round 3: Hero Elevation & Empty States
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-### 3A. Hero refinement
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
 
-For each page hero section (kept as-is per user request), refine:
-- Title: `34px` / `700` / `-0.02em` letter-spacing / `line-height: 1.1`
-- Subtitle: `17px` / `400` / `60%` opacity
-- Gradient: replace hard stops with `radial-gradient` ambient glow
-- Feature pills: `glass-card` style with `9999px` radius
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
 
-### 3B. Empty states
-
-Create a reusable `EmptyState` component with:
-- 48x48 icon
-- Title at `22px/600`
-- Description at `15px/400/60%` opacity
-- Primary CTA button + optional secondary text link
-
-Apply to: Email tabs, Social, Contacts, Analytics, Calendar empty days.
-
----
-
-## Technical Notes
-
-- The existing `.glass-card` in `index.css` (line 164) will be updated as the single source of truth
-- The existing `.glass-panel` can remain for layout panels (sidebar, modals) vs content cards
-- `card-3d` and `holographic-border` classes are too heavy for Apple aesthetic — will not be removed but won't be used on standardized cards
-- framer-motion is already installed and used extensively — no new dependencies needed
-- Total estimated files to touch: ~30-40 across all 3 rounds
-
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`

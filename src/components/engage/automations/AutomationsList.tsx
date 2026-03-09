@@ -674,7 +674,7 @@ export const AutomationsList = () => {
           transition={{ delay: 0, type: 'spring', stiffness: 100, damping: 18 }}
           className="flex justify-center mb-6"
         >
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 shadow-sm">
+          <div className="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full shadow-sm">
             <Zap className="h-5 w-5 text-amber-400" />
             <span className="text-sm font-medium text-foreground">Automation Hub</span>
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
@@ -721,7 +721,7 @@ export const AutomationsList = () => {
               <Button
                 variant="outline"
                 onClick={() => setShowTemplates(true)}
-                className="h-11 px-5 bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+                className="h-11 px-5 glass-card hover:bg-white/[0.08]"
               >
                 <BookTemplate className="h-4 w-4 mr-2" /> Templates
               </Button>
@@ -731,7 +731,7 @@ export const AutomationsList = () => {
                 variant="outline"
                 onClick={runNow}
                 disabled={runningNow}
-                className="h-11 px-5 bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+                className="h-11 px-5 glass-card hover:bg-white/[0.08]"
               >
                 <RotateCw className={`h-4 w-4 mr-2 ${runningNow ? 'animate-spin' : ''}`} />
                 {runningNow ? 'Running...' : 'Run Now'}
@@ -756,7 +756,7 @@ export const AutomationsList = () => {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="flex items-center gap-3 px-5 py-3 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 min-w-[140px]"
+                className="flex items-center gap-3 px-5 py-3 glass-card rounded-2xl min-w-[140px]"
               >
                 <div className="h-9 w-9 rounded-xl bg-background/80 border border-border/50 flex items-center justify-center">
                   <stat.icon className={`h-4 w-4 ${stat.color}`} />

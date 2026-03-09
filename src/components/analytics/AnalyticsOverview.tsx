@@ -126,7 +126,7 @@ export const AnalyticsOverview = () => {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="bg-background/60 backdrop-blur-xl border-border/50">
+            <Card key={i} className="glass-card">
               <CardContent className="pt-6">
                 <div className="animate-pulse">
                   <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
@@ -143,7 +143,7 @@ export const AnalyticsOverview = () => {
   if (!hasApiKeys) {
     return (
       <div className="space-y-6">
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 max-w-md mx-auto">
+        <Card className="glass-card max-w-md mx-auto">
           <CardContent className="pt-12 pb-12 text-center">
             <motion.div
               initial={{ scale: 0 }}
@@ -182,7 +182,7 @@ export const AnalyticsOverview = () => {
   if (analyticsData.length === 0 && searchConsoleData.length === 0) {
     return (
       <div className="space-y-6">
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 max-w-md mx-auto">
+        <Card className="glass-card max-w-md mx-auto">
           <CardContent className="pt-12 pb-12 text-center">
             <motion.div
               initial={{ scale: 0 }}
@@ -245,7 +245,7 @@ export const AnalyticsOverview = () => {
     <div className="space-y-6">
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -260,7 +260,7 @@ export const AnalyticsOverview = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -275,7 +275,7 @@ export const AnalyticsOverview = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -290,7 +290,7 @@ export const AnalyticsOverview = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -308,28 +308,28 @@ export const AnalyticsOverview = () => {
 
       {/* Additional Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Bounce Rate</p>
             <p className="text-2xl font-bold">{(avgBounceRate * 100).toFixed(1)}%</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Session Duration</p>
             <p className="text-2xl font-bold">{Math.floor(avgSessionDuration / 60)}:{(avgSessionDuration % 60).toFixed(0).padStart(2, '0')}</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Click-through Rate</p>
             <p className="text-2xl font-bold">{(avgCTR * 100).toFixed(1)}%</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+        <Card className="glass-card glass-card-hover">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Search Position</p>
             <p className="text-2xl font-bold">{avgPosition.toFixed(1)}</p>

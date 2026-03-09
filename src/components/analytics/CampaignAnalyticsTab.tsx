@@ -158,7 +158,7 @@ export const CampaignAnalyticsTab = () => {
         animate={{ opacity: 1, y: 0 }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+        <Card className="glass-card">
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg">
@@ -170,7 +170,7 @@ export const CampaignAnalyticsTab = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+        <Card className="glass-card">
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400 shadow-lg">
@@ -182,7 +182,7 @@ export const CampaignAnalyticsTab = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+        <Card className="glass-card">
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-400 shadow-lg">
@@ -194,7 +194,7 @@ export const CampaignAnalyticsTab = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+        <Card className="glass-card">
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-red-400 shadow-lg">
@@ -208,7 +208,7 @@ export const CampaignAnalyticsTab = () => {
       </motion.div>
 
       {/* Filters */}
-      <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+      <Card className="glass-card">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Filter by status:</span>
@@ -232,7 +232,7 @@ export const CampaignAnalyticsTab = () => {
       {/* Campaign List */}
       <div className="space-y-4">
         {campaigns.length === 0 ? (
-          <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+          <Card className="glass-card">
             <CardContent className="p-12 text-center">
               <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
@@ -250,7 +250,7 @@ export const CampaignAnalyticsTab = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group">
+              <Card className="glass-card glass-card-hover group">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
