@@ -737,7 +737,7 @@ const JourneyBuilderInner = () => {
           proOptions={{ hideAttribution: true }}
           className="[&_.react-flow__controls]:!bg-card/90 [&_.react-flow__controls]:!backdrop-blur-xl [&_.react-flow__controls]:!border-border/40 [&_.react-flow__controls]:!rounded-xl [&_.react-flow__controls]:!shadow-xl [&_.react-flow__controls-button]:!bg-transparent [&_.react-flow__controls-button]:!border-border/20 [&_.react-flow__controls-button]:!fill-muted-foreground [&_.react-flow__controls-button:hover]:!fill-foreground"
         >
-          <Controls showMiniMap={false} />
+          <Controls />
           <Background variant={BackgroundVariant.Dots} gap={24} size={1.5} color="hsl(var(--muted-foreground) / 0.12)" />
         </ReactFlow>
 
