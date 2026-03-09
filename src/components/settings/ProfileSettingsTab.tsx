@@ -218,7 +218,7 @@ export function ProfileSettingsTab() {
             
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
-                Coming soon
+                Secure
               </span>
             </div>
           </div>
