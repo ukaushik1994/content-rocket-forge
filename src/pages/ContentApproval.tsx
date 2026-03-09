@@ -22,7 +22,7 @@ const ContentApproval = () => {
         <meta name="description" content="Review and approve content submissions with advanced workflow management" />
       </Helmet>
       
-      <Navbar />
+      
       
       <main className="flex-1 container px-6 pt-24 pb-12 relative z-10">
         <ContentProvider>

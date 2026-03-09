@@ -481,7 +481,7 @@ const CampaignsInner = () => {
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
       
-      <Navbar />
+      
       
       {/* Animated Background */}
       <AnimatedBackground intensity="medium" />

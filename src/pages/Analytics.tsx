@@ -263,7 +263,7 @@ const Analytics = () => {
     >
       <AnimatedBackground intensity="medium" />
       
-      <Navbar />
+      
       
       <main className="flex-1 container px-6 pt-24 pb-12 relative z-10">
         {/* Empty State Banner */}

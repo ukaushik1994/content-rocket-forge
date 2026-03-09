@@ -80,7 +80,7 @@ const Repository = () => {
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
       
-      <Navbar />
+      
       
       {/* Interactive Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

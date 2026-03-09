@@ -371,7 +371,7 @@ const Solutions = () => {
         <meta name="description" content="Manage your business offerings for content creation" />
       </Helmet>
       
-      <Navbar />
+      
       
       <main className="pt-20 container py-8 rounded-3xl">
         <motion.div variants={itemVariants} className="mb-8 space-y-12">
