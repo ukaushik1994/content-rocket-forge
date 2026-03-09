@@ -10,23 +10,19 @@ import { TemplatesList } from './templates/TemplatesList';
 import { CampaignsList } from './campaigns/CampaignsList';
 import { EmailReports } from './reports/EmailReports';
 import { ComposeDialog } from './inbox/ComposeDialog';
-import { Mail, Inbox, Send, Clock, FileText, Megaphone, BarChart3, Plus, PenSquare, TrendingUp } from 'lucide-react';
+import { Mail, Plus, PenSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const primaryTabs = [
-  { key: 'inbox', label: 'Inbox', icon: Inbox },
-  { key: 'campaigns', label: 'Campaigns', icon: Megaphone },
-  { key: 'templates', label: 'Templates', icon: FileText },
-];
-
-const secondaryTabs = [
-  { key: 'sent', label: 'Sent', icon: Send },
-  { key: 'scheduled', label: 'Scheduled', icon: Clock },
-  { key: 'drafts', label: 'Drafts', icon: FileText },
-  { key: 'reports', label: 'Reports', icon: BarChart3 },
+const allTabs = [
+  { key: 'inbox', label: 'Inbox' },
+  { key: 'campaigns', label: 'Campaigns' },
+  { key: 'templates', label: 'Templates' },
+  { key: 'sent', label: 'Sent' },
+  { key: 'scheduled', label: 'Scheduled' },
+  { key: 'drafts', label: 'Drafts' },
+  { key: 'reports', label: 'Reports' },
 ];
 
 export const EmailDashboard = () => {
