@@ -360,11 +360,11 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         exit={isMobile ? { x: -320, opacity: 0, transition: { duration: 0.2 } } : undefined}
       >
         {/* Top: Logo + Toggle + New Chat + Notifications */}
-        <div className="p-3 pb-1 flex items-center justify-between">
+        <div className="p-3 pb-2 flex items-center justify-between border-b border-border/5">
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleSidebar}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
             >
               <PanelLeftClose className="h-4 w-4" />
             </button>
