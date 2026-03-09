@@ -26,11 +26,13 @@ interface ContentGapsTabProps {
 export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goals }) => {
   const { analyzeSERP, saveInsight } = useContentStrategy();
   const { data: savedGaps, isLoading: loadingGaps, create: createGap } = useContentGaps();
+  const { data: clusters } = useClusters();
   const [keyword, setKeyword] = useState(goals.mainKeyword || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [gapAnalysis, setGapAnalysis] = useState<any>(null);
   const [selectedGaps, setSelectedGaps] = useState<string[]>([]);
+  const [selectedClusterId, setSelectedClusterId] = useState<string>('');
 
   const handleAnalyzeGaps = async () => {
     if (!keyword.trim()) {
