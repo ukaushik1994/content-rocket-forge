@@ -108,9 +108,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
   }, [currentMatchIndex, messageSearchResults]);
 
-  const [showSidebar, setShowSidebar] = useState(false);
-
-  ntext();
+  const { pendingPanel, setPendingPanel } = useSidebarContext();
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
