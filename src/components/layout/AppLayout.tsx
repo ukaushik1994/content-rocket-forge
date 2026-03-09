@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
-import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
+import { AIChatDBProvider, useSharedAIChatDB } from '@/contexts/AIChatDBContext';
 import { useSidebarContext } from '@/contexts/SidebarContext';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
@@ -12,7 +12,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isSidebarOpen, toggleSidebar, setPendingPanel } = useSidebarContext();
@@ -26,7 +26,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     deleteConversation,
     togglePinConversation,
     toggleArchiveConversation,
-  } = useEnhancedAIChatDB();
+  } = useSharedAIChatDB();
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -87,7 +87,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     <div className="min-h-screen flex flex-col bg-background">
       <NotificationBell />
       <div className="flex-1 flex relative">
-        {/* On mobile: only show expanded sidebar via AnimatePresence when open */}
         {isMobile ? (
           <AnimatePresence>
             {isSidebarOpen && (
@@ -95,11 +94,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             )}
           </AnimatePresence>
         ) : (
-          /* On desktop: always render, toggle between expanded and collapsed */
           <ChatHistorySidebar {...sidebarProps} isCollapsed={!isSidebarOpen} />
         )}
 
-        {/* Main content with responsive margin */}
         <main
           className={cn(
             "flex-1 transition-all duration-300 min-w-0",
@@ -114,5 +111,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </main>
       </div>
     </div>
+  );
+};
+
+export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  return (
+    <AIChatDBProvider>
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </AIChatDBProvider>
   );
 };

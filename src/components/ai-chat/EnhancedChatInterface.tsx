@@ -12,7 +12,7 @@ import { SolutionRecommendations } from './SolutionRecommendations';
 import { SolutionWorkflowTemplates } from './SolutionWorkflowTemplates';
 import { ContextDisplayIndicator } from './ContextDisplayIndicator';
 import { MessageSearchBar } from './MessageSearchBar';
-import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
+import { useSharedAIChatDB } from '@/contexts/AIChatDBContext';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
