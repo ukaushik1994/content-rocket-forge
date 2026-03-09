@@ -128,14 +128,14 @@ const CollapsedIconButton: React.FC<{
   </Tooltip>
 );
 
-// Collapsible section — refined headers with divider
+// Collapsible section — styled like nav items (icon + text row)
 const CollapsibleSection: React.FC<{
   label: string;
   icon?: React.ReactNode;
   defaultOpen?: boolean;
   children: React.ReactNode;
   showDivider?: boolean;
-}> = ({ label, defaultOpen = true, children, showDivider = false }) => {
+}> = ({ label, icon, defaultOpen = true, children, showDivider = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
   React.useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
@@ -143,15 +143,22 @@ const CollapsibleSection: React.FC<{
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       {showDivider && <div className="mx-3 border-t border-border/5 mt-1" />}
-      <CollapsibleTrigger className="w-full flex items-center gap-1.5 px-3 pt-5 pb-2 group cursor-pointer">
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors duration-200" />
-        ) : (
-          <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors duration-200" />
+      <CollapsibleTrigger className={cn(
+        "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group cursor-pointer",
+        isOpen
+          ? "text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+      )}>
+        {icon && (
+          <span className="flex-shrink-0 text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+            {icon}
+          </span>
         )}
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground/50 font-semibold group-hover:text-muted-foreground/80 transition-colors duration-200">
-          {label}
-        </span>
+        <span className="flex-1 text-left">{label}</span>
+        <ChevronDown className={cn(
+          "h-3 w-3 text-muted-foreground/50 transition-transform duration-200",
+          !isOpen && "-rotate-90"
+        )} />
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-0.5">
         {children}
