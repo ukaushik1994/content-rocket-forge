@@ -192,34 +192,51 @@ const Analytics = () => {
     }
   };
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
     if (!realMetrics) {
       toast.error('No data available to export');
       return;
     }
-
-    const exportData = {
-      overview: {
-        pageViews: realMetrics.totalAnalytics.pageViews,
-        sessions: realMetrics.totalAnalytics.sessions,
-        bounceRate: realMetrics.avgBounceRate,
-        sessionDuration: realMetrics.avgSessionDuration,
-        impressions: realMetrics.totalSearchConsole.impressions,
-        clicks: realMetrics.totalSearchConsole.clicks,
-        ctr: realMetrics.avgCTR,
-        position: realMetrics.avgPosition,
-      },
-      exportedAt: new Date().toISOString(),
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const rows = [
+      ['Metric', 'Value', 'Source'],
+      ['Page Views', String(realMetrics.totalAnalytics.pageViews), 'Google Analytics'],
+      ['Sessions', String(realMetrics.totalAnalytics.sessions), 'Google Analytics'],
+      ['Bounce Rate', `${(realMetrics.avgBounceRate * 100).toFixed(1)}%`, 'Google Analytics'],
+      ['Avg Session Duration (s)', String(realMetrics.avgSessionDuration), 'Google Analytics'],
+      ['Search Impressions', String(realMetrics.totalSearchConsole.impressions), 'Search Console'],
+      ['Search Clicks', String(realMetrics.totalSearchConsole.clicks), 'Search Console'],
+      ['CTR', `${(realMetrics.avgCTR * 100).toFixed(1)}%`, 'Search Console'],
+      ['Avg Position', realMetrics.avgPosition.toFixed(1), 'Search Console'],
+    ];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `analytics-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `analytics-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Analytics exported successfully');
+    toast.success('CSV exported successfully');
+  };
+
+  const handleExportPDF = async () => {
+    const el = document.getElementById('analytics-dashboard');
+    if (!el) { toast.error('Nothing to export'); return; }
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(el, { backgroundColor: '#0f172a', scale: 2 });
+      const link = document.createElement('a');
+      link.download = `analytics-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      toast.success('Dashboard image exported');
+    } catch {
+      toast.error('Export failed');
+    }
+  };
+
+  const handleExport = () => {
+    handleExportCSV();
   };
 
   const timeRangeLabels = {
