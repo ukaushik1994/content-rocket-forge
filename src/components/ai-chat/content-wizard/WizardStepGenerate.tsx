@@ -512,7 +512,19 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     return fallback;
   };
 
+  const abortGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsGeneratingContent(false);
+    setGenerationStage('');
+    toast.info('Generation cancelled');
+  };
+
   const generateContent = async () => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setIsGeneratingContent(true);
     setGenerationStage('Building prompt...');
     try {
