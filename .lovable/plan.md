@@ -1,97 +1,110 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Master Fix List — Implementation Plan
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## Status Assessment
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+Reviewing all 25 items against the current codebase:
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
+**Already Done (skip):**
+- #4-8: `glass-card` CSS class already has the correct recipe (`rgba(255,255,255,0.06)`, `blur(12px)`, `16px` radius, shadow)
+- #9-11: Apple Typography Scale exists (`text-hero`, `text-headline`, `text-body`, etc.)
+- #12: `PageContainer` with `fadeUp` (0.3s ease) exists
+- #13: `glass-card-hover` with `translateY(-1px)` + shadow increase exists
+- #15: Dialog already has `zoom-in-95` / `zoom-out-95` spring animation
+- #16: Sidebar border exists (recently strengthened to `border-border/15`)
+- #18: Radial ambient glow applied to `EngagePageHero`
+- #21: Reject action exists in approval system (buttons, batch operations, status tracking all present)
 
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
+**Backend-Only / Out of Scope:**
+- #2: Email ESP integration (SendGrid/Resend) — requires backend service setup, not a UI fix
+- #3: Social OAuth integration — requires OAuth app registration, not a UI fix
 
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+**Remaining Items to Implement (13 items):**
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## Round 1: Critical Bug + Global CSS Utilities
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+### #1 — Chat input latency (multiple clicks to send)
+- Investigate the `ContextAwareMessageInput` submit handler — likely a focus/state issue where `isLoading` or debounce blocks rapid sends
+- Ensure the form `onSubmit` properly prevents default and doesn't re-render unnecessarily
+- Fix any event propagation issues with the nested button/form structure
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+### #14 — Button press `scale(0.97)` active state
+- Add global CSS utility `.btn-press` with `active:scale-[0.97]` transition
+- Apply to all `Button` components via the base button variant in `button.tsx`
 
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+### #17 — Tab sliding underline
+- Add a reusable `layoutId`-based animated indicator (already done for Analytics tabs) — extend to remaining tab components like `TabSelector` in drafts
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## Round 2: Page-Level Consistency
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+### #4-8 — Card system normalization (pages not yet using `glass-card`)
+- **Keywords page**: `KeywordCard` uses plain `Card` — add `glass-card` class
+- **Calendar**: Check and normalize card backgrounds
+- **Campaigns**: Wrap flat content sections in `glass-card` where missing
+- Audit all pages to ensure cards use the unified `glass-card` class
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+### #12 — Pages missing `PageContainer` wrapper
+- Wrap these pages in `PageContainer` for consistent `fadeUp` entrance:
+  - `Analytics.tsx`
+  - `ContentApproval.tsx`
+  - `KeywordsPage.tsx`
+  - `Repository.tsx`
+  - `Engage.tsx` sub-pages (Email, Social, Contacts, etc.)
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+---
+
+## Round 3: Empty States
+
+### #19 — Empty states for Email / Social / Contacts / Calendar
+- Create empty states using the existing `UnifiedEmptyState` component for:
+  - **Email**: "No emails yet" with Mail icon + "Compose" CTA
+  - **Social**: "No posts yet" with Share icon + "Create Post" CTA
+  - **Contacts**: "No contacts yet" with Users icon + "Import" CTA
+  - **Calendar**: "No events scheduled" with Calendar icon + "Create" CTA
+- Wire each to the appropriate action handler
+
+---
+
+## Round 4: Feature Enhancements
+
+### #20 — Repository card hover feedback
+- Add `glass-card-hover` class to `EnhancedContentCard` if not already present
+- Ensure hover state shows `translateY(-1px)` + shadow increase
+
+### #22 — Offerings internal detail view
+- Create an in-app detail page/modal for offerings instead of external links
+- Add a route `/offerings/:id` or a slide-over panel showing full offering details
+
+### #23 — Keyword sparklines & difficulty indicators
+- Add sparkline mini-charts to `KeywordCard` showing usage trends over time
+- Add difficulty badge (easy/medium/hard) based on competition data
+- Use recharts `<Sparklines>` or simple SVG path for compact visualization
+
+### #24 — Toast notifications for all actions
+- Audit Save/Delete/Approve actions across all pages
+- Add `toast.success()` / `toast.error()` calls where missing
+- Focus on: Settings save, Content delete, Approval actions, Keyword operations
+
+### #25 — Password change in Settings
+- Add a "Security" tab to Settings with password change form
+- Fields: current password, new password, confirm password
+- Use Supabase `updateUser({ password })` API
+
+---
+
+## Implementation Order
+
+| Round | Items | Scope |
+|-------|-------|-------|
+| 1 | #1, #14, #17 | Critical bug + global CSS |
+| 2 | #4-8, #12 | Page consistency (cards + PageContainer) |
+| 3 | #19 | Empty states |
+| 4 | #20, #22, #23, #24, #25 | Feature enhancements |
+
+Total: 13 actionable items across 4 rounds. Items #2 and #3 (ESP/OAuth) require external service setup and are deferred.
+
