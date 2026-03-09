@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { extractWizardContext, WizardContextExtraction } from '@/services/wizardContextExtraction';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSidebarContext } from '@/contexts/SidebarContext';
 
 interface EnhancedChatInterfaceProps {
   className?: string;
