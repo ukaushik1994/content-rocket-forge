@@ -459,7 +459,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                                   {conversation.title}
                                 </h3>
                               </div>
-                              <p className="text-[11px] <p className="text-[11px] text-muted-foreground/70 mt-0.5">">
+                              <p className="text-[11px] text-muted-foreground/70 mt-0.5">>
                                 {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
                               </p>
                             </div>
