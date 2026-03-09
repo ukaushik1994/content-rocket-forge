@@ -312,12 +312,8 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Campaigns</h2>
-          <p className="text-sm text-muted-foreground">{campaigns.length} campaigns</p>
-        </div>
+      {/* Minimal header — no duplicate title, just action */}
+      <div className="flex justify-end items-center">
         {canEdit && (
           <Button size="sm" className="text-xs gap-1.5 bg-foreground text-background hover:bg-foreground/90" onClick={() => openWizard()}><Plus className="h-3.5 w-3.5" /> New Campaign</Button>
         )}
@@ -477,30 +473,7 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
         </DialogContent>
       </Dialog>
 
-      {/* Stats */}
-      {campaigns.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Draft', count: stats.draft, icon: Clock },
-            { label: 'Sending', count: stats.sending, icon: Send },
-            { label: 'Complete', count: stats.complete, icon: CheckCircle },
-          ].map((s, i) => (
-            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <GlassCard className="p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground">{s.label}</p>
-                    <p className="text-xl font-semibold text-foreground">{s.count}</p>
-                  </div>
-                  <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                    <s.icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          ))}
-        </div>
-      )}
+      {/* Stats removed — status badges on cards are sufficient */}
 
       {/* List */}
       {isLoading ? (
@@ -541,12 +514,10 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
                   <div className="flex items-center justify-between">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-blue-400" />
                         <h3 className="font-medium text-foreground">{c.name}</h3>
                         <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} /> {c.status}
                         </Badge>
-                        {isClickable && <BarChart3 className="h-3 w-3 text-muted-foreground" />}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {c.email_templates?.name || 'No template'} • {format(new Date(c.created_at), 'MMM d, yyyy')}
@@ -558,12 +529,10 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
                           return null;
                         })()}
                       </p>
-                      {c.status !== 'draft' && (
-                        <div className="flex gap-3 text-xs text-muted-foreground">
-                          <span>Sent: {campaignStats.sent || 0}</span>
-                          <span>Delivered: {campaignStats.delivered || 0}</span>
-                          <span>Failed: {campaignStats.failed || 0}</span>
-                        </div>
+                      {c.status !== 'draft' && (campaignStats.sent > 0 || campaignStats.delivered > 0 || campaignStats.failed > 0) && (
+                        <p className="text-xs text-muted-foreground">
+                          {campaignStats.sent || 0} sent · {campaignStats.delivered || 0} delivered · {campaignStats.failed || 0} failed
+                        </p>
                       )}
                     </div>
                     <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
