@@ -138,7 +138,17 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="h-full"
     >
-      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full flex flex-col">
+      <Card className={`relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full flex flex-col ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+        {/* Selection Checkbox */}
+        {onToggleSelect && (
+          <div className="absolute top-3 left-3 z-20">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelect(content.id)}
+              className="bg-background/80 border-border"
+            />
+          </div>
+        )}
         {/* Animated Background Gradient */}
         <motion.div
           className={`absolute inset-0 bg-gradient-to-br ${statusInfo.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
