@@ -246,15 +246,15 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
   const toolsItems = [
     { icon: <Wand2 className="h-4 w-4" />, label: 'Content Wizard', action: () => handlePanel('content_wizard') },
-    { icon: <Megaphone className="h-4 w-4" />, label: 'Campaigns', action: () => handlePanel('campaigns') },
-    { icon: <Key className="h-4 w-4" />, label: 'Keywords', action: () => handlePanel('keywords') },
-    { icon: <BarChart3 className="h-4 w-4" />, label: 'Analytics', action: () => handlePanel('analytics') },
+    { icon: <Megaphone className="h-4 w-4" />, label: 'Campaigns', action: () => handleNavigation('/campaigns') },
+    { icon: <Key className="h-4 w-4" />, label: 'Keywords', action: () => handleNavigation('/keywords') },
+    { icon: <BarChart3 className="h-4 w-4" />, label: 'Analytics', action: () => handleNavigation('/analytics') },
   ];
 
   const engageItems = [
-    { icon: <Mail className="h-4 w-4" />, label: 'Email', action: () => handlePanel('email') },
-    { icon: <Share2 className="h-4 w-4" />, label: 'Social', action: () => handlePanel('social') },
-    { icon: <Users className="h-4 w-4" />, label: 'Contacts', action: () => handlePanel('contacts') },
+    { icon: <Mail className="h-4 w-4" />, label: 'Email', action: () => handleNavigation('/engage/email') },
+    { icon: <Share2 className="h-4 w-4" />, label: 'Social', action: () => handleNavigation('/engage/social') },
+    { icon: <Users className="h-4 w-4" />, label: 'Contacts', action: () => handleNavigation('/engage/contacts') },
     { icon: <Zap className="h-4 w-4" />, label: 'Automations', action: () => handleNavigation('/engage/automations') },
     { icon: <GitBranch className="h-4 w-4" />, label: 'Journeys', action: () => handleNavigation('/engage/journeys') },
   ];
