@@ -71,7 +71,7 @@ interface ChatHistorySidebarProps {
   className?: string;
 }
 
-// Sidebar nav item
+// Sidebar nav item — flat, minimal style
 const SidebarNavItem: React.FC<{
   icon: React.ReactNode;
   label: string;
