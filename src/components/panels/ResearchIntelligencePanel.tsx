@@ -119,8 +119,8 @@ const nextStatus = (current: string) => {
 
 const GapsTab: React.FC = () => {
   const { data: clusters } = useClusters();
-  const [filterCluster, setFilterCluster] = useState<string>('');
-  const { data: gaps, isLoading, update, remove: removeGap } = useContentGaps(filterCluster || undefined);
+  const [filterCluster, setFilterCluster] = useState<string>('all');
+  const { data: gaps, isLoading, update, remove: removeGap } = useContentGaps(filterCluster === 'all' ? undefined : filterCluster);
 
   if (isLoading) return <LoadingState />;
 
@@ -134,7 +134,7 @@ const GapsTab: React.FC = () => {
               <SelectValue placeholder="All clusters" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All clusters</SelectItem>
+              <SelectItem value="all">All clusters</SelectItem>
               {clusters.map(c => (
                 <SelectItem key={c.id} value={c.id} className="text-xs">{c.cluster_name}</SelectItem>
               ))}
