@@ -145,7 +145,7 @@ const CollapsibleSection: React.FC<{
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       {showDivider && <div className="mx-3 border-t border-border/5 mt-1" />}
       <CollapsibleTrigger className={cn(
-        "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group cursor-pointer",
+        "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-[background-color,color] duration-200 group cursor-pointer",
         isOpen
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
@@ -155,7 +155,7 @@ const CollapsibleSection: React.FC<{
             {icon}
           </span>
         )}
-        <span className="flex-1 text-left">{label}</span>
+        <span className="flex-1 text-left text-[11px] font-semibold uppercase tracking-[0.06em]">{label}</span>
         <ChevronDown className={cn(
           "h-3 w-3 text-muted-foreground/50 transition-transform duration-200",
           !isOpen && "-rotate-90"
