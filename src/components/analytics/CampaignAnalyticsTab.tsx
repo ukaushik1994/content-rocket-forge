@@ -194,7 +194,7 @@ export const CampaignAnalyticsTab = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+        <Card className="glass-card">
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-red-400 shadow-lg">
