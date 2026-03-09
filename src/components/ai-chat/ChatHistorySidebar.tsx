@@ -117,7 +117,8 @@ const CollapsedIconButton: React.FC<{
     <TooltipTrigger asChild>
       <button
         onClick={onClick}
-        className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
+        aria-label={label}
+        className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-[background-color,color] duration-200"
       >
         {icon}
       </button>
