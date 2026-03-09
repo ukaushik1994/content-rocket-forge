@@ -34,10 +34,16 @@ export const ContentApprovalHero: React.FC<ContentApprovalHeroProps> = ({
   };
   const quickFilters = [{
     key: 'all',
-    label: 'All Content',
+    label: 'All',
     count: contentStats.all,
     icon: FileText,
     color: 'bg-blue-500/20 text-blue-400'
+  }, {
+    key: 'draft',
+    label: 'Draft',
+    count: contentStats.draft,
+    icon: FileText,
+    color: 'bg-slate-500/20 text-slate-400'
   }, {
     key: 'pending_review',
     label: 'Pending',
@@ -56,6 +62,12 @@ export const ContentApprovalHero: React.FC<ContentApprovalHeroProps> = ({
     count: contentStats.approved,
     icon: CheckCircle2,
     color: 'bg-green-500/20 text-green-400'
+  }, {
+    key: 'rejected',
+    label: 'Rejected',
+    count: contentStats.rejected,
+    icon: XCircle,
+    color: 'bg-red-500/20 text-red-400'
   }];
   return <motion.div className="min-h-[60vh] w-full relative" initial={{
     opacity: 0
