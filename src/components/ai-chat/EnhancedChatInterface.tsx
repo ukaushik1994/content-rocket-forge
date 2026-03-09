@@ -568,7 +568,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         "border-t border-border/20 bg-background/80 backdrop-blur-md",
         "transition-all duration-300 ease-out",
         // Left padding only on desktop when sidebar is open (sidebars overlay on mobile/tablet)
-        showSidebar && !isMobile && "sm:pl-72 lg:pl-80"
+        false
       )}>
         <div className="max-w-6xl mx-auto px-4 py-3">
           {/* Context Indicator */}
