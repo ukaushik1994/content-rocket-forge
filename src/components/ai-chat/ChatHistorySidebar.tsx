@@ -381,7 +381,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             onClick={onCreateConversation}
           />
           {searchActive ? (
-            <div className="flex items-center gap-2 px-3 py-2">
+            <div className="flex items-center gap-2 px-3 py-2 mx-1 rounded-lg bg-accent/30">
               <Search className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
               <input
                 autoFocus
