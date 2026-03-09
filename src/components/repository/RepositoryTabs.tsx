@@ -139,6 +139,13 @@ export const RepositoryTabs = React.memo(({ onOpenDetailView }: RepositoryTabsPr
           </motion.div>
         </TabsContent>
       </Tabs>
+
+      <RepositoryBulkBar
+        selectedIds={selectedIds}
+        totalCount={unifiedItems.filter(i => i.sourceType === 'original').length}
+        onSelectAll={selectAll}
+        onClearSelection={clearSelection}
+      />
     </motion.div>
   );
 });
