@@ -15,7 +15,7 @@ export const EngageSkeletonCards: React.FC<EngageSkeletonCardsProps> = ({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(count)].map((_, i) => (
-          <Card key={i} className="p-5 bg-background/60 backdrop-blur-xl border-border/50">
+          <Card key={i} className="p-5 glass-card">
             <Skeleton className="h-5 w-3/4 mb-4" />
             <Skeleton className="h-4 w-full mb-2" />
             <Skeleton className="h-4 w-2/3 mb-4" />
