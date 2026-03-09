@@ -107,7 +107,7 @@ const SidebarNavItem: React.FC<{
   </button>
 );
 
-// Collapsed icon button with tooltip
+// Collapsed icon button with tooltip — premium
 const CollapsedIconButton: React.FC<{
   icon: React.ReactNode;
   label: string;
@@ -117,7 +117,7 @@ const CollapsedIconButton: React.FC<{
     <TooltipTrigger asChild>
       <button
         onClick={onClick}
-        className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+        className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200"
       >
         {icon}
       </button>
