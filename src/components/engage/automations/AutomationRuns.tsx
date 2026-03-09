@@ -11,7 +11,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Zap, Search, Download, Eye, CheckCircle2, XCircle, Clock, Timer, RotateCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
-import { EngageHero } from '../shared/EngageHero';
+import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
 import { EngageButton } from '../shared/EngageButton';
 import { format, subDays } from 'date-fns';
 import { motion } from 'framer-motion';
