@@ -23,6 +23,10 @@ export const EngageBreadcrumb = () => {
   const { pathname } = useLocation();
   const segments = pathname.split('/').filter(Boolean);
 
+  // Hide breadcrumb on full-screen builder routes (e.g. /engage/journeys/:uuid)
+  const isBuilderRoute = /\/engage\/journeys\/[a-f0-9-]{36}/i.test(pathname);
+  if (isBuilderRoute) return null;
+
   if (segments.length <= 1) return null;
 
   const crumbs = segments.map((seg, i) => ({

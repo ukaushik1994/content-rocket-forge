@@ -1,32 +1,35 @@
 
 
-# Fix Journey Builder UI Overlaps
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Problems from Screenshot
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-1. **Breadcrumb row showing raw UUID** — "Engage > Journeys > aec63d52-d648-40c7-a032-40c6b718607d" sits above the toolbar, creating a double-header effect and exposing an ugly UUID
-2. **Layout padding conflict** — `EngageLayout` wraps content in `p-6`, but `JourneyBuilder` uses `-m-6` to counteract it, causing potential overlap/bleed issues
-3. **Two navigation rows** — Breadcrumb + toolbar = wasted vertical space and visual clutter on a full-screen builder
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## Plan
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-### 1. Hide breadcrumb on builder routes
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-In `EngageBreadcrumb.tsx`, return `null` when the pathname matches a journey builder route (contains a UUID segment after `/journeys/`). The toolbar's back button + journey name already serves as navigation — the breadcrumb is redundant here.
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### 2. Suppress layout padding for builder
-
-In `EngageLayout.tsx`, detect when the current route is a builder route and conditionally remove the `p-6` padding on the content wrapper, so the builder can go truly full-bleed without the hacky `-m-6` negative margin. Remove `-m-6` from `JourneyBuilder.tsx`.
-
-### 3. Hide animated background on builder
-
-The `AnimatedBackground` and `EngageBackground` create purple glow bleed on the canvas. Suppress both on builder routes so the canvas owns its own atmosphere.
-
-## Files to Edit
-
-| File | Change |
-|------|--------|
-| `src/components/engage/shared/EngageBreadcrumb.tsx` | Return `null` for `/engage/journeys/:id` routes |
-| `src/components/engage/EngageLayout.tsx` | Conditionally remove `p-6`, hide backgrounds on builder routes |
-| `src/components/engage/journeys/JourneyBuilder.tsx` | Remove `-m-6` hack from root div |
-
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
