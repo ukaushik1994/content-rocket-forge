@@ -296,143 +296,40 @@ const Analytics = () => {
             </p>
           </motion.div>
         )}
-        {/* Hero Section */}
-        <motion.div 
-          className="min-h-[5vh] w-full relative mb-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-        >
-          <div className="relative z-10 w-full px-6 pt-16 pb-8">
-            <motion.div 
-              className="text-center mb-16 relative"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
-                animate={{ opacity: [0.5, 0.8, 0.5] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              />
-              
-              <div className="relative">
-                <motion.div 
-                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium">Real-time Performance Tracking</span>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                </motion.div>
-                
-                <motion.h1 
-                  className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent"
-                >
-                  Analytics Hub
-                  <br />
-                  <span className="text-primary">Performance</span>
-                </motion.h1>
-                
-                <motion.p 
-                  className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed"
-                >
-                  Track content performance, discover insights, and optimize your strategy 
-                  with real-time Google Analytics and Search Console data
-                </motion.p>
-
-                <motion.div className="flex gap-4 justify-center mb-12">
-                  <Button
-                    onClick={refreshAnalytics}
-                    disabled={loading}
-                    size="lg"
-                    className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl"
-                  >
-                    <RefreshCcw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh Data
-                    <TrendingUp className="h-5 w-5 ml-2" />
-                  </Button>
-                  <Button
-                    onClick={handleExportCSV}
-                    disabled={!realMetrics}
-                    size="lg"
-                    variant="outline"
-                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
-                  >
-                    <Download className="h-5 w-5 mr-2" />
-                    Export CSV
-                  </Button>
-                  <Button
-                    onClick={handleExportPDF}
-                    disabled={!realMetrics}
-                    size="lg"
-                    variant="outline"
-                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
-                  >
-                    <FileText className="h-5 w-5 mr-2" />
-                    Export Image
-                  </Button>
-                </motion.div>
-
-                <motion.div 
-                  className="flex justify-center gap-8 mb-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                >
-                  {[
-                    { icon: Eye, label: "Page Views", value: realMetrics?.totalAnalytics.pageViews.toLocaleString() || '0' },
-                    { icon: Users, label: "Sessions", value: realMetrics?.totalAnalytics.sessions.toLocaleString() || '0' },
-                    { icon: TrendingUp, label: "Impressions", value: realMetrics?.totalSearchConsole.impressions.toLocaleString() || '0' }
-                  ].map((stat) => (
-                    <motion.div 
-                      key={stat.label}
-                      className="text-center"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
-                        <stat.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="text-sm font-bold text-foreground">{stat.value}</div>
-                      <div className="text-xs text-muted-foreground">{stat.label}</div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              className="flex justify-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.0 }}
-            >
-              <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
-                {[
-                  { key: '24h', label: '24 Hours' },
-                  { key: '7days', label: '7 Days' },
-                  { key: '30days', label: '30 Days' },
-                  { key: '90days', label: '90 Days' }
-                ].map((filter) => (
-                  <motion.button
-                    key={filter.key}
-                    onClick={() => handleTimeRangeChange(filter.key)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                      timeRange === filter.key 
-                        ? 'bg-primary text-primary-foreground shadow-lg' 
-                        : 'hover:bg-background/80'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <CalendarRange className="h-4 w-4" />
-                    <span className="font-medium">{filter.label}</span>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
+        <CompactPageHeader
+          icon={BarChart3}
+          title="Analytics"
+          subtitle="Track content performance with Google Analytics & Search Console"
+          stats={realMetrics ? [
+            { icon: Eye, label: 'Views', value: realMetrics.totalAnalytics.pageViews.toLocaleString() },
+            { icon: Users, label: 'Sessions', value: realMetrics.totalAnalytics.sessions.toLocaleString() },
+            { icon: TrendingUp, label: 'Impressions', value: realMetrics.totalSearchConsole.impressions.toLocaleString() },
+          ] : undefined}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={refreshAnalytics} disabled={loading}>
+                <RefreshCcw className={`h-3.5 w-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={!realMetrics}>
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={!realMetrics}>
+                <FileText className="h-3.5 w-3.5 mr-1.5" />
+                Image
+              </Button>
+            </div>
+          }
+          quickFilters={[
+            { key: '24h', label: '24h', icon: CalendarRange },
+            { key: '7days', label: '7 Days', icon: CalendarRange },
+            { key: '30days', label: '30 Days', icon: CalendarRange },
+            { key: '90days', label: '90 Days', icon: CalendarRange },
+          ]}
+          activeFilter={timeRange}
+          onFilterChange={handleTimeRangeChange}
+        />
 
               {/* Key Metrics Cards - 8 Real Metrics */}
               <motion.div 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ContentApprovalHero } from './ContentApprovalHero';
+import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
 import { ContentApprovalCard } from './ContentApprovalCard';
 import { ReviewEditorModal } from './ReviewEditorModal';
 import { AssignReviewerDialog } from './AssignReviewerDialog';

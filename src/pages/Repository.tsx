@@ -20,6 +20,7 @@ const Repository = () => {
     refreshContent,
     loading
   } = useContent();
+  const navigate = useNavigate();
   const [selectedContent, setSelectedContent] = useState<ContentItemType | null>(null);
   const [detailViewOpen, setDetailViewOpen] = useState(false);
 
