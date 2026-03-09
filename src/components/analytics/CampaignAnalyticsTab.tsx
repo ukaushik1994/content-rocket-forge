@@ -208,7 +208,7 @@ export const CampaignAnalyticsTab = () => {
       </motion.div>
 
       {/* Filters */}
-      <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+      <Card className="glass-card">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Filter by status:</span>
