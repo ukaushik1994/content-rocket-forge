@@ -435,22 +435,28 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                         <div
                           key={conversation.id}
                           className={cn(
-                            "mx-1 mb-0.5 px-3 py-2.5 cursor-pointer transition-colors duration-150 rounded-lg group",
+                            "mx-1 mb-0.5 px-3 py-2 cursor-pointer transition-all duration-200 rounded-lg group relative overflow-hidden",
                             activeConversation === conversation.id 
-                              ? 'bg-muted/40' 
-                              : 'hover:bg-muted/20'
+                              ? 'bg-accent/50' 
+                              : 'hover:bg-accent/30'
                           )}
                           onClick={() => onSelectConversation(conversation.id)}
                         >
+                          {activeConversation === conversation.id && (
+                            <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-primary" />
+                          )}
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
-                                {conversation.pinned && <Pin className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />}
-                                <h3 className="text-sm text-foreground truncate">
+                                {conversation.pinned && <Pin className="h-3 w-3 text-primary/60 flex-shrink-0" />}
+                                <h3 className={cn(
+                                  "text-[13px] truncate",
+                                  activeConversation === conversation.id ? "text-foreground font-medium" : "text-foreground/80"
+                                )}>
                                   {conversation.title}
                                 </h3>
                               </div>
-                              <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+                              <p className="text-[11px] text-muted-foreground/60 mt-0.5">
                                 {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
                               </p>
                             </div>
