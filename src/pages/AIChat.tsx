@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Navbar from '@/components/layout/Navbar';
+
 import { EnhancedChatInterface } from '@/components/ai-chat/EnhancedChatInterface';
 import { EnhancedChatIntegration } from '@/components/ai-chat/EnhancedChatIntegration';
 import { useSettings } from '@/contexts/SettingsContext';
