@@ -280,11 +280,11 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
 
       <form onSubmit={handleSubmit} className="relative">
         <div 
-          className={`relative flex items-end gap-2 p-2.5 bg-background/60 border rounded-2xl transition-all duration-200 ${
+          className={`relative flex items-end gap-2 p-2.5 bg-background/60 backdrop-blur-xl border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
             wizardMode
               ? 'border-primary/30 ring-1 ring-primary/10'
               : isFocused 
-                ? 'border-primary/30' 
+                ? 'border-primary/30 shadow-[0_2px_12px_rgba(0,0,0,0.4)]' 
                 : 'border-border/20 hover:border-border/40'
           }`}
         >
