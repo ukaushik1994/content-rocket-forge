@@ -404,8 +404,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       <div
         className={`fixed z-[60] transition-all duration-300 ${
           showSidebar 
-            ? 'top-[4.5rem] sm:left-[16.5rem] lg:left-[18.5rem]' 
-            : 'top-20 left-4'
+            ? 'top-3 sm:left-[16.5rem] lg:left-[18.5rem]' 
+            : 'top-3 left-4'
         }`}
       >
         <Button
