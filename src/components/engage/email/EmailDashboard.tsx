@@ -190,7 +190,7 @@ export const EmailDashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
       >
-        <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
+        <div className="flex gap-3 p-2 glass-card rounded-2xl">
           {allTabs.map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.key;
