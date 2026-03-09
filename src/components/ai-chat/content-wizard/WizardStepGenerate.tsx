@@ -217,6 +217,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
   // Phase 5 state
   const [generationStage, setGenerationStage] = useState<string>('');
+  const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [seoScore, setSeoScore] = useState<number | null>(null);
   const [aiHumanScore, setAiHumanScore] = useState<number | null>(null);
   const [refinementInstruction, setRefinementInstruction] = useState('');
