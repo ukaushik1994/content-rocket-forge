@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -37,7 +36,6 @@ export const RepositoryBackfill = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
-      <Navbar />
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Card>

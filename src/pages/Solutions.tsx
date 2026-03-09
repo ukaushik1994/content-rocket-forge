@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
@@ -359,7 +358,6 @@ const Solutions = () => {
   if (loading) {
     return (
       <motion.div className="min-h-screen bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
-        <Navbar />
         <main className="pt-20 container py-8 rounded-3xl">
           <LoadingFallback />
         </main>
@@ -373,7 +371,7 @@ const Solutions = () => {
         <meta name="description" content="Manage your business offerings for content creation" />
       </Helmet>
       
-      <Navbar />
+      
       
       <main className="pt-20 container py-8 rounded-3xl">
         <motion.div variants={itemVariants} className="mb-8 space-y-12">

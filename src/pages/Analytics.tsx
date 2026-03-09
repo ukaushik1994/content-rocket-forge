@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
 import { AnalyticsHero } from '@/components/analytics/AnalyticsHero';
 import { ContentAnalyticsTab } from '@/components/analytics/ContentAnalyticsTab';
@@ -240,7 +239,6 @@ const Analytics = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <Navbar />
         <main className="pt-20 container py-8">
           <Card className="bg-red-50 border-red-200">
             <CardContent className="p-6 text-center">
@@ -265,7 +263,7 @@ const Analytics = () => {
     >
       <AnimatedBackground intensity="medium" />
       
-      <Navbar />
+      
       
       <main className="flex-1 container px-6 pt-24 pb-12 relative z-10">
         {/* Empty State Banner */}

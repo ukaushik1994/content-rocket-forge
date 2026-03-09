@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { ContentStrategyHero } from '@/components/research/content-strategy/ContentStrategyHero';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
@@ -19,8 +18,6 @@ const ContentStrategy = () => {
           <meta name="description" content="Complete content strategy workspace with AI proposals, production pipeline, editorial calendar, and performance analytics. Plan, create, and optimize your content strategy." />
           <link rel="canonical" href={canonicalUrl} />
         </Helmet>
-        
-        <Navbar />
         
         
         {/* Animated Background - matching Repository design */}

@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import Navbar from '@/components/layout/Navbar';
 import { OpenRouterSettings } from '@/components/ai-chat/OpenRouterSettings';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,8 +33,6 @@ const AISettings = () => {
         />
       </div>
 
-      <Navbar />
-      
       <motion.main 
         className="flex-1 pt-24 p-6"
         initial="hidden"

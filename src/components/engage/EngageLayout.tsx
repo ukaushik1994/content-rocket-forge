@@ -1,7 +1,6 @@
 import React from 'react';
 import { EngageBreadcrumb } from './shared/EngageBreadcrumb';
 import { EngageBackground } from './shared/EngageBackground';
-import { PageLayout } from '@/components/layout/PageLayout';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Loader2 } from 'lucide-react';
 
@@ -13,7 +12,7 @@ export const EngageLayout: React.FC<EngageLayoutProps> = ({ children }) => {
   const { loading, currentWorkspaceId } = useWorkspace();
 
   return (
-    <PageLayout containerized={false} className="!p-0 !pt-16">
+    <div className="min-h-screen relative">
       <div className="h-[calc(100vh-4rem)] overflow-auto relative">
         <EngageBackground />
         <div className="relative z-0 p-6">
@@ -29,6 +28,6 @@ export const EngageLayout: React.FC<EngageLayoutProps> = ({ children }) => {
           )}
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 };

@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -202,7 +201,6 @@ const TopicClusters = () => {
         <title>Topic Clusters | Creaiter</title>
       </Helmet>
       
-      <Navbar />
       
       {/* Background Effects */}
       <div className="fixed inset-0 pt-20 overflow-hidden pointer-events-none">

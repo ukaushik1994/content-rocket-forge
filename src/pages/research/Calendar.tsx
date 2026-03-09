@@ -1,5 +1,4 @@
 import React from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Sparkles, CalendarDays, Plus, BarChart3, Zap } from 'lucide-react';
@@ -42,7 +41,6 @@ const CalendarPage: React.FC = () => {
           <link rel="canonical" href={canonicalUrl} />
         </Helmet>
 
-        <Navbar />
 
         {/* Background orbs */}
         <div className="absolute inset-0 z-0">

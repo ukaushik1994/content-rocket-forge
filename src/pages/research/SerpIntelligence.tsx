@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
@@ -45,7 +44,6 @@ const SerpIntelligence = () => {
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
       
-      <Navbar />
       <AnimatedBackground intensity="medium" />
       
       <main className="flex-1 container pt-24 pb-8 z-10 relative max-w-7xl mx-auto">

@@ -1,5 +1,4 @@
 import React from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { NotificationDemo as NotificationDemoComponent } from '@/components/notifications/NotificationDemo';
 import { Helmet } from 'react-helmet-async';
 
@@ -11,7 +10,6 @@ export default function NotificationDemo() {
         <meta name="description" content="Try out the notification system with interactive demos" />
       </Helmet>
       
-      <Navbar />
       
       <main className="container mx-auto px-4 pt-24 pb-8">
         <NotificationDemoComponent />

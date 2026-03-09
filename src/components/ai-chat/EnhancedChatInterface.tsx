@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { extractWizardContext, WizardContextExtraction } from '@/services/wizardContextExtraction';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSidebarContext } from '@/contexts/SidebarContext';
 
 interface EnhancedChatInterfaceProps {
   className?: string;
@@ -109,6 +110,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   }, [currentMatchIndex, messageSearchResults]);
 
   const [showSidebar, setShowSidebar] = useState(false);
+
+  const { pendingPanel, setPendingPanel } = useSidebarContext();
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -153,6 +156,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setSidebarInteracted(true);
     setUserClosedSidebar(false);
   };
+
+  // Consume pending panel from SidebarContext (when navigating from other pages)
+  useEffect(() => {
+    if (pendingPanel) {
+      if (pendingPanel === 'content_wizard') {
+        handleSetVisualization({ type: 'content_wizard', keyword: '', content_type: 'blog' });
+      } else {
+        handleSetVisualization({ type: pendingPanel });
+      }
+      setPendingPanel(null);
+    }
+  }, [pendingPanel, setPendingPanel]);
 
   // AUTO-OPEN sidebar when AI response contains visual data
   // Respects user's explicit close intent (Issue #4 fix)

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { CampaignsHero } from '@/components/campaigns/CampaignsHero';
 import { CampaignChatInterface } from '@/components/campaigns/CampaignChatInterface';
@@ -482,7 +481,7 @@ const CampaignsInner = () => {
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
       
-      <Navbar />
+      
       
       {/* Animated Background */}
       <AnimatedBackground intensity="medium" />

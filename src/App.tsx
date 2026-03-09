@@ -56,6 +56,8 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { SidebarProvider } from "@/contexts/SidebarContext";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 const queryClient = new QueryClient();
 
@@ -114,10 +116,11 @@ const App = () => (
           <GlobalSettingsBridge />
           <KeywordMigrationRunner />
           <ContentProvider>
-                <ChatContextBridgeProvider>
+              <ChatContextBridgeProvider>
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <SidebarProvider>
                 <SettingsPopup />
                 <Routes>
                   <Route path="/landing" element={<Landing />} />
@@ -134,60 +137,58 @@ const App = () => (
                   <Route path="/features/audience" element={<AudienceFeaturePage />} />
                   <Route path="/features/analytics" element={<AnalyticsFeaturePage />} />
                   <Route path="/dashboard" element={<Navigate to="/ai-chat" replace />} />
-                  <Route path="/drafts" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
-                  <Route path="/repository" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
-                  <Route path="/repository/backfill" element={<ProtectedRoute><RepositoryBackfill /></ProtectedRoute>} />
                   <Route path="/content-builder" element={<Navigate to="/ai-chat" replace />} />
-                  <Route path="/content-type-selection" element={<ProtectedRoute><ContentTypeSelection /></ProtectedRoute>} />
-                  <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
-                  <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
-                  <Route path="/offerings" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
                   <Route path="/solutions" element={<Navigate to="/offerings" replace />} />
-                  <Route path="/keywords" element={<ProtectedRoute><KeywordsPage /></ProtectedRoute>} />
-                  
-                  <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-                  
-                   {/* AI Chat routes */}
-                   <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
-                   <Route path="/ai-streaming-chat" element={<ProtectedRoute><AIStreamingChatPage /></ProtectedRoute>} />
-                   <Route path="/ai-settings" element={<ProtectedRoute><AISettings /></ProtectedRoute>} />
-                   <Route path="/shared-conversation/:conversationId" element={<SharedConversation />} />
-                   
-                   {/* Enterprise Hub route */}
-                   <Route path="/enterprise" element={<ProtectedRoute><EnterpriseHubPage /></ProtectedRoute>} />
-                  
-                   {/* Research routes */}
-                   <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
-                     <Route path="/research/serp-intelligence" element={<ProtectedRoute><SerpIntelligence /></ProtectedRoute>} />
-                   <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
-                  
-                   <Route path="/research/content-gaps" element={<ProtectedRoute><ContentGapsPage /></ProtectedRoute>} />
-                   <Route path="/research/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-                   <Route path="/research/pipeline" element={<Navigate to="/research/content-strategy#pipeline" replace />} />
-                   
-                   {/* Campaigns */}
-                   <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
-                   
-                   {/* Engage */}
-                   <Route path="/engage/*" element={<ProtectedRoute><Engage /></ProtectedRoute>} />
-                  
 
-                   {/* Smart Actions Analytics */}
-                   <Route path="/smart-actions/analytics" element={<ProtectedRoute><SmartActionsAnalytics /></ProtectedRoute>} />
-                   
-                   {/* Workflow History */}
-                   <Route path="/workflows/history" element={<ProtectedRoute><WorkflowHistoryPage /></ProtectedRoute>} />
-                   
-                   {/* Notification Demo */}
-                   <Route path="/notifications/demo" element={<ProtectedRoute><NotificationDemo /></ProtectedRoute>} />
-                   
-                   {/* Redirects for legacy routes */}
-                   <Route path="/settings" element={<Navigate to="/ai-settings" replace />} />
-                   <Route path="/research" element={<Navigate to="/research/content-strategy" replace />} />
-                   
-                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  {/* AI Chat - keeps its own layout with built-in sidebar */}
+                  <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+                  <Route path="/ai-streaming-chat" element={<ProtectedRoute><AIStreamingChatPage /></ProtectedRoute>} />
+                  <Route path="/shared-conversation/:conversationId" element={<SharedConversation />} />
+
+                  {/* All other protected routes wrapped in AppLayout for persistent sidebar */}
+                  <Route path="/drafts" element={<ProtectedRoute><AppLayout><Repository /></AppLayout></ProtectedRoute>} />
+                  <Route path="/repository" element={<ProtectedRoute><AppLayout><Repository /></AppLayout></ProtectedRoute>} />
+                  <Route path="/repository/backfill" element={<ProtectedRoute><AppLayout><RepositoryBackfill /></AppLayout></ProtectedRoute>} />
+                  <Route path="/content-type-selection" element={<ProtectedRoute><AppLayout><ContentTypeSelection /></AppLayout></ProtectedRoute>} />
+                  <Route path="/content-approval" element={<ProtectedRoute><AppLayout><ContentApproval /></AppLayout></ProtectedRoute>} />
+                  <Route path="/glossary-builder" element={<ProtectedRoute><AppLayout><GlossaryBuilder /></AppLayout></ProtectedRoute>} />
+                  <Route path="/offerings" element={<ProtectedRoute><AppLayout><Solutions /></AppLayout></ProtectedRoute>} />
+                  <Route path="/keywords" element={<ProtectedRoute><AppLayout><KeywordsPage /></AppLayout></ProtectedRoute>} />
+                  <Route path="/analytics" element={<ProtectedRoute><AppLayout><Analytics /></AppLayout></ProtectedRoute>} />
+                  <Route path="/ai-settings" element={<ProtectedRoute><AppLayout><AISettings /></AppLayout></ProtectedRoute>} />
+                  <Route path="/enterprise" element={<ProtectedRoute><AppLayout><EnterpriseHubPage /></AppLayout></ProtectedRoute>} />
+                  
+                  {/* Research routes */}
+                  <Route path="/research/content-strategy" element={<ProtectedRoute><AppLayout><ContentStrategy /></AppLayout></ProtectedRoute>} />
+                  <Route path="/research/serp-intelligence" element={<ProtectedRoute><AppLayout><SerpIntelligence /></AppLayout></ProtectedRoute>} />
+                  <Route path="/research/topic-clusters" element={<ProtectedRoute><AppLayout><TopicClusters /></AppLayout></ProtectedRoute>} />
+                  <Route path="/research/content-gaps" element={<ProtectedRoute><AppLayout><ContentGapsPage /></AppLayout></ProtectedRoute>} />
+                  <Route path="/research/calendar" element={<ProtectedRoute><AppLayout><CalendarPage /></AppLayout></ProtectedRoute>} />
+                  <Route path="/research/pipeline" element={<Navigate to="/research/content-strategy#pipeline" replace />} />
+                  
+                  {/* Campaigns */}
+                  <Route path="/campaigns" element={<ProtectedRoute><AppLayout><Campaigns /></AppLayout></ProtectedRoute>} />
+                  
+                  {/* Engage */}
+                  <Route path="/engage/*" element={<ProtectedRoute><AppLayout><Engage /></AppLayout></ProtectedRoute>} />
+                  
+                  {/* Smart Actions Analytics */}
+                  <Route path="/smart-actions/analytics" element={<ProtectedRoute><AppLayout><SmartActionsAnalytics /></AppLayout></ProtectedRoute>} />
+                  
+                  {/* Workflow History */}
+                  <Route path="/workflows/history" element={<ProtectedRoute><AppLayout><WorkflowHistoryPage /></AppLayout></ProtectedRoute>} />
+                  
+                  {/* Notification Demo */}
+                  <Route path="/notifications/demo" element={<ProtectedRoute><AppLayout><NotificationDemo /></AppLayout></ProtectedRoute>} />
+                  
+                  {/* Redirects for legacy routes */}
+                  <Route path="/settings" element={<Navigate to="/ai-settings" replace />} />
+                  <Route path="/research" element={<Navigate to="/research/content-strategy" replace />} />
+                  
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </SidebarProvider>
               </BrowserRouter>
               </ChatContextBridgeProvider>
         </ContentProvider>
