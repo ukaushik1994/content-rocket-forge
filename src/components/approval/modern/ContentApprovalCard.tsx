@@ -30,8 +30,9 @@ interface ContentApprovalCardProps {
   content: ContentItemType;
   onView: (content: ContentItemType) => void;
   onApprove?: (id: string) => void;
-  onReject?: (id: string, reason: string) => void;
-  onRequestChanges?: (id: string, reason: string) => void;
+  onReject?: (id: string) => void;
+  onRequestChanges?: (id: string) => void;
+  onRevertToDraft?: (id: string) => void;
   onAnalyzeAI?: (content: ContentItemType) => void;
   onAssignReviewer?: (content: ContentItemType) => void;
   onViewHistory?: (content: ContentItemType) => void;
@@ -39,6 +40,8 @@ interface ContentApprovalCardProps {
   aiScore?: number;
   analyzedAt?: string;
   isAnalyzing?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 const statusConfig = {
