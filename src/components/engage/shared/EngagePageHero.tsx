@@ -83,7 +83,7 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
 
             {/* Title */}
             <motion.h1
-              className={`text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r ${gradientFrom} ${gradientTo} bg-clip-text text-transparent`}
+              className="text-hero mb-4 bg-gradient-to-r from-foreground via-primary to-primary/70 bg-clip-text text-transparent leading-[1.1]"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
