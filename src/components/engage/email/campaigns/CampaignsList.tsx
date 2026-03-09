@@ -514,12 +514,10 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
                   <div className="flex items-center justify-between">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-blue-400" />
                         <h3 className="font-medium text-foreground">{c.name}</h3>
                         <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} /> {c.status}
                         </Badge>
-                        {isClickable && <BarChart3 className="h-3 w-3 text-muted-foreground" />}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {c.email_templates?.name || 'No template'} • {format(new Date(c.created_at), 'MMM d, yyyy')}
