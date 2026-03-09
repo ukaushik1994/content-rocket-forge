@@ -26,7 +26,22 @@ const TAB_CONFIG: { value: RepositoryCategory | 'campaigns'; label: string; icon
 export const RepositoryTabs = React.memo(({ onOpenDetailView }: RepositoryTabsProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'all';
-  const { categoryCounts } = useRepositoryContent();
+  const { categoryCounts, unifiedItems } = useRepositoryContent();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(unifiedItems.filter(i => i.sourceType === 'original').map(i => i.id)));
+  }, [unifiedItems]);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
