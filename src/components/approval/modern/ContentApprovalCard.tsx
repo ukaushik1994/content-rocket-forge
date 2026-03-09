@@ -326,7 +326,20 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               ) : (
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-semibold text-muted-foreground/60">AI ANALYSIS</h4>
-                  <span className="text-xs text-muted-foreground/60 italic">Not analyzed</span>
+                  {onAnalyzeAI ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs text-primary hover:text-primary/80"
+                      onClick={() => onAnalyzeAI(content)}
+                      disabled={isAnalyzing}
+                    >
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Run Analysis
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground/60 italic">Not analyzed</span>
+                  )}
                 </div>
               )}
             </motion.div>
