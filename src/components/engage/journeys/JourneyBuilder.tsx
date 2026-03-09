@@ -492,150 +492,185 @@ const JourneyBuilderInner = () => {
     : journey?.status === 'paused' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
     : 'bg-muted text-muted-foreground';
 
+  const nodeCategories = [
+    { label: 'Triggers', items: [
+      { type: 'trigger', name: 'Trigger', color: 'bg-purple-500' },
+    ]},
+    { label: 'Actions', items: [
+      { type: 'send_email', name: 'Send Email', color: 'bg-blue-500' },
+      { type: 'wait', name: 'Wait', color: 'bg-amber-500' },
+      { type: 'update_contact', name: 'Update Contact', color: 'bg-cyan-500' },
+      { type: 'add_tag', name: 'Add Tag', color: 'bg-emerald-500' },
+      { type: 'remove_tag', name: 'Remove Tag', color: 'bg-rose-500' },
+      { type: 'webhook', name: 'Webhook', color: 'bg-orange-500' },
+    ]},
+    { label: 'Logic', items: [
+      { type: 'condition', name: 'Condition', color: 'bg-yellow-500' },
+      { type: 'end', name: 'End', color: 'bg-muted-foreground' },
+    ]},
+  ];
+
+  const NodeDropdownItems = () => (
+    <>
+      {nodeCategories.map((cat, ci) => (
+        <React.Fragment key={cat.label}>
+          {ci > 0 && <div className="h-px bg-border/50 my-1" />}
+          <div className="px-2 py-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{cat.label}</span>
+          </div>
+          {cat.items.map(item => (
+            <DropdownMenuItem key={item.type} onClick={() => addNode(item.type)} className="gap-2.5 text-[13px]">
+              <span className={`h-2.5 w-2.5 rounded-full ${item.color} shrink-0`} />
+              {item.name}
+            </DropdownMenuItem>
+          ))}
+        </React.Fragment>
+      ))}
+    </>
+  );
+
   return (
     <div className="h-full flex flex-col -m-6 relative">
       {/* Premium Toolbar */}
-      <div className="flex items-center justify-between px-4 h-12 border-b border-border/50 bg-card/80 backdrop-blur-xl z-10">
-        {/* Group 1: Navigation + Name */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/engage/journeys')}>
+      <div className="flex items-center justify-between px-5 h-14 border-b border-border/40 bg-background/70 backdrop-blur-xl z-10">
+        {/* Left: Navigation + Name + Status */}
+        <div className="flex items-center gap-3 min-w-0">
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => navigate('/engage/journeys')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-foreground text-sm truncate max-w-[200px]">{journey?.name || 'Journey Builder'}</h2>
-              <Badge variant="outline" className={`text-[10px] h-5 ${statusBadgeClass}`}>{journey?.status || 'draft'}</Badge>
-              {(journey as any)?.version && <Badge variant="secondary" className="text-[9px] h-4">v{(journey as any).version}</Badge>}
-            </div>
+          <div className="min-w-0 flex items-center gap-2.5">
+            <h2 className="font-semibold text-foreground text-sm truncate max-w-[220px]">{journey?.name || 'Journey Builder'}</h2>
+            <Badge variant="outline" className={`text-[10px] h-5 shrink-0 ${statusBadgeClass}`}>{journey?.status || 'draft'}</Badge>
           </div>
           {autoSaveStatus === 'saving' && (
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Saving...</span>
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0"><Loader2 className="h-3 w-3 animate-spin" /> Saving...</span>
           )}
           {autoSaveStatus === 'saved' && (
-            <span className="text-[10px] text-emerald-400 font-medium">✓ Saved</span>
+            <span className="text-[10px] text-emerald-400 font-medium shrink-0">✓ Saved</span>
           )}
         </div>
 
-        <div className="flex items-center gap-1">
-          {/* Group 2: Undo/Redo */}
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
-            <Undo2 className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">
-            <Redo2 className="h-3.5 w-3.5" />
-          </Button>
+        {/* Right: Grouped actions */}
+        <div className="flex items-center gap-0.5">
+          {/* Edit cluster */}
+          <div className="flex items-center gap-0.5 px-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+              <Undo2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">
+              <Redo2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
 
-          <Separator orientation="vertical" className="h-5 mx-1" />
+          <Separator orientation="vertical" className="h-6 mx-1.5" />
 
-          {/* Group 3: Add Node + Fit */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1.5"><Plus className="h-3.5 w-3.5" /> Add Node</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-border/50">
-              <DropdownMenuItem onClick={() => addNode('trigger')}>🎯 Trigger</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('send_email')}>📧 Send Email</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('wait')}>⏰ Wait</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('condition')}>🔀 Condition</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('update_contact')}>👤 Update Contact</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('add_tag')}>🏷️ Add Tag</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('remove_tag')}>🗑️ Remove Tag</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('webhook')}>🔗 Webhook</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('end')}>🏁 End</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => reactFlowInstance.fitView({ padding: 0.2 })} title="Fit View">
-            <Maximize className="h-3.5 w-3.5" />
-          </Button>
+          {/* Node + View cluster */}
+          <div className="flex items-center gap-1 px-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> Add Node</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-popover/95 backdrop-blur-xl border-border/50">
+                <NodeDropdownItems />
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => reactFlowInstance.fitView({ padding: 0.2 })} title="Fit View">
+              <Maximize className="h-3.5 w-3.5" />
+            </Button>
+          </div>
 
-          <Separator orientation="vertical" className="h-5 mx-1" />
+          <Separator orientation="vertical" className="h-6 mx-1.5" />
 
-          {/* Group 4: More (Settings, Enroll, Versions, Export) */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs"><MoreHorizontal className="h-3.5 w-3.5" /> More</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-border/50">
-              <DropdownMenuItem onClick={() => setShowSettings(true)}><Settings className="h-3.5 w-3.5 mr-2" /> Settings</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowEnrollContact(true)}><UserPlus className="h-3.5 w-3.5 mr-2" /> Enroll Contact</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowVersions(true)}><History className="h-3.5 w-3.5 mr-2" /> Versions</DropdownMenuItem>
-              <DropdownMenuItem onClick={exportJourney}><Download className="h-3.5 w-3.5 mr-2" /> Export JSON</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Manage cluster */}
+          <div className="flex items-center gap-0.5 px-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" title="More">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 bg-popover/95 backdrop-blur-xl border-border/50">
+                <DropdownMenuItem onClick={() => setShowSettings(true)} className="gap-2 text-[13px]"><Settings className="h-3.5 w-3.5" /> Settings</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowEnrollContact(true)} className="gap-2 text-[13px]"><UserPlus className="h-3.5 w-3.5" /> Enroll Contact</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowVersions(true)} className="gap-2 text-[13px]"><History className="h-3.5 w-3.5" /> Versions</DropdownMenuItem>
+                <div className="h-px bg-border/50 my-1" />
+                <DropdownMenuItem onClick={exportJourney} className="gap-2 text-[13px]"><Download className="h-3.5 w-3.5" /> Export JSON</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" title="Insights">
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 bg-popover/95 backdrop-blur-xl border-border/50">
+                <DropdownMenuItem onClick={() => setShowAnalytics(true)} className="gap-2 text-[13px]"><BarChart3 className="h-3.5 w-3.5" /> Analytics</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowEnrollments(true)} className="gap-2 text-[13px]"><ListChecks className="h-3.5 w-3.5" /> Enrollments</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowPerformance(true)} className="gap-2 text-[13px]"><TrendingUp className="h-3.5 w-3.5" /> Performance</DropdownMenuItem>
+                {enrollmentStats && (
+                  <>
+                    <div className="h-px bg-border/50 my-1" />
+                    <div className="px-2 py-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {enrollmentStats.active} active</span>
+                      <span className="text-emerald-400">{enrollmentStats.completed} done</span>
+                      <span>{enrollmentStats.exited} exited</span>
+                    </div>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-          {/* Group 5: Insights (Analytics, Enrollments, Performance) */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs"><BarChart3 className="h-3.5 w-3.5" /> Insights</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-border/50">
-              <DropdownMenuItem onClick={() => setShowAnalytics(true)}><BarChart3 className="h-3.5 w-3.5 mr-2" /> Analytics</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowEnrollments(true)}><ListChecks className="h-3.5 w-3.5 mr-2" /> Enrollments</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowPerformance(true)}><TrendingUp className="h-3.5 w-3.5 mr-2" /> Performance</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Separator orientation="vertical" className="h-6 mx-1.5" />
 
-          {enrollmentStats && (
-            <>
-              <Separator orientation="vertical" className="h-5 mx-1" />
-              <div className="flex items-center gap-1.5">
-                <Badge variant="secondary" className="text-[10px] gap-1 h-6"><Users className="h-3 w-3" /> {enrollmentStats.active}</Badge>
-                <Badge variant="secondary" className="text-[10px] gap-1 h-6 bg-emerald-500/10 text-emerald-400 border-emerald-500/30">{enrollmentStats.completed} done</Badge>
-              </div>
-            </>
-          )}
-
-          <Separator orientation="vertical" className="h-5 mx-1" />
-
-          {/* Group 6: Actions */}
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={validateJourney} title="Validate">
-            <CheckCircle className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => runProcessor.mutate()} disabled={runProcessor.isPending} title="Run Processor">
-            {runProcessor.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-amber-400" />}
-          </Button>
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => saveJourney.mutate()}>
-            <Save className="h-3.5 w-3.5" /> Save
-          </Button>
-          <Button
-            size="sm"
-            className={`h-8 gap-1.5 text-xs rounded-full px-4 font-medium ${
-              journey?.status === 'active'
-                ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25'
-            }`}
-            onClick={() => toggleStatus.mutate()}
-          >
-            {journey?.status === 'active' ? <><Pause className="h-3.5 w-3.5" /> Pause</> : <><Play className="h-3.5 w-3.5" /> Publish</>}
-          </Button>
+          {/* Action cluster */}
+          <div className="flex items-center gap-1.5 pl-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={validateJourney} title="Validate">
+              <CheckCircle className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => saveJourney.mutate()}>
+              <Save className="h-3.5 w-3.5" /> Save
+            </Button>
+            <Button
+              size="sm"
+              className={`h-8 gap-1.5 text-xs rounded-full px-5 font-medium ${
+                journey?.status === 'active'
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                  : 'bg-foreground text-background hover:bg-foreground/90'
+              }`}
+              onClick={() => toggleStatus.mutate()}
+            >
+              {journey?.status === 'active' ? <><Pause className="h-3.5 w-3.5" /> Pause</> : <><Play className="h-3.5 w-3.5" /> Publish</>}
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Canvas */}
       <div className="flex-1 relative">
+        {/* Subtle radial gradient overlay */}
+        <div className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_0%,hsl(var(--background)/0.4)_100%)]" />
+
         {nodes.length === 0 && !initialLoadRef.current && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none">
-            <div className="relative pointer-events-auto text-center space-y-4">
+            <div className="relative pointer-events-auto text-center space-y-5">
               <div className="relative h-20 w-20 mx-auto">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/30 to-blue-500/30 blur-xl" />
-                <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-border/50 flex items-center justify-center">
-                  <GitBranch className="h-9 w-9 text-purple-400" />
+                <div className="absolute inset-0 rounded-2xl bg-primary/10 animate-pulse" />
+                <div className="absolute -inset-3 rounded-3xl border border-primary/10 animate-[pulse_3s_ease-in-out_infinite]" />
+                <div className="relative h-20 w-20 rounded-2xl bg-card/80 border border-border/50 flex items-center justify-center backdrop-blur-sm">
+                  <GitBranch className="h-9 w-9 text-muted-foreground" />
                 </div>
               </div>
-              <div className="space-y-1">
-                <p className="font-semibold text-foreground">Start building your journey</p>
-                <p className="text-sm text-muted-foreground">Add your first node to begin</p>
+              <div className="space-y-1.5">
+                <p className="font-semibold text-foreground text-base">Start building your journey</p>
+                <p className="text-sm text-muted-foreground">Add your first node to begin the automation flow</p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> Add Node</EngageButton>
+                  <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-5"><Plus className="h-4 w-4 mr-1.5" /> Add Node</Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-card/95 backdrop-blur-xl border-border/50">
-                  <DropdownMenuItem onClick={() => addNode('trigger')}>🎯 Trigger</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => addNode('send_email')}>📧 Send Email</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => addNode('wait')}>⏰ Wait</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => addNode('condition')}>🔀 Condition</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => addNode('end')}>🏁 End</DropdownMenuItem>
+                <DropdownMenuContent className="w-48 bg-popover/95 backdrop-blur-xl border-border/50">
+                  <NodeDropdownItems />
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -649,10 +684,11 @@ const JourneyBuilderInner = () => {
           onEdgeDoubleClick={handleEdgeDoubleClick}
           nodeTypes={customNodeTypes} fitView snapToGrid snapGrid={[16, 16]}
           proOptions={{ hideAttribution: true }}
+          className="[&_.react-flow__controls]:!bg-card/90 [&_.react-flow__controls]:!backdrop-blur-md [&_.react-flow__controls]:!border-border/50 [&_.react-flow__controls]:!rounded-xl [&_.react-flow__controls]:!shadow-lg [&_.react-flow__controls_button]:!bg-transparent [&_.react-flow__controls_button]:!border-border/30 [&_.react-flow__controls_button]:!fill-muted-foreground [&_.react-flow__minimap]:!bg-card/90 [&_.react-flow__minimap]:!backdrop-blur-md [&_.react-flow__minimap]:!border-border/50 [&_.react-flow__minimap]:!rounded-xl"
         >
-          <Controls className="!bg-card/90 !backdrop-blur-md !border-border/50 !rounded-xl !shadow-lg" />
-          <MiniMap className="!bg-card/90 !backdrop-blur-md !border-border/50 !rounded-xl" />
-          <Background variant={BackgroundVariant.Dots} gap={24} size={0.8} color="hsl(var(--muted-foreground) / 0.15)" />
+          <Controls />
+          <MiniMap />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="hsl(var(--muted-foreground) / 0.25)" />
         </ReactFlow>
 
         <JourneyInspector
