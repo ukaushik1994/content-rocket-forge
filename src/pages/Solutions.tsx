@@ -370,7 +370,7 @@ const Solutions = () => {
           )}
         </motion.div>
       </main>
-    </motion.div>;
+    </PageContainer>;
 };
 
 export default Solutions;
