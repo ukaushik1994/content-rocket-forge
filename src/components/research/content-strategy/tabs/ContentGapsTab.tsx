@@ -101,7 +101,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
     setIsSaving(true);
     try {
       const baseScore = gapAnalysis?.opportunityScore ?? 50;
-      await Promise.all(
+      const savedResults = await Promise.all(
         selectedGaps.map((gap, i) =>
           createGap({
             title: gap,
@@ -115,6 +115,21 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
       );
       toast.success(`${selectedGaps.length} gap(s) saved to database`);
       setSelectedGaps([]);
+
+      // Auto-generate strategy recommendations
+      const gapIds = savedResults.map(r => r.id).filter(Boolean);
+      if (gapIds.length > 0) {
+        toast.info('Generating strategy recommendations...');
+        supabase.functions.invoke('generate-strategy-recommendations', {
+          body: JSON.stringify({ gap_ids: gapIds }),
+        }).then(({ error }) => {
+          if (error) {
+            console.error('Recommendation generation failed:', error);
+          } else {
+            toast.success('Strategy recommendations generated');
+          }
+        });
+      }
     } catch (error) {
       toast.error('Failed to save gaps');
     } finally {
