@@ -7445,6 +7445,7 @@ export type Database = {
           embedding: string | null
           id: string
           importance_score: number | null
+          metadata: Json | null
           parent_cluster_id: string | null
           topic_count: number | null
           updated_at: string | null
@@ -7457,6 +7458,7 @@ export type Database = {
           embedding?: string | null
           id?: string
           importance_score?: number | null
+          metadata?: Json | null
           parent_cluster_id?: string | null
           topic_count?: number | null
           updated_at?: string | null
@@ -7469,6 +7471,7 @@ export type Database = {
           embedding?: string | null
           id?: string
           importance_score?: number | null
+          metadata?: Json | null
           parent_cluster_id?: string | null
           topic_count?: number | null
           updated_at?: string | null
