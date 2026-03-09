@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -21,6 +22,7 @@ import { toast } from 'sonner';
 import {
   ArrowLeft, Save, Play, Pause, Plus, CheckCircle, Maximize, Users, Undo2, Redo2, BarChart3,
   Loader2, TrendingUp, ListChecks, Settings, UserPlus, History, Download, Copy, Clipboard,
+  MoreHorizontal, GitBranch, Zap,
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { customNodeTypes } from './nodes/CustomNodes';
@@ -492,44 +494,43 @@ const JourneyBuilderInner = () => {
 
   return (
     <div className="h-full flex flex-col -m-6 relative">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 bg-card/80 backdrop-blur-xl z-10">
+      {/* Premium Toolbar */}
+      <div className="flex items-center justify-between px-4 h-12 border-b border-border/50 bg-card/80 backdrop-blur-xl z-10">
+        {/* Group 1: Navigation + Name */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/engage/journeys')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-foreground">{journey?.name || 'Journey Builder'}</h2>
-              <Badge variant="outline" className={statusBadgeClass}>{journey?.status || 'draft'}</Badge>
+              <h2 className="font-semibold text-foreground text-sm truncate max-w-[200px]">{journey?.name || 'Journey Builder'}</h2>
+              <Badge variant="outline" className={`text-[10px] h-5 ${statusBadgeClass}`}>{journey?.status || 'draft'}</Badge>
               {(journey as any)?.version && <Badge variant="secondary" className="text-[9px] h-4">v{(journey as any).version}</Badge>}
             </div>
-            {journey?.description && <p className="text-[10px] text-muted-foreground">{journey.description}</p>}
           </div>
           {autoSaveStatus === 'saving' && (
             <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Saving...</span>
           )}
           {autoSaveStatus === 'saved' && (
-            <span className="text-[10px] text-emerald-400">Auto-saved</span>
-          )}
-          {enrollmentStats && (
-            <div className="flex items-center gap-2 ml-2">
-              <Badge variant="secondary" className="text-[10px] gap-1"><Users className="h-3 w-3" /> {enrollmentStats.active} active</Badge>
-              <Badge variant="secondary" className="text-[10px] gap-1 bg-emerald-500/10 text-emerald-400">{enrollmentStats.completed} done</Badge>
-              <Badge variant="secondary" className="text-[10px] gap-1 bg-muted/50">{enrollmentStats.exited} exited</Badge>
-            </div>
+            <span className="text-[10px] text-emerald-400 font-medium">✓ Saved</span>
           )}
         </div>
+
         <div className="flex items-center gap-1">
+          {/* Group 2: Undo/Redo */}
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
             <Undo2 className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">
             <Redo2 className="h-3.5 w-3.5" />
           </Button>
+
+          <Separator orientation="vertical" className="h-5 mx-1" />
+
+          {/* Group 3: Add Node + Fit */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8"><Plus className="h-3.5 w-3.5 mr-1" /> Add Node</Button>
+              <Button variant="outline" size="sm" className="h-8 gap-1.5"><Plus className="h-3.5 w-3.5" /> Add Node</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-border/50">
               <DropdownMenuItem onClick={() => addNode('trigger')}>🎯 Trigger</DropdownMenuItem>
@@ -543,47 +544,104 @@ const JourneyBuilderInner = () => {
               <DropdownMenuItem onClick={() => addNode('end')}>🏁 End</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => reactFlowInstance.fitView({ padding: 0.2 })}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => reactFlowInstance.fitView({ padding: 0.2 })} title="Fit View">
             <Maximize className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowEnrollContact(true)} title="Enroll Contact">
-            <UserPlus className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowSettings(true)} title="Settings">
-            <Settings className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowVersions(true)} title="Version History">
-            <History className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={exportJourney} title="Export JSON">
-            <Download className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowEnrollments(true)}>
-            <ListChecks className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowPerformance(true)}>
-            <TrendingUp className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowAnalytics(true)}>
-            <BarChart3 className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={validateJourney}>
+
+          <Separator orientation="vertical" className="h-5 mx-1" />
+
+          {/* Group 4: More (Settings, Enroll, Versions, Export) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs"><MoreHorizontal className="h-3.5 w-3.5" /> More</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-border/50">
+              <DropdownMenuItem onClick={() => setShowSettings(true)}><Settings className="h-3.5 w-3.5 mr-2" /> Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowEnrollContact(true)}><UserPlus className="h-3.5 w-3.5 mr-2" /> Enroll Contact</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowVersions(true)}><History className="h-3.5 w-3.5 mr-2" /> Versions</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportJourney}><Download className="h-3.5 w-3.5 mr-2" /> Export JSON</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Group 5: Insights (Analytics, Enrollments, Performance) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs"><BarChart3 className="h-3.5 w-3.5" /> Insights</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-border/50">
+              <DropdownMenuItem onClick={() => setShowAnalytics(true)}><BarChart3 className="h-3.5 w-3.5 mr-2" /> Analytics</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowEnrollments(true)}><ListChecks className="h-3.5 w-3.5 mr-2" /> Enrollments</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowPerformance(true)}><TrendingUp className="h-3.5 w-3.5 mr-2" /> Performance</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {enrollmentStats && (
+            <>
+              <Separator orientation="vertical" className="h-5 mx-1" />
+              <div className="flex items-center gap-1.5">
+                <Badge variant="secondary" className="text-[10px] gap-1 h-6"><Users className="h-3 w-3" /> {enrollmentStats.active}</Badge>
+                <Badge variant="secondary" className="text-[10px] gap-1 h-6 bg-emerald-500/10 text-emerald-400 border-emerald-500/30">{enrollmentStats.completed} done</Badge>
+              </div>
+            </>
+          )}
+
+          <Separator orientation="vertical" className="h-5 mx-1" />
+
+          {/* Group 6: Actions */}
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={validateJourney} title="Validate">
             <CheckCircle className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => runProcessor.mutate()} disabled={runProcessor.isPending} title="Run Processor">
-            {runProcessor.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5 text-emerald-400" />}
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => runProcessor.mutate()} disabled={runProcessor.isPending} title="Run Processor">
+            {runProcessor.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-amber-400" />}
           </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => saveJourney.mutate()}>
-            <Save className="h-3.5 w-3.5" />
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => saveJourney.mutate()}>
+            <Save className="h-3.5 w-3.5" /> Save
           </Button>
-          <Button size="sm" className="h-8" onClick={() => toggleStatus.mutate()}>
-            {journey?.status === 'active' ? <><Pause className="h-3.5 w-3.5 mr-1" /> Pause</> : <><Play className="h-3.5 w-3.5 mr-1" /> Publish</>}
+          <Button
+            size="sm"
+            className={`h-8 gap-1.5 text-xs rounded-full px-4 font-medium ${
+              journey?.status === 'active'
+                ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25'
+            }`}
+            onClick={() => toggleStatus.mutate()}
+          >
+            {journey?.status === 'active' ? <><Pause className="h-3.5 w-3.5" /> Pause</> : <><Play className="h-3.5 w-3.5" /> Publish</>}
           </Button>
         </div>
       </div>
 
       {/* Canvas */}
       <div className="flex-1 relative">
+        {nodes.length === 0 && !initialLoadRef.current && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none">
+            <div className="relative pointer-events-auto text-center space-y-4">
+              <div className="relative h-20 w-20 mx-auto">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/30 to-blue-500/30 blur-xl" />
+                <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-border/50 flex items-center justify-center">
+                  <GitBranch className="h-9 w-9 text-purple-400" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="font-semibold text-foreground">Start building your journey</p>
+                <p className="text-sm text-muted-foreground">Add your first node to begin</p>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> Add Node</EngageButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-card/95 backdrop-blur-xl border-border/50">
+                  <DropdownMenuItem onClick={() => addNode('trigger')}>🎯 Trigger</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addNode('send_email')}>📧 Send Email</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addNode('wait')}>⏰ Wait</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addNode('condition')}>🔀 Condition</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addNode('end')}>🏁 End</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        )}
+
         <ReactFlow
           nodes={nodes} edges={edges}
           onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
@@ -594,7 +652,7 @@ const JourneyBuilderInner = () => {
         >
           <Controls className="!bg-card/90 !backdrop-blur-md !border-border/50 !rounded-xl !shadow-lg" />
           <MiniMap className="!bg-card/90 !backdrop-blur-md !border-border/50 !rounded-xl" />
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="hsl(var(--border))" />
+          <Background variant={BackgroundVariant.Dots} gap={24} size={0.8} color="hsl(var(--muted-foreground) / 0.15)" />
         </ReactFlow>
 
         <JourneyInspector
