@@ -596,6 +596,13 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               });
             }}
             onLaunchWizard={handleLaunchWizard}
+            onOpenResearch={() => {
+              handleSetVisualization({
+                type: 'research_intelligence',
+                title: 'Research Intelligence',
+                description: 'Plan content strategy & identify gaps',
+              });
+            }}
           />
         </div>
       </div>

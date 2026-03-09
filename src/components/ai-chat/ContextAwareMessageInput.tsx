@@ -22,6 +22,7 @@ interface ContextAwareMessageInputProps {
   placeholder?: string;
   onTypingChange?: (isTyping: boolean) => void;
   onOpenProposals?: () => void;
+  onOpenResearch?: () => void;
   onLaunchWizard?: (userPrompt: string) => void;
 }
 
@@ -31,6 +32,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   placeholder = "Type your message...",
   onTypingChange,
   onOpenProposals,
+  onOpenResearch,
   onLaunchWizard
 }) => {
   const [message, setMessage] = useState('');
@@ -293,7 +295,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
           <PlusMenuDropdown
             onAttachFile={handleAttachmentClick}
             onContentWizard={handleContentWizardClick}
-            onAIProposals={handleAIProposalsClick}
+            onResearchIntelligence={onOpenResearch}
             disabled={isLoading}
           />
 
