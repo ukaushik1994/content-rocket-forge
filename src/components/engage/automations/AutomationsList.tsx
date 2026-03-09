@@ -1132,8 +1132,7 @@ export const AutomationsList = () => {
                       )}
                     </div>
                   </div>
-                </GlassCard>
-              </motion.div>
+              </EngageContentCard>
             );
           })}
         </div>
