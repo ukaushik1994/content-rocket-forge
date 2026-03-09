@@ -603,6 +603,13 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 description: 'Plan content strategy & identify gaps',
               });
             }}
+            onOpenAnalyst={() => {
+              handleSetVisualization({
+                type: 'analyst',
+                title: 'Analyst',
+                description: 'Charts & insights companion',
+              });
+            }}
           />
         </div>
       </div>
