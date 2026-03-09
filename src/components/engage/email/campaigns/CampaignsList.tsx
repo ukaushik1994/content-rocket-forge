@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -15,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Send, Megaphone, MoreVertical, Trash2, Mail, CheckCircle, Clock, AlertTriangle, ChevronRight, ChevronLeft, Copy, Pencil, Users, CalendarIcon, BarChart3, X, XCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -45,7 +46,12 @@ const defaultForm: WizardForm = {
   name: '', template_id: '', audience_type: 'all', segment_id: '', tags: '', schedule_type: 'now', scheduled_at: '',
 };
 
-export const CampaignsList = () => {
+interface CampaignsListProps {
+  openWizardOnMount?: boolean;
+  onWizardOpened?: () => void;
+}
+
+export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsListProps) => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -55,6 +61,14 @@ export const CampaignsList = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
   const [detailCampaign, setDetailCampaign] = useState<any>(null);
+
+  // Open wizard when triggered from dashboard
+  useEffect(() => {
+    if (openWizardOnMount && !showWizard) {
+      openWizard();
+      onWizardOpened?.();
+    }
+  }, [openWizardOnMount]);
 
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['email-campaigns', currentWorkspaceId],
@@ -301,11 +315,11 @@ export const CampaignsList = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Campaigns</h2>
+          <h2 className="text-lg font-semibold text-foreground">Campaigns</h2>
           <p className="text-sm text-muted-foreground">{campaigns.length} campaigns</p>
         </div>
         {canEdit && (
-          <EngageButton size="sm" onClick={() => openWizard()}><Plus className="h-4 w-4 mr-1" /> New Campaign</EngageButton>
+          <Button size="sm" className="text-xs gap-1.5 bg-foreground text-background hover:bg-foreground/90" onClick={() => openWizard()}><Plus className="h-3.5 w-3.5" /> New Campaign</Button>
         )}
       </div>
 
@@ -467,18 +481,20 @@ export const CampaignsList = () => {
       {campaigns.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Draft', count: stats.draft, color: 'from-muted/40 to-muted/10', text: 'text-muted-foreground', icon: Clock },
-            { label: 'Sending', count: stats.sending, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: Send },
-            { label: 'Complete', count: stats.complete, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: CheckCircle },
+            { label: 'Draft', count: stats.draft, icon: Clock },
+            { label: 'Sending', count: stats.sending, icon: Send },
+            { label: 'Complete', count: stats.complete, icon: CheckCircle },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
+              <GlassCard className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground">{s.label}</p>
-                    <p className={`text-xl font-bold ${s.text}`}>{s.count}</p>
+                    <p className="text-xl font-semibold text-foreground">{s.count}</p>
                   </div>
-                  <s.icon className={`h-5 w-5 ${s.text} opacity-50`} />
+                  <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                    <s.icon className="h-4 w-4 text-muted-foreground" />
+                  </div>
                 </div>
               </GlassCard>
             </motion.div>
@@ -488,14 +504,27 @@ export const CampaignsList = () => {
 
       {/* List */}
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => (
+            <GlassCard key={i} className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-[220px]" />
+                  <Skeleton className="h-3 w-[160px]" />
+                  <Skeleton className="h-3 w-[100px]" />
+                </div>
+                <Skeleton className="h-8 w-20 rounded-lg" />
+              </div>
+            </GlassCard>
+          ))}
+        </div>
       ) : campaigns.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto">
-            <Megaphone className="h-8 w-8 text-blue-400" />
+          <div className="h-12 w-12 rounded-2xl bg-muted/40 flex items-center justify-center mx-auto">
+            <Megaphone className="h-6 w-6 text-muted-foreground/40" />
           </div>
-          <p className="text-muted-foreground">No campaigns yet</p>
-          {canEdit && <Button size="sm" onClick={() => openWizard()}><Plus className="h-4 w-4 mr-1" /> Create First Campaign</Button>}
+          <p className="text-muted-foreground text-sm">No campaigns yet</p>
+          {canEdit && <Button size="sm" className="text-xs bg-foreground text-background hover:bg-foreground/90" onClick={() => openWizard()}><Plus className="h-3.5 w-3.5 mr-1" /> Create First Campaign</Button>}
         </motion.div>
       ) : (
         <div className="grid gap-3">

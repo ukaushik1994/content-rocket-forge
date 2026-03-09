@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, FileText, Trash2, Eye, Variable, Send, Copy, Bold, Italic, Link, Heading, Image, Sparkles, BarChart3, Paintbrush } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,6 +22,17 @@ import { AIEmailWriterDialog } from './AIEmailWriterDialog';
 import { AISubjectLineDialog } from './AISubjectLineDialog';
 import { EmailBuilderDialog } from '../builder/EmailBuilderDialog';
 import { EmailBlock } from '../builder/blockDefinitions';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const VARIABLES = [
   { key: 'first_name', label: 'First Name' },
@@ -70,7 +81,6 @@ export const TemplatesList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  // Usage counts
   const { data: usageCounts = {} } = useQuery({
     queryKey: ['template-usage-counts', currentWorkspaceId],
     queryFn: async () => {
@@ -218,18 +228,18 @@ export const TemplatesList = () => {
         <p className="text-sm text-muted-foreground">{templates.length} templates</p>
         {canEdit && (
           <div className="flex gap-2">
-            <EngageButton variant="outline" size="sm" onClick={() => {
+            <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => {
               setBuilderTemplateName('');
               setBuilderTemplateSubject('');
               setEditingId(null);
               setBuilderBlocks([]);
               setShowVisualBuilder(true);
             }}>
-              <Paintbrush className="h-4 w-4 mr-1" /> Visual Builder
-            </EngageButton>
-            <EngageButton size="sm" onClick={() => openEditor()}>
-              <Plus className="h-4 w-4 mr-1" /> New Template
-            </EngageButton>
+              <Paintbrush className="h-3.5 w-3.5" /> Visual Builder
+            </Button>
+            <Button size="sm" className="text-xs gap-1.5 bg-foreground text-background hover:bg-foreground/90" onClick={() => openEditor()}>
+              <Plus className="h-3.5 w-3.5" /> New Template
+            </Button>
           </div>
         )}
       </div>
@@ -237,8 +247,8 @@ export const TemplatesList = () => {
       {isLoading ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {[...Array(4)].map((_, i) => (
-            <GlassCard key={i} className="p-4 space-y-2">
-              <Skeleton className="w-full h-[120px] rounded-md" />
+            <GlassCard key={i} className="p-4 space-y-3">
+              <Skeleton className="w-full h-[120px] rounded-lg" />
               <Skeleton className="h-4 w-[160px]" />
               <Skeleton className="h-3 w-[120px]" />
               <Skeleton className="h-3 w-[80px]" />
@@ -246,11 +256,11 @@ export const TemplatesList = () => {
           ))}
         </div>
       ) : templates.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 space-y-3">
-          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto">
-            <FileText className="h-7 w-7 text-blue-400" />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
+          <div className="h-12 w-12 rounded-2xl bg-muted/40 flex items-center justify-center mx-auto">
+            <FileText className="h-6 w-6 text-muted-foreground/40" />
           </div>
-          <p className="text-muted-foreground">No templates yet</p>
+          <p className="text-muted-foreground text-sm">No templates yet</p>
         </motion.div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -259,7 +269,7 @@ export const TemplatesList = () => {
             return (
               <motion.div key={t.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <GlassCard
-                  className="p-4 space-y-2 cursor-pointer hover:border-primary/30 hover:scale-[1.01] transition-all duration-200"
+                  className="p-4 space-y-3 cursor-pointer hover:border-border/60 transition-all"
                   onClick={() => {
                     if (!canEdit) return;
                     const vars = t.variables || [];
@@ -280,16 +290,11 @@ export const TemplatesList = () => {
                 >
                   {/* Thumbnail preview */}
                   {t.body_html && (
-                    <div className="relative w-full h-[120px] overflow-hidden rounded-md bg-white border border-border/30 mb-2">
+                    <div className="relative w-full h-[120px] overflow-hidden rounded-lg bg-white border border-border/20">
                       <iframe
                         srcDoc={t.body_html}
                         className="pointer-events-none absolute top-0 left-0 border-0"
-                        style={{
-                          width: '600px',
-                          height: '480px',
-                          transform: 'scale(0.25)',
-                          transformOrigin: 'top left',
-                        }}
+                        style={{ width: '600px', height: '480px', transform: 'scale(0.25)', transformOrigin: 'top left' }}
                         tabIndex={-1}
                         sandbox=""
                         title={`Preview: ${t.name}`}
@@ -298,21 +303,35 @@ export const TemplatesList = () => {
                   )}
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-medium text-foreground">{t.name}</h3>
-                      <p className="text-xs text-muted-foreground">Subject: {t.subject}</p>
+                      <h3 className="font-medium text-foreground text-sm">{t.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">Subject: {t.subject}</p>
                     </div>
                     <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                       {canEdit && (
                         <>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicateTemplate.mutate(t)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicateTemplate.mutate(t)} title="Duplicate">
                             <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowTestSend(t.id); setTestEmail(''); }}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowTestSend(t.id); setTestEmail(''); }} title="Test Send">
                             <Send className="h-3.5 w-3.5 text-muted-foreground" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteTemplate.mutate(t.id)}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" title="Delete">
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete template?</AlertDialogTitle>
+                                <AlertDialogDescription>"{t.name}" will be permanently deleted. Campaigns using this template won't be affected.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteTemplate.mutate(t.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </>
                       )}
                     </div>
@@ -324,13 +343,13 @@ export const TemplatesList = () => {
                         try { JSON.parse(v); return false; } catch { return true; }
                       })
                       .map((v: string) => (
-                        <span key={v} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{`{{${v}}}`}</span>
+                        <span key={v} className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">{`{{${v}}}`}</span>
                       ))}
                     {usage > 0 && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">Used in {usage} campaign{usage > 1 ? 's' : ''}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">Used in {usage} campaign{usage > 1 ? 's' : ''}</span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">{format(new Date(t.created_at), 'MMM d, yyyy')}</p>
+                  <p className="text-[11px] text-muted-foreground">{format(new Date(t.created_at), 'MMM d, yyyy')}</p>
                 </GlassCard>
               </motion.div>
             );
@@ -347,9 +366,9 @@ export const TemplatesList = () => {
             <div>
               <div className="flex items-center justify-between">
                 <Label>Subject *</Label>
-                <EngageButton variant="outline" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowAISubjects(true)}>
+                <Button variant="outline" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowAISubjects(true)}>
                   <BarChart3 className="h-3 w-3" /> AI Subject Lines
-                </EngageButton>
+                </Button>
               </div>
               <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Use {{first_name}} for variables" />
             </div>
@@ -364,9 +383,9 @@ export const TemplatesList = () => {
               </div>
             </div>
             <div className="flex justify-end">
-              <EngageButton variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowAIWriter(true)}>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowAIWriter(true)}>
                 <Sparkles className="h-3 w-3" /> Write with AI
-              </EngageButton>
+              </Button>
             </div>
             <Tabs value={editorTab} onValueChange={setEditorTab}>
               <TabsList className="h-8">
@@ -374,7 +393,6 @@ export const TemplatesList = () => {
                 <TabsTrigger value="preview" className="text-xs"><Eye className="h-3 w-3 mr-1" /> Preview</TabsTrigger>
               </TabsList>
               <TabsContent value="code">
-                {/* HTML Toolbar */}
                 <div className="flex gap-1 mb-2 p-1 rounded-lg bg-muted/30 border border-border/30">
                   {HTML_TOOLS.map(tool => (
                     <Button key={tool.tag} variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertHtmlTag(tool)} title={tool.label}>
@@ -394,9 +412,9 @@ export const TemplatesList = () => {
                 </div>
               </TabsContent>
             </Tabs>
-            <EngageButton onClick={() => saveTemplate.mutate()} disabled={!form.name || !form.subject} className="w-full">
+            <Button onClick={() => saveTemplate.mutate()} disabled={!form.name || !form.subject} className="w-full bg-foreground text-background hover:bg-foreground/90">
               {editingId ? 'Update Template' : 'Create Template'}
-            </EngageButton>
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -407,9 +425,9 @@ export const TemplatesList = () => {
           <EngageDialogHeader icon={Send} title="Send Test Email" gradientFrom="from-emerald-400" gradientTo="to-teal-400" iconColor="text-emerald-400" />
           <div className="space-y-3">
             <div><Label>Recipient Email</Label><Input type="email" value={testEmail} onChange={e => setTestEmail(e.target.value)} placeholder="you@example.com" /></div>
-            <EngageButton onClick={() => showTestSend && testSend.mutate(showTestSend)} disabled={!testEmail || testSend.isPending} className="w-full">
+            <Button onClick={() => showTestSend && testSend.mutate(showTestSend)} disabled={!testEmail || testSend.isPending} className="w-full bg-foreground text-background hover:bg-foreground/90">
               <Send className="h-3.5 w-3.5 mr-1" /> Send Test
-            </EngageButton>
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

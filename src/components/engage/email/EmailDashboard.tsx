@@ -9,7 +9,8 @@ import { DraftsList } from './drafts/DraftsList';
 import { TemplatesList } from './templates/TemplatesList';
 import { CampaignsList } from './campaigns/CampaignsList';
 import { EmailReports } from './reports/EmailReports';
-import { Mail, Inbox, Send, Clock, FileText, Megaphone, BarChart3, Plus, PenSquare, TrendingUp, Users } from 'lucide-react';
+import { ComposeDialog } from './inbox/ComposeDialog';
+import { Mail, Inbox, Send, Clock, FileText, Megaphone, BarChart3, Plus, PenSquare, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,8 @@ const secondaryTabs = [
 export const EmailDashboard = () => {
   const { currentWorkspaceId } = useWorkspace();
   const [tab, setTab] = useState('inbox');
+  const [showCompose, setShowCompose] = useState(false);
+  const [showCampaignWizard, setShowCampaignWizard] = useState(false);
 
   const { data: threadCount = 0 } = useQuery({
     queryKey: ['email-threads-count', currentWorkspaceId],
@@ -68,46 +71,48 @@ export const EmailDashboard = () => {
   const stats = emailStats || { total: 0, delivered: 0, queued: 0, rate: 0 };
 
   const miniStats = [
-    { icon: Inbox, label: 'Threads', value: threadCount, color: 'text-blue-400' },
-    { icon: TrendingUp, label: 'Delivery Rate', value: `${stats.rate}%`, color: 'text-emerald-400' },
-    { icon: Megaphone, label: 'Active Campaigns', value: activeCampaigns, color: 'text-purple-400' },
-    { icon: Clock, label: 'Queued', value: stats.queued, color: 'text-amber-400' },
+    { icon: Inbox, label: 'Threads', value: threadCount },
+    { icon: TrendingUp, label: 'Delivery Rate', value: `${stats.rate}%` },
+    { icon: Megaphone, label: 'Active Campaigns', value: activeCampaigns },
+    { icon: Clock, label: 'Queued', value: stats.queued },
   ];
 
   return (
-    <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div className="space-y-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       {/* Compact Header */}
-      <div className="flex items-center justify-between h-16">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
-            <Mail className="h-4.5 w-4.5 text-blue-400" />
+          <div className="h-10 w-10 rounded-xl bg-muted/60 flex items-center justify-center">
+            <Mail className="h-5 w-5 text-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground leading-tight">Email</h1>
+            <h1 className="text-lg font-semibold text-foreground leading-tight">Email</h1>
             <p className="text-xs text-muted-foreground">Inbox, campaigns & delivery</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setTab('campaigns')}>
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => { setShowCampaignWizard(true); setTab('campaigns'); }}>
             <Plus className="h-3.5 w-3.5" /> New Campaign
           </Button>
-          <Button size="sm" className="h-8 text-xs gap-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 hover:from-blue-600 hover:to-cyan-600" onClick={() => setTab('inbox')}>
+          <Button size="sm" className="h-8 text-xs gap-1.5 bg-foreground text-background hover:bg-foreground/90" onClick={() => setShowCompose(true)}>
             <PenSquare className="h-3.5 w-3.5" /> Compose
           </Button>
         </div>
       </div>
 
       {/* Mini Stats Row */}
-      <GlassCard className="p-3">
-        <div className="flex items-center justify-between gap-4">
+      <GlassCard className="p-4">
+        <div className="flex items-center justify-between gap-6">
           {miniStats.map((s, i) => (
-            <div key={s.label} className="flex items-center gap-2 flex-1">
-              <s.icon className={cn('h-4 w-4', s.color)} />
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-foreground leading-none">{s.value}</p>
-                <p className="text-[10px] text-muted-foreground">{s.label}</p>
+            <div key={s.label} className="flex items-center gap-3 flex-1">
+              <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                <s.icon className="h-4 w-4 text-muted-foreground" />
               </div>
-              {i < miniStats.length - 1 && <div className="h-6 w-px bg-border/40 ml-auto" />}
+              <div className="min-w-0">
+                <p className="text-base font-semibold text-foreground leading-none">{s.value}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
+              </div>
+              {i < miniStats.length - 1 && <div className="h-8 w-px bg-border/30 ml-auto" />}
             </div>
           ))}
         </div>
@@ -120,9 +125,9 @@ export const EmailDashboard = () => {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+              'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all',
               tab === t.key
-                ? 'bg-primary text-primary-foreground shadow-sm'
+                ? 'bg-foreground text-background shadow-sm'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
             )}
           >
@@ -130,13 +135,13 @@ export const EmailDashboard = () => {
             {t.label}
           </button>
         ))}
-        <div className="h-4 w-px bg-border/40 mx-1" />
+        <div className="h-4 w-px bg-border/40 mx-1.5" />
         {secondaryTabs.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all',
+              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all',
               tab === t.key
                 ? 'bg-muted text-foreground'
                 : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-muted/30'
@@ -155,9 +160,12 @@ export const EmailDashboard = () => {
         {tab === 'scheduled' && <ScheduledList />}
         {tab === 'drafts' && <DraftsList />}
         {tab === 'templates' && <TemplatesList />}
-        {tab === 'campaigns' && <CampaignsList />}
+        {tab === 'campaigns' && <CampaignsList openWizardOnMount={showCampaignWizard} onWizardOpened={() => setShowCampaignWizard(false)} />}
         {tab === 'reports' && <EmailReports />}
       </div>
+
+      {/* Compose Dialog mounted at dashboard level */}
+      <ComposeDialog open={showCompose} onOpenChange={setShowCompose} />
     </motion.div>
   );
 };
