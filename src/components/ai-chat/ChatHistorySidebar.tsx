@@ -272,8 +272,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         <div
          className={cn(
             "fixed left-0 top-0 bottom-0 z-50",
-            "w-14 bg-background backdrop-blur-xl",
-            "border-r border-border/10 flex flex-col items-center py-3",
+            "w-14 bg-background backdrop-blur-xl border-r border-border/15",
+            "flex flex-col items-center py-3",
             "shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.05)]",
             className
           )}
@@ -359,7 +359,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           "fixed left-0 top-0 bottom-0 z-50",
           "w-full sm:w-72 lg:w-80",
           "bg-background backdrop-blur-xl",
-          "border-r border-border/10 flex flex-col",
+          "border-r border-border/15 flex flex-col",
           "shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.05)]",
           className
         )}

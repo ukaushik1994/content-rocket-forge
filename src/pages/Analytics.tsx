@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { cn } from '@/lib/utils';
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -541,40 +542,37 @@ const Analytics = () => {
               
               {/* Tabs Section */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-                  <CardContent className="p-2">
-                    <TabsList className="w-full grid grid-cols-4 gap-1 bg-transparent">
-                      <TabsTrigger 
-                        value="overview" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
+                <div className="glass-card p-1.5 rounded-2xl">
+                  <div className="flex w-full">
+                    {[
+                      { value: 'overview', icon: BarChart3, label: 'Overview' },
+                      { value: 'content', icon: FileText, label: 'Content' },
+                      { value: 'campaigns', icon: Target, label: 'Campaigns' },
+                      { value: 'performance', icon: Activity, label: 'Performance' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.value}
+                        onClick={() => setActiveTab(tab.value)}
+                        className={cn(
+                          'relative flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-medium transition-colors duration-200',
+                          activeTab === tab.value
+                            ? 'text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
                       >
-                        <BarChart3 className="h-4 w-4" />
-                        <span className="font-medium">Overview</span>
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="content" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
-                      >
-                        <FileText className="h-4 w-4" />
-                        <span className="font-medium">Content</span>
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="campaigns" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
-                      >
-                        <Target className="h-4 w-4" />
-                        <span className="font-medium">Campaigns</span>
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="performance" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
-                      >
-                        <Activity className="h-4 w-4" />
-                        <span className="font-medium">Performance</span>
-                      </TabsTrigger>
-                    </TabsList>
-                  </CardContent>
-                </Card>
+                        {activeTab === tab.value && (
+                          <motion.div
+                            layoutId="analytics-tab-indicator"
+                            className="absolute inset-0 bg-primary rounded-xl shadow-lg"
+                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                          />
+                        )}
+                        <tab.icon className="h-4 w-4 relative z-10" />
+                        <span className="relative z-10">{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                   
                 <TabsContent value="overview">
                   <AnalyticsOverview />

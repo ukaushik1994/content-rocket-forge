@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface QuickStat {
   icon: LucideIcon;
@@ -52,10 +53,13 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      {/* Glow */}
+      {/* Radial ambient glow */}
       <motion.div
-        className={`absolute inset-0 bg-gradient-to-r ${gradientFrom} ${gradientTo} rounded-3xl blur-[100px] opacity-[0.08]`}
-        animate={{ opacity: [0.05, 0.12, 0.05] }}
+        className="absolute inset-0 rounded-3xl"
+        style={{
+          background: `radial-gradient(ellipse at 50% 40%, hsl(var(--primary) / 0.08) 0%, transparent 70%)`,
+        }}
+        animate={{ opacity: [0.6, 1, 0.6] }}
         transition={{ duration: 4, repeat: Infinity }}
       />
 
@@ -80,7 +84,7 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
 
             {/* Title */}
             <motion.h1
-              className={`text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r ${gradientFrom} ${gradientTo} bg-clip-text text-transparent`}
+              className="text-hero mb-4 bg-gradient-to-r from-foreground via-primary to-primary/70 bg-clip-text text-transparent leading-[1.1]"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -96,7 +100,7 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
 
             {/* Subtitle */}
             <motion.p
-              className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed"
+              className="text-headline text-muted-foreground/60 max-w-2xl mx-auto mb-8 leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -156,20 +160,28 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
                 <motion.button
                   key={filter.key}
                   onClick={() => onFilterChange(filter.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${
+                  className={cn(
+                    'relative flex items-center gap-2 px-4 py-2.5 rounded-xl transition-colors duration-200 text-sm',
                     activeFilter === filter.key
-                      ? 'bg-primary text-primary-foreground shadow-lg'
+                      ? 'text-primary-foreground'
                       : 'hover:bg-background/80 text-muted-foreground'
-                  }`}
+                  )}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {filter.icon && <filter.icon className="h-4 w-4" />}
-                  <span className="font-medium">{filter.label}</span>
+                  {activeFilter === filter.key && (
+                    <motion.div
+                      layoutId="engage-hero-filter-indicator"
+                      className="absolute inset-0 bg-primary rounded-xl shadow-lg"
+                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  {filter.icon && <filter.icon className="h-4 w-4 relative z-10" />}
+                  <span className="font-medium relative z-10">{filter.label}</span>
                   {filter.count !== undefined && (
                     <Badge
                       variant={activeFilter === filter.key ? 'secondary' : 'outline'}
-                      className={activeFilter === filter.key ? 'bg-primary-foreground/20' : ''}
+                      className={cn('relative z-10', activeFilter === filter.key ? 'bg-primary-foreground/20' : '')}
                     >
                       {filter.count}
                     </Badge>
