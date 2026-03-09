@@ -23,6 +23,7 @@ interface ContextAwareMessageInputProps {
   onTypingChange?: (isTyping: boolean) => void;
   onOpenProposals?: () => void;
   onOpenResearch?: () => void;
+  onOpenAnalyst?: () => void;
   onLaunchWizard?: (userPrompt: string) => void;
 }
 
