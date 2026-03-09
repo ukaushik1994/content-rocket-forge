@@ -232,7 +232,7 @@ export const CampaignAnalyticsTab = () => {
       {/* Campaign List */}
       <div className="space-y-4">
         {campaigns.length === 0 ? (
-          <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+          <Card className="glass-card">
             <CardContent className="p-12 text-center">
               <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
