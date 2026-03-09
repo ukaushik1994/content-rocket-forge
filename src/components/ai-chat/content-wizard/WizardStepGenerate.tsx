@@ -584,9 +584,11 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           }
         } catch { /* non-critical */ }
 
-        // Phase 1A+1B: Run quality & compliance analysis
+        setGenerationStage('Finalizing...');
+        setGenerationProgress(92);
         runQualityAnalysis(result);
 
+        setGenerationProgress(100);
         toast.success('Content generated successfully!');
       } else {
         const fallback = buildKeywordRichFallback();
