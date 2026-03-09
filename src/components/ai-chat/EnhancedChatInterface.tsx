@@ -60,7 +60,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     editMessage,
     deleteMessage,
     handleConfirmAction,
-    handleCancelAction
+    handleCancelAction,
+    setAnalystActive
   } = useSharedAIChatDB();
 
   // Message search state
