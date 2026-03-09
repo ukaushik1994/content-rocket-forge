@@ -230,9 +230,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   ];
 
   const toolsItems = [
-    { icon: <PenLine className="h-4 w-4" />, label: 'Content Wizard', action: () => handlePanel('content_wizard') },
+    { icon: <Wand2 className="h-4 w-4" />, label: 'Content Wizard', action: () => handlePanel('content_wizard') },
     { icon: <Megaphone className="h-4 w-4" />, label: 'Campaigns', action: () => handlePanel('campaigns') },
-    { icon: <Search className="h-4 w-4" />, label: 'Keywords', action: () => handlePanel('keywords') },
+    { icon: <Key className="h-4 w-4" />, label: 'Keywords', action: () => handlePanel('keywords') },
     { icon: <BarChart3 className="h-4 w-4" />, label: 'Analytics', action: () => handlePanel('analytics') },
   ];
 
