@@ -389,7 +389,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         <ScrollArea className="flex-1">
           <div className="px-2">
             {/* ── LIBRARY (collapsible) ── */}
-            <CollapsibleSection label="Library" defaultOpen={false}>
+            <CollapsibleSection label="Library" icon={<BookOpen className="h-3.5 w-3.5" />} defaultOpen={true}>
               {libraryItems.map((item) => (
                 <SidebarNavItem key={item.label} icon={item.icon} label={item.label} onClick={item.action} />
               ))}
