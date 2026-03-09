@@ -493,9 +493,10 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                     <ContentApprovalCard
                       content={item}
                       onView={handleViewContent}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
-                      onRequestChanges={handleRequestChanges}
+                      onApprove={(id) => openNotesDialog('approve', id)}
+                      onReject={(id) => openNotesDialog('reject', id)}
+                      onRequestChanges={(id) => openNotesDialog('request_changes', id)}
+                      onRevertToDraft={handleRevertToDraft}
                       onAnalyzeAI={handleAnalyzeContent}
                       onAssignReviewer={handleAssign}
                       onViewHistory={handleViewHistory}
@@ -503,6 +504,8 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                       aiScore={aiScores[item.id]}
                       isAnalyzing={analyzingItems.has(item.id)}
                       analyzedAt={aiAnalyzedAt[item.id]}
+                      isSelected={selectedIds.has(item.id)}
+                      onToggleSelect={toggleSelect}
                     />
                   </motion.div>
                 ))}
