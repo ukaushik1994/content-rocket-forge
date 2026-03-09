@@ -131,7 +131,7 @@ export const EngagePageHero: React.FC<EngagePageHeroProps> = ({
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: 'spring', stiffness: 300 }}
                   >
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
+                    <div className="inline-flex items-center justify-center w-12 h-12 glass-card rounded-xl mb-2">
                       <stat.icon className="h-5 w-5 text-primary" />
                     </div>
                     <div className="text-sm font-bold text-foreground">{stat.value}</div>
