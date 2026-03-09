@@ -1,32 +1,35 @@
 
 
-# Sidebar Reverting — Diagnosis & Fix
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## What's Happening
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-The code in `ChatHistorySidebar.tsx` already contains all the premium styling changes (active indicators, refined typography, `defaultOpen={true}`, etc.). The sidebar briefly showed correctly then reverted — this is a hot-reload state caching issue where React preserves the old component state (sections defaulting to closed) even after code changes.
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## Fix
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-The issue is that `defaultOpen` only sets the **initial** state via `useState(defaultOpen)`. If React's hot module replacement preserves the old component instance, the `useState` initializer is ignored and the old `false` value persists.
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### Change in `ChatHistorySidebar.tsx`
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-**CollapsibleSection component** — Force sections to respect `defaultOpen` on re-render by using a key-based reset or by syncing with a `useEffect`:
-
-```tsx
-// Current (line 139):
-const [isOpen, setIsOpen] = useState(defaultOpen);
-
-// Fix: Add useEffect to sync
-const [isOpen, setIsOpen] = useState(defaultOpen);
-React.useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
-```
-
-This ensures that when the component re-renders with `defaultOpen={true}`, the sections actually open instead of staying stuck on the stale `false` state.
-
-### File Changed
-| File | Change |
-|------|--------|
-| `src/components/ai-chat/ChatHistorySidebar.tsx` | Add `useEffect` sync for `defaultOpen` in `CollapsibleSection` to prevent stale state |
-
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.

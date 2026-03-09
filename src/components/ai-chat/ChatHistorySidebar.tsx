@@ -138,6 +138,8 @@ const CollapsibleSection: React.FC<{
 }> = ({ label, defaultOpen = true, children, showDivider = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
+  React.useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
+  
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       {showDivider && <div className="mx-3 border-t border-border/5 mt-1" />}
