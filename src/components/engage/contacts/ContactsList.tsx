@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ContactDetailDialog } from './ContactDetailDialog';
 import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
-import { EngagePageHero } from '../shared/EngagePageHero';
+import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
 import { EngageFilterBar } from '../shared/EngageFilterBar';
 import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
 import { engageStagger } from '../shared/engageAnimations';

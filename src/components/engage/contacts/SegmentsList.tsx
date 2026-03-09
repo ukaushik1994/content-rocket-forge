@@ -18,7 +18,7 @@ import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
-import { EngageHero } from '../shared/EngageHero';
+import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
 

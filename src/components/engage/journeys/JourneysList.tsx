@@ -319,14 +319,10 @@ export const JourneysList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <EngagePageHero
+      <CompactPageHeader
         icon={GitBranch}
-        badge="Journey Builder"
         title="Journeys"
-        titleAccent="Builder"
-        subtitle="Visual customer journey flows — automate engagement at scale"
-        gradientFrom="from-purple-400"
-        gradientTo="to-blue-400"
+        subtitle="Visual customer journey flows"
         stats={[
           { icon: Play, label: 'Active', value: stats.active },
           { icon: GitBranch, label: 'Draft', value: stats.draft },

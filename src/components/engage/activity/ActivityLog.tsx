@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Activity, Mail, GitBranch, Zap, Share2, Search, CalendarDays, Download, Eye, Shield, HeartPulse } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { motion } from 'framer-motion';
-import { EngageHero } from '../shared/EngageHero';
+import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
 import { AIBriefingCard } from './AIBriefingCard';
