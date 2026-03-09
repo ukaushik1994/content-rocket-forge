@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService/aiService';
 import { useContentGaps, useClusters } from '@/hooks/useResearchIntelligence';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ContentGapsTabProps {
   serpMetrics?: any;
