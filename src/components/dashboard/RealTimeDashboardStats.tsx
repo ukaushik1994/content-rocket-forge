@@ -127,6 +127,8 @@ export const RealTimeDashboardStats: React.FC = () => {
     );
   }
 
+  const navigate = useNavigate();
+
   return (
     <motion.div
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
@@ -134,7 +136,7 @@ export const RealTimeDashboardStats: React.FC = () => {
       animate="visible"
       variants={containerVariants}
     >
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} onClick={() => navigate('/ai-chat')} className="cursor-pointer">
         <EnhancedStatCard
           title="Total Content"
           value={stats.totalContent}
@@ -147,7 +149,7 @@ export const RealTimeDashboardStats: React.FC = () => {
         />
       </motion.div>
       
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} onClick={() => navigate('/ai-chat')} className="cursor-pointer">
         <EnhancedStatCard
           title="Published"
           value={stats.publishedContent}
@@ -160,7 +162,7 @@ export const RealTimeDashboardStats: React.FC = () => {
         />
       </motion.div>
       
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} onClick={() => navigate('/analytics')} className="cursor-pointer">
         <EnhancedStatCard
           title="Total Views"
           value={stats.totalViews > 1000 ? `${(stats.totalViews / 1000).toFixed(1)}K` : stats.totalViews.toString()}
@@ -173,7 +175,7 @@ export const RealTimeDashboardStats: React.FC = () => {
         />
       </motion.div>
       
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} onClick={() => navigate('/analytics')} className="cursor-pointer">
         <EnhancedStatCard
           title="Revenue"
           value={`$${stats.totalRevenue > 1000 ? `${(stats.totalRevenue / 1000).toFixed(1)}K` : stats.totalRevenue.toFixed(0)}`}
