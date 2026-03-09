@@ -88,7 +88,7 @@ export const ConditionNode = memo(({ data, selected }: NodeProps) => (
 ));
 
 export const UpdateContactNode = memo(({ data, selected }: NodeProps) => (
-  <NodeWrapper color="bg-indigo-500" selected={selected}>
+  <NodeWrapper color="bg-indigo-500" selected={selected} onDelete={(data as any)?.onDelete}>
     <Handle type="target" position={Position.Top} className="!bg-indigo-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <Handle type="source" position={Position.Bottom} className="!bg-indigo-500 !w-2.5 !h-2.5 !border-2 !border-background" />
     <NodeLabel icon={User} label={getLabel(data, 'Update Contact')} summary={(data as any)?.config?.action || 'Set attribute'} iconBg="bg-indigo-500" execCount={(data as any)?.execCount} />
