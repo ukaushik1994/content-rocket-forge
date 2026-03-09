@@ -481,18 +481,20 @@ export const CampaignsList = ({ openWizardOnMount, onWizardOpened }: CampaignsLi
       {campaigns.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Draft', count: stats.draft, color: 'from-muted/40 to-muted/10', text: 'text-muted-foreground', icon: Clock },
-            { label: 'Sending', count: stats.sending, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: Send },
-            { label: 'Complete', count: stats.complete, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: CheckCircle },
+            { label: 'Draft', count: stats.draft, icon: Clock },
+            { label: 'Sending', count: stats.sending, icon: Send },
+            { label: 'Complete', count: stats.complete, icon: CheckCircle },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
+              <GlassCard className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground">{s.label}</p>
-                    <p className={`text-xl font-bold ${s.text}`}>{s.count}</p>
+                    <p className="text-xl font-semibold text-foreground">{s.count}</p>
                   </div>
-                  <s.icon className={`h-5 w-5 ${s.text} opacity-50`} />
+                  <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                    <s.icon className="h-4 w-4 text-muted-foreground" />
+                  </div>
                 </div>
               </GlassCard>
             </motion.div>
