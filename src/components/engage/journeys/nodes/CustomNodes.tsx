@@ -66,7 +66,7 @@ export const WaitNode = memo(({ data, selected }: NodeProps) => {
   const cfg = (data as any)?.config || {};
   const summary = cfg.duration ? `${cfg.duration} ${cfg.unit || 'hours'}` : 'Not set';
   return (
-    <NodeWrapper color="bg-amber-500" selected={selected}>
+    <NodeWrapper color="bg-amber-500" selected={selected} onDelete={(data as any)?.onDelete}>
       <Handle type="target" position={Position.Top} className="!bg-amber-500 !w-2.5 !h-2.5 !border-2 !border-background" />
       <Handle type="source" position={Position.Bottom} className="!bg-amber-500 !w-2.5 !h-2.5 !border-2 !border-background" />
       <NodeLabel icon={Clock} label={getLabel(data, 'Wait')} summary={summary} iconBg="bg-amber-500" execCount={(data as any)?.execCount} />
