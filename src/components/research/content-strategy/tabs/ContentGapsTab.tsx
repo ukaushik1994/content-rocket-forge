@@ -12,6 +12,7 @@ import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService/aiService';
 import { useContentGaps, useClusters } from '@/hooks/useResearchIntelligence';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContentGapsTabProps {
   serpMetrics?: any;
