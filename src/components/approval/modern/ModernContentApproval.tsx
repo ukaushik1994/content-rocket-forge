@@ -1,14 +1,16 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentApprovalHero } from './ContentApprovalHero';
 import { ContentApprovalCard } from './ContentApprovalCard';
 import { ReviewEditorModal } from './ReviewEditorModal';
 import { AssignReviewerDialog } from './AssignReviewerDialog';
 import { ApprovalHistoryDialog } from './ApprovalHistoryDialog';
+import { ApprovalNotesDialog } from './ApprovalNotesDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Search, 
   Filter, 
@@ -16,6 +18,9 @@ import {
   Grid3X3, 
   List,
   SlidersHorizontal,
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -45,6 +50,10 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [historyTarget, setHistoryTarget] = useState<ContentItemType | null>(null);
   const [historyItems, setHistoryItems] = useState<any[]>([]);
+  // Batch selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Approval notes dialog
+  const [notesDialog, setNotesDialog] = useState<{ open: boolean; action: 'approve' | 'reject' | 'request_changes'; contentId: string } | null>(null);
   
 
   const { 
