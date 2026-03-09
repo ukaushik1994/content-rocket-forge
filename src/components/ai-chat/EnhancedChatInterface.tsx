@@ -111,18 +111,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   const [showSidebar, setShowSidebar] = useState(false);
 
-  // Consume pending panel from SidebarContext (when navigating from other pages)
   const { pendingPanel, setPendingPanel } = useSidebarContext();
-  useEffect(() => {
-    if (pendingPanel) {
-      if (pendingPanel === 'content_wizard') {
-        handleSetVisualization({ type: 'content_wizard', keyword: '', content_type: 'blog' });
-      } else {
-        handleSetVisualization({ type: pendingPanel });
-      }
-      setPendingPanel(null);
-    }
-  }, [pendingPanel, setPendingPanel]);
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
