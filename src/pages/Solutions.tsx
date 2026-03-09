@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
 import { Helmet } from 'react-helmet-async';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { PageContainer, pageItemVariants } from '@/components/ui/PageContainer';
 import { motion } from 'framer-motion';
 import { CompanyInfo, BrandGuidelines } from '@/contexts/content-builder/types/company-types';
 import { CompetitorSection } from '@/components/company/CompetitorSection';
@@ -319,53 +320,21 @@ const Solutions = () => {
     }
   };
 
-  // Animation variants for the page transition
-  const pageVariants = {
-    initial: {
-      opacity: 0
-    },
-    animate: {
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-        staggerChildren: 0.1
-      }
-    },
-    exit: {
-      opacity: 0,
-      transition: {
-        duration: 0.3
-      }
-    }
-  };
+  // Animation variants removed — using PageContainer
   
-  const itemVariants = {
-    initial: {
-      y: 20,
-      opacity: 0
-    },
-    animate: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15
-      }
-    }
-  };
+  // Item variants removed — using pageItemVariants
   
   if (loading) {
     return (
-      <motion.div className="min-h-screen bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+      <PageContainer>
         <main className="pt-20 container py-8 rounded-3xl">
           <LoadingFallback />
         </main>
-      </motion.div>
+      </PageContainer>
     );
   }
   
-  return <motion.div className="min-h-screen bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+  return <PageContainer>
       <Helmet>
         <title>Business Offerings Hub | Creaiter</title>
         <meta name="description" content="Manage your business offerings for content creation" />
@@ -374,7 +343,7 @@ const Solutions = () => {
       
       
       <main className="pt-20 container py-8 rounded-3xl">
-        <motion.div variants={itemVariants} className="mb-8 space-y-12">
+        <motion.div variants={pageItemVariants} className="mb-8 space-y-12">
           {/* Company Section - Moved to top */}
           <CompanySection 
             companyInfo={companyInfo}
@@ -401,7 +370,7 @@ const Solutions = () => {
           )}
         </motion.div>
       </main>
-    </motion.div>;
+    </PageContainer>;
 };
 
 export default Solutions;

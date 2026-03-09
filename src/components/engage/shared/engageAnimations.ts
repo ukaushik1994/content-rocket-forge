@@ -1,7 +1,7 @@
 export const engageStagger = {
   container: {
     hidden: {},
-    visible: { transition: { staggerChildren: 0.08 } },
+    visible: { transition: { staggerChildren: 0.05 } },
   },
   item: {
     hidden: { opacity: 0, y: 16, scale: 0.98 },

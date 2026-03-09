@@ -9,6 +9,7 @@ import { AssetGenerationModal } from '@/components/campaigns/assets/AssetGenerat
 import { ContentGenerationPanel } from '@/components/campaigns/ContentGenerationPanel';
 import { ContentGenerationProvider, useContentGeneration } from '@/contexts/ContentGenerationContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PageContainer } from '@/components/ui/PageContainer';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignStrategies } from '@/hooks/useCampaignStrategies';
@@ -471,7 +472,7 @@ const CampaignsInner = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <PageContainer className="relative overflow-hidden">
       <Helmet>
         <title>Campaigns — AI-Powered Multi-Channel Campaign Builder</title>
         <meta 
@@ -668,7 +669,7 @@ const CampaignsInner = () => {
 
       {/* Content Generation Panel (real-time progress) */}
       <ContentGenerationPanel />
-    </div>
+    </PageContainer>
   );
 };
 
