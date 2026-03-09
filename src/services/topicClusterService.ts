@@ -35,13 +35,7 @@ class TopicClusterService {
         description: formData.description || null,
         importance_score: 0,
         topic_count: formData.keywords.length,
-        metadata: {
-          mainKeyword: formData.mainKeyword,
-          keywords: formData.keywords,
-          targetAudience: formData.targetAudience,
-          contentPillars: formData.contentPillars,
-        },
-      })
+      } as any)
       .select()
       .single();
 
