@@ -389,29 +389,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         onInteract={handleSidebarInteraction}
       />
 
-      {/* Floating Sidebar Toggle */}
-      <div
-        className={`fixed z-[60] transition-all duration-300 ${
-          showSidebar 
-            ? 'top-3 sm:left-[16.5rem] lg:left-[18.5rem]' 
-            : 'top-3 left-4'
-        }`}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowSidebar(!showSidebar)}
-          className="rounded-full border border-border/20 hover:border-border/40 hover:bg-muted/30 bg-transparent text-muted-foreground hover:text-foreground"
-        >
-          <Menu className="h-4 w-4" />
-        </Button>
-      </div>
-
       {/* Main Content Area - Chat and Visualization side by side */}
       <div className={cn(
-        "flex-1 flex transition-all duration-300 ease-out pt-4 pb-24 overflow-hidden",
-        // Left sidebar margin - desktop only (sidebars overlay on mobile/tablet)
-        showSidebar && !isMobile && "sm:ml-72 lg:ml-80"
+        "flex-1 flex transition-all duration-300 ease-out pt-4 pb-24 overflow-hidden"
       )}>
         {/* Chat Messages Area - shrinks when visualization sidebar is open */}
         <motion.div 
