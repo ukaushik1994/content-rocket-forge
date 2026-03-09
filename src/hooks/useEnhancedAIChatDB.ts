@@ -1106,6 +1106,10 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [activeConversation, loadMessages]);
 
+  const setAnalystActive = useCallback((active: boolean) => {
+    analystActiveRef.current = active;
+  }, []);
+
   return {
     conversations,
     activeConversation,
@@ -1132,6 +1136,7 @@ export const useEnhancedAIChatDB = () => {
     editMessage,
     deleteMessage,
     handleConfirmAction,
-    handleCancelAction
+    handleCancelAction,
+    setAnalystActive
   };
 };
