@@ -345,6 +345,31 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     else if (action === 'request_changes') await handleRequestChanges(contentId, notes);
     setNotesDialog(null);
   };
+
+  return (
+    <div className="min-h-screen w-full">
+      {/* Batch Selection Bar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -40 }}
+            className="fixed top-16 left-0 right-0 z-50 flex items-center justify-center"
+          >
+            <div className="flex items-center gap-3 px-6 py-3 bg-background/90 backdrop-blur-xl rounded-full border border-primary/30 shadow-xl">
+              <span className="text-sm font-medium">{selectedIds.size} selected</span>
+              <Button size="sm" variant="outline" onClick={selectAll}>Select All</Button>
+              <Button size="sm" variant="ghost" onClick={clearSelection}>Clear</Button>
+              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleBatchApprove}>
+                <CheckCircle2 className="h-4 w-4 mr-1" />
+                Approve Selected
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     <div className="min-h-screen w-full">
       {/* Hero Section */}
       <ContentApprovalHero
