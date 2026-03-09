@@ -13,6 +13,8 @@ import { LoadingState } from './LoadingState';
 interface CategoryContentProps {
   category: RepositoryCategory;
   onOpenDetailView: (content: ContentItemType) => void;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 const CONTENT_TYPE_CHIPS = [
@@ -26,7 +28,7 @@ const CONTENT_TYPE_CHIPS = [
 type SortOption = 'date' | 'title';
 type StatusFilter = 'all' | 'draft' | 'published' | 'archived';
 
-export const CategoryContent: React.FC<CategoryContentProps> = ({ category, onOpenDetailView }) => {
+export const CategoryContent: React.FC<CategoryContentProps> = ({ category, onOpenDetailView, selectedIds, onToggleSelect }) => {
   const { unifiedItems, loading } = useRepositoryContent();
 
   // Build a map: originalContentId -> array of repurposed format codes
@@ -192,6 +194,9 @@ export const CategoryContent: React.FC<CategoryContentProps> = ({ category, onOp
                 content={item.originalItem!}
                 onView={() => onOpenDetailView(item.originalItem!)}
                 repurposedFormats={repurposedFormatsMap.get(item.id)}
+                selectable={!!selectedIds}
+                selected={selectedIds?.has(item.id) || false}
+                onToggleSelect={onToggleSelect}
               />
             )
           )}

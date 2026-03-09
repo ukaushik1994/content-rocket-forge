@@ -247,6 +247,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   // Phase 2B: Image generation state
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
+  // Abort controller for generation cancellation
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Load company & brand context on mount
   useEffect(() => {
     if (!user) return;
@@ -509,7 +512,19 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     return fallback;
   };
 
+  const abortGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsGeneratingContent(false);
+    setGenerationStage('');
+    toast.info('Generation cancelled');
+  };
+
   const generateContent = async () => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setIsGeneratingContent(true);
     setGenerationStage('Building prompt...');
     try {
@@ -545,6 +560,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         formatType: wizardState.contentType,
       };
 
+      if (controller.signal.aborted) return;
       setGenerationStage('Generating content...');
       const result = await generateAdvancedContent(config);
 
@@ -571,7 +587,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         setEditableContent(fallback);
         toast.warning('AI returned empty content. A keyword-rich draft outline has been created.');
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError' || controller.signal.aborted) return;
       console.error('Content generation failed:', err);
       const fallback = buildKeywordRichFallback();
       onContentGenerated(fallback);
@@ -1067,6 +1084,11 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             {isGeneratingContent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {isGeneratingContent ? 'Generating...' : 'Generate Content'}
           </Button>
+          {isGeneratingContent && (
+            <Button variant="outline" size="sm" onClick={abortGeneration} className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10">
+              <X className="w-3.5 h-3.5" /> Cancel Generation
+            </Button>
+          )}
           {generationStage && (
             <p className="text-[10px] text-muted-foreground text-center animate-pulse">{generationStage}</p>
           )}

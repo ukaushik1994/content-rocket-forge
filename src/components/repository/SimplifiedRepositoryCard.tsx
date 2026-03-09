@@ -13,7 +13,8 @@ import {
   Image as ImageIcon,
   Film,
   Pencil,
-  Trash2
+  Trash2,
+  Check
 } from 'lucide-react';
 import { useContent } from '@/contexts/content';
 import {
@@ -62,12 +63,18 @@ interface SimplifiedRepositoryCardProps {
   content: ContentItemType;
   onView: () => void;
   repurposedFormats?: string[];
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> = ({ 
   content, 
   onView,
-  repurposedFormats 
+  repurposedFormats,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
 }) => {
   const navigate = useNavigate();
   const { deleteContentItem } = useContent();
@@ -141,11 +148,26 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
       whileTap={{ scale: 0.96 }}
       className="h-full"
     >
-      <Card className="glass-card hover:neon-border transition-all duration-500 overflow-hidden group h-full card-3d relative
+      <Card className={`glass-card hover:neon-border transition-all duration-500 overflow-hidden group h-full card-3d relative
+        ${selected ? 'ring-2 ring-primary/60 bg-primary/5' : ''}
         hover:shadow-[0_20px_40px_rgba(155,135,245,0.4),0_0_0_1px_rgba(255,255,255,0.1)_inset]
         before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:to-transparent before:opacity-0 
-        hover:before:opacity-100 before:transition-opacity before:duration-500 before:pointer-events-none">
+        hover:before:opacity-100 before:transition-opacity before:duration-500 before:pointer-events-none`}>
         
+        {/* Selection checkbox */}
+        {selectable && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleSelect?.(content.id); }}
+            className={`absolute top-3 left-3 z-20 h-5 w-5 rounded border-2 flex items-center justify-center transition-all
+              ${selected
+                ? 'bg-primary border-primary text-primary-foreground'
+                : 'border-muted-foreground/40 bg-background/60 backdrop-blur-sm hover:border-primary/60'
+              }`}
+          >
+            {selected && <Check className="h-3 w-3" />}
+          </button>
+        )}
+
         {/* Image preview banner if has generated images */}
         {hasImages && firstImageUrl && (
           <div className="relative h-32 overflow-hidden border-b border-border/30">

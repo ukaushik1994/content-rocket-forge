@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { CategoryContent } from './CategoryContent';
 import { CampaignContentTab } from './CampaignContentTab';
+import { RepositoryBulkBar } from './RepositoryBulkBar';
 import { ContentItemType } from '@/contexts/content/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Layers, Share2, Mail, FileText, Video, Target } from 'lucide-react';
@@ -25,7 +26,22 @@ const TAB_CONFIG: { value: RepositoryCategory | 'campaigns'; label: string; icon
 export const RepositoryTabs = React.memo(({ onOpenDetailView }: RepositoryTabsProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'all';
-  const { categoryCounts } = useRepositoryContent();
+  const { categoryCounts, unifiedItems } = useRepositoryContent();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(unifiedItems.filter(i => i.sourceType === 'original').map(i => i.id)));
+  }, [unifiedItems]);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
@@ -102,7 +118,12 @@ export const RepositoryTabs = React.memo(({ onOpenDetailView }: RepositoryTabsPr
         {(['all', 'socials', 'email', 'blog', 'scripts'] as RepositoryCategory[]).map(cat => (
           <TabsContent key={cat} value={cat}>
             <GlassCard className="p-6">
-              <CategoryContent category={cat} onOpenDetailView={onOpenDetailView} />
+              <CategoryContent
+                category={cat}
+                onOpenDetailView={onOpenDetailView}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+              />
             </GlassCard>
           </TabsContent>
         ))}
@@ -118,6 +139,13 @@ export const RepositoryTabs = React.memo(({ onOpenDetailView }: RepositoryTabsPr
           </motion.div>
         </TabsContent>
       </Tabs>
+
+      <RepositoryBulkBar
+        selectedIds={selectedIds}
+        totalCount={unifiedItems.filter(i => i.sourceType === 'original').length}
+        onSelectAll={selectAll}
+        onClearSelection={clearSelection}
+      />
     </motion.div>
   );
 });

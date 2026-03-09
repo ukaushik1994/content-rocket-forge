@@ -289,9 +289,44 @@ export const ContactsList = () => {
                     </TabsContent>
                     <TabsContent value="bulk" className="mt-3 space-y-3">
                       <div>
+                        <Label>Upload CSV File</Label>
+                        <label
+                          className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-border/50 rounded-lg cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const file = e.dataTransfer.files[0];
+                            if (file && (file.name.endsWith('.csv') || file.type === 'text/csv')) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => setCsvText(ev.target?.result as string || '');
+                              reader.readAsText(file);
+                            } else {
+                              toast.error('Please upload a .csv file');
+                            }
+                          }}
+                        >
+                          <Upload className="h-5 w-5 text-muted-foreground mb-1" />
+                          <span className="text-xs text-muted-foreground">Drop a .csv file here or click to browse</span>
+                          <input
+                            type="file"
+                            accept=".csv,text/csv"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => setCsvText(ev.target?.result as string || '');
+                                reader.readAsText(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      <div>
                         <Label>CSV Data</Label>
                         <p className="text-[10px] text-muted-foreground mb-1">Format: email, first_name, last_name, tags (semicolon-separated)</p>
-                        <Textarea value={csvText} onChange={e => setCsvText(e.target.value)} rows={8} className="font-mono text-xs" placeholder={"john@example.com, John, Doe, lead;newsletter\njane@example.com, Jane, Smith, customer"} />
+                        <Textarea value={csvText} onChange={e => setCsvText(e.target.value)} rows={6} className="font-mono text-xs" placeholder={"john@example.com, John, Doe, lead;newsletter\njane@example.com, Jane, Smith, customer"} />
                       </div>
                       <Button onClick={() => bulkImport.mutate()} disabled={!csvText.trim() || bulkImport.isPending} className="w-full">
                         <Upload className="h-3.5 w-3.5 mr-1" /> Import Contacts
