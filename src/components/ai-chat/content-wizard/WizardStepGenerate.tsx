@@ -520,6 +520,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
     }
     setIsGeneratingContent(false);
     setGenerationStage('');
+    setGenerationProgress(0);
     toast.info('Generation cancelled');
   };
 
