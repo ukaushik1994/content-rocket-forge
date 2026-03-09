@@ -69,6 +69,33 @@ const AISettings = () => {
               <OpenRouterSettings />
             </motion.div>
 
+            {/* AI Preferences */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+            >
+              <Card className="p-6 bg-white/5 border-white/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10">
+                    <Brain className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">AI Preferences</h3>
+                    <p className="text-sm text-white/60">Customize AI behavior and response style</p>
+                  </div>
+                  <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 ml-auto">
+                    Coming Soon
+                  </Badge>
+                </div>
+                <div className="text-center py-8">
+                  <Zap className="h-12 w-12 text-white/30 mx-auto mb-3" />
+                  <p className="text-white/60 text-sm">
+                    Advanced AI customization options will be available soon
+                  </p>
+                </div>
+              </Card>
+            </motion.div>
 
             {/* Security Settings */}
             <motion.div

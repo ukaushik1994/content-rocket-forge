@@ -4,7 +4,7 @@ import { SocialInbox } from './SocialInbox';
 import { SocialAnalytics } from './SocialAnalytics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
+import { EngagePageHero } from '../shared/EngagePageHero';
 import { EngageFilterBar } from '../shared/EngageFilterBar';
 import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
 import { EngageStatGrid } from '../shared/EngageStatCard';
@@ -267,10 +267,14 @@ export const SocialDashboard = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <CompactPageHeader
+      <EngagePageHero
         icon={Share2}
-        title="Social Media"
-        subtitle="Schedule and manage social posts"
+        badge="Social Command Center"
+        title="Social"
+        titleAccent="Media"
+        subtitle="Schedule and manage social posts across all channels"
+        gradientFrom="from-pink-400"
+        gradientTo="to-purple-400"
         stats={[
           { icon: Clock, label: 'Scheduled', value: stats.scheduled },
           { icon: CheckCircle2, label: 'Posted', value: stats.posted },

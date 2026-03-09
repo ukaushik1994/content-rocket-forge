@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Activity, Mail, GitBranch, Zap, Share2, Search, CalendarDays, Download, Eye, Shield, HeartPulse } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { motion } from 'framer-motion';
-import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
+import { EngageHero } from '../shared/EngageHero';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
 import { AIBriefingCard } from './AIBriefingCard';
@@ -116,13 +116,17 @@ export const ActivityLog = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <CompactPageHeader
+      <EngageHero
         icon={Activity}
         title="Activity"
         subtitle="Events, health, and audit trail"
+        gradientFrom="from-orange-400"
+        gradientTo="to-amber-400"
+        glowFrom="from-orange-500/30"
+        glowTo="to-amber-500/10"
         actions={
           <div className="flex items-center gap-2">
-            <div className="flex items-center border border-border/30 rounded-lg overflow-hidden bg-muted/30">
+            <div className="flex items-center border border-white/[0.06] rounded-lg overflow-hidden bg-white/[0.03]">
               {([
                 { key: 'feed' as const, icon: Activity, label: 'Feed' },
                 { key: 'health' as const, icon: HeartPulse, label: 'Health' },

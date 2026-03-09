@@ -18,7 +18,7 @@ import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
-import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
+import { EngageHero } from '../shared/EngageHero';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
 
@@ -182,10 +182,14 @@ export const SegmentsList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <CompactPageHeader
+      <EngageHero
         icon={Layers}
         title="Segments"
         subtitle="Group contacts by rules"
+        gradientFrom="from-violet-400"
+        gradientTo="to-purple-400"
+        glowFrom="from-violet-500/30"
+        glowTo="to-purple-500/10"
         actions={
           canEdit ? (
             <Dialog open={showAdd || !!editingSegment} onOpenChange={open => { if (!open) { setShowAdd(false); resetForm(); } else setShowAdd(true); }}>

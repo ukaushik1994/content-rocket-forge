@@ -19,7 +19,7 @@ import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
+import { EngagePageHero } from '../shared/EngagePageHero';
 import { EngageFilterBar } from '../shared/EngageFilterBar';
 import { EngageContentCard } from '../shared/EngageContentCard';
 import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
@@ -319,10 +319,14 @@ export const JourneysList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
-      <CompactPageHeader
+      <EngagePageHero
         icon={GitBranch}
+        badge="Journey Builder"
         title="Journeys"
-        subtitle="Visual customer journey flows"
+        titleAccent="Builder"
+        subtitle="Visual customer journey flows — automate engagement at scale"
+        gradientFrom="from-purple-400"
+        gradientTo="to-blue-400"
         stats={[
           { icon: Play, label: 'Active', value: stats.active },
           { icon: GitBranch, label: 'Draft', value: stats.draft },

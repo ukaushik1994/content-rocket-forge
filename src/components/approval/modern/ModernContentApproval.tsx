@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
+import { ContentApprovalHero } from './ContentApprovalHero';
 import { ContentApprovalCard } from './ContentApprovalCard';
 import { ReviewEditorModal } from './ReviewEditorModal';
 import { AssignReviewerDialog } from './AssignReviewerDialog';
@@ -21,12 +21,6 @@ import {
   CheckCircle2,
   XCircle,
   RotateCcw,
-  FileCheck,
-  Clock,
-  FileText,
-  Sparkles,
-  Target,
-  AlertCircle,
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -376,36 +370,13 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Compact Header */}
-      <CompactPageHeader
-        icon={FileCheck}
-        title="Content Approval"
-        subtitle="AI-powered content review & approval workflows"
-        stats={[
-          { icon: FileText, label: 'Total', value: contentStats.all },
-          { icon: Clock, label: 'Pending', value: contentStats.pending_review },
-          { icon: CheckCircle2, label: 'Approved', value: contentStats.approved },
-        ]}
-        actions={
-          <Button
-            onClick={handleAnalyzeAll}
-            disabled={isAnalyzingAll || contentStats.all === 0}
-            size="sm"
-          >
-            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-            {isAnalyzingAll ? 'Analyzing...' : 'Analyze All'}
-          </Button>
-        }
-        quickFilters={[
-          { key: 'all', label: 'All', count: contentStats.all, icon: FileText },
-          { key: 'draft', label: 'Draft', count: contentStats.draft },
-          { key: 'pending_review', label: 'Pending', count: contentStats.pending_review, icon: Clock },
-          { key: 'needs_changes', label: 'Changes', count: contentStats.needs_changes, icon: AlertCircle },
-          { key: 'approved', label: 'Approved', count: contentStats.approved, icon: CheckCircle2 },
-          { key: 'rejected', label: 'Rejected', count: contentStats.rejected, icon: XCircle },
-        ]}
+      {/* Hero Section */}
+      <ContentApprovalHero
+        contentStats={contentStats}
+        onAnalyzeAll={handleAnalyzeAll}
+        onQuickFilter={setStatusFilter}
         activeFilter={statusFilter}
-        onFilterChange={setStatusFilter}
+        isAnalyzing={isAnalyzingAll}
       />
 
       {/* Content Management Section */}

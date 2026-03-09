@@ -3,10 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { useContent } from '@/contexts/content';
 import { ContentItemType } from '@/contexts/content/types';
-import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
-import { FileText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { RepositoryHero } from '@/components/repository/RepositoryHero';
 import { RepositoryTabs } from '@/components/repository/RepositoryTabs';
 import { ContentDetailModal } from '@/components/repository/ContentDetailModal';
 import { toast } from 'sonner';
@@ -20,7 +17,6 @@ const Repository = () => {
     refreshContent,
     loading
   } = useContent();
-  const navigate = useNavigate();
   const [selectedContent, setSelectedContent] = useState<ContentItemType | null>(null);
   const [detailViewOpen, setDetailViewOpen] = useState(false);
 
@@ -141,17 +137,7 @@ const Repository = () => {
           transition={{ duration: 0.8 }}
           className="max-w-7xl mx-auto space-y-8"
         >
-          <CompactPageHeader
-            icon={FileText}
-            title="Content Repository"
-            subtitle="Your unified content hub"
-            actions={
-              <Button onClick={() => navigate('/ai-chat')} size="sm">
-                <FileText className="h-4 w-4 mr-1.5" />
-                Create Content
-              </Button>
-            }
-          />
+          <RepositoryHero />
           <RepositoryTabs onOpenDetailView={handleOpenDetailView} />
         </motion.div>
       </div>

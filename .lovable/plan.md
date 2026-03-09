@@ -95,26 +95,3 @@ Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterfa
 
 ## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
 - Wrapped stat cards in `onClick` handlers with `useNavigate`
-
----
-
-# UI/UX Premium Design Overhaul
-
-## ✅ Phase 1A — Compact Page Headers
-- Created `CompactPageHeader` component (~80px, icon + title + inline stats + actions + filter tabs)
-- Replaced all oversized heroes: RepositoryHero, KeywordsHero, AnalyticsHero, ContentApprovalHero, HeroSection (Solutions), EngagePageHero (Journeys, Contacts, Social), EngageHero (Segments, Activity, AutomationRuns), CampaignsHero
-
-## ✅ Phase 1B — Remove Visual Noise
-- VideoPlaceholder & VideoComingSoonBadge now return null
-- Removed inline "Video Soon" badges from ContentApprovalCard, ContentPreviewModal
-- Removed "Engagement: Coming Soon" from SocialPostCard
-- Removed "Coming Soon" badges from VisualDataRenderer (2x)
-- Removed AI Preferences "Coming Soon" section from AISettings
-
-## ✅ Phase 1C — Standardized Badge System
-- Created `StandardBadge.tsx` with 3 variants: StatusBadge, FeatureBadge, WarningBadge
-- Available for adoption across all pages
-
-## 🔲 Phase 2 — Design System Foundation (pending)
-## 🔲 Phase 3 — Polish & Delight (pending)
-## 🔲 Phase 4 — Aspirational Features (pending)

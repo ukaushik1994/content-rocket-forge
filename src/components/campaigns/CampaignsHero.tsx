@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { CampaignSettingsPanel } from './CampaignSettingsPanel';
 import { useCampaignStats } from '@/hooks/useCampaignStats';
 import { toast } from 'sonner';
-import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
 
 interface CampaignsHeroProps {
   onCreateClick?: () => void;
@@ -36,12 +35,15 @@ export const CampaignsHero = React.memo(({
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
+  // Fetch real campaign stats from database
   const { activeCampaigns, contentPiecesCreated, completedCampaigns, loading: statsLoading } = useCampaignStats();
 
+  // Settings panel state
   const [showSettings, setShowSettings] = useState(false);
   const [selectedSolutionId, setSelectedSolutionId] = useState<string | null>(null);
   const [platformPreferences, setPlatformPreferences] = useState<Record<string, number>>({});
 
+  // Express mode form fields
   const [expressData, setExpressData] = useState({
     idea: '',
     audience: '',
@@ -49,6 +51,7 @@ export const CampaignsHero = React.memo(({
     goal: 'awareness'
   });
 
+  // Initialize speech recognition
   useEffect(() => {
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -62,12 +65,15 @@ export const CampaignsHero = React.memo(({
           setCampaignIdea(transcript);
           setIsListening(false);
         };
-        recognitionRef.current.onerror = () => setIsListening(false);
-        recognitionRef.current.onend = () => setIsListening(false);
+        recognitionRef.current.onerror = () => {
+          setIsListening(false);
+        };
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
       }
     }
   }, []);
-
   const handleSubmit = () => {
     if (!campaignIdea.trim()) return;
     if (!selectedSolutionId) {
@@ -77,12 +83,11 @@ export const CampaignsHero = React.memo(({
     if (onStartConversation) {
       onStartConversation(campaignIdea.trim(), {
         solutionId: selectedSolutionId,
-        platformPreferences,
+        platformPreferences: platformPreferences
       });
       setCampaignIdea('');
     }
   };
-
   const handleExpressSubmit = () => {
     if (!expressData.idea.trim()) return;
     if (!selectedSolutionId) {
@@ -90,177 +95,385 @@ export const CampaignsHero = React.memo(({
       return;
     }
     if (onExpressMode) {
-      onExpressMode({ ...expressData, solutionId: selectedSolutionId, platformPreferences });
-      setExpressData({ idea: '', audience: '', timeline: '4-week', goal: 'awareness' });
+      onExpressMode({
+        ...expressData,
+        solutionId: selectedSolutionId,
+        platformPreferences: platformPreferences
+      });
+      setExpressData({
+        idea: '',
+        audience: '',
+        timeline: '4-week',
+        goal: 'awareness'
+      });
     }
   };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
-
   const toggleVoiceInput = () => {
     if (!recognitionRef.current) return;
-    if (isListening) { recognitionRef.current.stop(); setIsListening(false); }
-    else { recognitionRef.current.start(); setIsListening(true); }
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
   };
-
   const hasVoiceSupport = typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+  return <motion.div className="relative min-h-[60vh] flex items-center justify-center w-full" initial={{
+    opacity: 0
+  }} animate={{
+    opacity: 1
+  }} transition={{
+    duration: 0.8,
+    ease: "easeOut"
+  }}>
+      <div className="relative z-10 w-full px-6 pt-8 pb-12">
+        <div className="text-center space-y-8 max-w-5xl mx-auto">
+          <motion.div className="absolute inset-0 bg-gradient-to-r from-neon-purple/10 via-transparent to-neon-blue/10 rounded-3xl blur-3xl" animate={{
+          opacity: [0.5, 0.8, 0.5]
+        }} transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }} />
 
-  return (
-    <div className="space-y-6">
-      <CompactPageHeader
-        icon={Megaphone}
-        title="Campaigns"
-        subtitle="AI-powered campaign strategy & content generation"
-        stats={[
-          { icon: Target, label: 'Active', value: statsLoading ? '-' : activeCampaigns },
-          { icon: TrendingUp, label: 'Content', value: statsLoading ? '-' : contentPiecesCreated },
-          { icon: Sparkles, label: 'Completed', value: statsLoading ? '-' : completedCampaigns },
-        ]}
-      />
-
-      {/* Mode Toggle */}
-      <div className="flex items-center gap-3">
-        <div className="inline-flex items-center gap-1 p-1 bg-muted/30 rounded-lg border border-border/30">
-          <button
-            onClick={() => setMode('conversation')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              mode === 'conversation' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Conversation
-          </button>
-          <button
-            onClick={() => setMode('express')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              mode === 'express' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Express
-          </button>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowSettings(!showSettings)}
-          className={showSettings ? 'text-primary' : 'text-muted-foreground'}
-        >
-          <SlidersHorizontal className="h-4 w-4 mr-1.5" />
-          Settings
-        </Button>
-      </div>
-
-      <CampaignSettingsPanel
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        selectedSolutionId={selectedSolutionId}
-        onSolutionChange={setSelectedSolutionId}
-        platformPreferences={platformPreferences}
-        onPlatformPreferencesChange={setPlatformPreferences}
-      />
-
-      {/* Conversation Mode */}
-      {mode === 'conversation' && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <div className="flex items-center gap-2 bg-muted/20 border border-border/30 rounded-xl p-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Sparkles className="h-4 w-4 text-primary" />
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.2,
+          duration: 0.4
+        }} className="flex items-center justify-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 hover:scale-105 transition-transform duration-300">
+              <Zap className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">AI-Powered Campaign Builder</span>
+              <motion.div className="w-2 h-2 rounded-full bg-green-500" animate={{
+              opacity: [0.5, 1, 0.5]
+            }} transition={{
+              duration: 2,
+              repeat: Infinity
+            }} />
             </div>
-            <input
-              type="text"
-              value={campaignIdea}
-              onChange={e => setCampaignIdea(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Describe your campaign idea..."
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
-            />
-            {hasVoiceSupport && (
-              <Button type="button" variant="ghost" size="sm" onClick={toggleVoiceInput} className={isListening ? 'text-destructive' : 'text-muted-foreground'}>
-                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </Button>
-            )}
-            <Button onClick={handleSubmit} disabled={!campaignIdea.trim()} size="sm">
-              <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Start
-            </Button>
-          </div>
-          {isListening && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 bg-destructive rounded-full animate-pulse" /> Listening...
-            </p>
-          )}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Try:</span>
-            {['Product Launch', 'Brand Awareness', 'Lead Generation'].map(prompt => (
+          </motion.div>
+
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.3,
+          duration: 0.4
+        }} className="relative space-y-2">
+            <h1 className="text-4xl md:text-6xl font-bold">
+              <span className="bg-gradient-to-r from-neon-purple via-neon-blue to-neon-cyan bg-clip-text text-transparent">
+                Campaigns
+              </span>{' '}
+              
+            </h1>
+          </motion.div>
+
+          <motion.p initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.4,
+          duration: 0.4
+        }} className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
+            Create comprehensive marketing campaigns with AI-powered strategy generation
+          </motion.p>
+
+          {/* Removed Create New Campaign button - using conversational input instead */}
+
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.8,
+          duration: 0.4
+        }} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+            <div className="bg-background/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 hover:border-primary/30 transition-all hover:scale-105">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-lg bg-green-500/20">
+                  <Target className="h-5 w-5 text-green-500" />
+                </div>
+                <span className="text-2xl font-bold text-foreground">
+                  {statsLoading ? '-' : activeCampaigns}
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">Active Campaigns</div>
+            </div>
+
+            <div className="bg-background/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 hover:border-primary/30 transition-all hover:scale-105">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-lg bg-blue-500/20">
+                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                </div>
+                <span className="text-2xl font-bold text-foreground">
+                  {statsLoading ? '-' : contentPiecesCreated}
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">Content Pieces Created</div>
+            </div>
+
+            <div className="bg-background/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 hover:border-primary/30 transition-all hover:scale-105">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-lg bg-purple-500/20">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                </div>
+                <span className="text-2xl font-bold text-foreground">
+                  {statsLoading ? '-' : completedCampaigns}
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">Completed</div>
+            </div>
+          </motion.div>
+
+          {/* Mode Toggle */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0, duration: 0.4 }}
+            className="mt-6 flex justify-center"
+          >
+            <div className="inline-flex items-center gap-1 p-1 bg-background/60 backdrop-blur-xl rounded-full border border-border/50">
               <button
-                key={prompt}
-                onClick={() => setCampaignIdea(prompt)}
-                className="text-xs px-2.5 py-1 rounded-md bg-muted/30 hover:bg-muted/50 border border-border/30 transition-colors"
+                onClick={() => setMode('conversation')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  mode === 'conversation' 
+                    ? 'bg-primary text-primary-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
-                {prompt}
+                Conversation
               </button>
-            ))}
-          </div>
-        </motion.div>
-      )}
+              <button
+                onClick={() => setMode('express')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  mode === 'express' 
+                    ? 'bg-primary text-primary-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Express Mode
+              </button>
+            </div>
+          </motion.div>
 
-      {/* Express Mode */}
-      {mode === 'express' && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 bg-muted/10 border border-border/30 rounded-xl p-4">
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-foreground">Campaign Idea *</label>
-            <Textarea
-              value={expressData.idea}
-              onChange={e => setExpressData({ ...expressData, idea: e.target.value })}
-              placeholder="Describe your campaign idea..."
-              className="min-h-[80px] bg-background/50 text-sm"
-              maxLength={500}
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground">Target Audience</label>
-              <Input
-                value={expressData.audience}
-                onChange={e => setExpressData({ ...expressData, audience: e.target.value })}
-                placeholder="e.g., SaaS founders"
-                className="h-8 text-sm"
+          {/* Campaign Idea Input - Conversation Mode */}
+          {mode === 'conversation' && <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 1.1,
+          duration: 0.4
+        }} className="mt-6 max-w-3xl mx-auto space-y-4">
+              {/* Campaign Settings Panel */}
+              <CampaignSettingsPanel
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+                selectedSolutionId={selectedSolutionId}
+                onSolutionChange={setSelectedSolutionId}
+                platformPreferences={platformPreferences}
+                onPlatformPreferencesChange={setPlatformPreferences}
               />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground">Timeline</label>
-              <Select value={expressData.timeline} onValueChange={v => setExpressData({ ...expressData, timeline: v })}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-week">1 Week</SelectItem>
-                  <SelectItem value="2-week">2 Weeks</SelectItem>
-                  <SelectItem value="4-week">4 Weeks</SelectItem>
-                  <SelectItem value="8-week">8 Weeks</SelectItem>
-                  <SelectItem value="12-week">12 Weeks</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground">Goal</label>
-              <Select value={expressData.goal} onValueChange={v => setExpressData({ ...expressData, goal: v })}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="awareness">Brand Awareness</SelectItem>
-                  <SelectItem value="leads">Lead Generation</SelectItem>
-                  <SelectItem value="engagement">Engagement</SelectItem>
-                  <SelectItem value="sales">Sales</SelectItem>
-                  <SelectItem value="retention">Customer Retention</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <Button onClick={handleExpressSubmit} disabled={!expressData.idea.trim()} className="w-full" size="sm">
-            <Zap className="h-3.5 w-3.5 mr-1.5" /> Generate Campaign Strategy
-          </Button>
-        </motion.div>
-      )}
-    </div>
-  );
-});
 
+              <div className="relative group">
+                {/* Gradient glow on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                <div className="relative bg-background/60 backdrop-blur-xl border border-border/50 rounded-2xl p-4 shadow-xl hover:border-primary/30 transition-all duration-300">
+                  <div className="flex items-center gap-4">
+                    {/* Icon with pulse effect */}
+                    <div className="flex-shrink-0 relative">
+                      <div className="absolute inset-0 bg-primary/20 rounded-xl blur-md animate-pulse" />
+                      <div className="relative p-3 rounded-xl bg-primary/10 backdrop-blur-xl">
+                        <Sparkles className="h-6 w-6 text-primary" />
+                      </div>
+                    </div>
+                    
+                    {/* Input */}
+                    <input type="text" value={campaignIdea} onChange={e => setCampaignIdea(e.target.value)} onKeyDown={handleKeyDown} placeholder="Start a conversation about your campaign idea..." className="flex-1 bg-transparent text-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none" />
+                    
+                    {/* Settings Button */}
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowSettings(!showSettings)}
+                      className={`p-2 ${showSettings ? 'text-primary' : 'text-muted-foreground'} hover:bg-white/10`}
+                      title="Campaign Settings"
+                    >
+                      <SlidersHorizontal className="h-5 w-5" />
+                    </Button>
+
+                    {/* Voice Button */}
+                    {hasVoiceSupport && <Button type="button" variant="ghost" size="sm" onClick={toggleVoiceInput} className={`p-2 ${isListening ? 'text-red-500' : 'text-muted-foreground'} hover:bg-white/10`}>
+                        <motion.div animate={isListening ? {
+                    scale: [1, 1.2, 1]
+                  } : {
+                    scale: 1
+                  }} transition={{
+                    duration: 0.5,
+                    repeat: isListening ? Infinity : 0
+                  }}>
+                          {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                        </motion.div>
+                      </Button>}
+                    
+                    {/* Send Button */}
+                    <Button onClick={handleSubmit} disabled={!campaignIdea.trim()} size="lg" className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 gap-2 shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-105">
+                      <Sparkles className="h-5 w-5" />
+                      Start
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Listening indicator */}
+              {isListening && <motion.div initial={{
+            opacity: 0,
+            y: 10
+          }} animate={{
+            opacity: 1,
+            y: 0
+          }} className="text-sm text-muted-foreground text-center mt-3">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+                    Listening... Speak now
+                  </span>
+                </motion.div>}
+              
+              {/* Quick prompt suggestions */}
+              <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
+                <span className="text-xs text-muted-foreground">Try:</span>
+                {['Product Launch', 'Brand Awareness', 'Lead Generation'].map(prompt => <button key={prompt} onClick={() => setCampaignIdea(prompt)} className="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/30 transition-all duration-200 hover:scale-105">
+                    {prompt}
+                  </button>)}
+              </div>
+            </motion.div>}
+
+          {/* Express Mode Form */}
+          {mode === 'express' && <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 1.1,
+          duration: 0.4
+        }} className="mt-6 max-w-3xl mx-auto space-y-4">
+              {/* Campaign Settings Panel */}
+              <CampaignSettingsPanel
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+                selectedSolutionId={selectedSolutionId}
+                onSolutionChange={setSelectedSolutionId}
+                platformPreferences={platformPreferences}
+                onPlatformPreferencesChange={setPlatformPreferences}
+              />
+
+              <div className="bg-background/60 backdrop-blur-xl border border-border/50 rounded-2xl p-6 shadow-xl space-y-4">
+                {/* Settings Toggle */}
+                <div className="flex items-center justify-between pb-3 border-b border-border/50">
+                  <h3 className="text-sm font-medium text-foreground">Express Campaign Setup</h3>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowSettings(!showSettings)}
+                    className={`gap-2 ${showSettings ? 'text-primary' : 'text-muted-foreground'}`}
+                    title="Campaign Settings"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    {showSettings ? 'Hide' : 'Show'} Settings
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Campaign Idea*</label>
+                  <Textarea value={expressData.idea} onChange={e => setExpressData({
+                ...expressData,
+                idea: e.target.value
+              })} placeholder="Describe your campaign idea (100-500 characters)..." className="min-h-[100px] bg-background/50" maxLength={500} />
+                  <div className="text-xs text-muted-foreground text-right">
+                    {expressData.idea.length}/500
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Target Audience*</label>
+                  <Input value={expressData.audience} onChange={e => setExpressData({
+                ...expressData,
+                audience: e.target.value
+              })} placeholder="e.g., B2B SaaS founders, Enterprise CIOs..." className="bg-background/50" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Timeline</label>
+                    <Select value={expressData.timeline} onValueChange={value => setExpressData({
+                  ...expressData,
+                  timeline: value
+                })}>
+                      <SelectTrigger className="bg-background/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1-week">1 Week</SelectItem>
+                        <SelectItem value="2-week">2 Weeks</SelectItem>
+                        <SelectItem value="4-week">4 Weeks</SelectItem>
+                        <SelectItem value="ongoing">Ongoing</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Goal</label>
+                    <Select value={expressData.goal} onValueChange={value => setExpressData({
+                  ...expressData,
+                  goal: value
+                })}>
+                      <SelectTrigger className="bg-background/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="awareness">Brand Awareness</SelectItem>
+                        <SelectItem value="conversion">Lead Generation</SelectItem>
+                        <SelectItem value="engagement">Engagement</SelectItem>
+                        <SelectItem value="education">Education</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Button onClick={handleExpressSubmit} disabled={!expressData.idea.trim() || !expressData.audience.trim()} size="lg" className="w-full bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 gap-2 shadow-lg">
+                  <Sparkles className="h-5 w-5" />
+                  Generate Strategies
+                </Button>
+              </div>
+            </motion.div>}
+        </div>
+      </div>
+    </motion.div>;
+});
 CampaignsHero.displayName = "CampaignsHero";

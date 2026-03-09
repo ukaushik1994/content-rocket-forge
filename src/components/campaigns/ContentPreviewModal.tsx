@@ -93,6 +93,13 @@ export function ContentPreviewModal({
                         With Images
                       </Badge>
                     )}
+                    {/* Video formats get video indicator */}
+                    {['script'].includes(item.formatId) && (
+                      <Badge variant="outline" className="text-xs gap-1 text-muted-foreground">
+                        <Film className="h-3 w-3" />
+                        Video Soon
+                      </Badge>
+                    )}
                   </div>
                   {item.frequency && (
                     <p className="text-xs text-muted-foreground">

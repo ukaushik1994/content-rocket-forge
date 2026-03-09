@@ -9,9 +9,7 @@ import { EmptyState } from './EmptyState';
 import { ErrorDisplay } from './ErrorDisplay';
 import { LoadingState } from './LoadingState';
 import { EnhancedSolutionGrid } from '../EnhancedSolutionGrid';
-import { CompactPageHeader } from '@/components/ui/CompactPageHeader';
-import { Package, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { HeroSection } from '../HeroSection';
 import { motion } from 'framer-motion';
 import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
@@ -346,22 +344,12 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Compact header with search */}
-      <CompactPageHeader
-        icon={Package}
-        title="Business Offerings"
-        subtitle={`${solutions.length} offering${solutions.length === 1 ? '' : 's'} available`}
-      >
-        <div className="relative mt-3 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={filterTerm}
-            onChange={e => handleSearchChange(e.target.value)}
-            placeholder="Search offerings..."
-            className="pl-9 h-9 bg-muted/30 border-border/30"
-          />
-        </div>
-      </CompactPageHeader>
+      {/* Hero section with search and stats */}
+      <HeroSection 
+        solutionCount={solutions.length} 
+        searchTerm={filterTerm}
+        onSearchChange={handleSearchChange}
+      />
       
       {/* Main content area */}
       {filteredSolutions.length === 0 ? (
