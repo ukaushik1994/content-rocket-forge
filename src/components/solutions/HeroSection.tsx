@@ -7,6 +7,8 @@ interface HeroSectionProps {
   solutionCount: number;
   searchTerm: string;
   onSearchChange: (term: string) => void;
+  activeCount?: number;
+  featuredCount?: number;
 }
 export const HeroSection: React.FC<HeroSectionProps> = ({
   solutionCount,
