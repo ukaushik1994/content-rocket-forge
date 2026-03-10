@@ -396,6 +396,10 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           animate="visible" 
           variants={containerVariants}
         >
+          {/* Breadcrumb */}
+          <div className="mx-6 mt-2">
+            <PageBreadcrumb section="Chats" page="AI Chat" />
+          </div>
           {/* Rate Limit Banner */}
           <RateLimitBanner 
             className="mx-6 mt-2" 
