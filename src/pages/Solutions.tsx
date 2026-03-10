@@ -336,7 +336,8 @@ const Solutions = () => {
     );
   }
   
-  return <PageContainer>
+  return <PageContainer className="relative overflow-hidden">
+      <AnimatedBackground intensity="medium" />
       <Helmet>
         <title>Business Offerings Hub | Creaiter</title>
         <meta name="description" content="Manage your business offerings for content creation" />
