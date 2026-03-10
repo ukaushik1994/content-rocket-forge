@@ -428,7 +428,7 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                 {showAnalytics ? <EyeOff className="h-4 w-4 mr-1" /> : <BarChart3 className="h-4 w-4 mr-1" />}
                 {showAnalytics ? 'Hide' : 'Show'} Analytics
               </Button>
-              <Button size="sm" className="bg-primary/20 hover:bg-primary/30" onClick={() => handleAddContent()}>
+              <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 text-primary-foreground" onClick={() => handleAddContent()}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Content
               </Button>
