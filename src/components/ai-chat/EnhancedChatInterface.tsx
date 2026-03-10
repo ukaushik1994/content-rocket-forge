@@ -22,6 +22,8 @@ import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { RateLimitBanner } from '@/components/common/RateLimitBanner';
 import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
 import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search, Sparkles } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { cn } from '@/lib/utils';
@@ -64,6 +66,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     handleCancelAction,
     setAnalystActive
   } = useSharedAIChatDB();
+  const { user } = useAuth();
 
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
@@ -459,8 +462,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.5, type: "spring" }}
                     >
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">AI Content Assistant</span>
+                      <Brain className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">AI Command Centre</span>
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     </motion.div>
 
@@ -487,23 +490,23 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
 
-                    {/* Greeting */}
+                    {/* Personalized Greeting */}
                     <motion.div
                       className="text-center space-y-2"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3, duration: 0.4 }}
                     >
-                      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+                      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
                         {(() => {
                           const hour = new Date().getHours();
-                          if (hour < 12) return 'Good morning.';
-                          if (hour < 17) return 'Good afternoon.';
-                          return 'Good evening.';
+                          const firstName = user?.user_metadata?.first_name || user?.user_metadata?.name?.split(' ')[0] || '';
+                          const period = hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 17 ? 'afternoon' : hour >= 17 && hour < 21 ? 'evening' : 'night';
+                          return firstName ? `Good ${period}, ${firstName}.` : `Good ${period}.`;
                         })()}
                       </h2>
                       <p className="text-sm text-muted-foreground font-normal">
-                        What would you like to do?
+                        What would you like to work on today?
                       </p>
                     </motion.div>
 
@@ -615,7 +618,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           <ContextAwareMessageInput 
             onSendMessage={handleSendMessage} 
             isLoading={isLoading || isExtractingContext} 
-            placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
+            placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask Creaiter anything..." : "Continue the conversation..."} 
             onOpenProposals={() => {
               handleSetVisualization({
                 type: 'proposal_browser',

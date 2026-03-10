@@ -593,7 +593,7 @@ export const useEnhancedAIChatDB = () => {
 
       // Update conversation title if first exchange
       if (messages.length === 0) {
-        const title = content.slice(0, 50) + (content.length > 50 ? '...' : '');
+        const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
         await supabase
           .from('ai_conversations')
           .update({ title })
