@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { Helmet } from 'react-helmet-async';
 import { ContentApprovalView } from '@/components/approval/ContentApprovalView';
 import { ContentProvider } from '@/contexts/content';
