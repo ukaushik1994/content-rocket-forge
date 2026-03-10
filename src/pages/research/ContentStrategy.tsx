@@ -4,6 +4,8 @@ import { ContentStrategyHero } from '@/components/research/content-strategy/Cont
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PageContainer } from '@/components/ui/PageContainer';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { StrategyCreationModal } from '@/components/research/content-strategy/StrategyCreationModal';
 import { StrategyGoalsModal } from '@/components/research/content-strategy/simplified/StrategyGoalsModal';
 import { ContentStrategyTabs } from '@/components/research/content-strategy/simplified/ContentStrategyTabs';
