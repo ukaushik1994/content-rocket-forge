@@ -617,7 +617,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           <ContextAwareMessageInput 
             onSendMessage={handleSendMessage} 
             isLoading={isLoading || isExtractingContext} 
-            placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
+            placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask Creaiter anything..." : "Continue the conversation..."} 
             onOpenProposals={() => {
               handleSetVisualization({
                 type: 'proposal_browser',
