@@ -1,97 +1,98 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Creaiter Premium Audit — Implementation Plan
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## Scope Assessment
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+After auditing the codebase against the 16-page report, many items are already addressed. Here is what remains, organized by priority.
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## Phase 1: Critical Bugs (P0)
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+### 1.1 Raw HTML in Repository Card Titles
+**File**: `src/components/repository/SimplifiedRepositoryCard.tsx`
+**Root cause**: `getDisplayTitle()` calls `extractTitleFromContent()` which strips markdown (`#`, `**`) but not HTML tags (`<h2>`, `<p>`). The `EnhancedContentCard` path uses `DOMPurify.sanitize(title, { ALLOWED_TAGS: [] })` but `SimplifiedRepositoryCard` does not.
+**Fix**: Import `DOMPurify` and strip HTML in `getDisplayTitle()` before returning — add `DOMPurify.sanitize(title, { ALLOWED_TAGS: [] })` as a final pass on the returned string. Also fix `extractTitleFromContent` in `src/utils/content/extractTitle.ts` to strip HTML tags after stripping markdown.
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+### 1.2 Social Page Duplicate Stats
+**File**: `src/components/engage/social/SocialDashboard.tsx`
+**Root cause**: Stats are rendered twice — once via `EngagePageHero` (line 279-283 `stats` prop) AND again via `EngageStatGrid` (lines 403-410). Both show Scheduled/Posted/Connected.
+**Fix**: Remove the `EngageStatGrid` block (lines 403-410) since the hero already displays the same stats.
 
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
+### 1.3 Campaigns Stats Mismatch
+**File**: `src/components/campaigns/CampaignsHero.tsx`
+**Root cause**: The hero uses `useCampaignStats()` which queries the DB independently, while the campaign list uses `useCampaigns()`. If the stats hook counts strategies while the list shows saved campaigns, there's a mismatch.
+**Fix**: Audit `useCampaignStats` to ensure it queries the same `campaigns` table/view as `useCampaigns`. Add an empty state message in `CampaignList` when `campaigns.length === 0 && !isLoading` that says "No campaigns yet — start a conversation above to create one."
 
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+### 1.4 Search Only Searches Chats
+**File**: `src/components/ai-chat/ChatHistorySidebar.tsx`
+**Assessment**: The sidebar search is scoped to chat history, which is correct for its location. A global search (Cmd+K) is a P3 feature — not a bug. However, we should update the placeholder to be clearer.
+**Fix**: Change placeholder from "Search chats..." to "Search conversations..." (minor). Global command palette deferred to Phase 4.
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## Phase 2: Visual Consistency (P1)
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+### 2.1 AI Chat Missing Gradient Hero
+**File**: `src/pages/AIChat.tsx`
+**Current state**: Has animated gradient blobs in background but no structured hero header matching other pages.
+**Decision**: AI Chat is intentionally different — it's a chat-first interface, not a content page. Adding a full hero would push the chat below the fold. Instead, enhance the welcome state in `EnhancedChatInterface.tsx` with a subtle gradient treatment on the greeting text to match the brand language without disrupting the chat-first UX.
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+### 2.2 Keywords Already Has Hero
+**File**: `src/components/keywords/KeywordsHero.tsx`
+**Status**: Already has a gradient hero with badge ("Keyword Repository"), gradient title ("Keyword Management Dashboard"), and animated background. The audit finding is incorrect — this is already implemented.
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+### 2.3 Browser Tab Titles
+**Files**: Multiple pages
+**Audit**: Some pages use generic titles. Verify and fix:
+- AI Chat → "AI Chat — Creaiter"
+- Keywords → already has Helmet
+- Social, Contacts, Automations, Journeys → check if `<Helmet>` is set in each Engage sub-component
+
+### 2.4 Consistent Empty States
+**Assessment**: Most pages already use `UnifiedEmptyState`. Verify Social, Contacts, and Automations use it consistently.
+
+---
+
+## Phase 3: Premium Polish (P2)
+
+### 3.1 AI Chat Welcome State Enhancement
+**File**: `src/components/ai-chat/EnhancedChatInterface.tsx`
+**Fix**: Add a gradient text treatment to the "Good morning" greeting and enhance the stats bar with color-coded values and subtle glassmorphic card backgrounds.
+
+### 3.2 Chat Auto-Naming
+**File**: `src/contexts/AIChatDBContext.tsx` or equivalent
+**Fix**: When saving a conversation's first message, auto-generate a title from the first 50 chars of the user's message instead of "New Chat". This is a UX improvement.
+
+### 3.3 Calendar Today Highlight
+**File**: Calendar component (under `/research/calendar`)
+**Fix**: Add a visual indicator (ring or background highlight) for today's date.
+
+---
+
+## Phase 4: Advanced Features (P3) — Deferred
+
+These are noted but not planned for this round:
+- Global command palette (Cmd+K)
+- Dashboard home page
+- Theme customization
+- Onboarding walkthrough
+- Keyboard shortcuts
+
+---
+
+## Implementation Summary
+
+| # | Task | File(s) | Effort |
+|---|------|---------|--------|
+| 1 | Strip HTML from repository card titles | `SimplifiedRepositoryCard.tsx`, `extractTitle.ts` | Small |
+| 2 | Remove duplicate stats on Social page | `SocialDashboard.tsx` | Tiny |
+| 3 | Fix campaigns stats/empty state mismatch | `CampaignsHero.tsx`, `CampaignList.tsx`, `useCampaignStats.ts` | Small |
+| 4 | Enhance AI Chat welcome gradient treatment | `EnhancedChatInterface.tsx` | Small |
+| 5 | Add `<Helmet>` titles to Engage sub-pages | `SocialDashboard.tsx`, `ContactsHub.tsx`, etc. | Small |
+| 6 | Auto-name chat conversations | `AIChatDBContext.tsx` | Medium |
+| 7 | Calendar today highlight | Calendar component | Small |
+
+Total: ~7 focused edits across ~10 files. No new dependencies needed.
+
