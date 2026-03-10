@@ -33,7 +33,8 @@ type InputMode = 'conversation' | 'express';
 export const CampaignsHero = React.memo(({
   onCreateClick,
   onStartConversation,
-  onExpressMode
+  onExpressMode,
+  stats: externalStats
 }: CampaignsHeroProps) => {
   const [mode, setMode] = useState<InputMode>('conversation');
   const [campaignIdea, setCampaignIdea] = useState('');
