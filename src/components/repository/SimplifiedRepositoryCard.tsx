@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import DOMPurify from 'dompurify';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,17 +46,19 @@ const AI_PREAMBLE_PATTERNS = [
 ];
 
 function getDisplayTitle(content: ContentItemType): string {
+  const sanitize = (text: string) => DOMPurify.sanitize(text, { ALLOWED_TAGS: [] }).trim();
+  
   const extracted = extractTitleFromContent(content.content);
-  if (extracted && extracted.length <= 120) return extracted;
+  if (extracted && extracted.length <= 120) return sanitize(extracted);
   
   const metaTitle = content.metadata?.metaTitle;
-  if (metaTitle && typeof metaTitle === 'string' && metaTitle.length <= 120) return metaTitle;
+  if (metaTitle && typeof metaTitle === 'string' && metaTitle.length <= 120) return sanitize(metaTitle);
   
   const title = content.title;
-  if (title && !AI_PREAMBLE_PATTERNS.some(p => p.test(title)) && title.length <= 120) return title;
+  if (title && !AI_PREAMBLE_PATTERNS.some(p => p.test(title)) && title.length <= 120) return sanitize(title);
   
   // Fallback: truncate title
-  if (title) return title.substring(0, 100) + '...';
+  if (title) return sanitize(title).substring(0, 100) + '...';
   return 'Untitled Content';
 }
 

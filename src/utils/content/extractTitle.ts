@@ -29,6 +29,9 @@ export function extractTitleFromContent(content: string): string {
       title = title.replace(/\*(.*?)\*/g, '$1');
       title = title.replace(/_(.*?)_/g, '$1');
       
+      // Strip any HTML tags (e.g., <h2>, <p>, <strong>)
+      title = title.replace(/<[^>]*>/g, '');
+      
       const extractedTitle = title.trim();
       console.log('[extractTitle] Successfully extracted title:', extractedTitle);
       return extractedTitle;

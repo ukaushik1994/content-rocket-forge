@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -319,6 +320,10 @@ export const JourneysList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <Helmet>
+        <title>Journeys | Creaiter</title>
+        <meta name="description" content="Design and manage customer journey workflows with visual builders." />
+      </Helmet>
       <EngagePageHero
         icon={GitBranch}
         badge="Journey Builder"

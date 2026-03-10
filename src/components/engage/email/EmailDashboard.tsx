@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -75,6 +76,10 @@ export const EmailDashboard = () => {
 
   return (
     <div className="w-full relative">
+      <Helmet>
+        <title>Email Dashboard | Creaiter</title>
+        <meta name="description" content="Compose emails, manage campaigns, and track delivery performance." />
+      </Helmet>
       {/* ─── Centered Hero Section ─── */}
       <motion.div
         className="text-center mb-12 relative pt-16 pb-8"

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SocialInbox } from './SocialInbox';
 import { SocialAnalytics } from './SocialAnalytics';
@@ -268,6 +269,10 @@ export const SocialDashboard = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <Helmet>
+        <title>Social Media | Creaiter</title>
+        <meta name="description" content="Schedule and manage social posts across all channels." />
+      </Helmet>
       <EngagePageHero
         icon={Share2}
         badge="Social Command Center"
@@ -400,14 +405,7 @@ export const SocialDashboard = () => {
         </div>
       </motion.div>
 
-      {/* Stat Cards */}
-      <EngageStatGrid
-        stats={[
-          { label: 'Scheduled', count: stats.scheduled, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: Clock },
-          { label: 'Posted', count: stats.posted, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: CheckCircle2 },
-          { label: 'Connected', count: stats.connected, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: Zap },
-        ]}
-      />
+      {/* Stats already displayed in hero above — removed duplicate EngageStatGrid */}
 
       {/* Connected Accounts */}
       <motion.div variants={stagger.item}>

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -47,6 +48,10 @@ const AIChat = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
+      <Helmet>
+        <title>AI Chat | Creaiter</title>
+        <meta name="description" content="AI-powered content creation assistant — chat, create, and manage your content in one place." />
+      </Helmet>
       {/* Refined Background Effects - Calmer, more premium */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 

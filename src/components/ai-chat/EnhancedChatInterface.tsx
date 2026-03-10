@@ -463,7 +463,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1, duration: 0.4 }}
                     >
-                      <h2 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+                      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
                         {(() => {
                           const hour = new Date().getHours();
                           if (hour < 12) return 'Good morning.';
