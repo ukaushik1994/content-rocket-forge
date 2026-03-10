@@ -329,9 +329,10 @@ const Solutions = () => {
   
   if (loading) {
     return (
-      <PageContainer>
-        <main className="pt-20 container py-8 rounded-3xl">
-          <LoadingFallback />
+      <PageContainer className="relative overflow-hidden">
+        <AnimatedBackground intensity="medium" />
+        <main className="pt-20 container py-8 rounded-3xl relative z-10">
+          <PageSkeleton variant="cards" />
         </main>
       </PageContainer>
     );
