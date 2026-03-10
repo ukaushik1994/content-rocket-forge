@@ -13,7 +13,9 @@ interface HeroSectionProps {
 export const HeroSection: React.FC<HeroSectionProps> = ({
   solutionCount,
   searchTerm,
-  onSearchChange
+  onSearchChange,
+  activeCount = 0,
+  featuredCount = 0,
 }) => {
   // Animation variants
   const containerVariants = {
