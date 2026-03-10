@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { PageContainer } from '@/components/ui/PageContainer';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { UnifiedEmptyState } from '@/components/ui/UnifiedEmptyState';
 import { KeywordsHero } from '@/components/keywords/KeywordsHero';
 import { KeywordsFilters } from '@/components/keywords/KeywordsFilters';
