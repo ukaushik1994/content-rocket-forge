@@ -109,7 +109,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
   }, [currentMatchIndex, messageSearchResults]);
 
-  const { pendingPanel, setPendingPanel } = useSidebarContext();
+  const { pendingPanel, setPendingPanel, isSidebarOpen } = useSidebarContext();
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -569,8 +569,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         "fixed bottom-0 left-0 right-0 z-40",
         "border-t border-border/20 bg-background/80 backdrop-blur-md",
         "transition-all duration-300 ease-out",
-        // Left padding only on desktop when sidebar is open (sidebars overlay on mobile/tablet)
-        false
+        !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
       )}>
         <div className="max-w-6xl mx-auto px-4 py-3">
           {/* Context Indicator */}
