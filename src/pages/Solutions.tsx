@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { PageContainer, pageItemVariants } from '@/components/ui/PageContainer';
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { motion } from 'framer-motion';
 import { CompanyInfo, BrandGuidelines } from '@/contexts/content-builder/types/company-types';
 import { CompetitorSection } from '@/components/company/CompetitorSection';
