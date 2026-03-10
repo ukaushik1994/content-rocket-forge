@@ -49,6 +49,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { AIConversation } from '@/hooks/useEnhancedAIChatDB';
+import { GlobalSearchResults } from './GlobalSearchResults';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
@@ -411,6 +412,13 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             />
           )}
         </div>
+
+        {/* Global Search Results */}
+        {searchActive && searchTerm.length >= 2 && (
+          <div className="px-2">
+            <GlobalSearchResults searchTerm={searchTerm} onClose={() => { setSearchTerm(''); setSearchActive(false); }} />
+          </div>
+        )}
 
         <ScrollArea className="flex-1">
           <div className="px-2">

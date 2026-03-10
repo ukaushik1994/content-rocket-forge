@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { FileText, CheckCircle, Clock, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -47,22 +48,25 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = () => {
   if (isLoading || summary.totalContent === 0) return null;
 
   const metrics = [
-    { label: 'Content', value: summary.totalContent },
-    { label: 'Published', value: summary.published },
-    { label: 'In Review', value: summary.inReview },
-    { label: 'SEO Score', value: `${summary.avgSeoScore}%` },
+    { label: 'Content', value: summary.totalContent, icon: FileText, color: 'text-blue-400' },
+    { label: 'Published', value: summary.published, icon: CheckCircle, color: 'text-emerald-400' },
+    { label: 'In Review', value: summary.inReview, icon: Clock, color: 'text-amber-400' },
+    { label: 'SEO Score', value: `${summary.avgSeoScore}%`, icon: BarChart3, color: 'text-purple-400' },
   ];
 
   return (
     <motion.div
-      className="border-t border-border/30 pt-6 flex justify-center gap-8 sm:gap-12"
+      className="flex justify-center gap-6 sm:gap-10"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.3, duration: 0.4 }}
     >
-      {metrics.map((metric, index) => (
-        <div key={metric.label} className="text-center">
-          <div className="text-lg font-semibold text-foreground">{metric.value}</div>
+      {metrics.map((metric) => (
+        <div key={metric.label} className="flex flex-col items-center gap-2">
+          <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
+            <metric.icon className={`h-5 w-5 ${metric.color}`} />
+          </div>
+          <div className="text-lg font-bold text-foreground">{metric.value}</div>
           <div className="text-xs text-muted-foreground">{metric.label}</div>
         </div>
       ))}

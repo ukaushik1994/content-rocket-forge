@@ -217,42 +217,20 @@ export const CampaignsHero = React.memo(({
         }} transition={{
           delay: 0.8,
           duration: 0.4
-        }} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-            <div className="bg-background/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 hover:border-primary/30 transition-all hover:scale-105">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-green-500/20">
-                  <Target className="h-5 w-5 text-green-500" />
+        }} className="flex justify-center gap-8 mt-12">
+            {[
+              { icon: Target, value: statsLoading ? '-' : activeCampaigns, label: 'Active', color: 'text-emerald-400' },
+              { icon: TrendingUp, value: statsLoading ? '-' : contentPiecesCreated, label: 'Content Created', color: 'text-teal-400' },
+              { icon: Sparkles, value: statsLoading ? '-' : completedCampaigns, label: 'Completed', color: 'text-green-400' },
+            ].map((stat) => (
+              <div key={stat.label} className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
-                <span className="text-2xl font-bold text-foreground">
-                  {statsLoading ? '-' : activeCampaigns}
-                </span>
+                <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
-              <div className="text-sm text-muted-foreground">Active Campaigns</div>
-            </div>
-
-            <div className="bg-background/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 hover:border-primary/30 transition-all hover:scale-105">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-blue-500/20">
-                  <TrendingUp className="h-5 w-5 text-blue-500" />
-                </div>
-                <span className="text-2xl font-bold text-foreground">
-                  {statsLoading ? '-' : contentPiecesCreated}
-                </span>
-              </div>
-              <div className="text-sm text-muted-foreground">Content Pieces Created</div>
-            </div>
-
-            <div className="bg-background/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 hover:border-primary/30 transition-all hover:scale-105">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-purple-500/20">
-                  <Sparkles className="h-5 w-5 text-purple-500" />
-                </div>
-                <span className="text-2xl font-bold text-foreground">
-                  {statsLoading ? '-' : completedCampaigns}
-                </span>
-              </div>
-              <div className="text-sm text-muted-foreground">Completed</div>
-            </div>
+            ))}
           </motion.div>
 
           {/* Mode Toggle */}

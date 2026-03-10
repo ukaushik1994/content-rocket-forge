@@ -759,17 +759,12 @@ export const AutomationsList = () => {
               { icon: BarChart3, label: 'Total Runs', value: overallStats.totalRuns, color: 'text-blue-400' },
               { icon: TrendingUp, label: 'Success Rate', value: `${overallStats.successRate}%`, color: 'text-purple-400' },
             ].map((stat) => (
-              <div
-                key={stat.label}
-                className="flex items-center gap-3 px-5 py-3 glass-card rounded-2xl min-w-[140px]"
-              >
-                <div className="h-9 w-9 rounded-xl bg-background/80 border border-border/50 flex items-center justify-center">
-                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              <div key={stat.label} className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
-                <div className="text-left">
-                  <p className="text-lg font-bold text-foreground">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
+                <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
             ))}
 

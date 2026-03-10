@@ -1,14 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, FileText, BarChart3, Layers } from 'lucide-react';
+import { Sparkles, FileText, BarChart3, Layers, CheckCircle, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 interface RepositoryHeroProps {
   onCreate?: () => void;
+  stats?: { total: number; published: number; drafts: number };
 }
 
-export const RepositoryHero = React.memo(({ onCreate }: RepositoryHeroProps) => {
+export const RepositoryHero = React.memo(({ onCreate, stats }: RepositoryHeroProps) => {
   const navigate = useNavigate();
 
   return (
@@ -71,6 +72,30 @@ export const RepositoryHero = React.memo(({ onCreate }: RepositoryHeroProps) => 
             Create Content
           </Button>
         </motion.div>
+
+        {/* Circular Stats */}
+        {stats && (
+          <motion.div
+            className="flex justify-center gap-8 mt-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.8 }}
+          >
+            {[
+              { icon: FileText, value: stats.total, label: 'Total Content', color: 'text-blue-400' },
+              { icon: CheckCircle, value: stats.published, label: 'Published', color: 'text-emerald-400' },
+              { icon: Pencil, value: stats.drafts, label: 'Drafts', color: 'text-amber-400' },
+            ].map((stat) => (
+              <div key={stat.label} className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                </div>
+                <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            ))}
+          </motion.div>
+        )}
 
         {/* Feature Tags */}
         <motion.div 

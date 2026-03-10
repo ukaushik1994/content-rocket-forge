@@ -349,6 +349,8 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         solutionCount={solutions.length} 
         searchTerm={filterTerm}
         onSearchChange={handleSearchChange}
+        activeCount={solutions.length}
+        featuredCount={0}
       />
       
       {/* Main content area */}
