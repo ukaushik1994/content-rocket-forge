@@ -119,11 +119,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </motion.div>
           </div>
           
-          <motion.div variants={itemVariants} className="bg-glass text-center p-4 rounded-xl border border-white/10 min-w-[140px] backdrop-blur-sm py-[45px] mx-[23px] my-[44px]">
-            <h3 className="text-3xl md:text-4xl font-bold text-gradient mb-1">{solutionCount}</h3>
-            <p className="text-muted-foreground text-sm">
-              {solutionCount === 1 ? 'Offering' : 'Offerings'} Available
-            </p>
+          <motion.div variants={itemVariants} className="flex gap-6 items-start pt-8">
+            {[
+              { icon: Package, value: solutionCount, label: 'Total Offerings', color: 'text-pink-400' },
+              { icon: CheckCircle, value: activeCount, label: 'Active', color: 'text-emerald-400' },
+              { icon: Star, value: featuredCount, label: 'Featured', color: 'text-amber-400' },
+            ].map((stat) => (
+              <div key={stat.label} className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                </div>
+                <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            ))}
           </motion.div>
         </div>
       </div>

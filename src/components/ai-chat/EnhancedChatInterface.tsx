@@ -446,24 +446,50 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             <div className="max-w-6xl mx-auto py-6 space-y-8">
               {/* Welcome State - Premium Minimal */}
               <AnimatePresence>
-                {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[60vh] py-12 sm:py-16 lg:py-24 space-y-8">
-                    {/* Minimal Brain Icon */}
+              {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[60vh] py-12 sm:py-16 lg:py-24 space-y-8">
+                    {/* Hero Badge Pill */}
                     <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5 }}
+                      className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-background/60 backdrop-blur-xl rounded-full border border-border/50"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5, type: "spring" }}
                     >
-                      <Brain className="h-6 w-6 text-muted-foreground/60" />
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">AI Content Assistant</span>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     </motion.div>
 
-                    {/* Two-line greeting */}
+                    {/* Gradient Title */}
+                    <motion.h1
+                      className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-foreground via-primary to-primary/70 bg-clip-text text-transparent"
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1, duration: 0.6 }}
+                    >
+                      Content Studio
+                    </motion.h1>
+
+                    {/* Subtitle */}
+                    <motion.p
+                      className="text-base md:text-lg text-muted-foreground max-w-2xl text-center"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2, duration: 0.4 }}
+                    >
+                      Your AI-powered workspace for creating, managing, and optimizing all your content
+                    </motion.p>
+
+                    {/* Circular Stats */}
+                    <PlatformSummaryCard onAction={handleLegacyAction} />
+
+                    {/* Greeting */}
                     <motion.div
                       className="text-center space-y-2"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1, duration: 0.4 }}
+                      transition={{ delay: 0.3, duration: 0.4 }}
                     >
-                      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
+                      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
                         {(() => {
                           const hour = new Date().getHours();
                           if (hour < 12) return 'Good morning.';
@@ -471,16 +497,13 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                           return 'Good evening.';
                         })()}
                       </h2>
-                      <p className="text-base text-muted-foreground font-normal">
+                      <p className="text-sm text-muted-foreground font-normal">
                         What would you like to do?
                       </p>
                     </motion.div>
 
                     {/* Pill suggestions */}
                     <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
-
-                    {/* Metrics strip — only shows if user has data */}
-                    <PlatformSummaryCard onAction={handleLegacyAction} />
                   </motion.div>}
               </AnimatePresence>
 

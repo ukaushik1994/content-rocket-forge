@@ -413,6 +413,13 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           )}
         </div>
 
+        {/* Global Search Results */}
+        {searchActive && searchTerm.length >= 2 && (
+          <div className="px-2">
+            <GlobalSearchResults searchTerm={searchTerm} onClose={() => { setSearchTerm(''); setSearchActive(false); }} />
+          </div>
+        )}
+
         <ScrollArea className="flex-1">
           <div className="px-2">
             {/* ── LIBRARY (collapsible) ── */}
