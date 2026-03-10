@@ -97,7 +97,7 @@ const CalendarPage: React.FC = () => {
 
           <CalendarInner />
         </main>
-      </div>
+      </PageContainer>
     </ContentStrategyProvider>
   );
 };
