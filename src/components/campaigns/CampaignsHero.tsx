@@ -23,6 +23,11 @@ interface CampaignsHeroProps {
     solutionId: string | null;
     platformPreferences: Record<string, number>;
   }) => void;
+  stats?: {
+    activeCampaigns: number;
+    contentPiecesCreated: number;
+    completedCampaigns: number;
+  };
 }
 type InputMode = 'conversation' | 'express';
 export const CampaignsHero = React.memo(({
