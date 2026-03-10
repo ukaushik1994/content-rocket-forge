@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { useContent } from '@/contexts/content';
