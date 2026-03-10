@@ -276,6 +276,10 @@ const Analytics = () => {
 
   return (
     <PageContainer className="w-full relative overflow-hidden">
+      <Helmet>
+        <title>Analytics | Creaiter</title>
+        <meta name="description" content="Real-time performance tracking, content analytics, and campaign insights." />
+      </Helmet>
       <AnimatedBackground intensity="medium" />
       
       
