@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { useContent } from '@/contexts/content';
@@ -80,6 +81,7 @@ const Repository = () => {
       <AnimatedBackground intensity="medium" />
 
       <div className="relative z-10 w-full px-6 pt-24 pb-12">
+        <PageBreadcrumb section="Library" page="Repository" />
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

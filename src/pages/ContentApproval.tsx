@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { Helmet } from 'react-helmet-async';
 import { ContentApprovalView } from '@/components/approval/ContentApprovalView';
 import { ContentProvider } from '@/contexts/content';
@@ -17,6 +18,7 @@ const ContentApproval = () => {
       </Helmet>
       
       <main className="flex-1 container px-6 pt-24 pb-12 relative z-10">
+        <PageBreadcrumb section="Library" page="Approvals" />
         <ContentProvider>
           <ContentApprovalView />
         </ContentProvider>

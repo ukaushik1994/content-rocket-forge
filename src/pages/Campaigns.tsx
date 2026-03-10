@@ -25,6 +25,7 @@ import { createCampaignAtomic } from '@/services/campaignTransactions';
 import { campaignCleanupService } from '@/services/campaignCleanupService';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, AlertTriangle, Settings } from 'lucide-react';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -488,6 +489,7 @@ const CampaignsInner = () => {
       <AnimatedBackground intensity="medium" />
       
       <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">
+        <PageBreadcrumb section="Tools" page="Campaigns" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

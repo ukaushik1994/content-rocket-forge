@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Sparkles, CalendarDays, Plus, BarChart3, Zap } from 'lucide-react';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { ContentStrategyProvider, useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { EditorialCalendar } from '@/components/research/content-strategy/calendar/EditorialCalendar';
 import { useProposalRestoration } from '@/hooks/useProposalRestoration';
@@ -49,6 +50,7 @@ const CalendarPage: React.FC = () => {
         </div>
 
         <main className="flex-1 container py-10 z-10 relative max-w-7xl mx-auto">
+          <PageBreadcrumb section="Calendar" page="Editorial Calendar" />
           {/* Hero */}
           <motion.section
             className="text-center mb-10 relative"

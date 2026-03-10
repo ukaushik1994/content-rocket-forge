@@ -18,6 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { RateLimitBanner } from '@/components/common/RateLimitBanner';
 import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
 import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search, Sparkles } from 'lucide-react';
@@ -395,6 +396,10 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           animate="visible" 
           variants={containerVariants}
         >
+          {/* Breadcrumb */}
+          <div className="mx-6 mt-2">
+            <PageBreadcrumb section="Chats" page="AI Chat" />
+          </div>
           {/* Rate Limit Banner */}
           <RateLimitBanner 
             className="mx-6 mt-2" 
