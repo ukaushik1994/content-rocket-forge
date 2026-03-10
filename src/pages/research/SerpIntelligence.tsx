@@ -133,7 +133,7 @@ const SerpIntelligence = () => {
           </GlassCard>
         </motion.div>
       </main>
-    </div>
+    </PageContainer>
   );
 };
 

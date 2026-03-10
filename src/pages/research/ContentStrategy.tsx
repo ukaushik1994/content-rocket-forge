@@ -14,7 +14,7 @@ const ContentStrategy = () => {
   const [creatorOpen, setCreatorOpen] = useState(false);
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
   return <ContentStrategyProvider>
-      <div className="min-h-screen bg-background relative overflow-hidden">
+      <PageContainer className="relative overflow-hidden">
         <Helmet>
           <title>Content Strategy — AI-Powered Content Planning & Production</title>
           <meta name="description" content="Complete content strategy workspace with AI proposals, production pipeline, editorial calendar, and performance analytics. Plan, create, and optimize your content strategy." />
