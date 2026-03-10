@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Sparkles, CalendarDays, Plus, BarChart3, Zap } from 'lucide-react';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { ContentStrategyProvider, useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { EditorialCalendar } from '@/components/research/content-strategy/calendar/EditorialCalendar';
 import { useProposalRestoration } from '@/hooks/useProposalRestoration';
