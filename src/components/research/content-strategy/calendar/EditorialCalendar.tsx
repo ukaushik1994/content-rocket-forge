@@ -240,6 +240,7 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
   const renderDayCell = (day: Date, tall = false) => {
     const dayContent = getContentForDate(day);
     const isSelected = selectedDate && isSameDay(day, selectedDate);
+    const isToday = isSameDay(day, new Date());
     const maxItems = tall ? 5 : 2;
     
     return (
@@ -251,7 +252,9 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
           tall ? "min-h-[180px]" : "min-h-[120px]",
           isSelected
             ? 'border-primary bg-primary/10'
-            : 'border-border/30 hover:border-border/60 bg-card/30 hover:bg-card/50'
+            : isToday
+              ? 'border-primary/50 bg-primary/5 ring-1 ring-inset ring-primary/30'
+              : 'border-border/30 hover:border-border/60 bg-card/30 hover:bg-card/50'
         )}
         onClick={() => setSelectedDate(day)}
       >
