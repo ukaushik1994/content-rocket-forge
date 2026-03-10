@@ -6,6 +6,8 @@ import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { ContentStrategyProvider, useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { EditorialCalendar } from '@/components/research/content-strategy/calendar/EditorialCalendar';
 import { useProposalRestoration } from '@/hooks/useProposalRestoration';
+import { PageContainer } from '@/components/ui/PageContainer';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 
 const CalendarInner: React.FC = () => {
   const { currentStrategy } = useContentStrategy();
@@ -35,19 +37,14 @@ const CalendarPage: React.FC = () => {
 
   return (
     <ContentStrategyProvider>
-      <div className="min-h-screen bg-background relative overflow-hidden">
+      <PageContainer className="relative overflow-hidden">
         <Helmet>
           <title>Calendar | Creaiter</title>
           <meta name="description" content="Plan, schedule, and track your content production with a beautiful editorial calendar." />
           <link rel="canonical" href={canonicalUrl} />
         </Helmet>
 
-
-        {/* Background orbs */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl opacity-30 will-change-transform transform-gpu animate-float" />
-          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full filter blur-3xl opacity-20 will-change-transform transform-gpu animate-float" style={{ animationDelay: '2s' }} />
-        </div>
+        <AnimatedBackground intensity="medium" />
 
         <main className="flex-1 container py-10 z-10 relative max-w-7xl mx-auto">
           <PageBreadcrumb section="Calendar" page="Editorial Calendar" />
@@ -100,7 +97,7 @@ const CalendarPage: React.FC = () => {
 
           <CalendarInner />
         </main>
-      </div>
+      </PageContainer>
     </ContentStrategyProvider>
   );
 };

@@ -6,6 +6,8 @@ import { Helmet } from 'react-helmet-async';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { PageContainer, pageItemVariants } from '@/components/ui/PageContainer';
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { motion } from 'framer-motion';
 import { CompanyInfo, BrandGuidelines } from '@/contexts/content-builder/types/company-types';
 import { CompetitorSection } from '@/components/company/CompetitorSection';
@@ -327,15 +329,17 @@ const Solutions = () => {
   
   if (loading) {
     return (
-      <PageContainer>
-        <main className="pt-20 container py-8 rounded-3xl">
-          <LoadingFallback />
+      <PageContainer className="relative overflow-hidden">
+        <AnimatedBackground intensity="medium" />
+        <main className="pt-20 container py-8 rounded-3xl relative z-10">
+          <PageSkeleton variant="cards" />
         </main>
       </PageContainer>
     );
   }
   
-  return <PageContainer>
+  return <PageContainer className="relative overflow-hidden">
+      <AnimatedBackground intensity="medium" />
       <Helmet>
         <title>Business Offerings Hub | Creaiter</title>
         <meta name="description" content="Manage your business offerings for content creation" />

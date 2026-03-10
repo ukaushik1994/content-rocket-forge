@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PageContainer } from '@/components/ui/PageContainer';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Monitor, BarChart3, Zap, TrendingUp } from 'lucide-react';
@@ -37,7 +39,7 @@ const SerpIntelligence = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <PageContainer className="relative overflow-hidden">
       <Helmet>
         <title>SERP Intelligence — Real-time Search Engine Monitoring & Analytics</title>
         <meta name="description" content="Advanced SERP monitoring, performance analytics, AI-powered insights, and marketing integrations for comprehensive search intelligence." />
@@ -47,6 +49,7 @@ const SerpIntelligence = () => {
       <AnimatedBackground intensity="medium" />
       
       <main className="flex-1 container pt-24 pb-8 z-10 relative max-w-7xl mx-auto">
+        <PageBreadcrumb section="Research" page="SERP Intelligence" />
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -130,7 +133,7 @@ const SerpIntelligence = () => {
           </GlassCard>
         </motion.div>
       </main>
-    </div>
+    </PageContainer>
   );
 };
 
