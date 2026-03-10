@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PageContainer } from '@/components/ui/PageContainer';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Monitor, BarChart3, Zap, TrendingUp } from 'lucide-react';
