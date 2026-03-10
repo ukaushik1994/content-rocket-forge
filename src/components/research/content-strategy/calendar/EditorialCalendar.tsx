@@ -259,8 +259,17 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
         onClick={() => setSelectedDate(day)}
       >
         <div className="flex items-center justify-between mb-2">
-          <div className="text-sm font-medium text-foreground">
-            {format(day, tall ? 'EEE d' : 'd')}
+          <div className={cn(
+            "text-sm font-medium",
+            isToday ? "text-primary font-semibold" : "text-foreground"
+          )}>
+            {isToday && !tall ? (
+              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                {format(day, 'd')}
+              </span>
+            ) : (
+              format(day, tall ? 'EEE d' : 'd')
+            )}
           </div>
           <Button
             variant="ghost"

@@ -400,14 +400,7 @@ export const SocialDashboard = () => {
         </div>
       </motion.div>
 
-      {/* Stat Cards */}
-      <EngageStatGrid
-        stats={[
-          { label: 'Scheduled', count: stats.scheduled, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: Clock },
-          { label: 'Posted', count: stats.posted, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: CheckCircle2 },
-          { label: 'Connected', count: stats.connected, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: Zap },
-        ]}
-      />
+      {/* Stats already displayed in hero above — removed duplicate EngageStatGrid */}
 
       {/* Connected Accounts */}
       <motion.div variants={stagger.item}>
