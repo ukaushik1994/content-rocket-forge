@@ -25,6 +25,7 @@ import { createCampaignAtomic } from '@/services/campaignTransactions';
 import { campaignCleanupService } from '@/services/campaignCleanupService';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, AlertTriangle, Settings } from 'lucide-react';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
