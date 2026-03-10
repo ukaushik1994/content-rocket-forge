@@ -497,6 +497,11 @@ const CampaignsInner = () => {
         onCreateClick={handleStartNewCampaign}
         onStartConversation={handleStartConversation}
         onExpressMode={handleExpressMode}
+        stats={{
+          activeCampaigns: campaigns.filter(c => c.status === 'active' || c.status === 'planned').length,
+          contentPiecesCreated: 0,
+          completedCampaigns: campaigns.filter(c => c.status === 'completed').length,
+        }}
       />
 
           {/* AI Provider Pre-check Banner */}
