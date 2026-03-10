@@ -38,6 +38,7 @@ import {
   Search,
   Loader2
 } from 'lucide-react';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { PageContainer } from '@/components/ui/PageContainer';
