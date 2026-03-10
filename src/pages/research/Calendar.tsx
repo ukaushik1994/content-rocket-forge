@@ -6,6 +6,8 @@ import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { ContentStrategyProvider, useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { EditorialCalendar } from '@/components/research/content-strategy/calendar/EditorialCalendar';
 import { useProposalRestoration } from '@/hooks/useProposalRestoration';
+import { PageContainer } from '@/components/ui/PageContainer';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 
 const CalendarInner: React.FC = () => {
   const { currentStrategy } = useContentStrategy();
