@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
 import { AnalyticsHero } from '@/components/analytics/AnalyticsHero';
 import { ContentAnalyticsTab } from '@/components/analytics/ContentAnalyticsTab';
