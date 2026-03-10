@@ -81,6 +81,7 @@ const Repository = () => {
       <AnimatedBackground intensity="medium" />
 
       <div className="relative z-10 w-full px-6 pt-24 pb-12">
+        <PageBreadcrumb section="Library" page="Repository" />
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

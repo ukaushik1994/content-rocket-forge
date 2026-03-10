@@ -50,6 +50,7 @@ const CalendarPage: React.FC = () => {
         </div>
 
         <main className="flex-1 container py-10 z-10 relative max-w-7xl mx-auto">
+          <PageBreadcrumb section="Calendar" page="Editorial Calendar" />
           {/* Hero */}
           <motion.section
             className="text-center mb-10 relative"

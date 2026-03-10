@@ -344,6 +344,7 @@ const Solutions = () => {
       
       
       <main className="pt-20 container py-8 rounded-3xl">
+        <PageBreadcrumb section="Library" page="Offerings" />
         <motion.div variants={pageItemVariants} className="mb-8 space-y-12">
           {/* Company Section - Moved to top */}
           <CompanySection 

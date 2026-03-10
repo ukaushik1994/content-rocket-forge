@@ -139,6 +139,9 @@ const KeywordsPage = () => {
       
       {/* Spacing for fixed navbar */}
       <div className="pt-16">
+        <div className="px-6">
+          <PageBreadcrumb section="Tools" page="Keywords" />
+        </div>
         {/* Hero Section */}
         <KeywordsHero
         keywordStats={keywordStats}

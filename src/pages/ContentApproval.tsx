@@ -18,6 +18,7 @@ const ContentApproval = () => {
       </Helmet>
       
       <main className="flex-1 container px-6 pt-24 pb-12 relative z-10">
+        <PageBreadcrumb section="Library" page="Approvals" />
         <ContentProvider>
           <ContentApprovalView />
         </ContentProvider>
