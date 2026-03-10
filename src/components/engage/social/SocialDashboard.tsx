@@ -269,6 +269,10 @@ export const SocialDashboard = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <Helmet>
+        <title>Social Media | Creaiter</title>
+        <meta name="description" content="Schedule and manage social posts across all channels." />
+      </Helmet>
       <EngagePageHero
         icon={Share2}
         badge="Social Command Center"

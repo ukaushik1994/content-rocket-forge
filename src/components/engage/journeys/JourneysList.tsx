@@ -320,6 +320,10 @@ export const JourneysList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <Helmet>
+        <title>Journeys | Creaiter</title>
+        <meta name="description" content="Design and manage customer journey workflows with visual builders." />
+      </Helmet>
       <EngagePageHero
         icon={GitBranch}
         badge="Journey Builder"

@@ -661,6 +661,10 @@ export const AutomationsList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <Helmet>
+        <title>Automations | Creaiter</title>
+        <meta name="description" content="Build and manage marketing automations with triggers and actions." />
+      </Helmet>
       {/* ── Centered Hero Section ── */}
       <div className="text-center pt-12 pb-8 relative">
         {/* Ambient glow */}

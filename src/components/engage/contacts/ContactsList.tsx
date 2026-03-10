@@ -249,6 +249,10 @@ export const ContactsList = () => {
 
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <Helmet>
+        <title>Contacts | Creaiter</title>
+        <meta name="description" content="Manage your contact database, tags, and audience segments." />
+      </Helmet>
       <EngagePageHero
         icon={Users}
         badge="Contact Management"
