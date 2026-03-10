@@ -396,7 +396,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
               <Search className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
               <input
                 autoFocus
-                placeholder="Search chats..."
+                placeholder="Search conversations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onBlur={() => { if (!searchTerm) setSearchActive(false); }}

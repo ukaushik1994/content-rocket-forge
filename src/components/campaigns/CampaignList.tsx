@@ -83,7 +83,7 @@ export const CampaignList: React.FC<CampaignListProps> = ({
         <Sparkles className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
         <h3 className="text-xl font-semibold mb-2">No campaigns yet</h3>
         <p className="text-muted-foreground mb-6">
-          Create your first campaign to get started
+          Start a conversation above to create your first campaign
         </p>
       </motion.div>
     );
