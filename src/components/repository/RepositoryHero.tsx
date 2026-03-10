@@ -1,11 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, FileText, BarChart3, Layers } from 'lucide-react';
+import { Sparkles, FileText, BarChart3, Layers, CheckCircle, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
 interface RepositoryHeroProps {
   onCreate?: () => void;
+  stats?: { total: number; published: number; drafts: number };
 }
 
 export const RepositoryHero = React.memo(({ onCreate }: RepositoryHeroProps) => {
