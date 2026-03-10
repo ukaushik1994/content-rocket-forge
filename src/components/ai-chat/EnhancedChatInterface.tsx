@@ -18,6 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
+import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { RateLimitBanner } from '@/components/common/RateLimitBanner';
 import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
 import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search, Sparkles } from 'lucide-react';
