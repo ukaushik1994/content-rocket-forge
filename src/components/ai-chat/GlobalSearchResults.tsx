@@ -39,7 +39,7 @@ export const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ search
         const term = `%${searchTerm}%`;
         const [content, keywords, contacts, campaigns] = await Promise.all([
           supabase.from('content_items').select('id, title').eq('user_id', user.id).ilike('title', term).limit(5),
-          supabase.from('keyword_library').select('id, keyword').eq('user_id', user.id).ilike('keyword', term).limit(5),
+          supabase.from('keyword_library' as any).select('id, keyword').eq('user_id', user.id).ilike('keyword', term).limit(5),
           supabase.from('engage_contacts').select('id, first_name, last_name, email').or(`first_name.ilike.${term},last_name.ilike.${term},email.ilike.${term}`).limit(5),
           supabase.from('campaigns').select('id, name').eq('user_id', user.id).ilike('name', term).limit(5),
         ]);
