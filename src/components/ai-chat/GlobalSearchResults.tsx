@@ -44,9 +44,10 @@ export const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ search
           supabase.from('campaigns').select('id, name').eq('user_id', user.id).ilike('name', term).limit(5),
         ]);
 
+        const keywordsData = keywords.data as any[] || [];
         const mapped: SearchResult[] = [
-          ...(content.data || []).map(i => ({ id: i.id, title: i.title || 'Untitled', category: 'content' as const, route: '/repository' })),
-          ...(keywords.data || []).map(i => ({ id: i.id, title: i.keyword, category: 'keywords' as const, route: '/keywords' })),
+          ...(content.data || []).map((i: any) => ({ id: i.id, title: i.title || 'Untitled', category: 'content' as const, route: '/repository' })),
+          ...keywordsData.map((i: any) => ({ id: i.id, title: i.keyword, category: 'keywords' as const, route: '/keywords' })),
           ...(contacts.data || []).map(i => ({ id: i.id, title: `${i.first_name || ''} ${i.last_name || ''}`.trim() || i.email || 'Unknown', category: 'contacts' as const, route: '/engage/contacts' })),
           ...(campaigns.data || []).map(i => ({ id: i.id, title: i.name, category: 'campaigns' as const, route: '/campaigns' })),
         ];
