@@ -461,8 +461,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.5, type: "spring" }}
                     >
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">AI Content Assistant</span>
+                      <Brain className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">AI Command Centre</span>
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     </motion.div>
 
