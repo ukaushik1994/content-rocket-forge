@@ -39,7 +39,7 @@ const SerpIntelligence = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <PageContainer className="relative overflow-hidden">
       <Helmet>
         <title>SERP Intelligence — Real-time Search Engine Monitoring & Analytics</title>
         <meta name="description" content="Advanced SERP monitoring, performance analytics, AI-powered insights, and marketing integrations for comprehensive search intelligence." />
