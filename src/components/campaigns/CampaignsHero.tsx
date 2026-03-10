@@ -41,8 +41,12 @@ export const CampaignsHero = React.memo(({
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  // Fetch real campaign stats from database
-  const { activeCampaigns, contentPiecesCreated, completedCampaigns, loading: statsLoading } = useCampaignStats();
+  // Use external stats from parent (derived from campaigns list) or fallback to hook
+  const fallbackStats = useCampaignStats();
+  const activeCampaigns = externalStats?.activeCampaigns ?? fallbackStats.activeCampaigns;
+  const contentPiecesCreated = externalStats?.contentPiecesCreated ?? fallbackStats.contentPiecesCreated;
+  const completedCampaigns = externalStats?.completedCampaigns ?? fallbackStats.completedCampaigns;
+  const statsLoading = !externalStats && fallbackStats.loading;
 
   // Settings panel state
   const [showSettings, setShowSettings] = useState(false);

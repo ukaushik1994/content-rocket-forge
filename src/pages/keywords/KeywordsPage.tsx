@@ -129,7 +129,7 @@ const KeywordsPage = () => {
   return (
     <PageContainer className="relative overflow-hidden">
       <Helmet>
-        <title>Keywords — Keyword Repository & Management</title>
+        <title>Keywords | Creaiter</title>
         <meta name="description" content="Manage your keyword library with comprehensive metrics, track keyword usage across content, and identify cannibalization issues." />
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
