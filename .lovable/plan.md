@@ -1,97 +1,57 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Phase 3: Breadcrumbs + Remaining CTA Fixes
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## Status Check — What's Already Done
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+| Item | Status |
+|------|--------|
+| Task 8 (Helmet titles) | All pages already have correct `[Page] \| Creaiter` format |
+| Task 14 (Page transitions) | `PageContainer` already implements fade-in-up animation |
+| Task 15 (Button press feedback) | Already added to base `Button` component |
+| Task 6 (most CTAs) | Offerings, Approvals, Keywords, Analytics, Automations already have gradient fills. Social/Contacts/Journeys use `EngageButton` which defaults to gradient. |
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
+## Remaining Work
 
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
+### 1. Calendar "Add Content" Button → Gradient CTA
+**File**: `src/components/research/content-strategy/calendar/EditorialCalendar.tsx` (line 431)
+Currently: `className="bg-primary/20 hover:bg-primary/30"` — a ghost/transparent style.
+Change to: `className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 text-white"` — matching the gradient primary pattern.
 
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
+### 2. Breadcrumbs on All Non-Engage Pages (Task 7)
+**New file**: `src/components/shared/PageBreadcrumb.tsx`
 
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+A simple reusable component that accepts `section` and `page` props and renders a breadcrumb matching the `EngageBreadcrumb` style (small muted text, chevron separator).
 
----
+Route-to-breadcrumb mapping:
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+| Route | Section | Page |
+|-------|---------|------|
+| `/ai-chat` | Chats | AI Chat |
+| `/repository` | Library | Repository |
+| `/offerings` | Library | Offerings |
+| `/content-approval` | Library | Approvals |
+| `/campaigns` | Tools | Campaigns |
+| `/keywords` | Tools | Keywords |
+| `/analytics` | Tools | Analytics |
+| `/research/calendar` | Calendar | Editorial Calendar |
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+**Integration**: Add `<PageBreadcrumb>` to each of these 8 pages, placed at the top of the main content area (above the hero header), inside the existing `<main>` or page wrapper.
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+**Files to edit** (add breadcrumb import + render):
+- `src/components/ai-chat/EnhancedChatInterface.tsx`
+- `src/pages/Repository.tsx`
+- `src/pages/Solutions.tsx`
+- `src/pages/ContentApproval.tsx`
+- `src/pages/Campaigns.tsx`
+- `src/pages/keywords/KeywordsPage.tsx`
+- `src/pages/Analytics.tsx`
+- `src/pages/research/Calendar.tsx`
 
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+### 3. Card Hover Effects (Task 9)
+Add consistent `hover:scale-[1.02] hover:shadow-lg transition-all duration-200` to card components that lack hover effects. Most cards already have this via `glass-card-hover` or framer-motion `whileHover`. Quick scan and add where missing.
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+**Total**: 1 new file, ~10 files edited with small changes each.
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
-
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
-
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
