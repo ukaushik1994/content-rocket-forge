@@ -45,7 +45,7 @@ const ContentStrategy = () => {
         
         {/* Strategy Goals Modal (New Simplified) - Inside Provider */}
         <StrategyGoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} />
-      </div>
+      </PageContainer>
     </ContentStrategyProvider>;
 };
 
