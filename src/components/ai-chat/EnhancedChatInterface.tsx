@@ -489,23 +489,23 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
 
-                    {/* Greeting */}
+                    {/* Personalized Greeting */}
                     <motion.div
                       className="text-center space-y-2"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3, duration: 0.4 }}
                     >
-                      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+                      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
                         {(() => {
                           const hour = new Date().getHours();
-                          if (hour < 12) return 'Good morning.';
-                          if (hour < 17) return 'Good afternoon.';
-                          return 'Good evening.';
+                          const firstName = user?.user_metadata?.first_name || user?.user_metadata?.name?.split(' ')[0] || '';
+                          const period = hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 17 ? 'afternoon' : hour >= 17 && hour < 21 ? 'evening' : 'night';
+                          return firstName ? `Good ${period}, ${firstName}.` : `Good ${period}.`;
                         })()}
                       </h2>
                       <p className="text-sm text-muted-foreground font-normal">
-                        What would you like to do?
+                        What would you like to work on today?
                       </p>
                     </motion.div>
 
