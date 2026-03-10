@@ -86,7 +86,11 @@ const Repository = () => {
           transition={{ duration: 0.8 }}
           className="max-w-7xl mx-auto space-y-8"
         >
-          <RepositoryHero />
+          <RepositoryHero stats={{
+            total: contentItems.length,
+            published: contentItems.filter(i => i.status === 'published').length,
+            drafts: contentItems.filter(i => i.status === 'draft').length,
+          }} />
           <RepositoryTabs onOpenDetailView={handleOpenDetailView} />
         </motion.div>
       </div>
