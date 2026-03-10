@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SocialInbox } from './SocialInbox';
 import { SocialAnalytics } from './SocialAnalytics';
