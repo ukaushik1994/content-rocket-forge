@@ -474,7 +474,7 @@ const CampaignsInner = () => {
   return (
     <PageContainer className="relative overflow-hidden">
       <Helmet>
-        <title>Campaigns — AI-Powered Multi-Channel Campaign Builder</title>
+        <title>Campaigns | Creaiter</title>
         <meta 
           name="description" 
           content="Transform one idea into a complete multi-channel campaign strategy with AI-powered content generation across blogs, social media, landing pages, and more." 
@@ -497,6 +497,11 @@ const CampaignsInner = () => {
         onCreateClick={handleStartNewCampaign}
         onStartConversation={handleStartConversation}
         onExpressMode={handleExpressMode}
+        stats={{
+          activeCampaigns: campaigns.filter(c => c.status === 'active' || c.status === 'planned').length,
+          contentPiecesCreated: 0,
+          completedCampaigns: campaigns.filter(c => c.status === 'completed').length,
+        }}
       />
 
           {/* AI Provider Pre-check Banner */}

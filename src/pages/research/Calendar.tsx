@@ -36,7 +36,7 @@ const CalendarPage: React.FC = () => {
     <ContentStrategyProvider>
       <div className="min-h-screen bg-background relative overflow-hidden">
         <Helmet>
-          <title>Editorial Calendar — Plan and Schedule Content</title>
+          <title>Calendar | Creaiter</title>
           <meta name="description" content="Plan, schedule, and track your content production with a beautiful editorial calendar." />
           <link rel="canonical" href={canonicalUrl} />
         </Helmet>
