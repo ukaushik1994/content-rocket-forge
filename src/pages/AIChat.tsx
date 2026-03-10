@@ -44,15 +44,14 @@ const AIChat = () => {
   return (
     <motion.div 
       className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden"
->
-      <Helmet>
-        <title>AI Chat | Creaiter</title>
-        <meta name="description" content="AI-powered content creation assistant — chat, create, and manage your content in one place." />
-      </Helmet>
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
+      <Helmet>
+        <title>AI Chat | Creaiter</title>
+        <meta name="description" content="AI-powered content creation assistant — chat, create, and manage your content in one place." />
+      </Helmet>
       {/* Refined Background Effects - Calmer, more premium */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
