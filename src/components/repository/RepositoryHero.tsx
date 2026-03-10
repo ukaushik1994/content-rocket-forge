@@ -9,7 +9,7 @@ interface RepositoryHeroProps {
   stats?: { total: number; published: number; drafts: number };
 }
 
-export const RepositoryHero = React.memo(({ onCreate }: RepositoryHeroProps) => {
+export const RepositoryHero = React.memo(({ onCreate, stats }: RepositoryHeroProps) => {
   const navigate = useNavigate();
 
   return (
