@@ -145,6 +145,10 @@ const CORE_TOOL_DEFINITIONS = [
       parameters: {
         type: "object",
         properties: {
+          name: {
+            type: "string",
+            description: "Search by offering/product name (case-insensitive partial match)"
+          },
           limit: { 
             type: "number", 
             default: 5,
