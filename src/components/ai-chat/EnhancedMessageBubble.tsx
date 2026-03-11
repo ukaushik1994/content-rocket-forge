@@ -189,7 +189,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {!message.confirmationData && message.content !== '__CAPABILITIES_CARD__' && (
             <Card className={`relative ${
                isUser 
-                 ? 'bg-muted/30 text-foreground border border-border/20 ml-4' 
+                 ? 'bg-primary/15 text-foreground border border-primary/25 ml-4' 
                  : 'bg-transparent border border-border/20 mr-4'
              }`}>
               <div className="px-6 py-4">
