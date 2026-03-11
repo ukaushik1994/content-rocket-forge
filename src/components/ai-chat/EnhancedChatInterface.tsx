@@ -363,9 +363,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     },
     exit: {
       opacity: 0,
-      y: -20,
+      y: -40,
+      scale: 0.95,
+      filter: "blur(4px)",
       transition: {
-        duration: 0.2
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1]
       }
     }
   };
