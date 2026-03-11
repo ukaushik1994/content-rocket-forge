@@ -446,7 +446,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       {/* Avatar (only for user messages) */}
       {isUser && (
         <motion.div 
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent border border-border/20 flex-shrink-0"
+           className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border border-primary/25 flex-shrink-0"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.2 }}
