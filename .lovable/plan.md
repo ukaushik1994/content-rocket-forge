@@ -1,85 +1,97 @@
 
 
-# Plan: Complete AI Chat Platform Awareness
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Problem
-The `PLATFORM_KNOWLEDGE_MODULE` (inlined in `enhanced-ai-chat/index.ts` at lines 468-511) is outdated and incomplete. It references wrong routes (e.g., `/content` instead of `/repository`, `/strategy` instead of `/research/content-strategy`), lists non-existent standalone pages (`/competitors`, `/brand`), and entirely omits major modules like Content Approval, Editorial Calendar, Research Intelligence sub-pages, Glossary Builder, and the full Engage sub-module breakdown.
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-The `shared/prompt-modules.ts` version (lines 583-695) is more detailed but equally outdated on routes and missing modules.
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## What Changes
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-### Single file edit: `supabase/functions/enhanced-ai-chat/index.ts`
-Replace the inlined `PLATFORM_KNOWLEDGE_MODULE` (lines 468-511) with a comprehensive, route-accurate module covering every page and feature.
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### Updated Module Structure
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-```text
-PLATFORM_KNOWLEDGE_MODULE (rewritten)
-├── Platform Identity (Creaiter = AI content marketing platform)
-├── Navigation Structure (sidebar sections)
-│   ├── CHATS: AI Chat (/ai-chat) — Control Centre
-│   ├── LIBRARY: Repository (/repository), Offerings (/offerings), Approvals (/content-approval)
-│   ├── TOOLS: Campaigns (/campaigns), Keywords (/keywords), Analytics (/analytics)
-│   ├── RESEARCH: Content Strategy, SERP Intelligence, Topic Clusters, Content Gaps, Calendar
-│   └── ENGAGE: Email, Contacts, Segments, Journeys, Automations, Social, Activity
-├── Module Details (each with purpose, route, key features, data tables)
-│   1.  AI Chat (/ai-chat) — Control Centre, greeting, quick actions, + menu tools
-│   2.  Content Wizard (chat sidebar panel) — blog 5-step vs quick 2-step
-│   3.  Research Intelligence (chat sidebar panel) — topic clusters, gaps, strategies
-│   4.  Analyst (chat sidebar panel) — data visualization companion
-│   5.  Repository (/repository) — format-organized tabs, repurposed content
-│   6.  Offerings (/offerings) — product/service profiles, auto-fill briefs
-│   7.  Content Approval (/content-approval) — review workflows
-│   8.  Glossary Builder (/glossary-builder) — terminology management
-│   9.  Campaigns (/campaigns) — strategy-to-execution pipeline
-│   10. Keywords (/keywords) — keyword library, SERP data
-│   11. Analytics (/analytics) — performance dashboards
-│   12. Content Strategy (/research/content-strategy) — proposals, pipeline
-│   13. SERP Intelligence (/research/serp-intelligence) — live SERP analysis
-│   14. Topic Clusters (/research/topic-clusters) — pillar/cluster mapping
-│   15. Content Gaps (/research/content-gaps) — gap identification
-│   16. Editorial Calendar (/research/calendar) — scheduling, status tracking
-│   17. Engage Email (/engage/email) — inbox, campaigns, drafts, templates
-│   18. Engage Contacts (/engage/contacts) — CRM, tags, bulk actions
-│   19. Engage Segments (/engage/segments) — audience segmentation
-│   20. Engage Journeys (/engage/journeys) — multi-step workflows
-│   21. Engage Automations (/engage/automations) — trigger-based rules
-│   22. Engage Social (/engage/social) — multi-platform publishing, inbox
-│   23. Engage Activity (/engage/activity) — unified event log
-│   24. Settings (modal) — AI provider config, brand guidelines, integrations
-├── Key Data Pipelines (same 4 pipelines, with corrected routes)
-├── AI Chat Tools Summary (what you can DO, not just read)
-│   ├── Read tools: 18 data-fetching tools
-│   ├── Write tools: content CRUD, keyword CRUD, offering CRUD
-│   ├── Engage tools: contact/segment/journey/automation/email CRUD
-│   └── Cross-module: promote content→campaign, content→email, repurpose→social
-└── Smart Behaviors (contextual guidance)
-```
-
-### Also update: `shared/prompt-modules.ts`
-Sync the same rewritten module there so both copies match.
-
-### Token Budget Consideration
-The current inlined module is ~500 tokens. The new version will be ~1,200 tokens — still well within the normal budget ceiling (25k). The graduated fallback system already strips it in high-token scenarios, so no risk.
-
-### Query Analyzer Enhancement
-**File**: `supabase/functions/enhanced-ai-chat/query-analyzer.ts`
-
-Add missing intent categories so the AI properly routes queries about:
-- Approvals (`/content-approval`) — add `needsApprovals` pattern
-- Calendar (`/research/calendar`) — add `needsCalendar` pattern  
-- Research sub-pages — add `needsResearch` pattern
-- Glossary — add `needsGlossary` pattern
-- Social — already covered under `needsEngage` but add specific social patterns
-
-These new categories ensure the AI fetches relevant context when users ask about these modules.
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-**Files modified**: 2
-- `supabase/functions/enhanced-ai-chat/index.ts` (replace PLATFORM_KNOWLEDGE_MODULE, ~lines 468-511)
-- `supabase/functions/enhanced-ai-chat/query-analyzer.ts` (add missing intent patterns)
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-**Files NOT modified**: `shared/prompt-modules.ts` (not imported by the edge function — it uses the inlined copy)
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
+
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
+
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+
+---
+
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
+
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`

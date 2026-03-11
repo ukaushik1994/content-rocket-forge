@@ -69,6 +69,13 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   // Engage module categories
   const needsEngage = /contact|subscriber|audience|segment|journey|automation|email campaign|newsletter|crm|engage|drip|funnel|unsubscrib/i.test(q);
   
+  // Additional module categories
+  const needsApprovals = /approv|review|pending review|reject|needs changes|submission/i.test(q);
+  const needsCalendar = /calendar|schedule|editorial|planned|upcoming/i.test(q);
+  const needsResearch = /research|topic cluster|content gap|serp intelligence|pillar|topical authority/i.test(q);
+  const needsGlossary = /glossary|terminolog|definition|term|lexicon/i.test(q);
+  const needsSocial = /social|instagram|twitter|linkedin|facebook|tiktok|post|hashtag|mention|dm|comment/i.test(q);
+  
   // Write/Action intent detection
   const needsWriteAction = /create|add|make|build|write|draft|generate|new/i.test(q);
   const needsUpdateAction = /update|edit|change|modify|rename/i.test(q);
@@ -112,7 +119,11 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   if (needsCompetitors) categories.push('competitors');
   if (needsAnalytics) categories.push('analytics');
   if (needsPerformance || needsInternalTrends) categories.push('performance');
-  if (needsEngage) categories.push('engage');
+  if (needsEngage || needsSocial) categories.push('engage');
+  if (needsApprovals) categories.push('approvals');
+  if (needsCalendar) categories.push('calendar');
+  if (needsResearch) categories.push('research');
+  if (needsGlossary) categories.push('glossary');
   if (hasActionIntent) categories.push('action');
   
   // If no specific category detected, include core data at summary level
