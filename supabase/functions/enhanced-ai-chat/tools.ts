@@ -458,21 +458,37 @@ const CAMPAIGN_TOOL_NAMES = [
   'retry_failed_content'
 ];
 
+// New read tool names for routing
+const NEW_READ_TOOL_NAMES = [
+  'get_calendar_items', 'get_glossary_terms', 'get_pending_approvals',
+  'get_social_posts', 'get_email_templates', 'get_topic_clusters',
+  'get_content_gaps', 'get_strategy_recommendations', 'get_repurposed_content',
+  'get_email_threads', 'get_activity_log'
+];
+
 // Write tool names that should trigger cache invalidation
 const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   // Content actions invalidate content reads
   create_content_item: ['get_content_items', 'get_seo_scores'],
   update_content_item: ['get_content_items', 'get_seo_scores'],
   delete_content_item: ['get_content_items', 'get_seo_scores'],
-  submit_for_review: ['get_content_items'],
-  approve_content: ['get_content_items'],
-  reject_content: ['get_content_items'],
+  submit_for_review: ['get_content_items', 'get_pending_approvals'],
+  approve_content: ['get_content_items', 'get_pending_approvals'],
+  reject_content: ['get_content_items', 'get_pending_approvals'],
   generate_full_content: ['get_content_items', 'get_seo_scores'],
+  // Calendar actions
+  create_calendar_item: ['get_calendar_items'],
+  update_calendar_item: ['get_calendar_items'],
+  delete_calendar_item: ['get_calendar_items'],
+  // Glossary actions
+  create_glossary_term: ['get_glossary_terms'],
+  // Email template actions
+  create_email_template: ['get_email_templates'],
   // Keyword actions invalidate keyword reads
   add_keywords: ['get_keywords'],
   remove_keywords: ['get_keywords'],
   trigger_serp_analysis: ['get_serp_analysis'],
-  create_topic_cluster: ['get_keywords'],
+  create_topic_cluster: ['get_keywords', 'get_topic_clusters'],
   // Offerings actions invalidate solution/competitor reads
   create_solution: ['get_solutions'],
   update_solution: ['get_solutions'],
@@ -496,14 +512,14 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   promote_content_to_campaign: ['get_campaign_intelligence', 'get_content_items'],
   content_to_email: ['get_engage_email_campaigns'],
   campaign_content_to_engage: ['get_engage_email_campaigns'],
-  repurpose_for_social: [],
+  repurpose_for_social: ['get_repurposed_content'],
   // Publishing & social
   publish_to_website: ['get_content_items'],
-  create_social_post: [],
-  schedule_social_from_repurpose: [],
+  create_social_post: ['get_social_posts'],
+  schedule_social_from_repurpose: ['get_social_posts'],
   enroll_contacts_in_journey: ['get_engage_journeys'],
   send_quick_email: [],
-  trigger_content_gap_analysis: ['get_keywords', 'get_content_items'],
+  trigger_content_gap_analysis: ['get_keywords', 'get_content_items', 'get_content_gaps'],
   start_content_builder: [],
   launch_content_wizard: [],
   // Delete tools
@@ -512,7 +528,7 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   delete_email_campaign: ['get_engage_email_campaigns'],
   delete_journey: ['get_engage_journeys'],
   delete_automation: ['get_engage_automations'],
-  delete_social_post: [],
+  delete_social_post: ['get_social_posts'],
 };
 
 /**
