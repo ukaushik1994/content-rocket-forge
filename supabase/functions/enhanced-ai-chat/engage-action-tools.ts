@@ -286,7 +286,7 @@ export const ENGAGE_ACTION_TOOL_DEFINITIONS = [
       description: "Delete a social media post. Use when user says 'delete social post', 'remove social post'.",
       parameters: { type: "object", properties: { post_id: { type: "string", description: "UUID of the social post to delete" } }, required: ["post_id"] }
     }
-  }
+  },
   // === EMAIL TEMPLATE WRITE TOOL ===
   {
     type: "function",
