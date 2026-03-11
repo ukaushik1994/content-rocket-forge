@@ -270,6 +270,165 @@ const CORE_TOOL_DEFINITIONS = [
       }
     }
   }
+  // === NEW READ TOOLS: Calendar, Glossary, Approvals, Social, Templates, Clusters, Gaps, Recommendations, Repurposed, Email Threads, Activity ===
+  {
+    type: "function",
+    function: {
+      name: "get_calendar_items",
+      description: "Fetch editorial calendar items with optional date range and status filtering. Use when user asks about schedule, calendar, upcoming content, deadlines, or planned content.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["planned", "in_progress", "completed", "cancelled"], description: "Filter by status" },
+          from_date: { type: "string", description: "Start date (ISO format) for date range filter" },
+          to_date: { type: "string", description: "End date (ISO format) for date range filter" },
+          limit: { type: "number", default: 20, description: "Number of items to return (default 20, max 50)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_glossary_terms",
+      description: "Fetch glossary terms with definitions. Use when user asks about glossary, terms, definitions, terminology, or brand language.",
+      parameters: {
+        type: "object",
+        properties: {
+          search: { type: "string", description: "Search term name or definition" },
+          glossary_id: { type: "string", description: "Filter by specific glossary" },
+          limit: { type: "number", default: 20, description: "Number of terms to return (default 20, max 100)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_pending_approvals",
+      description: "Fetch content items pending approval review. Use when user asks about pending reviews, approval queue, what needs review, or content waiting for approval.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["pending_review", "approved", "rejected", "needs_changes"], description: "Filter by approval status (default: pending_review)" },
+          limit: { type: "number", default: 20, description: "Number of items to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_social_posts",
+      description: "Fetch social media posts with status and scheduling info. Use when user asks about social posts, scheduled posts, social media calendar, or social content.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["draft", "scheduled", "published", "failed"], description: "Filter by post status" },
+          limit: { type: "number", default: 20, description: "Number of posts to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_email_templates",
+      description: "Fetch email templates. Use when user asks about templates, email templates, newsletter templates, or reusable emails.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: { type: "string", description: "Filter by template category (e.g., newsletter, transactional, marketing)" },
+          limit: { type: "number", default: 20, description: "Number of templates to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_topic_clusters",
+      description: "Fetch topic clusters with performance data. Use when user asks about topic clusters, pillar content, topical authority, or content clusters.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", default: 20, description: "Number of clusters to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_content_gaps",
+      description: "Fetch identified content gaps and opportunities. Use when user asks about content gaps, missing topics, content opportunities, or what competitors cover.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", description: "Filter by gap status (e.g., identified, in_progress, resolved)" },
+          limit: { type: "number", default: 20, description: "Number of gaps to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_strategy_recommendations",
+      description: "Fetch strategy recommendations. Use when user asks about recommendations, strategy suggestions, what should I do next, or strategic advice.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", description: "Filter by status (e.g., pending, accepted, completed)" },
+          priority: { type: "string", description: "Filter by priority (e.g., high, medium, low)" },
+          limit: { type: "number", default: 20, description: "Number of recommendations to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_repurposed_content",
+      description: "Fetch repurposed content versions. Use when user asks about repurposed content, content variations, format versions, or content in different formats.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "Filter by source content ID" },
+          format_code: { type: "string", description: "Filter by format (e.g., social-twitter, email, ad)" },
+          limit: { type: "number", default: 20, description: "Number of items to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_email_threads",
+      description: "Fetch email inbox threads. Use when user asks about email inbox, recent emails, email threads, or messages.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["open", "closed", "archived"], description: "Filter by thread status" },
+          limit: { type: "number", default: 20, description: "Number of threads to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_activity_log",
+      description: "Fetch recent workspace activity events. Use when user asks about recent activity, what happened, audit trail, event log, or workspace history.",
+      parameters: {
+        type: "object",
+        properties: {
+          channel: { type: "string", description: "Filter by channel (e.g., email, social, automation)" },
+          limit: { type: "number", default: 30, description: "Number of events to return" }
+        }
+      }
+    }
+  }
 ];
 
 // Campaign intelligence tools (imported from dedicated module)
