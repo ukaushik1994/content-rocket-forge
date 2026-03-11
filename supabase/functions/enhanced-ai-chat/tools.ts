@@ -692,10 +692,14 @@ export async function executeToolCall(
               .limit(Math.min(toolArgs.limit || 10, 50));
             
           case 'get_solutions':
-            return await supabase
+            let solQuery = supabase
               .from('solutions')
               .select('id, name, description, short_description, category, features, benefits, pain_points, target_audience, use_cases, unique_value_propositions, positioning_statement, key_differentiators, pricing_model, technical_specs, case_studies, external_url, created_at')
-              .eq('user_id', userId)
+              .eq('user_id', userId);
+            
+            if (toolArgs.name) solQuery = solQuery.ilike('name', `%${toolArgs.name}%`);
+            
+            return await solQuery
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 5, 20));
             
