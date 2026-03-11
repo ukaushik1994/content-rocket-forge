@@ -6,6 +6,7 @@ import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
 import { DynamicGreeting } from './DynamicGreeting';
 import { VisualizationSidebar } from './VisualizationSidebar';
+import { ThinkingTextRotator } from './ThinkingTextRotator';
 import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { SolutionContextCard } from './SolutionContextCard';
