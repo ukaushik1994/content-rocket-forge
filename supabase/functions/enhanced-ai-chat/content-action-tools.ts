@@ -157,13 +157,89 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
         required: ["keyword"]
       }
     }
+  },
+  // === CALENDAR CRUD TOOLS ===
+  {
+    type: "function",
+    function: {
+      name: "create_calendar_item",
+      description: "Schedule content on the editorial calendar. Use when user says 'schedule content', 'add to calendar', 'plan for next week', or 'put on the calendar'.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Calendar item title" },
+          scheduled_date: { type: "string", description: "Scheduled date (ISO format, e.g., 2026-03-15)" },
+          content_type: { type: "string", default: "blog", description: "Content type" },
+          status: { type: "string", enum: ["planned", "in_progress", "completed"], default: "planned", description: "Status" },
+          priority: { type: "string", enum: ["low", "medium", "high"], default: "medium", description: "Priority level" },
+          notes: { type: "string", description: "Additional notes" },
+          proposal_id: { type: "string", description: "Link to a strategy proposal" },
+          content_id: { type: "string", description: "Link to existing content item" }
+        },
+        required: ["title", "scheduled_date"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_calendar_item",
+      description: "Update a calendar item (reschedule, change status, etc.). Use when user says 'reschedule', 'move to next week', 'mark as done', or 'update calendar item'.",
+      parameters: {
+        type: "object",
+        properties: {
+          calendar_id: { type: "string", description: "UUID of the calendar item" },
+          title: { type: "string" },
+          scheduled_date: { type: "string" },
+          status: { type: "string", enum: ["planned", "in_progress", "completed", "cancelled"] },
+          priority: { type: "string", enum: ["low", "medium", "high"] },
+          notes: { type: "string" }
+        },
+        required: ["calendar_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_calendar_item",
+      description: "Remove a calendar item. Use when user says 'remove from calendar', 'delete calendar item', or 'cancel scheduled content'.",
+      parameters: {
+        type: "object",
+        properties: {
+          calendar_id: { type: "string", description: "UUID of the calendar item to delete" }
+        },
+        required: ["calendar_id"]
+      }
+    }
+  },
+  // === GLOSSARY WRITE TOOL ===
+  {
+    type: "function",
+    function: {
+      name: "create_glossary_term",
+      description: "Add a new term to the glossary. Use when user says 'add glossary term', 'define term', 'add definition', or 'new terminology entry'.",
+      parameters: {
+        type: "object",
+        properties: {
+          term: { type: "string", description: "The term to define" },
+          short_definition: { type: "string", description: "Short definition (1-2 sentences)" },
+          expanded_explanation: { type: "string", description: "Expanded explanation with more detail" },
+          glossary_id: { type: "string", description: "Glossary to add the term to (if not provided, uses the first active glossary)" },
+          related_terms: { type: "array", items: { type: "string" }, description: "Related terms" }
+        },
+        required: ["term", "short_definition"]
+      }
+    }
   }
 ];
 
 export const CONTENT_ACTION_TOOL_NAMES = [
   'create_content_item', 'update_content_item', 'delete_content_item',
   'submit_for_review', 'approve_content', 'reject_content',
-  'generate_full_content', 'start_content_builder', 'launch_content_wizard'
+  'generate_full_content', 'start_content_builder', 'launch_content_wizard',
+  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item',
+  'create_glossary_term'
 ];
 
 export async function executeContentActionTool(
@@ -398,6 +474,95 @@ export async function executeContentActionTool(
             content_type: toolArgs.content_type || 'blog'
           }
         };
+      }
+
+      // === CALENDAR CRUD ===
+      case 'create_calendar_item': {
+        const { data, error } = await supabase.from('content_calendar').insert({
+          user_id: userId,
+          title: toolArgs.title,
+          scheduled_date: toolArgs.scheduled_date,
+          content_type: toolArgs.content_type || 'blog',
+          status: toolArgs.status || 'planned',
+          priority: toolArgs.priority || 'medium',
+          notes: toolArgs.notes || null,
+          proposal_id: toolArgs.proposal_id || null,
+          content_id: toolArgs.content_id || null
+        }).select('id, title, scheduled_date, status, priority, content_type, created_at').single();
+
+        if (error) throw error;
+        return { success: true, message: `Scheduled "${data.title}" for ${data.scheduled_date}`, item: data };
+      }
+
+      case 'update_calendar_item': {
+        const updates: any = {};
+        if (toolArgs.title) updates.title = toolArgs.title;
+        if (toolArgs.scheduled_date) updates.scheduled_date = toolArgs.scheduled_date;
+        if (toolArgs.status) updates.status = toolArgs.status;
+        if (toolArgs.priority) updates.priority = toolArgs.priority;
+        if (toolArgs.notes !== undefined) updates.notes = toolArgs.notes;
+        updates.updated_at = new Date().toISOString();
+
+        const { data, error } = await supabase.from('content_calendar')
+          .update(updates)
+          .eq('id', toolArgs.calendar_id)
+          .eq('user_id', userId)
+          .select('id, title, scheduled_date, status, priority').single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Calendar item not found or access denied' };
+        return { success: true, message: `Updated calendar item "${data.title}"`, item: data };
+      }
+
+      case 'delete_calendar_item': {
+        const { data, error } = await supabase.from('content_calendar')
+          .delete()
+          .eq('id', toolArgs.calendar_id)
+          .eq('user_id', userId)
+          .select('id, title').single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Calendar item not found or access denied' };
+        return { success: true, message: `Removed "${data.title}" from calendar` };
+      }
+
+      // === GLOSSARY WRITE ===
+      case 'create_glossary_term': {
+        let glossaryId = toolArgs.glossary_id;
+
+        // If no glossary_id, find the first active glossary or create one
+        if (!glossaryId) {
+          const { data: glossaries } = await supabase.from('glossaries')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('is_active', true)
+            .limit(1).single();
+
+          if (glossaries) {
+            glossaryId = glossaries.id;
+          } else {
+            // Create default glossary
+            const { data: newGlossary, error: gErr } = await supabase.from('glossaries').insert({
+              user_id: userId,
+              name: 'My Glossary',
+              is_active: true
+            }).select('id').single();
+            if (gErr) throw gErr;
+            glossaryId = newGlossary.id;
+          }
+        }
+
+        const { data, error } = await supabase.from('glossary_terms').insert({
+          user_id: userId,
+          glossary_id: glossaryId,
+          term: toolArgs.term,
+          short_definition: toolArgs.short_definition,
+          expanded_explanation: toolArgs.expanded_explanation || null,
+          related_terms: toolArgs.related_terms ? JSON.stringify(toolArgs.related_terms) : null
+        }).select('id, term, short_definition, created_at').single();
+
+        if (error) throw error;
+        return { success: true, message: `Added glossary term "${data.term}"`, item: data };
       }
 
       default:

@@ -124,7 +124,25 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   if (needsCalendar) categories.push('calendar');
   if (needsResearch) categories.push('research');
   if (needsGlossary) categories.push('glossary');
+  if (needsSocial) categories.push('social');
   if (hasActionIntent) categories.push('action');
+  
+  // New category detections for expanded read tools
+  const needsTemplates = /template|email template|newsletter template|reusable email/i.test(q);
+  const needsTopicClusters = /topic cluster|pillar|topical authority|cluster performance/i.test(q);
+  const needsContentGaps = /content gap|missing topic|gap analysis|what.*(miss|lack|don't cover)/i.test(q);
+  const needsRecommendations = /recommend|suggestion|what should i|next step|strategic advice|action item/i.test(q);
+  const needsRepurposed = /repurpos|reformat|content variation|different format|converted content/i.test(q);
+  const needsEmailThreads = /inbox|email thread|recent email|email message|did.*reply/i.test(q);
+  const needsActivityLog = /activity|what happened|audit|event log|workspace history|recent event/i.test(q);
+  
+  if (needsTemplates) categories.push('templates');
+  if (needsTopicClusters) categories.push('topic_clusters');
+  if (needsContentGaps) categories.push('content_gaps');
+  if (needsRecommendations) categories.push('recommendations');
+  if (needsRepurposed) categories.push('repurposed');
+  if (needsEmailThreads) categories.push('email_threads');
+  if (needsActivityLog) categories.push('activity_log');
   
   // If no specific category detected, include core data at summary level
   if (categories.length === 0) {

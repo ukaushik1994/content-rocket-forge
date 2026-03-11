@@ -269,6 +269,165 @@ const CORE_TOOL_DEFINITIONS = [
         }
       }
     }
+  },
+  // === NEW READ TOOLS: Calendar, Glossary, Approvals, Social, Templates, Clusters, Gaps, Recommendations, Repurposed, Email Threads, Activity ===
+  {
+    type: "function",
+    function: {
+      name: "get_calendar_items",
+      description: "Fetch editorial calendar items with optional date range and status filtering. Use when user asks about schedule, calendar, upcoming content, deadlines, or planned content.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["planned", "in_progress", "completed", "cancelled"], description: "Filter by status" },
+          from_date: { type: "string", description: "Start date (ISO format) for date range filter" },
+          to_date: { type: "string", description: "End date (ISO format) for date range filter" },
+          limit: { type: "number", default: 20, description: "Number of items to return (default 20, max 50)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_glossary_terms",
+      description: "Fetch glossary terms with definitions. Use when user asks about glossary, terms, definitions, terminology, or brand language.",
+      parameters: {
+        type: "object",
+        properties: {
+          search: { type: "string", description: "Search term name or definition" },
+          glossary_id: { type: "string", description: "Filter by specific glossary" },
+          limit: { type: "number", default: 20, description: "Number of terms to return (default 20, max 100)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_pending_approvals",
+      description: "Fetch content items pending approval review. Use when user asks about pending reviews, approval queue, what needs review, or content waiting for approval.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["pending_review", "approved", "rejected", "needs_changes"], description: "Filter by approval status (default: pending_review)" },
+          limit: { type: "number", default: 20, description: "Number of items to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_social_posts",
+      description: "Fetch social media posts with status and scheduling info. Use when user asks about social posts, scheduled posts, social media calendar, or social content.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["draft", "scheduled", "published", "failed"], description: "Filter by post status" },
+          limit: { type: "number", default: 20, description: "Number of posts to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_email_templates",
+      description: "Fetch email templates. Use when user asks about templates, email templates, newsletter templates, or reusable emails.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: { type: "string", description: "Filter by template category (e.g., newsletter, transactional, marketing)" },
+          limit: { type: "number", default: 20, description: "Number of templates to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_topic_clusters",
+      description: "Fetch topic clusters with performance data. Use when user asks about topic clusters, pillar content, topical authority, or content clusters.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", default: 20, description: "Number of clusters to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_content_gaps",
+      description: "Fetch identified content gaps and opportunities. Use when user asks about content gaps, missing topics, content opportunities, or what competitors cover.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", description: "Filter by gap status (e.g., identified, in_progress, resolved)" },
+          limit: { type: "number", default: 20, description: "Number of gaps to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_strategy_recommendations",
+      description: "Fetch strategy recommendations. Use when user asks about recommendations, strategy suggestions, what should I do next, or strategic advice.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", description: "Filter by status (e.g., pending, accepted, completed)" },
+          priority: { type: "string", description: "Filter by priority (e.g., high, medium, low)" },
+          limit: { type: "number", default: 20, description: "Number of recommendations to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_repurposed_content",
+      description: "Fetch repurposed content versions. Use when user asks about repurposed content, content variations, format versions, or content in different formats.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "Filter by source content ID" },
+          format_code: { type: "string", description: "Filter by format (e.g., social-twitter, email, ad)" },
+          limit: { type: "number", default: 20, description: "Number of items to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_email_threads",
+      description: "Fetch email inbox threads. Use when user asks about email inbox, recent emails, email threads, or messages.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["open", "closed", "archived"], description: "Filter by thread status" },
+          limit: { type: "number", default: 20, description: "Number of threads to return" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_activity_log",
+      description: "Fetch recent workspace activity events. Use when user asks about recent activity, what happened, audit trail, event log, or workspace history.",
+      parameters: {
+        type: "object",
+        properties: {
+          channel: { type: "string", description: "Filter by channel (e.g., email, social, automation)" },
+          limit: { type: "number", default: 30, description: "Number of events to return" }
+        }
+      }
+    }
   }
 ];
 
@@ -299,21 +458,37 @@ const CAMPAIGN_TOOL_NAMES = [
   'retry_failed_content'
 ];
 
+// New read tool names for routing
+const NEW_READ_TOOL_NAMES = [
+  'get_calendar_items', 'get_glossary_terms', 'get_pending_approvals',
+  'get_social_posts', 'get_email_templates', 'get_topic_clusters',
+  'get_content_gaps', 'get_strategy_recommendations', 'get_repurposed_content',
+  'get_email_threads', 'get_activity_log'
+];
+
 // Write tool names that should trigger cache invalidation
 const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   // Content actions invalidate content reads
   create_content_item: ['get_content_items', 'get_seo_scores'],
   update_content_item: ['get_content_items', 'get_seo_scores'],
   delete_content_item: ['get_content_items', 'get_seo_scores'],
-  submit_for_review: ['get_content_items'],
-  approve_content: ['get_content_items'],
-  reject_content: ['get_content_items'],
+  submit_for_review: ['get_content_items', 'get_pending_approvals'],
+  approve_content: ['get_content_items', 'get_pending_approvals'],
+  reject_content: ['get_content_items', 'get_pending_approvals'],
   generate_full_content: ['get_content_items', 'get_seo_scores'],
+  // Calendar actions
+  create_calendar_item: ['get_calendar_items'],
+  update_calendar_item: ['get_calendar_items'],
+  delete_calendar_item: ['get_calendar_items'],
+  // Glossary actions
+  create_glossary_term: ['get_glossary_terms'],
+  // Email template actions
+  create_email_template: ['get_email_templates'],
   // Keyword actions invalidate keyword reads
   add_keywords: ['get_keywords'],
   remove_keywords: ['get_keywords'],
   trigger_serp_analysis: ['get_serp_analysis'],
-  create_topic_cluster: ['get_keywords'],
+  create_topic_cluster: ['get_keywords', 'get_topic_clusters'],
   // Offerings actions invalidate solution/competitor reads
   create_solution: ['get_solutions'],
   update_solution: ['get_solutions'],
@@ -337,14 +512,14 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   promote_content_to_campaign: ['get_campaign_intelligence', 'get_content_items'],
   content_to_email: ['get_engage_email_campaigns'],
   campaign_content_to_engage: ['get_engage_email_campaigns'],
-  repurpose_for_social: [],
+  repurpose_for_social: ['get_repurposed_content'],
   // Publishing & social
   publish_to_website: ['get_content_items'],
-  create_social_post: [],
-  schedule_social_from_repurpose: [],
+  create_social_post: ['get_social_posts'],
+  schedule_social_from_repurpose: ['get_social_posts'],
   enroll_contacts_in_journey: ['get_engage_journeys'],
   send_quick_email: [],
-  trigger_content_gap_analysis: ['get_keywords', 'get_content_items'],
+  trigger_content_gap_analysis: ['get_keywords', 'get_content_items', 'get_content_gaps'],
   start_content_builder: [],
   launch_content_wizard: [],
   // Delete tools
@@ -353,7 +528,7 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   delete_email_campaign: ['get_engage_email_campaigns'],
   delete_journey: ['get_engage_journeys'],
   delete_automation: ['get_engage_automations'],
-  delete_social_post: [],
+  delete_social_post: ['get_social_posts'],
 };
 
 /**
@@ -596,11 +771,124 @@ export async function executeToolCall(
               .limit(Math.min(toolArgs.limit || 10, 50));
             
           case 'generate_campaign_strategies':
-            // This is a formatting tool, not a data-fetching tool
-            // Just return the structured data from the AI
             console.log(`[TOOL] ${toolName} | FORMATTING TOOL | Returning AI-structured data`);
             return { data: toolArgs, error: null };
-            
+
+          // === NEW READ TOOLS ===
+          case 'get_calendar_items': {
+            let calQuery = supabase
+              .from('content_calendar')
+              .select('id, title, scheduled_date, status, content_type, priority, assigned_to, proposal_id, content_id, notes, tags, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.status) calQuery = calQuery.eq('status', toolArgs.status);
+            if (toolArgs.from_date) calQuery = calQuery.gte('scheduled_date', toolArgs.from_date);
+            if (toolArgs.to_date) calQuery = calQuery.lte('scheduled_date', toolArgs.to_date);
+            return await calQuery.order('scheduled_date', { ascending: true }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_glossary_terms': {
+            let gtQuery = supabase
+              .from('glossary_terms')
+              .select('id, term, short_definition, expanded_explanation, search_volume, keyword_difficulty, related_terms, paa_questions, glossary_id, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.glossary_id) gtQuery = gtQuery.eq('glossary_id', toolArgs.glossary_id);
+            if (toolArgs.search) gtQuery = gtQuery.ilike('term', `%${toolArgs.search}%`);
+            return await gtQuery.order('term', { ascending: true }).limit(Math.min(toolArgs.limit || 20, 100));
+          }
+
+          case 'get_pending_approvals': {
+            const approvalStatus = toolArgs.status || 'pending_review';
+            let apQuery = supabase
+              .from('content_items')
+              .select('id, title, content_type, status, approval_status, submitted_for_review_at, created_at, updated_at')
+              .eq('user_id', userId)
+              .eq('approval_status', approvalStatus);
+            return await apQuery.order('submitted_for_review_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_social_posts': {
+            // Social posts use workspace_id, need to get it first
+            const { data: tm } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).single();
+            if (!tm?.workspace_id) return { data: [], error: null };
+            let spQuery = supabase
+              .from('social_posts')
+              .select('id, content, status, scheduled_at, created_at, media_urls, approval_status')
+              .eq('workspace_id', tm.workspace_id);
+            if (toolArgs.status) spQuery = spQuery.eq('status', toolArgs.status);
+            return await spQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_email_templates': {
+            const { data: tm2 } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).single();
+            if (!tm2?.workspace_id) return { data: [], error: null };
+            let etQuery = supabase
+              .from('email_templates')
+              .select('id, name, subject, category, variables, created_at, updated_at')
+              .eq('workspace_id', tm2.workspace_id);
+            if (toolArgs.category) etQuery = etQuery.eq('category', toolArgs.category);
+            return await etQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_topic_clusters': {
+            return await supabase
+              .from('topic_clusters')
+              .select('id, cluster_name, description, importance_score, topic_count, parent_cluster_id, metadata, created_at')
+              .eq('user_id', userId)
+              .order('importance_score', { ascending: false })
+              .limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_content_gaps': {
+            let cgQuery = supabase
+              .from('content_gaps')
+              .select('id, title, description, gap_type, competition_level, opportunity_score, search_volume, potential_traffic, status, keywords, target_cluster_id, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.status) cgQuery = cgQuery.eq('status', toolArgs.status);
+            return await cgQuery.order('opportunity_score', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_strategy_recommendations': {
+            let srQuery = supabase
+              .from('strategy_recommendations')
+              .select('id, title, description, recommendation_type, priority, status, confidence_score, expected_impact, effort_estimate, action_items, reasoning, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.status) srQuery = srQuery.eq('status', toolArgs.status);
+            if (toolArgs.priority) srQuery = srQuery.eq('priority', toolArgs.priority);
+            return await srQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_repurposed_content': {
+            let rcQuery = supabase
+              .from('repurposed_contents')
+              .select('id, content_id, format_code, title, status, version, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.content_id) rcQuery = rcQuery.eq('content_id', toolArgs.content_id);
+            if (toolArgs.format_code) rcQuery = rcQuery.eq('format_code', toolArgs.format_code);
+            return await rcQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_email_threads': {
+            const { data: tm3 } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).single();
+            if (!tm3?.workspace_id) return { data: [], error: null };
+            let thQuery = supabase
+              .from('email_threads')
+              .select('id, subject, status, last_activity_at, sentiment, tags, contact_id, created_at')
+              .eq('workspace_id', tm3.workspace_id);
+            if (toolArgs.status) thQuery = thQuery.eq('status', toolArgs.status);
+            return await thQuery.order('last_activity_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_activity_log': {
+            const { data: tm4 } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).single();
+            if (!tm4?.workspace_id) return { data: [], error: null };
+            let alQuery = supabase
+              .from('engage_activity_log')
+              .select('id, type, channel, message, payload, contact_id, created_at, created_by')
+              .eq('workspace_id', tm4.workspace_id);
+            if (toolArgs.channel) alQuery = alQuery.eq('channel', toolArgs.channel);
+            return await alQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 30, 100));
+          }
+
           default:
             throw new Error(`Unknown tool: ${toolName}`);
         }

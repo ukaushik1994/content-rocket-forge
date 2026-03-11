@@ -286,6 +286,25 @@ export const ENGAGE_ACTION_TOOL_DEFINITIONS = [
       description: "Delete a social media post. Use when user says 'delete social post', 'remove social post'.",
       parameters: { type: "object", properties: { post_id: { type: "string", description: "UUID of the social post to delete" } }, required: ["post_id"] }
     }
+  },
+  // === EMAIL TEMPLATE WRITE TOOL ===
+  {
+    type: "function",
+    function: {
+      name: "create_email_template",
+      description: "Create a reusable email template. Use when user says 'create email template', 'save as template', 'new newsletter template', or 'build template'.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Template name" },
+          subject: { type: "string", description: "Default subject line" },
+          body_html: { type: "string", description: "Template body HTML" },
+          category: { type: "string", enum: ["newsletter", "transactional", "marketing", "notification", "other"], description: "Template category" },
+          variables: { type: "array", items: { type: "string" }, description: "Template variables (e.g., ['first_name', 'company'])" }
+        },
+        required: ["name", "subject", "body_html"]
+      }
+    }
   }
 ];
 
@@ -296,7 +315,8 @@ export const ENGAGE_ACTION_TOOL_NAMES = [
   'toggle_automation', 'enroll_contacts_in_journey', 'send_quick_email',
   'create_social_post',
   'delete_contact', 'delete_segment', 'delete_email_campaign',
-  'delete_journey', 'delete_automation', 'delete_social_post'
+  'delete_journey', 'delete_automation', 'delete_social_post',
+  'create_email_template'
 ];
 
 export async function executeEngageActionTool(
@@ -668,6 +688,21 @@ export async function executeEngageActionTool(
           .eq('workspace_id', workspaceId);
         if (error) throw error;
         return { success: true, message: `Deleted social post ${toolArgs.post_id}` };
+      }
+
+      case 'create_email_template': {
+        const { data, error } = await supabase.from('email_templates').insert({
+          workspace_id: workspaceId,
+          name: toolArgs.name,
+          subject: toolArgs.subject,
+          body_html: toolArgs.body_html,
+          category: toolArgs.category || 'other',
+          variables: toolArgs.variables || [],
+          created_by: userId
+        }).select('id, name, subject, category, created_at').single();
+
+        if (error) throw error;
+        return { success: true, message: `Created email template "${data.name}"`, item: data };
       }
 
       default:
