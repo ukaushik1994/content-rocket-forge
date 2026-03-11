@@ -1863,6 +1863,7 @@ serve(async (req) => {
         .replace('{completedQueueCount}', (counts.completedQueueCount || 0).toString())
         .replace('{failedQueueCount}', (counts.failedQueueCount || 0).toString())
         .replace('{proactiveInsights}', proactiveInsights);
+      systemPrompt += '\n\n' + toolUsageWithCounts;
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       systemPrompt += '\n\n' + CHART_MODULE;
       
