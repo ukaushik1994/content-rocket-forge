@@ -690,6 +690,21 @@ export async function executeEngageActionTool(
         return { success: true, message: `Deleted social post ${toolArgs.post_id}` };
       }
 
+      case 'create_email_template': {
+        const { data, error } = await supabase.from('email_templates').insert({
+          workspace_id: workspaceId,
+          name: toolArgs.name,
+          subject: toolArgs.subject,
+          body_html: toolArgs.body_html,
+          category: toolArgs.category || 'other',
+          variables: toolArgs.variables || [],
+          created_by: userId
+        }).select('id, name, subject, category, created_at').single();
+
+        if (error) throw error;
+        return { success: true, message: `Created email template "${data.name}"`, item: data };
+      }
+
       default:
         return { error: `Unknown engage action tool: ${toolName}` };
     }

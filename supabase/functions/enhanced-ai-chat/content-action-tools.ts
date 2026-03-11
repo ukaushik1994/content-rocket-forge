@@ -476,6 +476,95 @@ export async function executeContentActionTool(
         };
       }
 
+      // === CALENDAR CRUD ===
+      case 'create_calendar_item': {
+        const { data, error } = await supabase.from('content_calendar').insert({
+          user_id: userId,
+          title: toolArgs.title,
+          scheduled_date: toolArgs.scheduled_date,
+          content_type: toolArgs.content_type || 'blog',
+          status: toolArgs.status || 'planned',
+          priority: toolArgs.priority || 'medium',
+          notes: toolArgs.notes || null,
+          proposal_id: toolArgs.proposal_id || null,
+          content_id: toolArgs.content_id || null
+        }).select('id, title, scheduled_date, status, priority, content_type, created_at').single();
+
+        if (error) throw error;
+        return { success: true, message: `Scheduled "${data.title}" for ${data.scheduled_date}`, item: data };
+      }
+
+      case 'update_calendar_item': {
+        const updates: any = {};
+        if (toolArgs.title) updates.title = toolArgs.title;
+        if (toolArgs.scheduled_date) updates.scheduled_date = toolArgs.scheduled_date;
+        if (toolArgs.status) updates.status = toolArgs.status;
+        if (toolArgs.priority) updates.priority = toolArgs.priority;
+        if (toolArgs.notes !== undefined) updates.notes = toolArgs.notes;
+        updates.updated_at = new Date().toISOString();
+
+        const { data, error } = await supabase.from('content_calendar')
+          .update(updates)
+          .eq('id', toolArgs.calendar_id)
+          .eq('user_id', userId)
+          .select('id, title, scheduled_date, status, priority').single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Calendar item not found or access denied' };
+        return { success: true, message: `Updated calendar item "${data.title}"`, item: data };
+      }
+
+      case 'delete_calendar_item': {
+        const { data, error } = await supabase.from('content_calendar')
+          .delete()
+          .eq('id', toolArgs.calendar_id)
+          .eq('user_id', userId)
+          .select('id, title').single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Calendar item not found or access denied' };
+        return { success: true, message: `Removed "${data.title}" from calendar` };
+      }
+
+      // === GLOSSARY WRITE ===
+      case 'create_glossary_term': {
+        let glossaryId = toolArgs.glossary_id;
+
+        // If no glossary_id, find the first active glossary or create one
+        if (!glossaryId) {
+          const { data: glossaries } = await supabase.from('glossaries')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('is_active', true)
+            .limit(1).single();
+
+          if (glossaries) {
+            glossaryId = glossaries.id;
+          } else {
+            // Create default glossary
+            const { data: newGlossary, error: gErr } = await supabase.from('glossaries').insert({
+              user_id: userId,
+              name: 'My Glossary',
+              is_active: true
+            }).select('id').single();
+            if (gErr) throw gErr;
+            glossaryId = newGlossary.id;
+          }
+        }
+
+        const { data, error } = await supabase.from('glossary_terms').insert({
+          user_id: userId,
+          glossary_id: glossaryId,
+          term: toolArgs.term,
+          short_definition: toolArgs.short_definition,
+          expanded_explanation: toolArgs.expanded_explanation || null,
+          related_terms: toolArgs.related_terms ? JSON.stringify(toolArgs.related_terms) : null
+        }).select('id, term, short_definition, created_at').single();
+
+        if (error) throw error;
+        return { success: true, message: `Added glossary term "${data.term}"`, item: data };
+      }
+
       default:
         return { error: `Unknown content action tool: ${toolName}` };
     }

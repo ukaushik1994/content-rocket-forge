@@ -771,11 +771,124 @@ export async function executeToolCall(
               .limit(Math.min(toolArgs.limit || 10, 50));
             
           case 'generate_campaign_strategies':
-            // This is a formatting tool, not a data-fetching tool
-            // Just return the structured data from the AI
             console.log(`[TOOL] ${toolName} | FORMATTING TOOL | Returning AI-structured data`);
             return { data: toolArgs, error: null };
-            
+
+          // === NEW READ TOOLS ===
+          case 'get_calendar_items': {
+            let calQuery = supabase
+              .from('content_calendar')
+              .select('id, title, scheduled_date, status, content_type, priority, assigned_to, proposal_id, content_id, notes, tags, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.status) calQuery = calQuery.eq('status', toolArgs.status);
+            if (toolArgs.from_date) calQuery = calQuery.gte('scheduled_date', toolArgs.from_date);
+            if (toolArgs.to_date) calQuery = calQuery.lte('scheduled_date', toolArgs.to_date);
+            return await calQuery.order('scheduled_date', { ascending: true }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_glossary_terms': {
+            let gtQuery = supabase
+              .from('glossary_terms')
+              .select('id, term, short_definition, expanded_explanation, search_volume, keyword_difficulty, related_terms, paa_questions, glossary_id, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.glossary_id) gtQuery = gtQuery.eq('glossary_id', toolArgs.glossary_id);
+            if (toolArgs.search) gtQuery = gtQuery.ilike('term', `%${toolArgs.search}%`);
+            return await gtQuery.order('term', { ascending: true }).limit(Math.min(toolArgs.limit || 20, 100));
+          }
+
+          case 'get_pending_approvals': {
+            const approvalStatus = toolArgs.status || 'pending_review';
+            let apQuery = supabase
+              .from('content_items')
+              .select('id, title, content_type, status, approval_status, submitted_for_review_at, created_at, updated_at')
+              .eq('user_id', userId)
+              .eq('approval_status', approvalStatus);
+            return await apQuery.order('submitted_for_review_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_social_posts': {
+            // Social posts use workspace_id, need to get it first
+            const { data: tm } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).single();
+            if (!tm?.workspace_id) return { data: [], error: null };
+            let spQuery = supabase
+              .from('social_posts')
+              .select('id, content, status, scheduled_at, created_at, media_urls, approval_status')
+              .eq('workspace_id', tm.workspace_id);
+            if (toolArgs.status) spQuery = spQuery.eq('status', toolArgs.status);
+            return await spQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_email_templates': {
+            const { data: tm2 } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).single();
+            if (!tm2?.workspace_id) return { data: [], error: null };
+            let etQuery = supabase
+              .from('email_templates')
+              .select('id, name, subject, category, variables, created_at, updated_at')
+              .eq('workspace_id', tm2.workspace_id);
+            if (toolArgs.category) etQuery = etQuery.eq('category', toolArgs.category);
+            return await etQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_topic_clusters': {
+            return await supabase
+              .from('topic_clusters')
+              .select('id, cluster_name, description, importance_score, topic_count, parent_cluster_id, metadata, created_at')
+              .eq('user_id', userId)
+              .order('importance_score', { ascending: false })
+              .limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_content_gaps': {
+            let cgQuery = supabase
+              .from('content_gaps')
+              .select('id, title, description, gap_type, competition_level, opportunity_score, search_volume, potential_traffic, status, keywords, target_cluster_id, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.status) cgQuery = cgQuery.eq('status', toolArgs.status);
+            return await cgQuery.order('opportunity_score', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_strategy_recommendations': {
+            let srQuery = supabase
+              .from('strategy_recommendations')
+              .select('id, title, description, recommendation_type, priority, status, confidence_score, expected_impact, effort_estimate, action_items, reasoning, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.status) srQuery = srQuery.eq('status', toolArgs.status);
+            if (toolArgs.priority) srQuery = srQuery.eq('priority', toolArgs.priority);
+            return await srQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_repurposed_content': {
+            let rcQuery = supabase
+              .from('repurposed_contents')
+              .select('id, content_id, format_code, title, status, version, created_at')
+              .eq('user_id', userId);
+            if (toolArgs.content_id) rcQuery = rcQuery.eq('content_id', toolArgs.content_id);
+            if (toolArgs.format_code) rcQuery = rcQuery.eq('format_code', toolArgs.format_code);
+            return await rcQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_email_threads': {
+            const { data: tm3 } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).single();
+            if (!tm3?.workspace_id) return { data: [], error: null };
+            let thQuery = supabase
+              .from('email_threads')
+              .select('id, subject, status, last_activity_at, sentiment, tags, contact_id, created_at')
+              .eq('workspace_id', tm3.workspace_id);
+            if (toolArgs.status) thQuery = thQuery.eq('status', toolArgs.status);
+            return await thQuery.order('last_activity_at', { ascending: false }).limit(Math.min(toolArgs.limit || 20, 50));
+          }
+
+          case 'get_activity_log': {
+            const { data: tm4 } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).single();
+            if (!tm4?.workspace_id) return { data: [], error: null };
+            let alQuery = supabase
+              .from('engage_activity_log')
+              .select('id, type, channel, message, payload, contact_id, created_at, created_by')
+              .eq('workspace_id', tm4.workspace_id);
+            if (toolArgs.channel) alQuery = alQuery.eq('channel', toolArgs.channel);
+            return await alQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 30, 100));
+          }
+
           default:
             throw new Error(`Unknown tool: ${toolName}`);
         }
