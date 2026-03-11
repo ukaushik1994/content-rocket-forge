@@ -158,12 +158,88 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
       }
     }
   }
+  // === CALENDAR CRUD TOOLS ===
+  {
+    type: "function",
+    function: {
+      name: "create_calendar_item",
+      description: "Schedule content on the editorial calendar. Use when user says 'schedule content', 'add to calendar', 'plan for next week', or 'put on the calendar'.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Calendar item title" },
+          scheduled_date: { type: "string", description: "Scheduled date (ISO format, e.g., 2026-03-15)" },
+          content_type: { type: "string", default: "blog", description: "Content type" },
+          status: { type: "string", enum: ["planned", "in_progress", "completed"], default: "planned", description: "Status" },
+          priority: { type: "string", enum: ["low", "medium", "high"], default: "medium", description: "Priority level" },
+          notes: { type: "string", description: "Additional notes" },
+          proposal_id: { type: "string", description: "Link to a strategy proposal" },
+          content_id: { type: "string", description: "Link to existing content item" }
+        },
+        required: ["title", "scheduled_date"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_calendar_item",
+      description: "Update a calendar item (reschedule, change status, etc.). Use when user says 'reschedule', 'move to next week', 'mark as done', or 'update calendar item'.",
+      parameters: {
+        type: "object",
+        properties: {
+          calendar_id: { type: "string", description: "UUID of the calendar item" },
+          title: { type: "string" },
+          scheduled_date: { type: "string" },
+          status: { type: "string", enum: ["planned", "in_progress", "completed", "cancelled"] },
+          priority: { type: "string", enum: ["low", "medium", "high"] },
+          notes: { type: "string" }
+        },
+        required: ["calendar_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_calendar_item",
+      description: "Remove a calendar item. Use when user says 'remove from calendar', 'delete calendar item', or 'cancel scheduled content'.",
+      parameters: {
+        type: "object",
+        properties: {
+          calendar_id: { type: "string", description: "UUID of the calendar item to delete" }
+        },
+        required: ["calendar_id"]
+      }
+    }
+  },
+  // === GLOSSARY WRITE TOOL ===
+  {
+    type: "function",
+    function: {
+      name: "create_glossary_term",
+      description: "Add a new term to the glossary. Use when user says 'add glossary term', 'define term', 'add definition', or 'new terminology entry'.",
+      parameters: {
+        type: "object",
+        properties: {
+          term: { type: "string", description: "The term to define" },
+          short_definition: { type: "string", description: "Short definition (1-2 sentences)" },
+          expanded_explanation: { type: "string", description: "Expanded explanation with more detail" },
+          glossary_id: { type: "string", description: "Glossary to add the term to (if not provided, uses the first active glossary)" },
+          related_terms: { type: "array", items: { type: "string" }, description: "Related terms" }
+        },
+        required: ["term", "short_definition"]
+      }
+    }
+  }
 ];
 
 export const CONTENT_ACTION_TOOL_NAMES = [
   'create_content_item', 'update_content_item', 'delete_content_item',
   'submit_for_review', 'approve_content', 'reject_content',
-  'generate_full_content', 'start_content_builder', 'launch_content_wizard'
+  'generate_full_content', 'start_content_builder', 'launch_content_wizard',
+  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item',
+  'create_glossary_term'
 ];
 
 export async function executeContentActionTool(
