@@ -451,7 +451,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.2 }}
         >
-          <User className="h-4 w-4 text-secondary-foreground" />
+          <User className="h-4 w-4 text-primary" />
         </motion.div>
       )}
 
