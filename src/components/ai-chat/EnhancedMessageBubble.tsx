@@ -189,7 +189,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {!message.confirmationData && message.content !== '__CAPABILITIES_CARD__' && (
             <Card className={`relative ${
                isUser 
-                 ? 'bg-muted/30 text-foreground border border-border/20 ml-4' 
+                 ? 'bg-primary/15 text-foreground border border-primary/25 ml-4' 
                  : 'bg-transparent border border-border/20 mr-4'
              }`}>
               <div className="px-6 py-4">
@@ -446,12 +446,12 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       {/* Avatar (only for user messages) */}
       {isUser && (
         <motion.div 
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent border border-border/20 flex-shrink-0"
+           className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border border-primary/25 flex-shrink-0"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.2 }}
         >
-          <User className="h-4 w-4 text-secondary-foreground" />
+          <User className="h-4 w-4 text-primary" />
         </motion.div>
       )}
 

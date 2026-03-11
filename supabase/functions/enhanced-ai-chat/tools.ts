@@ -141,7 +141,7 @@ const CORE_TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "get_solutions",
-      description: "Fetch solutions/products data. Use when user asks about their products, services, or solutions.",
+      description: "Fetch solutions/products data including features, benefits, pain points, target audience, use cases, pricing, and technical specs. Use when user asks about their products, services, offerings, or solutions.",
       parameters: {
         type: "object",
         properties: {
@@ -690,7 +690,7 @@ export async function executeToolCall(
           case 'get_solutions':
             return await supabase
               .from('solutions')
-              .select('id, name, description, created_at')
+              .select('id, name, description, short_description, category, features, benefits, pain_points, target_audience, use_cases, unique_value_propositions, positioning_statement, key_differentiators, pricing_model, technical_specs, case_studies, external_url, created_at')
               .eq('user_id', userId)
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 5, 20));
