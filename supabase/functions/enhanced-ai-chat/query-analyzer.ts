@@ -119,7 +119,11 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   if (needsCompetitors) categories.push('competitors');
   if (needsAnalytics) categories.push('analytics');
   if (needsPerformance || needsInternalTrends) categories.push('performance');
-  if (needsEngage) categories.push('engage');
+  if (needsEngage || needsSocial) categories.push('engage');
+  if (needsApprovals) categories.push('approvals');
+  if (needsCalendar) categories.push('calendar');
+  if (needsResearch) categories.push('research');
+  if (needsGlossary) categories.push('glossary');
   if (hasActionIntent) categories.push('action');
   
   // If no specific category detected, include core data at summary level
