@@ -1,55 +1,97 @@
 
 
-# Fix: AI Chat Not Using Tools (Critical Bug) + Add Name Search to Offerings Tool
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Root Cause
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-**Critical bug found**: The `TOOL_USAGE_MODULE` (which tells the AI when and how to use all 60+ tools) is computed with count placeholders replaced but **never appended to the system prompt**. The variable `toolUsageWithCounts` is built on lines 1882-1893 and then completely discarded. This means the AI has no instructions about its tools, doesn't know when to call `get_solutions`, and can't intelligently use any data-fetching tools.
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-This is why "earlier the AI was completely aware" — the module was likely being appended before a recent refactor broke it.
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-Additionally, the `get_solutions` tool lacks a `name` search parameter, unlike `get_competitors` which has `competitor_name` with ilike search.
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-## Changes
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### File: `supabase/functions/enhanced-ai-chat/index.ts`
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
-**Fix 1 — Append `toolUsageWithCounts` to system prompt (NORMAL path, ~line 1893):**
-After the variable is built, add:
-```
-systemPrompt += '\n\n' + toolUsageWithCounts;
-```
+---
 
-**Fix 2 — Same fix for HIGH token path (~line 1865):**
-After `toolUsageWithCounts` is built, add:
-```
-systemPrompt += '\n\n' + toolUsageWithCounts;
-```
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-### File: `supabase/functions/enhanced-ai-chat/tools.ts`
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-**Fix 3 — Add `name` search parameter to `get_solutions` tool definition (line 146-153):**
-Add a `name` property:
-```
-name: { type: "string", description: "Search by offering/product name (case-insensitive partial match)" }
-```
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-**Fix 4 — Add name filter to `get_solutions` execution (line 690-696):**
-Add ilike filter when `toolArgs.name` is provided:
-```
-if (toolArgs.name) query = query.ilike('name', `%${toolArgs.name}%`);
-```
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
-Also update the tool description to explicitly mention: "Search by name to look up specific offerings."
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
 
-### File: `supabase/functions/enhanced-ai-chat/index.ts` (TOOL_USAGE_MODULE)
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
-**Fix 5 — Add example for name-based offering lookup (~line 1414-1427):**
-```
-- User: "Tell me about GL Connect" → Call get_solutions with name="GL Connect"
-```
+---
 
-## Impact
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-These fixes restore the AI's full tool awareness and add targeted name-based offering search — solving both the "AI doesn't know about offerings" issue and the broader "AI stopped being smart" regression.
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
 
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`

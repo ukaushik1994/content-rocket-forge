@@ -1417,6 +1417,8 @@ You have access to 18 powerful tools to fetch exactly the data you need:
 - User: "Analyze keyword performance" → Call get_keywords with limit=20
 - User: "Who are my competitors?" → Call get_competitors with limit=10, include_intelligence=true
 - User: "What products does [competitor] offer?" → Call get_competitor_solutions with competitor_name="...", limit=10
+- User: "Tell me about GL Connect" → Call get_solutions with name="GL Connect"
+- User: "What are our offerings?" → Call get_solutions with limit=10
 - User: "How is my campaign doing?" → Call get_campaign_intelligence with campaign_name
 - User: "What's failing in my queue?" → Call get_queue_status
 - User: "Retry failed items" → Call retry_failed_content
@@ -1863,6 +1865,7 @@ serve(async (req) => {
         .replace('{completedQueueCount}', (counts.completedQueueCount || 0).toString())
         .replace('{failedQueueCount}', (counts.failedQueueCount || 0).toString())
         .replace('{proactiveInsights}', proactiveInsights);
+      systemPrompt += '\n\n' + toolUsageWithCounts;
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       systemPrompt += '\n\n' + CHART_MODULE;
       
@@ -1891,6 +1894,7 @@ serve(async (req) => {
         .replace('{completedQueueCount}', (counts.completedQueueCount || 0).toString())
         .replace('{failedQueueCount}', (counts.failedQueueCount || 0).toString())
         .replace('{proactiveInsights}', proactiveInsights);
+      systemPrompt += '\n\n' + toolUsageWithCounts;
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       
       // PHASE 3: Check if multi-chart mode should be activated
