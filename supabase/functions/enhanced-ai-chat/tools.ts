@@ -141,7 +141,7 @@ const CORE_TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "get_solutions",
-      description: "Fetch solutions/products data. Use when user asks about their products, services, or solutions.",
+      description: "Fetch solutions/products data including features, benefits, pain points, target audience, use cases, pricing, and technical specs. Use when user asks about their products, services, offerings, or solutions.",
       parameters: {
         type: "object",
         properties: {
