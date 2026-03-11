@@ -4,6 +4,7 @@ import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { ContextAwareMessageInput } from './ContextAwareMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
+import { DynamicGreeting } from './DynamicGreeting';
 import { VisualizationSidebar } from './VisualizationSidebar';
 import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
 import { SolutionSuggestions } from './SolutionSuggestions';
