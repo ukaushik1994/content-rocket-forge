@@ -1,40 +1,97 @@
 
 
-# Simplify AI Chat Welcome — Dynamic, Catchy Header
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## What Changes
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-### Remove clutter
-- **Delete** the "Content Studio" gradient title (lines 470-478)
-- **Delete** the subtitle "Your AI-powered workspace..." (lines 480-488)
-- **Merge** the greeting into the hero — one big dynamic headline instead of separate title + greeting
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-### Dynamic rotating header
-Replace the static greeting with a catchy, time-aware phrase system that rotates. The badge stays as-is ("AI Command Centre").
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-**Phrase pools by time period:**
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-| Period (hours) | Phrases |
-|---|---|
-| Morning (5-12) | "Rise and create.", "Morning momentum.", "Fresh ideas await.", "Let's make today count." |
-| Afternoon (12-17) | "Back at it.", "Afternoon hustle.", "Keep the momentum.", "Let's power through." |
-| Evening (17-21) | "Evening flow.", "Winding down? Or warming up?", "Creative hours.", "One more thing?" |
-| Night (21-5) | "Night owl mode.", "Burning the midnight oil.", "Late night brilliance.", "The quiet hours." |
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-On mount, pick a random phrase from the current period's pool. Rotate to a new one every 8 seconds with a subtle fade transition.
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
-### Simplified layout (top to bottom)
-1. Badge pill — "AI Command Centre" (unchanged)
-2. **Dynamic phrase** — large `text-3xl sm:text-4xl` heading, e.g. "Night owl mode, Utkarsh."
-3. **Sub-line** — "What would you like to work on today?" (smaller, muted)
-4. Stats circles (unchanged)
-5. Quick action grid (unchanged)
+---
 
-This removes two entire text blocks and consolidates into one punchy headline.
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-### Files Changed
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-| File | Change |
-|---|---|
-| `src/components/ai-chat/EnhancedChatInterface.tsx` | Remove "Content Studio" title + subtitle. Replace greeting block with rotating dynamic phrase using `useState` + `useEffect` interval. Move it directly under the badge. |
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
+
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
+
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+
+---
+
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
+
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`

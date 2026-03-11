@@ -4,6 +4,7 @@ import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { ContextAwareMessageInput } from './ContextAwareMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
+import { DynamicGreeting } from './DynamicGreeting';
 import { VisualizationSidebar } from './VisualizationSidebar';
 import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
 import { SolutionSuggestions } from './SolutionSuggestions';
@@ -467,48 +468,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     </motion.div>
 
-                    {/* Gradient Title */}
-                    <motion.h1
-                      className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-foreground via-primary to-primary/70 bg-clip-text text-transparent"
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1, duration: 0.6 }}
-                    >
-                      Content Studio
-                    </motion.h1>
-
-                    {/* Subtitle */}
-                    <motion.p
-                      className="text-base md:text-lg text-muted-foreground max-w-2xl text-center"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2, duration: 0.4 }}
-                    >
-                      Your AI-powered workspace for creating, managing, and optimizing all your content
-                    </motion.p>
+                    {/* Dynamic Rotating Greeting */}
+                    <DynamicGreeting firstName={user?.user_metadata?.first_name || user?.user_metadata?.name?.split(' ')[0] || ''} />
 
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
-
-                    {/* Personalized Greeting */}
-                    <motion.div
-                      className="text-center space-y-2"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3, duration: 0.4 }}
-                    >
-                      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
-                        {(() => {
-                          const hour = new Date().getHours();
-                          const firstName = user?.user_metadata?.first_name || user?.user_metadata?.name?.split(' ')[0] || '';
-                          const period = hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 17 ? 'afternoon' : hour >= 17 && hour < 21 ? 'evening' : 'night';
-                          return firstName ? `Good ${period}, ${firstName}.` : `Good ${period}.`;
-                        })()}
-                      </h2>
-                      <p className="text-sm text-muted-foreground font-normal">
-                        What would you like to work on today?
-                      </p>
-                    </motion.div>
 
                     {/* Pill suggestions */}
                     <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
