@@ -269,7 +269,7 @@ const CORE_TOOL_DEFINITIONS = [
         }
       }
     }
-  }
+  },
   // === NEW READ TOOLS: Calendar, Glossary, Approvals, Social, Templates, Clusters, Gaps, Recommendations, Repurposed, Email Threads, Activity ===
   {
     type: "function",
