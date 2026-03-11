@@ -157,7 +157,7 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
         required: ["keyword"]
       }
     }
-  }
+  },
   // === CALENDAR CRUD TOOLS ===
   {
     type: "function",
