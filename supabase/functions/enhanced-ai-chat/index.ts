@@ -1892,6 +1892,7 @@ serve(async (req) => {
         .replace('{completedQueueCount}', (counts.completedQueueCount || 0).toString())
         .replace('{failedQueueCount}', (counts.failedQueueCount || 0).toString())
         .replace('{proactiveInsights}', proactiveInsights);
+      systemPrompt += '\n\n' + toolUsageWithCounts;
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       
       // PHASE 3: Check if multi-chart mode should be activated
