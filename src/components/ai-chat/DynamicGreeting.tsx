@@ -55,18 +55,12 @@ interface DynamicGreetingProps {
 }
 
 export const DynamicGreeting: React.FC<DynamicGreetingProps> = ({ firstName }) => {
-  const period = getTimePeriod();
-  const [phrase, setPhrase] = useState(() => getRandomPhrase(period));
+  const [phrase, setPhrase] = useState(() => getRandomPhrase(getTimePeriod()));
 
-  const rotate = useCallback(() => {
-    const currentPeriod = getTimePeriod();
-    setPhrase(prev => getRandomPhrase(currentPeriod, prev));
-  }, []);
-
+  // Pick a new phrase only when the component remounts (e.g. conversation change)
   useEffect(() => {
-    const interval = setInterval(rotate, 8000);
-    return () => clearInterval(interval);
-  }, [rotate]);
+    setPhrase(getRandomPhrase(getTimePeriod()));
+  }, []);
 
   const displayText = firstName ? `${phrase.replace('.', '')}, ${firstName}.` : phrase;
 
