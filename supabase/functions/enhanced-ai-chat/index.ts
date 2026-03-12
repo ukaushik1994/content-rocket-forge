@@ -436,7 +436,7 @@ You have access to specialized tools to fetch AND act on data. Use them smartly:
 
 **📖 READ Tools (Fetch Data):**
 - get_content_items, get_keywords, get_proposals, get_solutions, get_seo_scores, get_serp_analysis
-- get_competitors, get_competitor_solutions
+- get_competitors, get_competitor_solutions, get_company_info
 - get_campaign_intelligence, get_queue_status, get_campaign_content
 - get_engage_contacts, get_engage_segments, get_engage_journeys, get_engage_automations, get_engage_email_campaigns
 
