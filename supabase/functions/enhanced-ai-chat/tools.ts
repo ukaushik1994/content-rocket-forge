@@ -925,6 +925,14 @@ export async function executeToolCall(
             return await alQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 30, 100));
           }
 
+          case 'get_company_info': {
+            return await supabase
+              .from('company_info')
+              .select('id, name, description, industry, website, mission, size, founded, logo_url, values, created_at, updated_at')
+              .eq('user_id', userId)
+              .limit(1);
+          }
+
           default:
             throw new Error(`Unknown tool: ${toolName}`);
         }
