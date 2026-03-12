@@ -28,7 +28,6 @@ import { aiStrategyService } from '@/services/aiStrategyService';
 
 interface DashboardSummaryData {
   content_created: {
-    glossary: number;
     blog: number;
     article: number;
     strategy: number;
