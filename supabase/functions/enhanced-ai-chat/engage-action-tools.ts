@@ -757,6 +757,66 @@ export async function executeEngageActionTool(
         return { success: true, message: `Created email template "${data.name}"`, item: data };
       }
 
+      case 'update_email_template': {
+        const updates: any = { updated_at: new Date().toISOString() };
+        if (toolArgs.name) updates.name = toolArgs.name;
+        if (toolArgs.subject) updates.subject = toolArgs.subject;
+        if (toolArgs.body_html) updates.body_html = toolArgs.body_html;
+        if (toolArgs.category) updates.category = toolArgs.category;
+
+        const { data, error } = await supabase.from('email_templates')
+          .update(updates)
+          .eq('id', toolArgs.template_id)
+          .eq('workspace_id', workspaceId)
+          .select('id, name, subject, category')
+          .single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Template not found or access denied' };
+        return { success: true, message: `Updated email template "${data.name}"`, item: data };
+      }
+
+      case 'update_social_post': {
+        const updates: any = { updated_at: new Date().toISOString() };
+        if (toolArgs.content) updates.content = toolArgs.content;
+        if (toolArgs.status) updates.status = toolArgs.status;
+        if (toolArgs.media_urls) updates.media_urls = toolArgs.media_urls;
+
+        const { data, error } = await supabase.from('social_posts')
+          .update(updates)
+          .eq('id', toolArgs.post_id)
+          .eq('workspace_id', workspaceId)
+          .select('id, content, status, scheduled_at')
+          .single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Social post not found or access denied' };
+        return { success: true, message: `Updated social post`, item: data };
+      }
+
+      case 'schedule_social_post': {
+        const { data, error } = await supabase.from('social_posts')
+          .update({ 
+            scheduled_at: toolArgs.scheduled_at, 
+            status: 'scheduled',
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', toolArgs.post_id)
+          .eq('workspace_id', workspaceId)
+          .select('id, content, status, scheduled_at')
+          .single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Social post not found or access denied' };
+
+        // Update target statuses too
+        await supabase.from('social_post_targets')
+          .update({ status: 'pending' })
+          .eq('post_id', toolArgs.post_id);
+
+        return { success: true, message: `Scheduled social post for ${toolArgs.scheduled_at}`, item: data };
+      }
+
       default:
         return { error: `Unknown engage action tool: ${toolName}` };
     }
