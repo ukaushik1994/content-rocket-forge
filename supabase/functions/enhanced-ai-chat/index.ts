@@ -2066,6 +2066,18 @@ The user's query matches an approvals intent. You MUST include this in your resp
 {"visualData": {"type": "approvals", "title": "Pending Approvals"}}
 \`\`\`
 This will open the Approvals quick-action panel. Also provide a brief text answer.`;
+    } else if (queryIntent.panelHint === 'content_repurpose') {
+      systemPrompt += `\n\n## 🎯 PANEL HINT: CONTENT REPURPOSE
+The user wants to repurpose content. You MUST include this in your response:
+\`\`\`json
+{"visualData": {"type": "content_repurpose", "contentId": null}}
+\`\`\`
+This will open the Repurpose panel. Also provide a brief text answer explaining the repurpose options.`;
+    }
+    
+    // Inject disambiguation hint if present
+    if (queryIntent.disambiguationHint) {
+      systemPrompt += `\n\n## ⚠️ DISAMBIGUATION REQUIRED:\n${queryIntent.disambiguationHint}`;
     }
     
     // Inject real data context
