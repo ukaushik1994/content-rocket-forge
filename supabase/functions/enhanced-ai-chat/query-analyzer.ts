@@ -47,10 +47,11 @@ export function analyzeQueryIntent(query: string): QueryIntent {
     return {
       scope: 'conversational',
       categories: [],
-      estimatedTokens: 500, // Minimal tokens
+      estimatedTokens: 500,
       requiresVisualData: false,
       confidence: 0.95,
-      isConversational: true
+      isConversational: true,
+      panelHint: null
     };
   }
   
