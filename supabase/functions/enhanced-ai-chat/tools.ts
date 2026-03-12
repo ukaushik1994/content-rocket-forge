@@ -661,7 +661,7 @@ export async function executeToolCall(
         }
         
         switch (toolName) {
-          case 'get_content_items':
+          case 'get_content_items': {
             let query = supabase
               .from('content_items')
               .select('id, title, status, created_at, seo_score, content_type, metadata, campaign_id')
@@ -675,8 +675,9 @@ export async function executeToolCall(
             return await query
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 10, 50));
+          }
             
-          case 'get_keywords':
+          case 'get_keywords': {
             let kwQuery = supabase
               .from('keywords')
               .select('keyword, volume, difficulty, created_at')
@@ -688,8 +689,9 @@ export async function executeToolCall(
             return await kwQuery
               .order('volume', { ascending: false })
               .limit(Math.min(toolArgs.limit || 10, 50));
+          }
             
-          case 'get_proposals':
+          case 'get_proposals': {
             let propQuery = supabase
               .from('ai_strategy_proposals')
               .select('id, title, primary_keyword, description, status, priority_tag, estimated_impressions, content_type, created_at')
@@ -702,6 +704,7 @@ export async function executeToolCall(
             return await propQuery
               .order('estimated_impressions', { ascending: false })
               .limit(Math.min(toolArgs.limit || 10, 50));
+          }
             
           case 'get_solutions': {
             let solQuery = supabase
