@@ -395,201 +395,40 @@ export const useEnhancedAIChatDB = () => {
     setMessages(prev => [...prev, placeholderMessage]);
 
     try {
-      // Try streaming first
-      let streamSuccess = false;
-      
-      try {
-        const session = await supabase.auth.getSession();
-        const token = session.data.session?.access_token;
-        
-        if (!token) throw new Error('No auth token');
+      // AWARENESS-FIRST: Use enhanced-ai-chat (tool-enabled) as default path
+      // This ensures the AI always has access to tools for fetching solutions, competitors, company info etc.
+      const conversationHistory = [...messages, userMessage].slice(-10).map(m => ({
+        role: m.role,
+        content: m.content
+      }));
 
-        const streamUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-streaming`;
-
-        // Build conversation history for the AI
-        const conversationHistory = [...messages, userMessage].slice(-10).map(m => ({
-          role: m.role,
-          content: m.content
-        }));
-
-        const response = await fetch(streamUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            messages: conversationHistory,
-            context: { conversationId, analystActive: analystActiveRef.current },
-            userId: user.id,
-            features: ['streaming'],
-          }),
-        });
-
-        if (!response.ok || !response.body) {
-          throw new Error(`Stream failed: ${response.status}`);
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let fullContent = '';
-        let buffer = '';
-        let firstToken = true;
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-
-          let newlineIndex: number;
-          while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-            let line = buffer.slice(0, newlineIndex);
-            buffer = buffer.slice(newlineIndex + 1);
-
-            if (line.endsWith('\r')) line = line.slice(0, -1);
-            if (line.trim() === '' || line.startsWith(':')) continue;
-
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6).trim();
-              if (data === '[DONE]') continue;
-
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.type === 'token' && parsed.content) {
-                  fullContent += parsed.content;
-                  if (firstToken) {
-                    setIsTyping(false);
-                    firstToken = false;
-                  }
-                  // Update the placeholder message progressively
-                  setMessages(prev =>
-                    prev.map(m =>
-                      m.id === assistantId
-                        ? { ...m, content: fullContent }
-                        : m
-                    )
-                  );
-                } else if (parsed.type === 'complete' && parsed.content) {
-                  fullContent = parsed.content;
-                } else if (parsed.type === 'error') {
-                  throw new Error(parsed.error || 'Stream error');
-                }
-              } catch (e) {
-                if (e instanceof SyntaxError) {
-                  buffer = line + '\n' + buffer;
-                  break;
-                }
-                throw e;
-              }
-            }
+      const { data: response, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+        body: {
+          messages: conversationHistory,
+          context: { 
+            conversation_id: conversationId, 
+            analystActive: analystActiveRef.current 
           }
         }
+      });
 
-        if (fullContent) {
-          streamSuccess = true;
-          const finalMessage: EnhancedChatMessage = {
-            ...placeholderMessage,
-            content: fullContent,
-          };
-          setMessages(prev =>
-            prev.map(m => m.id === assistantId ? finalMessage : m)
-          );
-          await saveMessage(finalMessage, conversationId);
+      if (error) throw error;
 
-          // ========== PHASE 2: Post-stream tool execution ==========
-          let actionIntent = detectActionIntent(content);
-          if (!actionIntent.detected) {
-            actionIntent = detectAIResponseIntent(fullContent);
-          }
-          // NEW: Contextual follow-up detection (user replied with a topic)
-          if (!actionIntent.detected) {
-            const recentMsgs = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
-            actionIntent = detectContextualContentIntent(content, recentMsgs);
-          }
+      const responseContent = response?.message || response?.content || 'No response received';
+      const responseActions = response?.actions || [];
+      const responseVisualData = response?.visualData;
 
-          if (actionIntent.detected && actionIntent.confidence !== 'low') {
-            // Direct wizard launch shortcut: skip tool call, set visualData directly
-            if (actionIntent.toolName === 'launch_content_wizard') {
-              console.log('🚀 Direct wizard launch with keyword:', actionIntent.params.keyword);
-              const wizardMessage: EnhancedChatMessage = {
-                id: `wizard-${Date.now()}`,
-                role: 'assistant',
-                content: actionIntent.params.keyword 
-                  ? `Great! Let's create content about "${actionIntent.params.keyword}". How would you like to proceed?`
-                  : 'How would you like to create your content?',
-                timestamp: new Date(),
-                visualData: {
-                  type: 'content_creation_choice',
-                  keyword: actionIntent.params.keyword || '',
-                },
-              };
-              setMessages(prev => [...prev, wizardMessage]);
-              await saveMessage(wizardMessage, conversationId);
-            } else {
-              console.log('🔧 Action intent detected:', actionIntent.toolName, '- calling enhanced-ai-chat...');
+      const finalMessage: EnhancedChatMessage = {
+        ...placeholderMessage,
+        content: responseContent,
+        actions: responseActions,
+        visualData: responseVisualData,
+      };
 
-              const conversationForTools = [
-                ...messages.slice(-8).map(m => ({ role: m.role, content: m.content })),
-                { role: 'user' as const, content },
-                { role: 'assistant' as const, content: fullContent },
-                { role: 'user' as const, content: `Please execute the action I requested. Tool hint: ${actionIntent.toolName}${actionIntent.params && Object.keys(actionIntent.params).length > 0 ? ` with params: ${JSON.stringify(actionIntent.params)}` : ''}` }
-              ];
-
-              // If destructive action, show confirmation instead of executing
-              if (actionIntent.requiresConfirmation) {
-                console.log('⚠️ Destructive action requires confirmation:', actionIntent.toolName);
-                setPendingConfirmation({
-                  toolName: actionIntent.toolName,
-                  originalMessage: content,
-                  conversationId: conversationId!,
-                  conversationHistory: conversationForTools,
-                });
-
-                const confirmMessage: EnhancedChatMessage = {
-                  id: `confirm-${Date.now()}`,
-                  role: 'assistant',
-                  content: '',
-                  timestamp: new Date(),
-                  confirmationData: {
-                    toolName: actionIntent.toolName,
-                    originalMessage: content,
-                  },
-                };
-                setMessages(prev => [...prev, confirmMessage]);
-              } else {
-                // Non-destructive: execute immediately
-                await executeToolAction(conversationForTools, conversationId!, actionIntent.toolName);
-              }
-            }
-          }
-        }
-      } catch (streamError) {
-        console.warn('Streaming failed, falling back to blocking call:', streamError);
-      }
-
-      // Fallback to blocking call if streaming didn't work
-      if (!streamSuccess) {
-        const aiResponse = await enhancedAIService.processEnhancedMessage(
-          content,
-          [...messages, userMessage],
-          user.id
-        );
-
-        // Replace placeholder with actual response
-        setMessages(prev =>
-          prev.map(m => m.id === assistantId ? { ...aiResponse, id: assistantId } : m)
-        );
-        await saveMessage({ ...aiResponse, id: assistantId }, conversationId);
-
-        if (aiResponse.workflowContext?.currentWorkflow) {
-          toast({
-            title: "Workflow Progress",
-            description: `${aiResponse.workflowContext.currentWorkflow.replace(/-/g, ' ')} workflow updated`,
-            duration: 1500
-          });
-        }
-      }
+      setMessages(prev =>
+        prev.map(m => m.id === assistantId ? finalMessage : m)
+      );
+      await saveMessage(finalMessage, conversationId);
 
       // Update conversation title if first exchange
       if (messages.length === 0) {
