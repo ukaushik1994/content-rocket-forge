@@ -469,6 +469,9 @@ Brand & Analytics: get_brand_voice, update_brand_voice, get_content_performance
 - User says "schedule this social post" → schedule_social_post
 - User says "accept the recommendation" → accept_recommendation
 - User says "update the email template" → update_email_template
+- User says "what's my brand voice" or "show brand guidelines" → get_brand_voice
+- User says "change my tone to professional" → update_brand_voice with tone parameter
+- User says "how is my content performing" or "show traffic" → get_content_performance (checks API keys first)
 
 **Important:** Always check counts above first. If a count is 0, inform the user no data exists rather than calling the tool. For write operations, confirm the action with the user in your response.
 

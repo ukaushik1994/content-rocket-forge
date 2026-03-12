@@ -150,6 +150,8 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   if (needsRepurposed) categories.push('repurposed');
   if (needsEmailThreads) categories.push('email_threads');
   if (needsActivityLog) categories.push('activity_log');
+  if (needsBrandVoice) categories.push('brand_voice');
+  if (needsContentPerformance) categories.push('content_performance');
   
   // If no specific category detected, include core data at summary level
   if (categories.length === 0) {

@@ -695,6 +695,13 @@ export async function executeToolCall(
           const result = await executeStrategyActionTool(toolName, toolArgs, supabase, userId);
           return { data: result, error: null };
         }
+
+        // Route brand & analytics tools
+        if (BRAND_ANALYTICS_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to brand/analytics handler`);
+          const result = await executeBrandAnalyticsTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
         
         switch (toolName) {
           case 'get_content_items': {
