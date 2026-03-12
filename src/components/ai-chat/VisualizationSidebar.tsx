@@ -969,6 +969,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   if (visualData?.type === 'research_intelligence') {
     return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;
   }
+  if (visualData?.type === 'content_repurpose') {
+    return <RepurposePanel isOpen={isOpen} onClose={onClose} contentId={visualData.contentId} />;
+  }
 
   // Analyst mode — empty state when no chart data, otherwise falls through to default chart view
   if (visualData?.type === 'analyst' && chartData.length === 0) {
