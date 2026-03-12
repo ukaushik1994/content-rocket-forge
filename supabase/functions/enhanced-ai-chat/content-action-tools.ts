@@ -116,7 +116,7 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
         type: "object",
         properties: {
           keyword: { type: "string", description: "Primary keyword/topic for the article" },
-          content_type: { type: "string", enum: ["blog", "social-twitter", "social-linkedin", "email", "glossary"], default: "blog", description: "Type of content to generate" },
+          content_type: { type: "string", enum: ["blog", "social-twitter", "social-linkedin", "email"], default: "blog", description: "Type of content to generate" },
           tone: { type: "string", enum: ["professional", "casual", "technical", "persuasive", "educational"], default: "professional", description: "Writing tone" },
           length: { type: "string", enum: ["short", "medium", "long"], default: "medium", description: "Content length (short ~500 words, medium ~1000, long ~2000)" },
           solution_id: { type: "string", description: "Optional solution to tie the content to" },
