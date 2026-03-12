@@ -544,6 +544,20 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   delete_journey: ['get_engage_journeys'],
   delete_automation: ['get_engage_automations'],
   delete_social_post: ['get_social_posts'],
+  // Proposal action tools
+  accept_proposal: ['get_proposals', 'get_calendar_items'],
+  reject_proposal: ['get_proposals'],
+  create_proposal: ['get_proposals'],
+  // Campaign creation
+  create_campaign: ['get_campaign_intelligence'],
+  // Social post updates
+  update_social_post: ['get_social_posts'],
+  schedule_social_post: ['get_social_posts'],
+  // Email template updates
+  update_email_template: ['get_email_templates'],
+  // Strategy recommendation actions
+  accept_recommendation: ['get_strategy_recommendations'],
+  dismiss_recommendation: ['get_strategy_recommendations'],
 };
 
 /**
