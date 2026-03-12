@@ -321,7 +321,19 @@ export async function executeContentActionTool(
         }).select('id, title, status, content_type, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created "${data.title}" as ${data.status}`, item: data };
+
+        // Auto-calculate SEO score
+        const seoScore = calculateBasicSeoScore(
+          toolArgs.content || '', 
+          toolArgs.main_keyword || '', 
+          toolArgs.meta_title, 
+          toolArgs.meta_description
+        );
+        if (seoScore > 0 && data.id) {
+          await saveAutoSeoScore(supabase, userId, data.id, seoScore, toolArgs.main_keyword || '');
+        }
+
+        return { success: true, message: `Created "${data.title}" as ${data.status} (SEO: ${seoScore}/100)`, item: { ...data, seo_score: seoScore } };
       }
 
       case 'update_content_item': {
