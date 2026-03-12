@@ -4,7 +4,7 @@
  */
 
 // Content Type Options - synced with template formats
-export type ContentType = 'blog' | 'social-twitter' | 'social-linkedin' | 'social-facebook' | 'social-instagram' | 'script' | 'email' | 'glossary' | 'meme' | 'carousel';
+export type ContentType = 'blog' | 'social-twitter' | 'social-linkedin' | 'social-facebook' | 'social-instagram' | 'script' | 'email' | 'meme' | 'carousel';
 
 // Content Format Options
 export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to' | 'list';
