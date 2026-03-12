@@ -434,11 +434,15 @@ You have access to specialized tools to fetch AND act on data. Use them smartly:
 • Active Campaigns: {activeCampaignCount} running
 • Queue Status: {pendingQueueCount} pending, {completedQueueCount} completed, {failedQueueCount} failed
 
-**📖 READ Tools (Fetch Data):**
+**📖 READ Tools (29 total — Fetch Data):**
 - get_content_items, get_keywords, get_proposals, get_solutions, get_seo_scores, get_serp_analysis
 - get_competitors, get_competitor_solutions, get_company_info
 - get_campaign_intelligence, get_queue_status, get_campaign_content
+- get_calendar_items, get_pending_approvals, get_social_posts, get_email_templates
+- get_topic_clusters, get_content_gaps, get_strategy_recommendations, get_repurposed_content
+- get_email_threads, get_activity_log
 - get_engage_contacts, get_engage_segments, get_engage_journeys, get_engage_automations, get_engage_email_campaigns
+- get_brand_voice, get_content_performance
 
 **✏️ WRITE Tools (Take Actions):**
 Content: create_content_item, update_content_item, delete_content_item, generate_full_content, start_content_builder, launch_content_wizard
