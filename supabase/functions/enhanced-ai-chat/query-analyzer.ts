@@ -140,6 +140,8 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   const needsRepurposed = /repurpos|reformat|content variation|different format|converted content/i.test(q);
   const needsEmailThreads = /inbox|email thread|recent email|email message|did.*reply/i.test(q);
   const needsActivityLog = /activity|what happened|audit|event log|workspace history|recent event/i.test(q);
+  const needsBrandVoice = /brand voice|brand guideline|tone of voice|writing style|brand personality|how should i write|do.*don't.*phrase/i.test(q);
+  const needsContentPerformance = /page view|traffic|impression|click through|bounce rate|session duration|ctr|content performance|real analytics/i.test(q);
   
   if (needsTemplates) categories.push('templates');
   if (needsTopicClusters) categories.push('topic_clusters');
