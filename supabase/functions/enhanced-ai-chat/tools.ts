@@ -462,7 +462,7 @@ const CAMPAIGN_TOOL_NAMES = [
 
 // New read tool names for routing
 const NEW_READ_TOOL_NAMES = [
-  'get_calendar_items', 'get_glossary_terms', 'get_pending_approvals',
+  'get_calendar_items', 'get_pending_approvals',
   'get_social_posts', 'get_email_templates', 'get_topic_clusters',
   'get_content_gaps', 'get_strategy_recommendations', 'get_repurposed_content',
   'get_email_threads', 'get_activity_log', 'get_company_info'
