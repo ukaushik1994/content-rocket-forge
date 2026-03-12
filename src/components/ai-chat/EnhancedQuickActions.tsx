@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle, Database } from 'lucide-react';
+import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle } from 'lucide-react';
 
 interface EnhancedQuickActionsProps {
   onAction: (action: string, data?: any) => void;
@@ -14,7 +14,6 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
     { text: 'Run a campaign', prompt: 'Help me set up and run a new campaign', icon: Megaphone, iconColor: 'text-emerald-400' },
     { text: 'Draft an email', prompt: 'Create a new email campaign for my latest content', icon: Mail, iconColor: 'text-blue-400' },
     { text: 'Check performance', prompt: 'Show me my campaign dashboard with live queue status', icon: BarChart3, iconColor: 'text-orange-400' },
-    { text: 'What can you access?', prompt: 'What data sources and backend modules can you read from? List all available read tools, the database tables they access, and give me example questions I can ask for each.', icon: Database, iconColor: 'text-cyan-400' },
     { text: 'What can you do?', prompt: '/help', icon: HelpCircle, iconColor: 'text-violet-400' },
   ];
 

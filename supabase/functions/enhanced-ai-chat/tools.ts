@@ -703,7 +703,7 @@ export async function executeToolCall(
               .order('estimated_impressions', { ascending: false })
               .limit(Math.min(toolArgs.limit || 10, 50));
             
-          case 'get_solutions':
+          case 'get_solutions': {
             let solQuery = supabase
               .from('solutions')
               .select('id, name, description, short_description, category, features, benefits, pain_points, target_audience, use_cases, unique_value_propositions, positioning_statement, key_differentiators, pricing_model, technical_specs, case_studies, external_url, created_at')
@@ -714,6 +714,7 @@ export async function executeToolCall(
             return await solQuery
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 5, 20));
+          }
             
           case 'get_seo_scores':
             let seoQuery = supabase
@@ -763,7 +764,7 @@ export async function executeToolCall(
               .order('priority_order', { ascending: true })
               .limit(Math.min(toolArgs.limit || 10, 50));
             
-          case 'get_competitor_solutions':
+          case 'get_competitor_solutions': {
             let solQuery = supabase
               .from('competitor_solutions')
               .select(`
@@ -783,7 +784,6 @@ export async function executeToolCall(
               solQuery = solQuery.eq('competitor_id', toolArgs.competitor_id);
             }
             if (toolArgs.competitor_name) {
-              // Look up competitor IDs by name first
               const { data: matchingCompetitors } = await supabase
                 .from('company_competitors')
                 .select('id')
@@ -794,7 +794,6 @@ export async function executeToolCall(
                 const competitorIds = matchingCompetitors.map(c => c.id);
                 solQuery = solQuery.in('competitor_id', competitorIds);
               } else {
-                // No matching competitors found
                 return { data: [], error: null };
               }
             }
@@ -805,6 +804,7 @@ export async function executeToolCall(
             return await solQuery
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 10, 50));
+          }
             
           case 'generate_campaign_strategies':
             console.log(`[TOOL] ${toolName} | FORMATTING TOOL | Returning AI-structured data`);

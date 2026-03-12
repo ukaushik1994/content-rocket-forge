@@ -1,43 +1,97 @@
 
 
-# Fix: Edge Function Crash + Remove "What can you access?" Button
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Root Cause
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-The `enhanced-ai-chat` edge function is **completely broken** — it fails to boot with:
-```
-Uncaught SyntaxError: Identifier 'solQuery' has already been declared (tools.ts:908)
-```
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-Two `case` blocks in the same `switch` scope both declare `let solQuery`:
-- Line 707: `case 'get_solutions'` → `let solQuery = ...`
-- Line 767: `case 'get_competitor_solutions'` → `let solQuery = ...`
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-JavaScript switch/case shares scope across cases, so the second `let solQuery` is a redeclaration error. This means **every single chat message has been failing** since the last deployment — the AI literally cannot respond with any tool-backed data.
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-## Fix
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### File: `supabase/functions/enhanced-ai-chat/tools.ts`
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
-**Wrap both case blocks in braces** to create independent block scopes:
+---
 
-- `case 'get_solutions': { let solQuery = ...; return ...; }`  (lines 706-716)
-- `case 'get_competitor_solutions': { let solQuery = ...; return ...; }` (lines 766-807)
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-This is the standard fix for `let`/`const` in switch cases.
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-### File: `src/components/ai-chat/EnhancedQuickActions.tsx`
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-Remove the "What can you access?" button per user request (line 17).
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
-### Deployment
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
 
-Re-deploy the `enhanced-ai-chat` edge function after the fix.
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
-## Files Changed
+---
 
-| File | Change |
-|---|---|
-| `supabase/functions/enhanced-ai-chat/tools.ts` | Add block scoping braces to `get_solutions` and `get_competitor_solutions` case blocks |
-| `src/components/ai-chat/EnhancedQuickActions.tsx` | Remove "What can you access?" quick action |
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
+
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
