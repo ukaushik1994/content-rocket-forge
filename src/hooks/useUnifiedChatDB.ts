@@ -846,8 +846,8 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
 
               const { data: toolResult, error: toolError } = await supabase.functions.invoke('enhanced-ai-chat', {
                 body: {
-                  conversationId: targetConversationId,
-                  messages: conversationForTools
+                  messages: conversationForTools,
+                  context: { conversation_id: targetConversationId }
                 }
               });
 
