@@ -703,7 +703,7 @@ export async function executeToolCall(
               .order('estimated_impressions', { ascending: false })
               .limit(Math.min(toolArgs.limit || 10, 50));
             
-          case 'get_solutions':
+          case 'get_solutions': {
             let solQuery = supabase
               .from('solutions')
               .select('id, name, description, short_description, category, features, benefits, pain_points, target_audience, use_cases, unique_value_propositions, positioning_statement, key_differentiators, pricing_model, technical_specs, case_studies, external_url, created_at')
@@ -714,6 +714,7 @@ export async function executeToolCall(
             return await solQuery
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 5, 20));
+          }
             
           case 'get_seo_scores':
             let seoQuery = supabase
