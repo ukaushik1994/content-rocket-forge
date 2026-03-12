@@ -287,7 +287,7 @@ export const ENGAGE_ACTION_TOOL_DEFINITIONS = [
       parameters: { type: "object", properties: { post_id: { type: "string", description: "UUID of the social post to delete" } }, required: ["post_id"] }
     }
   },
-  // === EMAIL TEMPLATE WRITE TOOL ===
+  // === EMAIL TEMPLATE WRITE TOOLS ===
   {
     type: "function",
     function: {
@@ -305,6 +305,57 @@ export const ENGAGE_ACTION_TOOL_DEFINITIONS = [
         required: ["name", "subject", "body_html"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_email_template",
+      description: "Update an existing email template. Use when user says 'update template', 'edit template', 'change template subject', or 'modify email template'.",
+      parameters: {
+        type: "object",
+        properties: {
+          template_id: { type: "string", description: "UUID of the template to update" },
+          name: { type: "string", description: "Updated template name" },
+          subject: { type: "string", description: "Updated subject line" },
+          body_html: { type: "string", description: "Updated template body HTML" },
+          category: { type: "string", enum: ["newsletter", "transactional", "marketing", "notification", "other"], description: "Updated category" }
+        },
+        required: ["template_id"]
+      }
+    }
+  },
+  // === SOCIAL POST WRITE TOOLS ===
+  {
+    type: "function",
+    function: {
+      name: "update_social_post",
+      description: "Update an existing social media post's content or status. Use when user says 'update social post', 'edit post', 'change post content', or 'modify social post'.",
+      parameters: {
+        type: "object",
+        properties: {
+          post_id: { type: "string", description: "UUID of the social post to update" },
+          content: { type: "string", description: "Updated post content" },
+          status: { type: "string", enum: ["draft", "scheduled", "posted", "failed"], description: "Updated status" },
+          media_urls: { type: "array", items: { type: "string" }, description: "Updated media URLs" }
+        },
+        required: ["post_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "schedule_social_post",
+      description: "Schedule a social media post for a specific date/time. Use when user says 'schedule this post', 'post this at [time]', 'schedule social for [date]', or 'set post time'.",
+      parameters: {
+        type: "object",
+        properties: {
+          post_id: { type: "string", description: "UUID of the social post to schedule" },
+          scheduled_at: { type: "string", description: "ISO datetime to schedule the post" }
+        },
+        required: ["post_id", "scheduled_at"]
+      }
+    }
   }
 ];
 
@@ -316,7 +367,8 @@ export const ENGAGE_ACTION_TOOL_NAMES = [
   'create_social_post',
   'delete_contact', 'delete_segment', 'delete_email_campaign',
   'delete_journey', 'delete_automation', 'delete_social_post',
-  'create_email_template'
+  'create_email_template', 'update_email_template',
+  'update_social_post', 'schedule_social_post'
 ];
 
 export async function executeEngageActionTool(
@@ -703,6 +755,66 @@ export async function executeEngageActionTool(
 
         if (error) throw error;
         return { success: true, message: `Created email template "${data.name}"`, item: data };
+      }
+
+      case 'update_email_template': {
+        const updates: any = { updated_at: new Date().toISOString() };
+        if (toolArgs.name) updates.name = toolArgs.name;
+        if (toolArgs.subject) updates.subject = toolArgs.subject;
+        if (toolArgs.body_html) updates.body_html = toolArgs.body_html;
+        if (toolArgs.category) updates.category = toolArgs.category;
+
+        const { data, error } = await supabase.from('email_templates')
+          .update(updates)
+          .eq('id', toolArgs.template_id)
+          .eq('workspace_id', workspaceId)
+          .select('id, name, subject, category')
+          .single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Template not found or access denied' };
+        return { success: true, message: `Updated email template "${data.name}"`, item: data };
+      }
+
+      case 'update_social_post': {
+        const updates: any = { updated_at: new Date().toISOString() };
+        if (toolArgs.content) updates.content = toolArgs.content;
+        if (toolArgs.status) updates.status = toolArgs.status;
+        if (toolArgs.media_urls) updates.media_urls = toolArgs.media_urls;
+
+        const { data, error } = await supabase.from('social_posts')
+          .update(updates)
+          .eq('id', toolArgs.post_id)
+          .eq('workspace_id', workspaceId)
+          .select('id, content, status, scheduled_at')
+          .single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Social post not found or access denied' };
+        return { success: true, message: `Updated social post`, item: data };
+      }
+
+      case 'schedule_social_post': {
+        const { data, error } = await supabase.from('social_posts')
+          .update({ 
+            scheduled_at: toolArgs.scheduled_at, 
+            status: 'scheduled',
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', toolArgs.post_id)
+          .eq('workspace_id', workspaceId)
+          .select('id, content, status, scheduled_at')
+          .single();
+
+        if (error) throw error;
+        if (!data) return { success: false, message: 'Social post not found or access denied' };
+
+        // Update target statuses too
+        await supabase.from('social_post_targets')
+          .update({ status: 'pending' })
+          .eq('post_id', toolArgs.post_id);
+
+        return { success: true, message: `Scheduled social post for ${toolArgs.scheduled_at}`, item: data };
       }
 
       default:

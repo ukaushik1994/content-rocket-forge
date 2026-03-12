@@ -44,6 +44,18 @@ import {
   executeCrossModuleTool
 } from './cross-module-tools.ts';
 
+import {
+  PROPOSAL_ACTION_TOOL_DEFINITIONS,
+  PROPOSAL_ACTION_TOOL_NAMES,
+  executeProposalActionTool
+} from './proposal-action-tools.ts';
+
+import {
+  STRATEGY_ACTION_TOOL_DEFINITIONS,
+  STRATEGY_ACTION_TOOL_NAMES,
+  executeStrategyActionTool
+} from './strategy-action-tools.ts';
+
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Core data tools
@@ -448,7 +460,9 @@ export const TOOL_DEFINITIONS = [
   ...KEYWORD_ACTION_TOOL_DEFINITIONS,
   ...OFFERINGS_ACTION_TOOL_DEFINITIONS,
   ...ENGAGE_ACTION_TOOL_DEFINITIONS,
-  ...CROSS_MODULE_TOOL_DEFINITIONS
+  ...CROSS_MODULE_TOOL_DEFINITIONS,
+  ...PROPOSAL_ACTION_TOOL_DEFINITIONS,
+  ...STRATEGY_ACTION_TOOL_DEFINITIONS
 ];
 
 // List of campaign tool names for routing
@@ -530,6 +544,20 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   delete_journey: ['get_engage_journeys'],
   delete_automation: ['get_engage_automations'],
   delete_social_post: ['get_social_posts'],
+  // Proposal action tools
+  accept_proposal: ['get_proposals', 'get_calendar_items'],
+  reject_proposal: ['get_proposals'],
+  create_proposal: ['get_proposals'],
+  // Campaign creation
+  create_campaign: ['get_campaign_intelligence'],
+  // Social post updates
+  update_social_post: ['get_social_posts'],
+  schedule_social_post: ['get_social_posts'],
+  // Email template updates
+  update_email_template: ['get_email_templates'],
+  // Strategy recommendation actions
+  accept_recommendation: ['get_strategy_recommendations'],
+  dismiss_recommendation: ['get_strategy_recommendations'],
 };
 
 /**
@@ -642,6 +670,20 @@ export async function executeToolCall(
         if (CROSS_MODULE_TOOL_NAMES.includes(toolName)) {
           console.log(`[TOOL] ${toolName} | Routing to cross-module handler`);
           const result = await executeCrossModuleTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
+
+        // Route proposal action tools
+        if (PROPOSAL_ACTION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to proposal action handler`);
+          const result = await executeProposalActionTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
+
+        // Route strategy action tools
+        if (STRATEGY_ACTION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to strategy action handler`);
+          const result = await executeStrategyActionTool(toolName, toolArgs, supabase, userId);
           return { data: result, error: null };
         }
         

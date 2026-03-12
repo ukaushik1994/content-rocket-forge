@@ -446,18 +446,27 @@ Approvals: submit_for_review, approve_content, reject_content
 Keywords: add_keywords, remove_keywords, trigger_serp_analysis, trigger_content_gap_analysis, create_topic_cluster
 Offerings: create_solution, update_solution, delete_solution, update_company_info, add_competitor, update_competitor, trigger_competitor_analysis
 Engage: create_contact, update_contact, tag_contacts, create_segment, create_email_campaign, send_email_campaign, create_journey, activate_journey, create_automation, toggle_automation, enroll_contacts_in_journey, send_quick_email, delete_contact, delete_segment, delete_email_campaign, delete_journey, delete_automation, delete_social_post
-Cross-Module: promote_content_to_campaign, content_to_email, campaign_content_to_engage, repurpose_for_social, publish_to_website, schedule_social_from_repurpose
-Social: create_social_post
+Cross-Module: promote_content_to_campaign, content_to_email, campaign_content_to_engage, repurpose_for_social, publish_to_website, schedule_social_from_repurpose, create_campaign
+Social: create_social_post, update_social_post, schedule_social_post
+Email Templates: create_email_template, update_email_template
+Proposals: accept_proposal, reject_proposal, create_proposal
+Strategy: accept_recommendation, dismiss_recommendation
 
 **Campaign Tools:** trigger_content_generation, retry_failed_content
 
 **When to Use Write Tools:**
-- User explicitly asks to create, add, update, edit, delete, remove, send, publish, schedule, approve, reject
+- User explicitly asks to create, add, update, edit, delete, remove, send, publish, schedule, approve, reject, accept, dismiss
 - User says "generate an article about X" → generate_full_content
 - User says "add contact john@example.com" → create_contact
 - User says "email this content to VIP contacts" → content_to_email
 - User says "create a segment of active users" → create_segment
 - User says "repurpose for social" → repurpose_for_social
+- User says "accept this proposal" → accept_proposal
+- User says "reject proposal" → reject_proposal
+- User says "create a campaign about X" → create_campaign
+- User says "schedule this social post" → schedule_social_post
+- User says "accept the recommendation" → accept_recommendation
+- User says "update the email template" → update_email_template
 
 **Important:** Always check counts above first. If a count is 0, inform the user no data exists rather than calling the tool. For write operations, confirm the action with the user in your response.
 

@@ -112,12 +112,17 @@ Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterfa
 - Removed glossary from ContentTypeSelection page
 - DB tables kept (no destructive migration)
 
-## 🔲 Batch 2: New Write Tools (8 new tools)
-- Proposal actions: accept/reject/create
-- Campaign creation
-- Social post update/schedule
-- Email template update
-- Strategy recommendation accept/dismiss
+## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
+- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
+- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
+- Added `create_campaign` to cross-module-tools.ts
+- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
+- Added `update_email_template` to engage-action-tools.ts
+- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
+- Added cache invalidation for all new write tools
+- Updated query-analyzer.ts with new intent patterns
+- Updated system prompt with new tool capabilities + usage examples
+- Edge function deployed successfully
 
 ## 🔲 Batch 3: Repurpose Content Sidebar
 ## 🔲 Batch 4: SEO Auto-Scoring
