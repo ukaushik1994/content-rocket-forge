@@ -672,6 +672,20 @@ export async function executeToolCall(
           const result = await executeCrossModuleTool(toolName, toolArgs, supabase, userId);
           return { data: result, error: null };
         }
+
+        // Route proposal action tools
+        if (PROPOSAL_ACTION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to proposal action handler`);
+          const result = await executeProposalActionTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
+
+        // Route strategy action tools
+        if (STRATEGY_ACTION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to strategy action handler`);
+          const result = await executeStrategyActionTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
         
         switch (toolName) {
           case 'get_content_items': {
