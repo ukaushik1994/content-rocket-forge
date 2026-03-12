@@ -95,3 +95,36 @@ Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterfa
 
 ## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
 - Wrapped stat cards in `onClick` handlers with `useNavigate`
+
+---
+
+# AI Chat Awareness Audit (59 tools total)
+
+## Scorecard Summary
+
+| DATA DOMAIN | READ | WRITE | STATUS |
+|---|---|---|---|
+| Company Info | ✅ | ✅ | Good — always-on snippet |
+| Solutions / Offerings | ✅ | ✅ CUD | Good — full details on-demand |
+| Competitors | ✅ | ✅ CUD | Good — SWOT/intel on demand |
+| Competitor Solutions | ✅ | ❌ | Gap — read-only |
+| Content Items | ✅ | ✅ CUD | Good |
+| AI Strategy Proposals | ✅ | ❌ | Gap — no accept/reject/create |
+| Keywords | ✅ | ✅ CUD | Good |
+| Campaigns | ✅ | ❌ | Gap — no create from chat |
+| Editorial Calendar | ✅ | ✅ CUD | Good |
+| Glossary Terms | ✅ | ❌ | Gap — read-only |
+| Approvals | ✅ | ✅ | Good |
+| Social Posts | ✅ | ❌ | Gap — read-only |
+| Email Templates | ✅ | ❌ | Gap — read-only |
+| Engage (Contacts/Segments/Journeys/Automations/Email) | ✅ | ✅ CUD | Good — full CRUD |
+| Cross-Module Orchestration (6 actions) | — | ✅ | Good |
+| Content Generation (3 actions) | — | ✅ | Good |
+
+## Critical Weaknesses (Priority Fix List)
+1. **Disconnected awareness pipelines** — Content Wizard & AI Proposals fetch solutions independently, not through chat tools
+2. **Read-only gaps** — Glossary, Email Templates, Social Posts, Strategy Recs
+3. **No analytics/performance tool** — No traffic/clicks/impressions data
+4. **No user profile/settings awareness** — No tone prefs or brand voice
+5. **Incomplete proposal lifecycle** — Cannot accept/schedule/convert from chat
+6. **No campaign creation from chat**
