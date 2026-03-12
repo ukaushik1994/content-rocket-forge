@@ -2028,6 +2028,23 @@ CRITICAL: For EVERY response while Analyst is active:
 5. Default to multi-chart analysis when possible
 Make every response a mini-dashboard. The Analyst panel will auto-render your chart data.`;
     }
+
+    // Inject panel hint from query analyzer
+    if (queryIntent.panelHint === 'repository') {
+      systemPrompt += `\n\n## 🎯 PANEL HINT: REPOSITORY
+The user's query matches a repository/content browsing intent. You MUST include this in your response:
+\`\`\`json
+{"visualData": {"type": "repository", "title": "Content Search Results"}}
+\`\`\`
+This will open the Repository quick-access panel. Also provide a brief text answer.`;
+    } else if (queryIntent.panelHint === 'approvals') {
+      systemPrompt += `\n\n## 🎯 PANEL HINT: APPROVALS
+The user's query matches an approvals intent. You MUST include this in your response:
+\`\`\`json
+{"visualData": {"type": "approvals", "title": "Pending Approvals"}}
+\`\`\`
+This will open the Approvals quick-action panel. Also provide a brief text answer.`;
+    }
     
     // Inject real data context
     systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;
