@@ -22,17 +22,6 @@ const ContentTypeSelection = () => {
       category: 'Content Creation',
       useCases: ['Blog posts', 'Social media', 'Newsletters', 'Marketing copy']
     },
-    {
-      id: 'glossary-builder',
-      title: 'Glossary Builder',
-      description: 'Build comprehensive glossaries and term definitions with auto-linking, export capabilities, and intelligent organization',
-      icon: Book,
-      path: '/glossary-builder',
-      features: ['Terminology management', 'Auto-linking', 'Export ready', 'Search & filter'],
-      targetAudience: ['Technical writers', 'Educators', 'Documentation teams'],
-      category: 'Knowledge Management',
-      useCases: ['Documentation', 'Training materials', 'Knowledge bases', 'Reference guides']
-    }
   ];
 
   const handleSelectContentType = (contentType: any) => {

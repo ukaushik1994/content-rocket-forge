@@ -349,15 +349,6 @@ export const DashboardSummary = () => {
             iconColor: 'text-neon-purple'
           },
           { 
-            type: 'glossary', 
-            label: 'Glossary Terms', 
-            current: data.content_created.glossary, 
-            goal: data.progress.goal.glossary,
-            icon: Book,
-            gradient: 'from-neon-pink/20 to-pink-400/20',
-            iconColor: 'text-neon-pink'
-          },
-          { 
             type: 'overall', 
             label: 'Overall Progress', 
             current: data.progress.percentage, 

@@ -813,15 +813,7 @@ export async function executeToolCall(
             return await calQuery.order('scheduled_date', { ascending: true }).limit(Math.min(toolArgs.limit || 20, 50));
           }
 
-          case 'get_glossary_terms': {
-            let gtQuery = supabase
-              .from('glossary_terms')
-              .select('id, term, short_definition, expanded_explanation, search_volume, keyword_difficulty, related_terms, paa_questions, glossary_id, created_at')
-              .eq('user_id', userId);
-            if (toolArgs.glossary_id) gtQuery = gtQuery.eq('glossary_id', toolArgs.glossary_id);
-            if (toolArgs.search) gtQuery = gtQuery.ilike('term', `%${toolArgs.search}%`);
-            return await gtQuery.order('term', { ascending: true }).limit(Math.min(toolArgs.limit || 20, 100));
-          }
+          // get_glossary_terms removed — feature deprecated
 
           case 'get_pending_approvals': {
             const approvalStatus = toolArgs.status || 'pending_review';

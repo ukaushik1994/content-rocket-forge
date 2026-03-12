@@ -123,7 +123,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   if (needsApprovals) categories.push('approvals');
   if (needsCalendar) categories.push('calendar');
   if (needsResearch) categories.push('research');
-  if (needsGlossary) categories.push('glossary');
+  // glossary removed
   if (needsSocial) categories.push('social');
   if (hasActionIntent) categories.push('action');
   

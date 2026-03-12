@@ -507,44 +507,7 @@ export async function executeContentActionTool(
         return { success: true, message: `Removed "${data.title}" from calendar` };
       }
 
-      // === GLOSSARY WRITE ===
-      case 'create_glossary_term': {
-        let glossaryId = toolArgs.glossary_id;
-
-        // If no glossary_id, find the first active glossary or create one
-        if (!glossaryId) {
-          const { data: glossaries } = await supabase.from('glossaries')
-            .select('id')
-            .eq('user_id', userId)
-            .eq('is_active', true)
-            .limit(1).single();
-
-          if (glossaries) {
-            glossaryId = glossaries.id;
-          } else {
-            // Create default glossary
-            const { data: newGlossary, error: gErr } = await supabase.from('glossaries').insert({
-              user_id: userId,
-              name: 'My Glossary',
-              is_active: true
-            }).select('id').single();
-            if (gErr) throw gErr;
-            glossaryId = newGlossary.id;
-          }
-        }
-
-        const { data, error } = await supabase.from('glossary_terms').insert({
-          user_id: userId,
-          glossary_id: glossaryId,
-          term: toolArgs.term,
-          short_definition: toolArgs.short_definition,
-          expanded_explanation: toolArgs.expanded_explanation || null,
-          related_terms: toolArgs.related_terms ? JSON.stringify(toolArgs.related_terms) : null
-        }).select('id, term, short_definition, created_at').single();
-
-        if (error) throw error;
-        return { success: true, message: `Added glossary term "${data.term}"`, item: data };
-      }
+      // Glossary write removed — feature deprecated
 
       default:
         return { error: `Unknown content action tool: ${toolName}` };
