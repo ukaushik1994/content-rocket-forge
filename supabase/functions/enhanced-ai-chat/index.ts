@@ -1291,7 +1291,11 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       publishedContentResult,
       recentContentResult,
       // Phase 4: Engage module counts
-      engageWorkspaceResult
+      engageWorkspaceResult,
+      // Phase 5: Business identity snippet
+      companyInfoResult,
+      topSolutionsResult,
+      topCompetitorsResult
     ] = await Promise.all([
       supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('ai_strategy_proposals').select('*', { count: 'exact', head: true }).eq('user_id', userId),
@@ -1309,7 +1313,11 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       // Phase 3: Recent activity
       supabase.from('content_items').select('title, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
       // Phase 4: Engage workspace
-      supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle()
+      supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle(),
+      // Phase 5: Business identity
+      supabase.from('company_info').select('name, industry, website, description').eq('user_id', userId).limit(1).maybeSingle(),
+      supabase.from('solutions').select('name').eq('user_id', userId).order('created_at', { ascending: false }).limit(3),
+      supabase.from('company_competitors').select('name').eq('user_id', userId).order('priority_order', { ascending: true }).limit(3)
     ]);
 
     const contentCount = contentResult.count || 0;
