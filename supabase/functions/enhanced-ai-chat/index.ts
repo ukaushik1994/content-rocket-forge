@@ -1362,8 +1362,26 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       engageEmailCampaignCount = emailCampaignsR.count || 0;
     }
 
+    // Phase 5: Build business identity snippet
+    const companyInfo = companyInfoResult.data;
+    const topSolutions = (topSolutionsResult.data || []).map((s: any) => s.name);
+    const topCompetitors = (topCompetitorsResult.data || []).map((c: any) => c.name);
+    
+    const identitySnippet = companyInfo ? `
+## 🏢 Business Identity:
+- **Company**: ${companyInfo.name || 'Not set'}${companyInfo.industry ? ` (${companyInfo.industry})` : ''}${companyInfo.website ? ` — ${companyInfo.website}` : ''}
+${companyInfo.description ? `- **About**: ${companyInfo.description.slice(0, 200)}` : ''}
+${topSolutions.length > 0 ? `- **Offerings**: ${topSolutions.join(', ')}${solutionCount > 3 ? ` (+${solutionCount - 3} more)` : ''}` : ''}
+${topCompetitors.length > 0 ? `- **Competitors**: ${topCompetitors.join(', ')}${competitorCount > 3 ? ` (+${competitorCount - 3} more)` : ''}` : ''}
+` : (topSolutions.length > 0 || topCompetitors.length > 0 ? `
+## 🏢 Business Identity:
+${topSolutions.length > 0 ? `- **Offerings**: ${topSolutions.join(', ')}${solutionCount > 3 ? ` (+${solutionCount - 3} more)` : ''}` : '- No offerings defined yet'}
+${topCompetitors.length > 0 ? `- **Competitors**: ${topCompetitors.join(', ')}${competitorCount > 3 ? ` (+${competitorCount - 3} more)` : ''}` : '- No competitors tracked yet'}
+` : '');
+
     // Build minimal context string with enhanced stats
     const contextString = `
+${identitySnippet}
 ## Available Data Summary (${new Date().toISOString()}):
 - **Content Items**: ${contentCount} total (${draftCount} drafts, ${publishedCount} published)
 - **AI Strategy Proposals**: ${proposalCount} total
@@ -1385,7 +1403,7 @@ ${recentActivitySection}
 
 ## How to Access Detailed Data:
 
-You have access to 18 powerful tools to fetch exactly the data you need:
+You have access to powerful tools to fetch exactly the data you need:
 
 **Core Tools:**
 1. **get_content_items** - Fetch content with filters (status, SEO score, type)
