@@ -73,7 +73,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   const needsApprovals = /approv|review|pending review|reject|needs changes|submission/i.test(q);
   const needsCalendar = /calendar|schedule|editorial|planned|upcoming/i.test(q);
   const needsResearch = /research|topic cluster|content gap|serp intelligence|pillar|topical authority/i.test(q);
-  const needsGlossary = /glossary|terminolog|definition|term|lexicon/i.test(q);
+  // Glossary removed — feature deprecated
   const needsSocial = /social|instagram|twitter|linkedin|facebook|tiktok|post|hashtag|mention|dm|comment/i.test(q);
   
   // Write/Action intent detection
