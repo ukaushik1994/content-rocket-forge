@@ -124,7 +124,12 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   if (needsProposals) categories.push('proposals');
   if (needsSEO && !needsInternalTrends) categories.push('seo');
   if (needsCampaigns || needsInternalTrends) categories.push('campaigns');
-  if (needsCompetitors) categories.push('competitors');
+  if (needsCompetitors) {
+    categories.push('competitors');
+    // Remove 'solutions' if competitor intent is stronger to avoid confusion
+    const idx = categories.indexOf('solutions');
+    if (idx > -1 && !needsSolutions) categories.splice(idx, 1);
+  }
   if (needsAnalytics) categories.push('analytics');
   if (needsPerformance || needsInternalTrends) categories.push('performance');
   if (needsEngage || needsSocial) categories.push('engage');
