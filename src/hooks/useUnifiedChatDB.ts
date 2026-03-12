@@ -846,8 +846,8 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
 
               const { data: toolResult, error: toolError } = await supabase.functions.invoke('enhanced-ai-chat', {
                 body: {
-                  conversationId: targetConversationId,
-                  messages: conversationForTools
+                  messages: conversationForTools,
+                  context: { conversation_id: targetConversationId }
                 }
               });
 
@@ -941,11 +941,11 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
       try {
         const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
           body: {
-            conversationId: targetConversationId,
             messages: [...state.messages, userMessage].map(msg => ({
               role: msg.role,
               content: msg.content
-            }))
+            })),
+            context: { conversation_id: targetConversationId }
           }
         });
 

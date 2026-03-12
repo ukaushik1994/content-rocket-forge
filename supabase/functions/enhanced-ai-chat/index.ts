@@ -436,7 +436,7 @@ You have access to specialized tools to fetch AND act on data. Use them smartly:
 
 **📖 READ Tools (Fetch Data):**
 - get_content_items, get_keywords, get_proposals, get_solutions, get_seo_scores, get_serp_analysis
-- get_competitors, get_competitor_solutions
+- get_competitors, get_competitor_solutions, get_company_info
 - get_campaign_intelligence, get_queue_status, get_campaign_content
 - get_engage_contacts, get_engage_segments, get_engage_journeys, get_engage_automations, get_engage_email_campaigns
 
@@ -1291,7 +1291,11 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       publishedContentResult,
       recentContentResult,
       // Phase 4: Engage module counts
-      engageWorkspaceResult
+      engageWorkspaceResult,
+      // Phase 5: Business identity snippet
+      companyInfoResult,
+      topSolutionsResult,
+      topCompetitorsResult
     ] = await Promise.all([
       supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('ai_strategy_proposals').select('*', { count: 'exact', head: true }).eq('user_id', userId),
@@ -1309,7 +1313,11 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       // Phase 3: Recent activity
       supabase.from('content_items').select('title, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
       // Phase 4: Engage workspace
-      supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle()
+      supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle(),
+      // Phase 5: Business identity
+      supabase.from('company_info').select('name, industry, website, description').eq('user_id', userId).limit(1).maybeSingle(),
+      supabase.from('solutions').select('name').eq('user_id', userId).order('created_at', { ascending: false }).limit(3),
+      supabase.from('company_competitors').select('name').eq('user_id', userId).order('priority_order', { ascending: true }).limit(3)
     ]);
 
     const contentCount = contentResult.count || 0;
@@ -1354,8 +1362,26 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       engageEmailCampaignCount = emailCampaignsR.count || 0;
     }
 
+    // Phase 5: Build business identity snippet
+    const companyInfo = companyInfoResult.data;
+    const topSolutions = (topSolutionsResult.data || []).map((s: any) => s.name);
+    const topCompetitors = (topCompetitorsResult.data || []).map((c: any) => c.name);
+    
+    const identitySnippet = companyInfo ? `
+## 🏢 Business Identity:
+- **Company**: ${companyInfo.name || 'Not set'}${companyInfo.industry ? ` (${companyInfo.industry})` : ''}${companyInfo.website ? ` — ${companyInfo.website}` : ''}
+${companyInfo.description ? `- **About**: ${companyInfo.description.slice(0, 200)}` : ''}
+${topSolutions.length > 0 ? `- **Offerings**: ${topSolutions.join(', ')}${solutionCount > 3 ? ` (+${solutionCount - 3} more)` : ''}` : ''}
+${topCompetitors.length > 0 ? `- **Competitors**: ${topCompetitors.join(', ')}${competitorCount > 3 ? ` (+${competitorCount - 3} more)` : ''}` : ''}
+` : (topSolutions.length > 0 || topCompetitors.length > 0 ? `
+## 🏢 Business Identity:
+${topSolutions.length > 0 ? `- **Offerings**: ${topSolutions.join(', ')}${solutionCount > 3 ? ` (+${solutionCount - 3} more)` : ''}` : '- No offerings defined yet'}
+${topCompetitors.length > 0 ? `- **Competitors**: ${topCompetitors.join(', ')}${competitorCount > 3 ? ` (+${competitorCount - 3} more)` : ''}` : '- No competitors tracked yet'}
+` : '');
+
     // Build minimal context string with enhanced stats
     const contextString = `
+${identitySnippet}
 ## Available Data Summary (${new Date().toISOString()}):
 - **Content Items**: ${contentCount} total (${draftCount} drafts, ${publishedCount} published)
 - **AI Strategy Proposals**: ${proposalCount} total
@@ -1377,7 +1403,7 @@ ${recentActivitySection}
 
 ## How to Access Detailed Data:
 
-You have access to 18 powerful tools to fetch exactly the data you need:
+You have access to powerful tools to fetch exactly the data you need:
 
 **Core Tools:**
 1. **get_content_items** - Fetch content with filters (status, SEO score, type)
@@ -1402,6 +1428,7 @@ You have access to 18 powerful tools to fetch exactly the data you need:
 16. **get_engage_journeys** - Fetch customer journeys with enrollment stats
 17. **get_engage_automations** - Fetch automation rules with execution stats
 18. **get_engage_email_campaigns** - Fetch email campaigns with delivery analytics (sent, opened, clicked, bounced)
+19. **get_company_info** - Fetch company/business information (name, industry, website, mission, values)
 
 **CRITICAL INSTRUCTIONS:**
 - When user asks about specific data, USE TOOLS to fetch it
@@ -1427,6 +1454,8 @@ You have access to 18 powerful tools to fetch exactly the data you need:
 - User: "What journeys are active?" → Call get_engage_journeys with status="active"
 - User: "Show email campaign performance" → Call get_engage_email_campaigns with status="sent"
 - User: "What automations are running?" → Call get_engage_automations with is_active=true
+- User: "What's my company info?" → Call get_company_info
+- User: "Tell me about our business" → Call get_company_info
 
 **Remember:** The counts above show total data available. Use tools to dive deeper when needed.
 `;

@@ -432,6 +432,18 @@ const CORE_TOOL_DEFINITIONS = [
         }
       }
     }
+  },
+  // Company info read tool
+  {
+    type: "function",
+    function: {
+      name: "get_company_info",
+      description: "Fetch the user's company/business information including name, description, industry, website, mission, and values. Use when user asks about their company, business info, organization details, or 'who are we'.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
   }
 ];
 
@@ -467,7 +479,7 @@ const NEW_READ_TOOL_NAMES = [
   'get_calendar_items', 'get_glossary_terms', 'get_pending_approvals',
   'get_social_posts', 'get_email_templates', 'get_topic_clusters',
   'get_content_gaps', 'get_strategy_recommendations', 'get_repurposed_content',
-  'get_email_threads', 'get_activity_log'
+  'get_email_threads', 'get_activity_log', 'get_company_info'
 ];
 
 // Write tool names that should trigger cache invalidation
@@ -770,6 +782,22 @@ export async function executeToolCall(
             if (toolArgs.competitor_id) {
               solQuery = solQuery.eq('competitor_id', toolArgs.competitor_id);
             }
+            if (toolArgs.competitor_name) {
+              // Look up competitor IDs by name first
+              const { data: matchingCompetitors } = await supabase
+                .from('company_competitors')
+                .select('id')
+                .eq('user_id', userId)
+                .ilike('name', `%${toolArgs.competitor_name}%`);
+              
+              if (matchingCompetitors && matchingCompetitors.length > 0) {
+                const competitorIds = matchingCompetitors.map(c => c.id);
+                solQuery = solQuery.in('competitor_id', competitorIds);
+              } else {
+                // No matching competitors found
+                return { data: [], error: null };
+              }
+            }
             if (toolArgs.category) {
               solQuery = solQuery.eq('category', toolArgs.category);
             }
@@ -895,6 +923,14 @@ export async function executeToolCall(
               .eq('workspace_id', tm4.workspace_id);
             if (toolArgs.channel) alQuery = alQuery.eq('channel', toolArgs.channel);
             return await alQuery.order('created_at', { ascending: false }).limit(Math.min(toolArgs.limit || 30, 100));
+          }
+
+          case 'get_company_info': {
+            return await supabase
+              .from('company_info')
+              .select('id, name, description, industry, website, mission, size, founded, logo_url, values, created_at, updated_at')
+              .eq('user_id', userId)
+              .limit(1);
           }
 
           default:
