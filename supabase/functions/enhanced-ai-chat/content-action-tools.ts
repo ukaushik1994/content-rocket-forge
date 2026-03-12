@@ -505,11 +505,17 @@ export async function executeContentActionTool(
 
         if (saveError) throw saveError;
 
+        // Auto-calculate SEO score for generated content
+        const seoScore = calculateBasicSeoScore(generatedContent, toolArgs.keyword, autoTitle, '');
+        if (seoScore > 0 && saved.id) {
+          await saveAutoSeoScore(supabase, userId, saved.id, seoScore, toolArgs.keyword);
+        }
+
         const wordCount = generatedContent.split(/\s+/).length;
         return {
           success: true,
-          message: `Generated and saved "${saved.title}" (~${wordCount} words) as draft`,
-          item: saved,
+          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100) as draft`,
+          item: { ...saved, seo_score: seoScore },
           wordCount
         };
       }
