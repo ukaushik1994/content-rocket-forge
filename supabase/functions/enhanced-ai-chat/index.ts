@@ -502,7 +502,6 @@ You are the AI brain of **Creaiter** — an end-to-end AI-powered content market
 - **Activity** (/engage/activity) — Unified event log across all Engage modules.
 
 ### OTHER
-- **Glossary Builder** (/glossary-builder) — Terminology management for consistent brand language across content.
 - **AI Settings** (modal via /ai-settings) — AI provider configuration (OpenAI, etc.), preferred models, API keys.
 - **Brand Guidelines** (within settings) — Colors, fonts, tone, personality, do/don't phrases. Injected into content generation.
 - **Competitors** (within settings/strategy) — Profiles, solution discovery (auto-scrapes websites), SWOT analysis.
