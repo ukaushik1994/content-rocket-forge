@@ -122,7 +122,7 @@ export const DashboardSummary = () => {
     switch (type) {
       case 'blog': return <FileText className="w-4 h-4" />;
       case 'article': return <FileText className="w-4 h-4" />;
-      case 'glossary': return <Book className="w-4 h-4" />;
+      
       case 'strategy': return <Zap className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
     }
