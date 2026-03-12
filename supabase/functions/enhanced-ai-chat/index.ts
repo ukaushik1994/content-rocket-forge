@@ -474,11 +474,32 @@ Brand: update_brand_voice
 - User says "reject proposal" → reject_proposal
 - User says "create a campaign about X" → create_campaign
 - User says "schedule this social post" → schedule_social_post
+- User says "edit my post" or "modify my social post" → update_social_post
 - User says "accept the recommendation" → accept_recommendation
 - User says "update the email template" → update_email_template
 - User says "what's my brand voice" or "show brand guidelines" → get_brand_voice
 - User says "change my tone to professional" → update_brand_voice with tone parameter
 - User says "how is my content performing" or "show traffic" → get_content_performance (checks API keys first)
+
+**🚫 CROSS-MODULE CHAIN CONFIRMATION (CRITICAL):**
+When user requests involve 2+ write tools chained together (e.g., "turn my blog into a campaign and email it"):
+1. Execute the FIRST tool only
+2. Report the result to the user
+3. Ask: "Should I proceed with the next step ([describe next action])?"
+4. Only execute the next tool after user confirms
+NEVER silently chain multiple write operations.
+
+**📧 EMAIL DISAMBIGUATION RULE:**
+When user says "show my emails" without context, ASK which they mean:
+- "Email campaigns" (sent/scheduled marketing emails)
+- "Email templates" (reusable templates)
+- "Email inbox" (recent email threads)
+Do NOT guess — ask the user to clarify.
+
+**🎯 RECOMMENDATIONS vs PROPOSALS RULE:**
+- "What should I do next?" → Use get_strategy_recommendations (curated next-best-actions)
+- "Show my proposals" → Use get_proposals (content strategy ideas)
+These are DIFFERENT datasets. Don't mix them.
 
 **Important:** Always check counts above first. If a count is 0, inform the user no data exists rather than calling the tool. For write operations, confirm the action with the user in your response.
 
@@ -2045,6 +2066,18 @@ The user's query matches an approvals intent. You MUST include this in your resp
 {"visualData": {"type": "approvals", "title": "Pending Approvals"}}
 \`\`\`
 This will open the Approvals quick-action panel. Also provide a brief text answer.`;
+    } else if (queryIntent.panelHint === 'content_repurpose') {
+      systemPrompt += `\n\n## 🎯 PANEL HINT: CONTENT REPURPOSE
+The user wants to repurpose content. You MUST include this in your response:
+\`\`\`json
+{"visualData": {"type": "content_repurpose", "contentId": null}}
+\`\`\`
+This will open the Repurpose panel. Also provide a brief text answer explaining the repurpose options.`;
+    }
+    
+    // Inject disambiguation hint if present
+    if (queryIntent.disambiguationHint) {
+      systemPrompt += `\n\n## ⚠️ DISAMBIGUATION REQUIRED:\n${queryIntent.disambiguationHint}`;
     }
     
     // Inject real data context
