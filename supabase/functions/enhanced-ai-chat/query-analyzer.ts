@@ -90,7 +90,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   const needsProposalAction = /accept proposal|reject proposal|dismiss proposal|approve proposal|schedule proposal|create proposal/i.test(q);
   const needsRecommendationAction = /accept recommendation|dismiss recommendation|follow.*advice|implement.*recommendation/i.test(q);
   const needsCampaignAction = /create.*campaign|new campaign|start.*campaign|launch.*campaign/i.test(q);
-  const needsSocialAction = /update.*social|edit.*post|schedule.*post|change.*post/i.test(q);
+  const needsSocialAction = /update.*social|edit.*post|schedule.*post|change.*post|modify.*post|reschedule.*post|update.*post|edit.*social/i.test(q);
   const needsTemplateAction = /update.*template|edit.*template|modify.*template/i.test(q);
   const hasActionIntent = needsWriteAction || needsUpdateAction || needsDeleteAction || needsSendAction || needsApprovalAction || needsTagAction || needsCrossModule || needsProposalAction || needsRecommendationAction || needsCampaignAction || needsSocialAction || needsTemplateAction;
   
