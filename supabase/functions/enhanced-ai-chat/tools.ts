@@ -291,21 +291,7 @@ const CORE_TOOL_DEFINITIONS = [
       }
     }
   },
-  {
-    type: "function",
-    function: {
-      name: "get_glossary_terms",
-      description: "Fetch glossary terms with definitions. Use when user asks about glossary, terms, definitions, terminology, or brand language.",
-      parameters: {
-        type: "object",
-        properties: {
-          search: { type: "string", description: "Search term name or definition" },
-          glossary_id: { type: "string", description: "Filter by specific glossary" },
-          limit: { type: "number", default: 20, description: "Number of terms to return (default 20, max 100)" }
-        }
-      }
-    }
-  },
+  // glossary read tool removed — feature deprecated
   {
     type: "function",
     function: {
