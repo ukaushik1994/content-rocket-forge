@@ -446,8 +446,11 @@ Approvals: submit_for_review, approve_content, reject_content
 Keywords: add_keywords, remove_keywords, trigger_serp_analysis, trigger_content_gap_analysis, create_topic_cluster
 Offerings: create_solution, update_solution, delete_solution, update_company_info, add_competitor, update_competitor, trigger_competitor_analysis
 Engage: create_contact, update_contact, tag_contacts, create_segment, create_email_campaign, send_email_campaign, create_journey, activate_journey, create_automation, toggle_automation, enroll_contacts_in_journey, send_quick_email, delete_contact, delete_segment, delete_email_campaign, delete_journey, delete_automation, delete_social_post
-Cross-Module: promote_content_to_campaign, content_to_email, campaign_content_to_engage, repurpose_for_social, publish_to_website, schedule_social_from_repurpose
-Social: create_social_post
+Cross-Module: promote_content_to_campaign, content_to_email, campaign_content_to_engage, repurpose_for_social, publish_to_website, schedule_social_from_repurpose, create_campaign
+Social: create_social_post, update_social_post, schedule_social_post
+Email Templates: create_email_template, update_email_template
+Proposals: accept_proposal, reject_proposal, create_proposal
+Strategy: accept_recommendation, dismiss_recommendation
 
 **Campaign Tools:** trigger_content_generation, retry_failed_content
 
