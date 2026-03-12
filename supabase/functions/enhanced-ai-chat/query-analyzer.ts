@@ -185,17 +185,38 @@ export function analyzeQueryIntent(query: string): QueryIntent {
     /\d+/  // Any query with numbers likely benefits from visualization
   ];
   
-  // Detect panel hints for repository and approvals
+  // Detect panel hints for repository, approvals, and content_repurpose
   const repositoryPatterns = /find\s+(my|the)\s+(blog|article|content|post)|show\s+(my|me)\s+(content|articles|blogs|posts)|what\s+did\s+i\s+write|open\s+(my\s+)?(content\s+)?library|read\s+my\s+(article|blog|post)|search\s+(my\s+)?content|browse\s+(my\s+)?content/i;
   const approvalsPatterns = /pending\s+(approval|review)|what('s|\s+is)\s+pending|approve\s+the|reject\s+the|items?\s+need\s+review|show\s+(my\s+)?approvals|needs?\s+(my\s+)?review/i;
+  const repurposePatterns = /repurpos|reformat\s+(my|this|the)\s+(article|blog|content|post)|convert\s+(my|this).*(to|into|for)\s+(social|email|twitter|linkedin)/i;
   
-  let panelHint: 'repository' | 'approvals' | null = null;
+  let panelHint: 'repository' | 'approvals' | 'content_repurpose' | null = null;
   if (repositoryPatterns.test(q)) {
     panelHint = 'repository';
     console.log('📂 Repository panel hint detected');
   } else if (approvalsPatterns.test(q) || (needsApprovals && !hasActionIntent)) {
     panelHint = 'approvals';
     console.log('✅ Approvals panel hint detected');
+  } else if (repurposePatterns.test(q)) {
+    panelHint = 'content_repurpose';
+    console.log('♻️ Content repurpose panel hint detected');
+  }
+
+  // Disambiguation hints for ambiguous queries
+  let disambiguationHint: string | null = null;
+  
+  // Gap 7: "show my emails" is ambiguous
+  const emailAmbiguous = /^(show|list|get)\s+(my\s+)?emails?$/i.test(q.trim());
+  if (emailAmbiguous) {
+    disambiguationHint = 'EMAIL_AMBIGUOUS: User said "show my emails" which could mean email templates, email campaigns, or email threads/inbox. Ask the user which they mean before fetching data.';
+    console.log('⚠️ Ambiguous email query detected');
+  }
+  
+  // Gap 6: "what should I do next" triggers both recommendations and proposals
+  const nextStepAmbiguous = /what\s+should\s+i\s+(do|work on|focus on)\s*(next)?/i.test(q);
+  if (nextStepAmbiguous) {
+    disambiguationHint = 'NEXT_STEP: User wants strategic guidance. Use get_strategy_recommendations (NOT get_proposals). Recommendations are curated next-best-actions; proposals are content ideas.';
+    console.log('🎯 Next-step query — routing to recommendations');
   }
 
   return {
@@ -205,6 +226,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
     requiresVisualData,
     confidence: categories.length > 0 ? 0.8 : 0.5,
     isConversational: false,
-    panelHint
+    panelHint,
+    disambiguationHint
   };
 }
