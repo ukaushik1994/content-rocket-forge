@@ -5,6 +5,7 @@ export interface QueryIntent {
   requiresVisualData: boolean;
   confidence: number;
   isConversational: boolean; // Issue #5: Fast-path flag
+  panelHint?: 'repository' | 'approvals' | null; // Hint to trigger sidebar panel
 }
 
 // Issue #5 Fix: Patterns for simple conversational queries that don't need data
@@ -46,10 +47,11 @@ export function analyzeQueryIntent(query: string): QueryIntent {
     return {
       scope: 'conversational',
       categories: [],
-      estimatedTokens: 500, // Minimal tokens
+      estimatedTokens: 500,
       requiresVisualData: false,
       confidence: 0.95,
-      isConversational: true
+      isConversational: true,
+      panelHint: null
     };
   }
   
@@ -177,14 +179,26 @@ export function analyzeQueryIntent(query: string): QueryIntent {
     /\d+/  // Any query with numbers likely benefits from visualization
   ];
   
-  const requiresVisualData = visualTriggers.some(pattern => pattern.test(q));
+  // Detect panel hints for repository and approvals
+  const repositoryPatterns = /find\s+(my|the)\s+(blog|article|content|post)|show\s+(my|me)\s+(content|articles|blogs|posts)|what\s+did\s+i\s+write|open\s+(my\s+)?(content\s+)?library|read\s+my\s+(article|blog|post)|search\s+(my\s+)?content|browse\s+(my\s+)?content/i;
+  const approvalsPatterns = /pending\s+(approval|review)|what('s|\s+is)\s+pending|approve\s+the|reject\s+the|items?\s+need\s+review|show\s+(my\s+)?approvals|needs?\s+(my\s+)?review/i;
   
+  let panelHint: 'repository' | 'approvals' | null = null;
+  if (repositoryPatterns.test(q)) {
+    panelHint = 'repository';
+    console.log('📂 Repository panel hint detected');
+  } else if (approvalsPatterns.test(q) || (needsApprovals && !hasActionIntent)) {
+    panelHint = 'approvals';
+    console.log('✅ Approvals panel hint detected');
+  }
+
   return {
     scope,
     categories,
     estimatedTokens: tokenEstimates[scope],
     requiresVisualData,
     confidence: categories.length > 0 ? 0.8 : 0.5,
-    isConversational: false
+    isConversational: false,
+    panelHint
   };
 }

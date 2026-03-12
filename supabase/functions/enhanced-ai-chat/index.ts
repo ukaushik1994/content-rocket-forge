@@ -75,19 +75,22 @@ Before ANY response, check dataAvailability in REAL DATA CONTEXT:
 • Never generate charts requiring unavailable data
 • Provide actionable steps to fix missing data
 
-🎯 VISUAL-FIRST MANDATE:
-Your responses must be HIGHLY VISUAL by default. For ANY data-related query:
-✅ ALWAYS include visualData with charts (even for simple questions)
-✅ ALWAYS include 2-4 metric cards showing key statistics
-✅ ALWAYS include 2-5 actionable items with navigation links
-✅ ALWAYS include 2-3 insights (AI observations)
-✅ ALWAYS include 2-3 deepDivePrompts (smart follow-up questions)
+🎯 VISUAL-FIRST MANDATE (CHART-ELIGIBLE MODULES ONLY):
+This applies ONLY to: Keywords, Analytics, Campaigns, Content performance, Proposals, SEO scores.
+For these modules: ALWAYS include visualData with charts, metric cards, actionable items, insights, deepDivePrompts.
 
-Example: User asks "How many proposals do I have?"
+TEXT-ONLY MODULES (NO charts, NO visualData):
+Offerings, Contacts, Email, Social, Journeys, Automations — respond with formatted text + markdown link to the full page.
+Format: Include a line like "👉 [Open Offerings →](/offerings)" in your text response so users can navigate.
+
+Example for chart-eligible: User asks "How many proposals do I have?"
 ❌ WRONG: "You have 7 proposals."
-✅ CORRECT: Chart showing proposals by status + metric cards (total, completion rate) + actions (review drafts, create new) + insights (5 ready to send) + follow-ups (which has best SEO score?)
+✅ CORRECT: Chart showing proposals by status + metric cards + actions + insights + follow-ups
 
-Make every response a mini-dashboard, not just text.
+Example for text-only: User asks "What products do I have?"
+✅ CORRECT: Text list of products + "👉 [Open Offerings →](/offerings)" link in text. NO visualData.
+
+Make chart-eligible responses a mini-dashboard. Make text-only responses clean and actionable.
 
 📊 VISUALIZATION PRIORITY:
 
@@ -534,11 +537,25 @@ You are the AI brain of **Creaiter** — an end-to-end AI-powered content market
 ## 🚦 SIDEBAR & NAVIGATION RULES (CRITICAL — follow strictly):
 
 **RIGHT SIDEBAR PANELS (only these open as sidebar):**
-- **Repository** (visualData type: "repository") — When user asks to find/search/browse content. Show matching titles as clickable list. User clicks one → show full text in sidebar reader. Always include "Open Repository" link at top.
-- **Approvals** (visualData type: "approvals") — When user asks about pending approvals or wants to approve content. Show pending items. User picks one → approve/comment in sidebar. Auto-close sidebar after approval action.
+- **Repository** (visualData type: "repository") — When user asks to find/search/browse/read content. 
+- **Approvals** (visualData type: "approvals") — When user asks about pending approvals or wants to approve/reject content.
 - **Content Wizard** (visualData type: "content_wizard") — When user wants to create/write new content.
 - **Research Intelligence** (visualData type: "research_intelligence") — When user wants to plan strategy or research topics.
 - **Analyst** (visualData type: "analyst") — When user asks for data analysis/charts. Opens automatically.
+
+**REPOSITORY PANEL TRIGGER — JSON FORMAT:**
+When user asks to find, search, browse, or read content, return this EXACT format:
+\`\`\`json
+{"visualData": {"type": "repository", "title": "Content Search Results"}}
+\`\`\`
+Trigger phrases: "find my blog about", "show my content", "what did I write about", "open my library", "read my article on", "search my content"
+
+**APPROVALS PANEL TRIGGER — JSON FORMAT:**
+When user asks about approvals, pending reviews, or wants to approve/reject content, return this EXACT format:
+\`\`\`json
+{"visualData": {"type": "approvals", "title": "Pending Approvals"}}
+\`\`\`
+Trigger phrases: "what's pending approval", "approve the blog", "items need review", "reject the article", "pending review", "show approvals"
 
 **TEXT-ONLY MODULES (NEVER open sidebar panels for these):**
 - **Offerings** — Answer in text. Mention "Go to Offerings page (/offerings) for details."
@@ -562,7 +579,7 @@ You are the AI brain of **Creaiter** — an end-to-end AI-powered content market
 - **Contacts → Segments → Journeys**: Import contacts (/engage/contacts) → Build segments (/engage/segments) → Enroll in journeys (/engage/journeys) or automations (/engage/automations)
 
 ## 🛠️ YOUR CAPABILITIES (AI Chat Tools)
-**Read (25 tools):** content_items, keywords, proposals, solutions, seo_scores, serp_analysis, competitors, competitor_solutions, campaign_intelligence, queue_status, campaign_content, contacts, segments, journeys, automations, email_campaigns, **calendar_items**, **pending_approvals**, **social_posts**, **email_templates**, **topic_clusters**, **content_gaps**, **strategy_recommendations**, **repurposed_content**, **email_threads**, **activity_log**, **get_brand_voice**, **get_content_performance**.
+**Read (29 tools):** content_items, keywords, proposals, solutions, seo_scores, serp_analysis, competitors, competitor_solutions, campaign_intelligence, queue_status, campaign_content, contacts, segments, journeys, automations, email_campaigns, **calendar_items**, **pending_approvals**, **social_posts**, **email_templates**, **topic_clusters**, **content_gaps**, **strategy_recommendations**, **repurposed_content**, **email_threads**, **activity_log**, **get_brand_voice**, **get_content_performance**, company_info.
 **Write — Content:** Create/update/delete content, generate full articles, start builder/wizard. **Calendar CRUD** (create/update/delete calendar items).
 **Write — Engage:** Create/update contacts, segments, journeys, automations. Draft & send emails. Create social posts. **Create email templates.**
 **Write — Campaigns:** Trigger content generation, retry failed content.
@@ -1615,7 +1632,8 @@ serve(async (req) => {
       categories: queryIntent.categories,
       estimatedTokens: queryIntent.estimatedTokens,
       confidence: queryIntent.confidence,
-      isConversational: queryIntent.isConversational
+      isConversational: queryIntent.isConversational,
+      panelHint: queryIntent.panelHint || 'none'
     });
     
     // ⚡ ISSUE #5 FIX: Fast-path for conversational queries (greetings, thanks, test, etc.)
@@ -2010,6 +2028,23 @@ CRITICAL: For EVERY response while Analyst is active:
 4. Proactively surface data insights even if the user asks a general question
 5. Default to multi-chart analysis when possible
 Make every response a mini-dashboard. The Analyst panel will auto-render your chart data.`;
+    }
+
+    // Inject panel hint from query analyzer
+    if (queryIntent.panelHint === 'repository') {
+      systemPrompt += `\n\n## 🎯 PANEL HINT: REPOSITORY
+The user's query matches a repository/content browsing intent. You MUST include this in your response:
+\`\`\`json
+{"visualData": {"type": "repository", "title": "Content Search Results"}}
+\`\`\`
+This will open the Repository quick-access panel. Also provide a brief text answer.`;
+    } else if (queryIntent.panelHint === 'approvals') {
+      systemPrompt += `\n\n## 🎯 PANEL HINT: APPROVALS
+The user's query matches an approvals intent. You MUST include this in your response:
+\`\`\`json
+{"visualData": {"type": "approvals", "title": "Pending Approvals"}}
+\`\`\`
+This will open the Approvals quick-action panel. Also provide a brief text answer.`;
     }
     
     // Inject real data context

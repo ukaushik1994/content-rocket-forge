@@ -62,7 +62,8 @@ export const MultiChartAnalysis: React.FC<MultiChartAnalysisProps> = ({
 
   const handleQuickAction = (action: any) => {
     if (action.actionType === 'navigate' && action.targetUrl) {
-      navigate(action.targetUrl);
+      // Open in new tab to preserve chat context
+      window.open(action.targetUrl, '_blank');
     }
   };
 
