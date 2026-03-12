@@ -287,7 +287,7 @@ export const ENGAGE_ACTION_TOOL_DEFINITIONS = [
       parameters: { type: "object", properties: { post_id: { type: "string", description: "UUID of the social post to delete" } }, required: ["post_id"] }
     }
   },
-  // === EMAIL TEMPLATE WRITE TOOL ===
+  // === EMAIL TEMPLATE WRITE TOOLS ===
   {
     type: "function",
     function: {
@@ -303,6 +303,57 @@ export const ENGAGE_ACTION_TOOL_DEFINITIONS = [
           variables: { type: "array", items: { type: "string" }, description: "Template variables (e.g., ['first_name', 'company'])" }
         },
         required: ["name", "subject", "body_html"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_email_template",
+      description: "Update an existing email template. Use when user says 'update template', 'edit template', 'change template subject', or 'modify email template'.",
+      parameters: {
+        type: "object",
+        properties: {
+          template_id: { type: "string", description: "UUID of the template to update" },
+          name: { type: "string", description: "Updated template name" },
+          subject: { type: "string", description: "Updated subject line" },
+          body_html: { type: "string", description: "Updated template body HTML" },
+          category: { type: "string", enum: ["newsletter", "transactional", "marketing", "notification", "other"], description: "Updated category" }
+        },
+        required: ["template_id"]
+      }
+    }
+  },
+  // === SOCIAL POST WRITE TOOLS ===
+  {
+    type: "function",
+    function: {
+      name: "update_social_post",
+      description: "Update an existing social media post's content or status. Use when user says 'update social post', 'edit post', 'change post content', or 'modify social post'.",
+      parameters: {
+        type: "object",
+        properties: {
+          post_id: { type: "string", description: "UUID of the social post to update" },
+          content: { type: "string", description: "Updated post content" },
+          status: { type: "string", enum: ["draft", "scheduled", "posted", "failed"], description: "Updated status" },
+          media_urls: { type: "array", items: { type: "string" }, description: "Updated media URLs" }
+        },
+        required: ["post_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "schedule_social_post",
+      description: "Schedule a social media post for a specific date/time. Use when user says 'schedule this post', 'post this at [time]', 'schedule social for [date]', or 'set post time'.",
+      parameters: {
+        type: "object",
+        properties: {
+          post_id: { type: "string", description: "UUID of the social post to schedule" },
+          scheduled_at: { type: "string", description: "ISO datetime to schedule the post" }
+        },
+        required: ["post_id", "scheduled_at"]
       }
     }
   }
