@@ -482,8 +482,7 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   create_calendar_item: ['get_calendar_items'],
   update_calendar_item: ['get_calendar_items'],
   delete_calendar_item: ['get_calendar_items'],
-  // Glossary actions
-  create_glossary_term: ['get_glossary_terms'],
+  // Glossary removed
   // Email template actions
   create_email_template: ['get_email_templates'],
   // Keyword actions invalidate keyword reads
