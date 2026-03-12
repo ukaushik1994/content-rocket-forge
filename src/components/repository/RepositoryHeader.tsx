@@ -16,13 +16,6 @@ export const RepositoryHeader: React.FC = () => {
       description: 'Create blog posts and articles'
     },
     {
-      label: 'Build Glossary',
-      icon: BookOpen,
-      action: () => navigate('/glossary-builder'),
-      gradient: 'from-purple-500 to-purple-600',
-      description: 'Generate comprehensive glossaries'
-    },
-    {
       label: 'Email Content',
       icon: Mail,
       action: () => navigate('/ai-chat'),

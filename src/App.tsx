@@ -19,7 +19,7 @@ import { RepositoryBackfill } from "./pages/RepositoryBackfill";
 // ContentBuilder deprecated - redirects to /ai-chat
 import ContentTypeSelection from "./pages/ContentTypeSelection";
 import ContentApproval from "./pages/ContentApproval";
-import GlossaryBuilder from "./pages/GlossaryBuilder";
+// GlossaryBuilder removed — feature deprecated
 import Solutions from "./pages/Solutions";
 import KeywordsPage from "./pages/keywords/KeywordsPage";
 import { migrateKeywordsToArray } from "@/utils/migration/keywordArrayMigration";
@@ -151,7 +151,7 @@ const App = () => (
                   <Route path="/repository/backfill" element={<ProtectedRoute><AppLayout><RepositoryBackfill /></AppLayout></ProtectedRoute>} />
                   <Route path="/content-type-selection" element={<ProtectedRoute><AppLayout><ContentTypeSelection /></AppLayout></ProtectedRoute>} />
                   <Route path="/content-approval" element={<ProtectedRoute><AppLayout><ContentApproval /></AppLayout></ProtectedRoute>} />
-                  <Route path="/glossary-builder" element={<ProtectedRoute><AppLayout><GlossaryBuilder /></AppLayout></ProtectedRoute>} />
+                  <Route path="/glossary-builder" element={<Navigate to="/ai-chat" replace />} />
                   <Route path="/offerings" element={<ProtectedRoute><AppLayout><Solutions /></AppLayout></ProtectedRoute>} />
                   <Route path="/keywords" element={<ProtectedRoute><AppLayout><KeywordsPage /></AppLayout></ProtectedRoute>} />
                   <Route path="/analytics" element={<ProtectedRoute><AppLayout><Analytics /></AppLayout></ProtectedRoute>} />

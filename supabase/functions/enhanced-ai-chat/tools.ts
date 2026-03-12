@@ -291,21 +291,7 @@ const CORE_TOOL_DEFINITIONS = [
       }
     }
   },
-  {
-    type: "function",
-    function: {
-      name: "get_glossary_terms",
-      description: "Fetch glossary terms with definitions. Use when user asks about glossary, terms, definitions, terminology, or brand language.",
-      parameters: {
-        type: "object",
-        properties: {
-          search: { type: "string", description: "Search term name or definition" },
-          glossary_id: { type: "string", description: "Filter by specific glossary" },
-          limit: { type: "number", default: 20, description: "Number of terms to return (default 20, max 100)" }
-        }
-      }
-    }
-  },
+  // glossary read tool removed — feature deprecated
   {
     type: "function",
     function: {
@@ -476,7 +462,7 @@ const CAMPAIGN_TOOL_NAMES = [
 
 // New read tool names for routing
 const NEW_READ_TOOL_NAMES = [
-  'get_calendar_items', 'get_glossary_terms', 'get_pending_approvals',
+  'get_calendar_items', 'get_pending_approvals',
   'get_social_posts', 'get_email_templates', 'get_topic_clusters',
   'get_content_gaps', 'get_strategy_recommendations', 'get_repurposed_content',
   'get_email_threads', 'get_activity_log', 'get_company_info'
@@ -496,8 +482,7 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   create_calendar_item: ['get_calendar_items'],
   update_calendar_item: ['get_calendar_items'],
   delete_calendar_item: ['get_calendar_items'],
-  // Glossary actions
-  create_glossary_term: ['get_glossary_terms'],
+  // Glossary removed
   // Email template actions
   create_email_template: ['get_email_templates'],
   // Keyword actions invalidate keyword reads
@@ -828,15 +813,7 @@ export async function executeToolCall(
             return await calQuery.order('scheduled_date', { ascending: true }).limit(Math.min(toolArgs.limit || 20, 50));
           }
 
-          case 'get_glossary_terms': {
-            let gtQuery = supabase
-              .from('glossary_terms')
-              .select('id, term, short_definition, expanded_explanation, search_volume, keyword_difficulty, related_terms, paa_questions, glossary_id, created_at')
-              .eq('user_id', userId);
-            if (toolArgs.glossary_id) gtQuery = gtQuery.eq('glossary_id', toolArgs.glossary_id);
-            if (toolArgs.search) gtQuery = gtQuery.ilike('term', `%${toolArgs.search}%`);
-            return await gtQuery.order('term', { ascending: true }).limit(Math.min(toolArgs.limit || 20, 100));
-          }
+          // get_glossary_terms removed — feature deprecated
 
           case 'get_pending_approvals': {
             const approvalStatus = toolArgs.status || 'pending_review';

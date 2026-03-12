@@ -14,7 +14,7 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
         properties: {
           title: { type: "string", description: "Content title" },
           content: { type: "string", description: "Content body (HTML or markdown)" },
-          content_type: { type: "string", enum: ["blog", "social-twitter", "social-linkedin", "social-facebook", "social-instagram", "script", "email", "glossary"], description: "Type of content" },
+          content_type: { type: "string", enum: ["blog", "social-twitter", "social-linkedin", "social-facebook", "social-instagram", "script", "email"], description: "Type of content" },
           main_keyword: { type: "string", description: "Primary keyword for the content" },
           secondary_keywords: { type: "array", items: { type: "string" }, description: "Secondary keywords" },
           status: { type: "string", enum: ["draft", "published"], default: "draft", description: "Initial status" },
@@ -116,7 +116,7 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
         type: "object",
         properties: {
           keyword: { type: "string", description: "Primary keyword/topic for the article" },
-          content_type: { type: "string", enum: ["blog", "social-twitter", "social-linkedin", "email", "glossary"], default: "blog", description: "Type of content to generate" },
+          content_type: { type: "string", enum: ["blog", "social-twitter", "social-linkedin", "email"], default: "blog", description: "Type of content to generate" },
           tone: { type: "string", enum: ["professional", "casual", "technical", "persuasive", "educational"], default: "professional", description: "Writing tone" },
           length: { type: "string", enum: ["short", "medium", "long"], default: "medium", description: "Content length (short ~500 words, medium ~1000, long ~2000)" },
           solution_id: { type: "string", description: "Optional solution to tie the content to" },
@@ -213,33 +213,14 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
       }
     }
   },
-  // === GLOSSARY WRITE TOOL ===
-  {
-    type: "function",
-    function: {
-      name: "create_glossary_term",
-      description: "Add a new term to the glossary. Use when user says 'add glossary term', 'define term', 'add definition', or 'new terminology entry'.",
-      parameters: {
-        type: "object",
-        properties: {
-          term: { type: "string", description: "The term to define" },
-          short_definition: { type: "string", description: "Short definition (1-2 sentences)" },
-          expanded_explanation: { type: "string", description: "Expanded explanation with more detail" },
-          glossary_id: { type: "string", description: "Glossary to add the term to (if not provided, uses the first active glossary)" },
-          related_terms: { type: "array", items: { type: "string" }, description: "Related terms" }
-        },
-        required: ["term", "short_definition"]
-      }
-    }
-  }
+  // Glossary write tool removed — feature deprecated
 ];
 
 export const CONTENT_ACTION_TOOL_NAMES = [
   'create_content_item', 'update_content_item', 'delete_content_item',
   'submit_for_review', 'approve_content', 'reject_content',
   'generate_full_content', 'start_content_builder', 'launch_content_wizard',
-  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item',
-  'create_glossary_term'
+  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item'
 ];
 
 export async function executeContentActionTool(
@@ -526,44 +507,7 @@ export async function executeContentActionTool(
         return { success: true, message: `Removed "${data.title}" from calendar` };
       }
 
-      // === GLOSSARY WRITE ===
-      case 'create_glossary_term': {
-        let glossaryId = toolArgs.glossary_id;
-
-        // If no glossary_id, find the first active glossary or create one
-        if (!glossaryId) {
-          const { data: glossaries } = await supabase.from('glossaries')
-            .select('id')
-            .eq('user_id', userId)
-            .eq('is_active', true)
-            .limit(1).single();
-
-          if (glossaries) {
-            glossaryId = glossaries.id;
-          } else {
-            // Create default glossary
-            const { data: newGlossary, error: gErr } = await supabase.from('glossaries').insert({
-              user_id: userId,
-              name: 'My Glossary',
-              is_active: true
-            }).select('id').single();
-            if (gErr) throw gErr;
-            glossaryId = newGlossary.id;
-          }
-        }
-
-        const { data, error } = await supabase.from('glossary_terms').insert({
-          user_id: userId,
-          glossary_id: glossaryId,
-          term: toolArgs.term,
-          short_definition: toolArgs.short_definition,
-          expanded_explanation: toolArgs.expanded_explanation || null,
-          related_terms: toolArgs.related_terms ? JSON.stringify(toolArgs.related_terms) : null
-        }).select('id, term, short_definition, created_at').single();
-
-        if (error) throw error;
-        return { success: true, message: `Added glossary term "${data.term}"`, item: data };
-      }
+      // Glossary write removed — feature deprecated
 
       default:
         return { error: `Unknown content action tool: ${toolName}` };

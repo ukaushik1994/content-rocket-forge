@@ -28,7 +28,6 @@ import { aiStrategyService } from '@/services/aiStrategyService';
 
 interface DashboardSummaryData {
   content_created: {
-    glossary: number;
     blog: number;
     article: number;
     strategy: number;
@@ -43,13 +42,11 @@ interface DashboardSummaryData {
   progress: {
     goal: {
       blog: number;
-      glossary: number;
       article: number;
       strategy: number;
     };
     achieved: {
       blog: number;
-      glossary: number;
       article: number;
       strategy: number;
     };
@@ -125,7 +122,7 @@ export const DashboardSummary = () => {
     switch (type) {
       case 'blog': return <FileText className="w-4 h-4" />;
       case 'article': return <FileText className="w-4 h-4" />;
-      case 'glossary': return <Book className="w-4 h-4" />;
+      
       case 'strategy': return <Zap className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
     }
@@ -350,15 +347,6 @@ export const DashboardSummary = () => {
             icon: FileText,
             gradient: 'from-neon-purple/20 to-purple-400/20',
             iconColor: 'text-neon-purple'
-          },
-          { 
-            type: 'glossary', 
-            label: 'Glossary Terms', 
-            current: data.content_created.glossary, 
-            goal: data.progress.goal.glossary,
-            icon: Book,
-            gradient: 'from-neon-pink/20 to-pink-400/20',
-            iconColor: 'text-neon-pink'
           },
           { 
             type: 'overall', 
