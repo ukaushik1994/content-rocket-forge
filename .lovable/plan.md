@@ -1,153 +1,130 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# AI Chat Audit: What Works, What Confuses, and What Users Can Ask
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## Current State Summary
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+The AI chat has **92 tools** and a system prompt with sidebar/navigation rules. Here's the honest audit:
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## What's WORKING
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
-
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
-
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+1. **Sidebar rules are defined** — Repository and Approvals have panel types, 9 modules are marked text-only
+2. **Repository panel** — Search, browse, read content inline, "Open Repository" button
+3. **Approvals panel** — Pending items list, approve/reject/comment, auto-close after action
+4. **Content Wizard** — Opens from + menu, works as guided creation
+5. **Charts/Analytics** — Visual-first responses with charts, metrics, insights
+6. **Query analyzer** — Detects intent categories (content, keywords, campaigns, etc.)
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## What's CONFUSING the AI (Problems)
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
-
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
-
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+| # | Problem | Why It Confuses |
+|---|---|---|
+| 1 | **"repository" visualData type never gets triggered by AI** | The system prompt says to use it, but the AI has no example of WHEN to return `"type": "repository"` vs just answering in text. There's no JSON example like the chart examples. |
+| 2 | **"approvals" visualData type same problem** | Same issue — no JSON format example showing the AI HOW to return `"type": "approvals"`. |
+| 3 | **VISUAL-FIRST MANDATE conflicts with text-only rules** | The prompt says "ALWAYS include visualData with charts" for ANY data query. But then says "for Offerings, answer in text only." These contradict — if user asks "show my offerings," does AI make a chart or answer in text? |
+| 4 | **actionableItems with `navigate` URLs go to full pages** | When AI includes actions like "View Campaigns → /campaigns", clicking them NAVIGATES AWAY from chat. User loses context. No "open in new tab" or "stay in chat" option. |
+| 5 | **No way for AI to return "Open [Module]" as a styled button** | The prompt says "include actionableItem with Open [Module]" but actionableItems render as small links inside the sidebar chart view, not as prominent buttons in chat text. |
+| 6 | **Query analyzer has no "repository" or "approvals" category** | `query-analyzer.ts` detects `needsApprovals` but adds category `'approvals'` — this category is never used to force `visualData.type = "approvals"`. The connection between detected intent and panel opening is missing. |
+| 7 | **Read tool count still says 25** in the system prompt (line 565) | Should say 29. Was supposed to be fixed but the line wasn't updated. |
 
 ---
 
-# AI Chat Awareness Gaps — Implementation Tracker
+## What Every User Can Ask — Module by Module
 
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
+### Repository (Panel)
+- "Find my blog about [topic]" → should open repository panel with search results
+- "Show me all my published content" → panel with filtered list
+- "What did I write about [keyword]?" → search + show matches
+- "Open my content library" → panel opens
+- "Read my article on [topic]" → panel opens, shows content inline
 
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
+### Approvals (Panel)  
+- "What's pending approval?" → panel with pending items
+- "Approve the blog about [topic]" → panel opens, shows item, approve button
+- "How many items need review?" → text answer + panel link
+- "Reject the [title] article" → panel opens with reject action
 
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
+### Offerings (Text only)
+- "What products do I have?" → text list
+- "Tell me about my [offering name]" → text description
+- "How many offerings do I have?" → text count
+- "Add a new product called X" → uses create_solution tool
 
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+### Contacts (Text only)
+- "How many contacts do I have?" → text count
+- "Find contacts tagged [tag]" → text list
+- "Add a contact: [name, email]" → uses create_contact tool
+- "Show my audience segments" → text list
+
+### Campaigns (Text only + charts)
+- "How are my campaigns doing?" → chart + metrics
+- "Show campaign [name] status" → text summary
+- "Create a new campaign for [topic]" → uses create_campaign tool
+- "What's in my content queue?" → text/chart of queue
+
+### Email (Text only)
+- "Draft an email about [topic]" → text draft via tool
+- "Send a newsletter to [segment]" → uses send_email_campaign tool
+- "Show my email templates" → text list
+- "How did my last email perform?" → text metrics
+
+### Social (Text only)
+- "Create a LinkedIn post about [topic]" → uses create_social_post tool
+- "Schedule a post for tomorrow" → uses schedule_social_post tool
+- "Show my upcoming social posts" → text list
+- "Repurpose my blog for social" → uses repurpose_for_social tool
+
+### Keywords (Text only + charts)
+- "Show my keywords" → chart of keyword data
+- "Add keyword [term]" → uses add_keywords tool
+- "Run a SERP analysis for [keyword]" → triggers SERP tool
+- "What are my top keywords?" → chart
+
+### Analytics (Text only + charts)
+- "Show my content performance" → multi-chart dashboard
+- "How is my content doing?" → chart + metrics
+- "Compare my blog performance" → chart
+
+### Journeys (Text only)
+- "Show my customer journeys" → text list
+- "Create a journey for [purpose]" → uses create_journey tool
+- "Activate the [name] journey" → uses activate_journey tool
+
+### Automations (Text only)
+- "List my automations" → text list
+- "Turn on the [name] automation" → uses toggle_automation tool
+- "Create an automation for [trigger]" → uses create_automation tool
+
+---
+
+## What Needs Fixing (Implementation Plan)
+
+### Fix 1: Add JSON examples for repository/approvals panel triggers
+Add explicit examples in the system prompt showing the AI exactly when and how to return `"type": "repository"` and `"type": "approvals"` — just like the chart JSON examples exist today.
+
+### Fix 2: Resolve VISUAL-FIRST vs TEXT-ONLY conflict
+Add a clear override rule: "The VISUAL-FIRST mandate applies ONLY to modules that support charts (Keywords, Analytics, Campaigns, Content performance). For TEXT-ONLY modules, respond with formatted text + an actionable 'Open [Module]' link."
+
+### Fix 3: Make "Open [Module]" buttons render in chat messages
+Currently actionableItems only show in the sidebar. Add a new response format — `navigationLinks` — that renders as styled buttons directly in the chat message bubble so users see "Open Campaigns →" as a clickable button.
+
+### Fix 4: Prevent navigate-away on action clicks
+When user is on `/ai-chat`, actionableItem clicks with `navigate` type should either open in a new tab or show a confirmation, not silently navigate away from chat.
+
+### Fix 5: Connect query-analyzer categories to panel types
+When `query-analyzer.ts` detects `needsApprovals`, the system should hint to the AI to return `visualData.type = "approvals"`. Same for repository content browsing queries.
+
+### Fix 6: Update read tool count to 29
+
+---
+
+## Files to Change
+- `supabase/functions/enhanced-ai-chat/index.ts` — Fix prompt: add panel JSON examples, resolve visual-first conflict, update tool count
+- `supabase/functions/enhanced-ai-chat/query-analyzer.ts` — Add panel-trigger hints for repository/approvals intents  
+- `src/components/ai-chat/EnhancedChatMessage.tsx` — Add navigation link buttons rendering in chat bubbles
+- `src/components/ai-chat/visualization/MultiChartAnalysis.tsx` — Fix navigate-away behavior for action clicks
+
