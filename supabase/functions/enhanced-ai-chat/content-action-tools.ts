@@ -220,8 +220,7 @@ export const CONTENT_ACTION_TOOL_NAMES = [
   'create_content_item', 'update_content_item', 'delete_content_item',
   'submit_for_review', 'approve_content', 'reject_content',
   'generate_full_content', 'start_content_builder', 'launch_content_wizard',
-  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item',
-  'create_glossary_term'
+  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item'
 ];
 
 export async function executeContentActionTool(
