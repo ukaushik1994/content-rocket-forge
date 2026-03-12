@@ -21,6 +21,7 @@ import { SocialPanel } from './panels/SocialPanel';
 import { KeywordsPanel } from './panels/KeywordsPanel';
 import { AnalyticsPanel } from './panels/AnalyticsPanel';
 import { ResearchIntelligencePanel } from '@/components/panels/ResearchIntelligencePanel';
+import { RepurposePanel } from './panels/RepurposePanel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
