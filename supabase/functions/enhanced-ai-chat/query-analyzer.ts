@@ -65,7 +65,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   
   // Phase 3: New category detections
   const needsCampaigns = /campaign|generation|queue|progress|active campaign|generating/i.test(q);
-  const needsCompetitors = /competitor|competition|rival|market|swot/i.test(q);
+  const needsCompetitors = /competitor|competition|rival|market leader|swot|versus|vs\b/i.test(q);
   const needsAnalytics = /analytics|metrics|views|clicks|conversion|traffic|engagement/i.test(q);
   const needsPerformance = /performing|performance|how.*(doing|going)|status|health/i.test(q);
   
