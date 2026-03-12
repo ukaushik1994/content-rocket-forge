@@ -415,6 +415,27 @@ export async function executeCrossModuleTool(
         };
       }
 
+      case 'create_campaign': {
+        const { data: campaign, error: campaignError } = await supabase.from('campaigns').insert({
+          user_id: userId,
+          name: toolArgs.name,
+          original_idea: toolArgs.idea,
+          goal: toolArgs.goal || null,
+          target_audience: toolArgs.target_audience || null,
+          timeline: toolArgs.timeline || null,
+          solution_id: toolArgs.solution_id || null,
+          status: 'draft'
+        }).select('id, name, status, goal, target_audience, timeline, created_at').single();
+
+        if (campaignError) throw campaignError;
+
+        return {
+          success: true,
+          message: `Created campaign "${campaign.name}" (draft)`,
+          item: campaign
+        };
+      }
+
       case 'schedule_social_from_repurpose': {
         const workspaceId = await getUserWorkspaceId(supabase, userId);
         if (!workspaceId) {
