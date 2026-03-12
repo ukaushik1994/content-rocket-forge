@@ -19,7 +19,7 @@ import { RepositoryBackfill } from "./pages/RepositoryBackfill";
 // ContentBuilder deprecated - redirects to /ai-chat
 import ContentTypeSelection from "./pages/ContentTypeSelection";
 import ContentApproval from "./pages/ContentApproval";
-import GlossaryBuilder from "./pages/GlossaryBuilder";
+// GlossaryBuilder removed — feature deprecated
 import Solutions from "./pages/Solutions";
 import KeywordsPage from "./pages/keywords/KeywordsPage";
 import { migrateKeywordsToArray } from "@/utils/migration/keywordArrayMigration";
