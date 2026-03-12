@@ -1632,7 +1632,8 @@ serve(async (req) => {
       categories: queryIntent.categories,
       estimatedTokens: queryIntent.estimatedTokens,
       confidence: queryIntent.confidence,
-      isConversational: queryIntent.isConversational
+      isConversational: queryIntent.isConversational,
+      panelHint: queryIntent.panelHint || 'none'
     });
     
     // ⚡ ISSUE #5 FIX: Fast-path for conversational queries (greetings, thanks, test, etc.)
