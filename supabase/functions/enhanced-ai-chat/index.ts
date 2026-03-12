@@ -1454,6 +1454,8 @@ You have access to powerful tools to fetch exactly the data you need:
 - User: "What journeys are active?" → Call get_engage_journeys with status="active"
 - User: "Show email campaign performance" → Call get_engage_email_campaigns with status="sent"
 - User: "What automations are running?" → Call get_engage_automations with is_active=true
+- User: "What's my company info?" → Call get_company_info
+- User: "Tell me about our business" → Call get_company_info
 
 **Remember:** The counts above show total data available. Use tools to dive deeper when needed.
 `;
