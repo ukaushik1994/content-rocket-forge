@@ -142,4 +142,12 @@ Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterfa
 - Content Wizard already saves seo_score on insert (verified)
 - SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
 - Edge function deployed
-## 🔲 Batch 5: Analytics + Brand Voice
+## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
+- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
+- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
+- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
+- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
+- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
+- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
+- Updated system prompt tool listing (25 read tools) and usage examples
+- Edge function deployed
