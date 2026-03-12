@@ -14,7 +14,7 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
         properties: {
           title: { type: "string", description: "Content title" },
           content: { type: "string", description: "Content body (HTML or markdown)" },
-          content_type: { type: "string", enum: ["blog", "social-twitter", "social-linkedin", "social-facebook", "social-instagram", "script", "email", "glossary"], description: "Type of content" },
+          content_type: { type: "string", enum: ["blog", "social-twitter", "social-linkedin", "social-facebook", "social-instagram", "script", "email"], description: "Type of content" },
           main_keyword: { type: "string", description: "Primary keyword for the content" },
           secondary_keywords: { type: "array", items: { type: "string" }, description: "Secondary keywords" },
           status: { type: "string", enum: ["draft", "published"], default: "draft", description: "Initial status" },
