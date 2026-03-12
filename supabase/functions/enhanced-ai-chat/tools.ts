@@ -782,6 +782,22 @@ export async function executeToolCall(
             if (toolArgs.competitor_id) {
               solQuery = solQuery.eq('competitor_id', toolArgs.competitor_id);
             }
+            if (toolArgs.competitor_name) {
+              // Look up competitor IDs by name first
+              const { data: matchingCompetitors } = await supabase
+                .from('company_competitors')
+                .select('id')
+                .eq('user_id', userId)
+                .ilike('name', `%${toolArgs.competitor_name}%`);
+              
+              if (matchingCompetitors && matchingCompetitors.length > 0) {
+                const competitorIds = matchingCompetitors.map(c => c.id);
+                solQuery = solQuery.in('competitor_id', competitorIds);
+              } else {
+                // No matching competitors found
+                return { data: [], error: null };
+              }
+            }
             if (toolArgs.category) {
               solQuery = solQuery.eq('category', toolArgs.category);
             }
