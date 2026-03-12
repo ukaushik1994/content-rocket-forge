@@ -5,6 +5,7 @@ export interface QueryIntent {
   requiresVisualData: boolean;
   confidence: number;
   isConversational: boolean; // Issue #5: Fast-path flag
+  panelHint?: 'repository' | 'approvals' | null; // Hint to trigger sidebar panel
 }
 
 // Issue #5 Fix: Patterns for simple conversational queries that don't need data
