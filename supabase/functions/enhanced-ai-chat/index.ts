@@ -461,6 +461,7 @@ Strategy: accept_recommendation, dismiss_recommendation
 - User says "email this content to VIP contacts" → content_to_email
 - User says "create a segment of active users" → create_segment
 - User says "repurpose for social" → repurpose_for_social
+- User says "repurpose this content" or "repurpose my article" → respond with visualData: {"type": "content_repurpose", "contentId": null} to open the Repurpose panel
 - User says "accept this proposal" → accept_proposal
 - User says "reject proposal" → reject_proposal
 - User says "create a campaign about X" → create_campaign
@@ -2706,7 +2707,7 @@ Make every response a mini-dashboard. The Analyst panel will auto-render your ch
     }
     
     // AUTO-CONVERT TO CHARTS (unless user explicitly asked for table)
-    if (visualData && visualData.type !== 'chart' && visualData.type !== 'content_wizard' && visualData.type !== 'content_creation_choice' && visualData.type !== 'proposal_browser' && chartRequest.type !== 'table_explicit') {
+    if (visualData && visualData.type !== 'chart' && visualData.type !== 'content_wizard' && visualData.type !== 'content_creation_choice' && visualData.type !== 'proposal_browser' && visualData.type !== 'content_repurpose' && chartRequest.type !== 'table_explicit') {
       console.log(`📊 Auto-converting ${visualData.type} to chart (default behavior)...`);
       
       // Try metrics to chart conversion
