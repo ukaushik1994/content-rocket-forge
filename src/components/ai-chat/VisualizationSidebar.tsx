@@ -931,33 +931,12 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     );
   }
 
-  // Panel modes — Phase 2
+  // Panel modes — Only Repository & Approvals get sidebar panels
   if (visualData?.type === 'repository') {
     return <RepositoryPanel isOpen={isOpen} onClose={onClose} />;
   }
-  if (visualData?.type === 'offerings') {
-    return <OfferingsPanel isOpen={isOpen} onClose={onClose} />;
-  }
   if (visualData?.type === 'approvals') {
     return <ApprovalsPanel isOpen={isOpen} onClose={onClose} />;
-  }
-  if (visualData?.type === 'contacts') {
-    return <ContactsPanel isOpen={isOpen} onClose={onClose} />;
-  }
-  if (visualData?.type === 'campaigns') {
-    return <CampaignsPanel isOpen={isOpen} onClose={onClose} />;
-  }
-  if (visualData?.type === 'email') {
-    return <EmailPanel isOpen={isOpen} onClose={onClose} />;
-  }
-  if (visualData?.type === 'social') {
-    return <SocialPanel isOpen={isOpen} onClose={onClose} />;
-  }
-  if (visualData?.type === 'keywords') {
-    return <KeywordsPanel isOpen={isOpen} onClose={onClose} />;
-  }
-  if (visualData?.type === 'analytics') {
-    return <AnalyticsPanel isOpen={isOpen} onClose={onClose} />;
   }
   if (visualData?.type === 'research_intelligence') {
     return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;

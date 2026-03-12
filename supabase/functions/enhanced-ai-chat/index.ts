@@ -2739,7 +2739,7 @@ Make every response a mini-dashboard. The Analyst panel will auto-render your ch
     }
     
     // AUTO-CONVERT TO CHARTS (unless user explicitly asked for table)
-    if (visualData && visualData.type !== 'chart' && visualData.type !== 'content_wizard' && visualData.type !== 'content_creation_choice' && visualData.type !== 'proposal_browser' && visualData.type !== 'content_repurpose' && chartRequest.type !== 'table_explicit') {
+    if (visualData && visualData.type !== 'chart' && visualData.type !== 'content_wizard' && visualData.type !== 'content_creation_choice' && visualData.type !== 'proposal_browser' && visualData.type !== 'content_repurpose' && visualData.type !== 'repository' && visualData.type !== 'approvals' && chartRequest.type !== 'table_explicit') {
       console.log(`📊 Auto-converting ${visualData.type} to chart (default behavior)...`);
       
       // Try metrics to chart conversion
