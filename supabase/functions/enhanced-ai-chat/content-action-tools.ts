@@ -3,6 +3,66 @@
  * Write/Create/Update/Delete operations for content items
  */
 
+// Inline SEO score calculator for auto-scoring on content creation
+function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: string, metaDescription?: string): number {
+  if (!content) return 0;
+  let score = 0;
+  const lowerContent = content.toLowerCase();
+  const lowerKeyword = keyword?.toLowerCase() || '';
+
+  // Content length (max 25 pts)
+  const wordCount = content.split(/\s+/).length;
+  if (wordCount >= 1500) score += 25;
+  else if (wordCount >= 800) score += 20;
+  else if (wordCount >= 400) score += 15;
+  else if (wordCount >= 200) score += 10;
+  else score += 5;
+
+  // Keyword presence (max 25 pts)
+  if (lowerKeyword) {
+    const keywordCount = (lowerContent.match(new RegExp(lowerKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')) || []).length;
+    const density = keywordCount / Math.max(wordCount, 1) * 100;
+    if (density >= 0.5 && density <= 3) score += 25;
+    else if (density > 0 && density < 0.5) score += 15;
+    else if (density > 3) score += 10;
+  }
+
+  // Heading structure (max 20 pts)
+  const hasH1 = /<h1/i.test(content) || /^#\s/m.test(content);
+  const hasH2 = /<h2/i.test(content) || /^##\s/m.test(content);
+  const h2Count = (content.match(/<h2/gi) || content.match(/^##\s/gm) || []).length;
+  if (hasH1) score += 5;
+  if (hasH2) score += 5;
+  if (h2Count >= 3) score += 10;
+  else if (h2Count >= 1) score += 5;
+
+  // Meta tags (max 15 pts)
+  if (metaTitle && metaTitle.length >= 30 && metaTitle.length <= 60) score += 8;
+  else if (metaTitle) score += 4;
+  if (metaDescription && metaDescription.length >= 120 && metaDescription.length <= 160) score += 7;
+  else if (metaDescription) score += 3;
+
+  // Keyword in title/meta (max 15 pts)
+  if (lowerKeyword) {
+    if (metaTitle?.toLowerCase().includes(lowerKeyword)) score += 8;
+    if (metaDescription?.toLowerCase().includes(lowerKeyword)) score += 7;
+  }
+
+  return Math.min(score, 100);
+}
+
+// Save SEO score to content_items.seo_score
+async function saveAutoSeoScore(supabase: any, userId: string, contentId: string, score: number, _keyword: string) {
+  try {
+    await supabase.from('content_items')
+      .update({ seo_score: score })
+      .eq('id', contentId)
+      .eq('user_id', userId);
+  } catch (err) {
+    console.error('Auto SEO score save failed (non-blocking):', err);
+  }
+}
+
 export const CONTENT_ACTION_TOOL_DEFINITIONS = [
   {
     type: "function",
@@ -247,7 +307,19 @@ export async function executeContentActionTool(
         }).select('id, title, status, content_type, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created "${data.title}" as ${data.status}`, item: data };
+
+        // Auto-calculate SEO score
+        const seoScore = calculateBasicSeoScore(
+          toolArgs.content || '', 
+          toolArgs.main_keyword || '', 
+          toolArgs.meta_title, 
+          toolArgs.meta_description
+        );
+        if (seoScore > 0 && data.id) {
+          await saveAutoSeoScore(supabase, userId, data.id, seoScore, toolArgs.main_keyword || '');
+        }
+
+        return { success: true, message: `Created "${data.title}" as ${data.status} (SEO: ${seoScore}/100)`, item: { ...data, seo_score: seoScore } };
       }
 
       case 'update_content_item': {
@@ -419,11 +491,17 @@ export async function executeContentActionTool(
 
         if (saveError) throw saveError;
 
+        // Auto-calculate SEO score for generated content
+        const seoScore = calculateBasicSeoScore(generatedContent, toolArgs.keyword, autoTitle, '');
+        if (seoScore > 0 && saved.id) {
+          await saveAutoSeoScore(supabase, userId, saved.id, seoScore, toolArgs.keyword);
+        }
+
         const wordCount = generatedContent.split(/\s+/).length;
         return {
           success: true,
-          message: `Generated and saved "${saved.title}" (~${wordCount} words) as draft`,
-          item: saved,
+          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100) as draft`,
+          item: { ...saved, seo_score: seoScore },
           wordCount
         };
       }

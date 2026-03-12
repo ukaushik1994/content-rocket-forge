@@ -134,5 +134,12 @@ Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterfa
 - Content Wizard already has repurpose quick actions (Phase 2C) — verified working
 - Edge function deployed
 
-## 🔲 Batch 4: SEO Auto-Scoring
+## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
+- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
+- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
+- Auto-triggers after `create_content_item` — saves seo_score to content_items
+- Auto-triggers after `generate_full_content` — saves seo_score to content_items
+- Content Wizard already saves seo_score on insert (verified)
+- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
+- Edge function deployed
 ## 🔲 Batch 5: Analytics + Brand Voice
