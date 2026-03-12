@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle, Database } from 'lucide-react';
+import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle } from 'lucide-react';
 
 interface EnhancedQuickActionsProps {
   onAction: (action: string, data?: any) => void;
