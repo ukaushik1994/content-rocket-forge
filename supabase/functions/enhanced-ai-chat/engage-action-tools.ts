@@ -367,7 +367,8 @@ export const ENGAGE_ACTION_TOOL_NAMES = [
   'create_social_post',
   'delete_contact', 'delete_segment', 'delete_email_campaign',
   'delete_journey', 'delete_automation', 'delete_social_post',
-  'create_email_template'
+  'create_email_template', 'update_email_template',
+  'update_social_post', 'schedule_social_post'
 ];
 
 export async function executeEngageActionTool(
