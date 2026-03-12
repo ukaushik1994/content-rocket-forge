@@ -433,6 +433,18 @@ const CORE_TOOL_DEFINITIONS = [
       }
     }
   }
+  // Company info read tool
+  {
+    type: "function",
+    function: {
+      name: "get_company_info",
+      description: "Fetch the user's company/business information including name, description, industry, website, mission, and values. Use when user asks about their company, business info, organization details, or 'who are we'.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  }
 ];
 
 // Campaign intelligence tools (imported from dedicated module)
