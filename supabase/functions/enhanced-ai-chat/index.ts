@@ -1428,6 +1428,7 @@ You have access to powerful tools to fetch exactly the data you need:
 16. **get_engage_journeys** - Fetch customer journeys with enrollment stats
 17. **get_engage_automations** - Fetch automation rules with execution stats
 18. **get_engage_email_campaigns** - Fetch email campaigns with delivery analytics (sent, opened, clicked, bounced)
+19. **get_company_info** - Fetch company/business information (name, industry, website, mission, values)
 
 **CRITICAL INSTRUCTIONS:**
 - When user asks about specific data, USE TOOLS to fetch it
