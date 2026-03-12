@@ -451,6 +451,7 @@ Social: create_social_post, update_social_post, schedule_social_post
 Email Templates: create_email_template, update_email_template
 Proposals: accept_proposal, reject_proposal, create_proposal
 Strategy: accept_recommendation, dismiss_recommendation
+Brand & Analytics: get_brand_voice, update_brand_voice, get_content_performance
 
 **Campaign Tools:** trigger_content_generation, retry_failed_content
 
