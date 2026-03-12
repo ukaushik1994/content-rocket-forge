@@ -56,6 +56,12 @@ import {
   executeStrategyActionTool
 } from './strategy-action-tools.ts';
 
+import {
+  BRAND_ANALYTICS_TOOL_DEFINITIONS,
+  BRAND_ANALYTICS_TOOL_NAMES,
+  executeBrandAnalyticsTool
+} from './brand-analytics-tools.ts';
+
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Core data tools
