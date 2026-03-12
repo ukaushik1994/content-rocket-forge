@@ -84,29 +84,26 @@ class EnhancedAIService {
         return this.createErrorMessage('No API keys available. Please configure at least one AI provider in Settings.');
       }
 
-      const data = {
+      // Schema-compliant payload: only { messages, context }
+      const payload = {
         messages: [
-          { role: 'system', content: systemPrompt },
           ...conversationHistory.slice(-10).map(msg => ({
             role: msg.role,
             content: msg.content
           })),
           { role: 'user', content: message }
         ],
-        context: enhancedContext,
-        userId,
-        features: ['visual_data', 'solution_intelligence', 'context_awareness'],
-        apiKeys
+        context: {
+          analystActive: false,
+        }
       };
 
-      console.log('🔄 Calling enhanced-ai-chat with comprehensive context:', {
-        messagesCount: data.messages.length,
-        contextKeys: Object.keys(enhancedContext || {}),
-        features: data.features
+      console.log('🔄 Calling enhanced-ai-chat with schema-compliant payload:', {
+        messagesCount: payload.messages.length,
       });
 
       const { data: response, error } = await supabase.functions.invoke('enhanced-ai-chat', {
-        body: data
+        body: payload
       });
 
       if (error) {
