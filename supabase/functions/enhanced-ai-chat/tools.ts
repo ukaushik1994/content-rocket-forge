@@ -44,6 +44,18 @@ import {
   executeCrossModuleTool
 } from './cross-module-tools.ts';
 
+import {
+  PROPOSAL_ACTION_TOOL_DEFINITIONS,
+  PROPOSAL_ACTION_TOOL_NAMES,
+  executeProposalActionTool
+} from './proposal-action-tools.ts';
+
+import {
+  STRATEGY_ACTION_TOOL_DEFINITIONS,
+  STRATEGY_ACTION_TOOL_NAMES,
+  executeStrategyActionTool
+} from './strategy-action-tools.ts';
+
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Core data tools
