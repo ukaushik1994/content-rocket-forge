@@ -136,7 +136,7 @@ export const CROSS_MODULE_TOOL_DEFINITIONS = [
 export const CROSS_MODULE_TOOL_NAMES = [
   'promote_content_to_campaign', 'content_to_email',
   'campaign_content_to_engage', 'repurpose_for_social',
-  'publish_to_website', 'schedule_social_from_repurpose'
+  'publish_to_website', 'create_campaign', 'schedule_social_from_repurpose'
 ];
 
 async function getUserWorkspaceId(supabase: any, userId: string): Promise<string | null> {
