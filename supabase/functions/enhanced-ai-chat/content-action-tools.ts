@@ -213,25 +213,7 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
       }
     }
   },
-  // === GLOSSARY WRITE TOOL ===
-  {
-    type: "function",
-    function: {
-      name: "create_glossary_term",
-      description: "Add a new term to the glossary. Use when user says 'add glossary term', 'define term', 'add definition', or 'new terminology entry'.",
-      parameters: {
-        type: "object",
-        properties: {
-          term: { type: "string", description: "The term to define" },
-          short_definition: { type: "string", description: "Short definition (1-2 sentences)" },
-          expanded_explanation: { type: "string", description: "Expanded explanation with more detail" },
-          glossary_id: { type: "string", description: "Glossary to add the term to (if not provided, uses the first active glossary)" },
-          related_terms: { type: "array", items: { type: "string" }, description: "Related terms" }
-        },
-        required: ["term", "short_definition"]
-      }
-    }
-  }
+  // Glossary write tool removed — feature deprecated
 ];
 
 export const CONTENT_ACTION_TOOL_NAMES = [
