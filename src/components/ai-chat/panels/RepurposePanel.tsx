@@ -159,7 +159,7 @@ const RepurposePanelInner: React.FC<RepurposePanelInnerProps> = ({ isOpen, onClo
           <Card className="border-border/20">
             <CardContent className="p-4">
               <div className="prose prose-sm max-w-none text-foreground text-sm">
-                <SafeMarkdown content={activeContent} />
+                <SafeMarkdown>{activeContent}</SafeMarkdown>
               </div>
             </CardContent>
           </Card>
