@@ -42,13 +42,11 @@ interface DashboardSummaryData {
   progress: {
     goal: {
       blog: number;
-      glossary: number;
       article: number;
       strategy: number;
     };
     achieved: {
       blog: number;
-      glossary: number;
       article: number;
       strategy: number;
     };
