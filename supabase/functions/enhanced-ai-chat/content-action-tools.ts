@@ -51,27 +51,13 @@ function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: st
   return Math.min(score, 100);
 }
 
-// Save SEO score to seo_content_scores table and update content_items.seo_score
-async function saveAutoSeoScore(supabase: any, userId: string, contentId: string, score: number, keyword: string) {
+// Save SEO score to content_items.seo_score
+async function saveAutoSeoScore(supabase: any, userId: string, contentId: string, score: number, _keyword: string) {
   try {
-    // Update seo_score on content_items
     await supabase.from('content_items')
       .update({ seo_score: score })
       .eq('id', contentId)
       .eq('user_id', userId);
-
-    // Also insert into seo_content_scores for detailed tracking
-    await supabase.from('seo_content_scores').upsert({
-      user_id: userId,
-      content_id: contentId,
-      overall_score: score,
-      keyword_score: Math.round(score * 0.4),
-      readability_score: Math.round(score * 0.3),
-      structure_score: Math.round(score * 0.3),
-      main_keyword: keyword || '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'content_id' });
   } catch (err) {
     console.error('Auto SEO score save failed (non-blocking):', err);
   }
