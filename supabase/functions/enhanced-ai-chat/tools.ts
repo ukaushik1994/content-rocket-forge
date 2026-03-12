@@ -565,6 +565,8 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   // Strategy recommendation actions
   accept_recommendation: ['get_strategy_recommendations'],
   dismiss_recommendation: ['get_strategy_recommendations'],
+  // Brand voice
+  update_brand_voice: [],
 };
 
 /**
