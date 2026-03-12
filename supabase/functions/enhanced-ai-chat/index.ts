@@ -461,6 +461,7 @@ Strategy: accept_recommendation, dismiss_recommendation
 - User says "email this content to VIP contacts" → content_to_email
 - User says "create a segment of active users" → create_segment
 - User says "repurpose for social" → repurpose_for_social
+- User says "repurpose this content" or "repurpose my article" → respond with visualData: {"type": "content_repurpose", "contentId": null} to open the Repurpose panel
 - User says "accept this proposal" → accept_proposal
 - User says "reject proposal" → reject_proposal
 - User says "create a campaign about X" → create_campaign
