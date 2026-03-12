@@ -432,7 +432,7 @@ const CORE_TOOL_DEFINITIONS = [
         }
       }
     }
-  }
+  },
   // Company info read tool
   {
     type: "function",
