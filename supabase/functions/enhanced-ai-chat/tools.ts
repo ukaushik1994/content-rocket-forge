@@ -716,7 +716,7 @@ export async function executeToolCall(
               .limit(Math.min(toolArgs.limit || 5, 20));
           }
             
-          case 'get_seo_scores':
+          case 'get_seo_scores': {
             let seoQuery = supabase
               .from('seo_content_scores')
               .select('*')
@@ -727,8 +727,9 @@ export async function executeToolCall(
             return await seoQuery
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 10, 50));
+          }
             
-          case 'get_serp_analysis':
+          case 'get_serp_analysis': {
             let serpQuery = supabase
               .from('serp_analysis_history')
               .select('*')
@@ -739,8 +740,9 @@ export async function executeToolCall(
             return await serpQuery
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 5, 20));
+          }
             
-          case 'get_competitors':
+          case 'get_competitors': {
             let compQuery = supabase
               .from('company_competitors')
               .select(`
@@ -763,6 +765,7 @@ export async function executeToolCall(
             return await compQuery
               .order('priority_order', { ascending: true })
               .limit(Math.min(toolArgs.limit || 10, 50));
+          }
             
           case 'get_competitor_solutions': {
             let solQuery = supabase
