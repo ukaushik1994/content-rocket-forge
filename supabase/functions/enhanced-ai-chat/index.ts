@@ -3556,24 +3556,87 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
         const analyticsInsights: string[] = [];
         
         // Pull lightweight platform stats for analyst enrichment
-        const [contentRes, campaignRes, proposalRes] = await Promise.all([
-          supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-          supabase.from('campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-          supabase.from('ai_strategy_proposals').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-        ]);
-        
+        const platformFetches: Promise<void>[] = [];
         const platformStats: Record<string, number> = {};
-        if (contentRes.count !== null) { platformStats['totalContent'] = contentRes.count; analyticsInsights.push(`You have ${contentRes.count} content items in your repository`); }
-        if (campaignRes.count !== null) { platformStats['totalCampaigns'] = campaignRes.count; analyticsInsights.push(`${campaignRes.count} campaigns tracked`); }
-        if (proposalRes.count !== null) { platformStats['totalProposals'] = proposalRes.count; analyticsInsights.push(`${proposalRes.count} strategy proposals available`); }
 
-        if (analyticsInsights.length > 0) {
-          analystContext = {
-            insights: analyticsInsights,
-            platformStats,
-          };
-          console.log(`📊 Analyst context enriched with ${analyticsInsights.length} insights`);
+        // Core stats
+        platformFetches.push((async () => {
+          const { count } = await supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+          if (count !== null) { platformStats['totalContent'] = count; analyticsInsights.push(`You have ${count} content items in your repository`); }
+        })());
+        platformFetches.push((async () => {
+          const { count } = await supabase.from('campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+          if (count !== null) { platformStats['totalCampaigns'] = count; analyticsInsights.push(`${count} campaigns tracked`); }
+        })());
+        platformFetches.push((async () => {
+          const { count } = await supabase.from('ai_strategy_proposals').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+          if (count !== null) { platformStats['totalProposals'] = count; analyticsInsights.push(`${count} strategy proposals available`); }
+        })());
+
+        // Email stats (engage_email_campaigns)
+        platformFetches.push((async () => {
+          try {
+            const { count } = await supabase.from('engage_email_campaigns').select('id', { count: 'exact', head: true });
+            if (count !== null && count > 0) { platformStats['totalEmailCampaigns'] = count; analyticsInsights.push(`${count} email campaigns in Engage`); }
+          } catch (_) { /* table may not exist */ }
+        })());
+
+        // Competitor stats
+        platformFetches.push((async () => {
+          const { count } = await supabase.from('company_competitors').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+          if (count !== null && count > 0) { platformStats['totalCompetitors'] = count; analyticsInsights.push(`${count} competitors tracked`); }
+        })());
+
+        await Promise.all(platformFetches);
+
+        // Build analyst context object
+        analystContext = {
+          insights: analyticsInsights.length > 0 ? analyticsInsights : undefined,
+          platformStats: Object.keys(platformStats).length > 0 ? platformStats : undefined,
+        };
+
+        // Attach web search results if available (webSearchContext is set earlier in the pipeline)
+        if (typeof webSearchContext === 'string' && webSearchContext.length > 0) {
+          // Re-parse from the webResults variable captured in the web search path
+          // We store the raw results in a closure-accessible variable
+          try {
+            // webResults was captured in the web search block above - we need to hoist it
+            // Since webSearchContext exists, we know the search succeeded
+            // Extract structured data from the context string for the frontend
+            const searchQuery = serpIntelligence?.keywords?.join(' ') || userQuery;
+            const contextLines = webSearchContext.split('\n').filter((l: string) => l.trim());
+            const searchResults: Array<{title: string; url: string; snippet: string; position: number}> = [];
+            
+            let currentResult: any = null;
+            for (const line of contextLines) {
+              const titleMatch = line.match(/^(\d+)\.\s+(.+)/);
+              const urlMatch = line.match(/^\s+URL:\s+(.+)/);
+              const snippetMatch = line.match(/^\s+(?:Summary|Snippet):\s+(.+)/);
+              
+              if (titleMatch) {
+                if (currentResult) searchResults.push(currentResult);
+                currentResult = { title: titleMatch[2], url: '', snippet: '', position: parseInt(titleMatch[1]) };
+              } else if (urlMatch && currentResult) {
+                currentResult.url = urlMatch[1];
+              } else if (snippetMatch && currentResult) {
+                currentResult.snippet = snippetMatch[1];
+              }
+            }
+            if (currentResult) searchResults.push(currentResult);
+
+            if (searchResults.length > 0) {
+              analystContext.webSearchResults = {
+                query: searchQuery,
+                results: searchResults,
+              };
+              console.log(`🌐 Analyst context enriched with ${searchResults.length} web search results`);
+            }
+          } catch (wsErr) {
+            console.error('Web search results parsing for analyst failed (non-critical):', wsErr);
+          }
         }
+
+        console.log(`📊 Analyst context enriched with ${analyticsInsights.length} insights`);
       } catch (acErr) {
         console.error('Analyst context enrichment failed (non-critical):', acErr);
       }

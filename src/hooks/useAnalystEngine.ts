@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState, useCallback, useRef } from 'react';
-import { EnhancedChatMessage, MetricCard, ChartConfiguration, ActionableItem } from '@/types/enhancedChat';
+import { EnhancedChatMessage, MetricCard, ChartConfiguration, ActionableItem, AnalystWebSearchData } from '@/types/enhancedChat';
 import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -34,6 +34,7 @@ export interface AnalystState {
   suggestedActions: ActionableItem[];
   accumulatedCharts: ChartConfiguration[];
   platformData: PlatformDataPoint[];
+  webSearchResults: AnalystWebSearchData[];
   lastUpdated: Date | null;
   isEnriching: boolean;
   messageCount: number;
@@ -166,6 +167,31 @@ export function useAnalystEngine(
             content: typeof insight === 'string' ? insight : insight.content,
             type: classifyInsight(typeof insight === 'string' ? insight : insight.content),
             source: 'platform',
+            timestamp: msg.timestamp,
+            messageId: msg.id,
+          });
+        }
+      }
+
+      // Extract web search results as search-type insights
+      if (msg.analystContext?.webSearchResults) {
+        const ws = msg.analystContext.webSearchResults;
+        // Add query-level insight
+        feed.push({
+          id: `ws-query-${msg.id}`,
+          content: `Web search: "${ws.query}" — ${ws.results.length} results found`,
+          type: 'search',
+          source: 'web',
+          timestamp: msg.timestamp,
+          messageId: msg.id,
+        });
+        // Add top 3 results as individual insights
+        for (const result of ws.results.slice(0, 3)) {
+          feed.push({
+            id: `ws-${msg.id}-${feed.length}`,
+            content: `${result.title}: ${result.snippet}`,
+            type: 'search',
+            source: 'web',
             timestamp: msg.timestamp,
             messageId: msg.id,
           });
@@ -387,6 +413,18 @@ export function useAnalystEngine(
     }
   }, [isActive, topics, fetchPlatformData]);
 
+  // ─── Accumulated web search results ──────────────────────────────────
+  const webSearchResults = useMemo(() => {
+    if (!isActive) return [];
+    const results: AnalystWebSearchData[] = [];
+    for (const msg of messages) {
+      if (msg.role === 'assistant' && msg.analystContext?.webSearchResults) {
+        results.push(msg.analystContext.webSearchResults);
+      }
+    }
+    return results;
+  }, [messages, isActive]);
+
   return {
     topics,
     insightsFeed,
@@ -394,6 +432,7 @@ export function useAnalystEngine(
     suggestedActions,
     accumulatedCharts,
     platformData,
+    webSearchResults,
     lastUpdated: messages.length > 0 ? messages[messages.length - 1].timestamp : null,
     isEnriching,
     messageCount: messages.filter(m => m.role === 'assistant').length,

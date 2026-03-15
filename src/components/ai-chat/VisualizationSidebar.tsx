@@ -38,7 +38,9 @@ import {
   CheckCircle2,
   Search,
   Clock,
-  Loader2
+  Loader2,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
@@ -888,6 +890,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
         return { icon: AlertTriangle, bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/20', textColor: 'text-amber-500', label: 'Warning' };
       case 'opportunity':
         return { icon: CheckCircle2, bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20', textColor: 'text-emerald-500', label: 'Opportunity' };
+      case 'search':
+        return { icon: Search, bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/20', textColor: 'text-cyan-500', label: 'Web' };
       default:
         return { icon: Lightbulb, bgColor: 'bg-warning/10', borderColor: 'border-warning/20', textColor: 'text-warning', label: 'Insight' };
     }
@@ -1073,6 +1077,53 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             </Card>
                           ))}
                         </div>
+                      </motion.div>
+                    )}
+
+                    {/* Web Intelligence Cards */}
+                    {analystState && analystState.webSearchResults.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.07 }}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-3.5 h-3.5 text-cyan-500" />
+                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+                            Web Intelligence
+                          </span>
+                        </div>
+                        {analystState.webSearchResults.map((ws, wsIdx) => (
+                          <div key={`ws-${wsIdx}`} className="space-y-1.5">
+                            <p className="text-[10px] text-muted-foreground italic">"{ws.query}"</p>
+                            {ws.results.slice(0, 4).map((result, rIdx) => (
+                              <Card 
+                                key={`wsr-${wsIdx}-${rIdx}`}
+                                className="p-2.5 bg-cyan-500/5 border-border/15 border-l-2 border-l-cyan-500/30 hover:bg-cyan-500/10 transition-colors cursor-pointer group"
+                                onClick={() => window.open(result.url, '_blank', 'noopener')}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <Search className="w-3 h-3 mt-0.5 flex-shrink-0 text-cyan-500/70" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-foreground/90 line-clamp-1 group-hover:text-cyan-500 transition-colors">
+                                      {result.title}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground/60 line-clamp-2 mt-0.5">
+                                      {result.snippet}
+                                    </p>
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <ExternalLink className="w-2.5 h-2.5 text-muted-foreground/30" />
+                                      <span className="text-[9px] text-muted-foreground/30 truncate">
+                                        {new URL(result.url).hostname}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        ))}
                       </motion.div>
                     )}
 

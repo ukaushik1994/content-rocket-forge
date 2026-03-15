@@ -1,64 +1,153 @@
 
 
-# Status Check: Analyst & Web Search Features
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## 1. Analyst Panel — Status: COMPLETE
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-All planned components are in place:
-- **`useAnalystEngine.ts`** — Fully built with topic extraction, cumulative insights feed, metric accumulation, chart waterfall, suggested actions, and platform data enrichment (queries `content_items`, `campaigns`, `ai_strategy_proposals`, `company_competitors` from Supabase).
-- **Backend enrichment** — `enhanced-ai-chat/index.ts` builds `analystContext` (platform stats + insights) when `analystActive` is true and includes it in the SSE `done` payload.
-- **`VisualizationSidebar.tsx`** — Analyst feed layout is complete with topic tags, cumulative metrics strip, platform data cards, chart waterfall, live insights feed, smart suggestions, and empty state with prompt pills.
-- **`EnhancedChatInterface.tsx`** — Wires `useAnalystEngine`, syncs `isAnalystPanelActive` with `setAnalystActive`, passes `analystState` to sidebar.
-- **Types** — `AnalystContext` interface and `analystContext` field on `EnhancedChatMessage` are defined.
-- **DB hook** — `useEnhancedAIChatDB.ts` parses `analystContext` from response and stores it on the message.
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-No gaps found.
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-## 2. Web Search — Status: COMPLETE
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-All planned components are in place:
-- **Intent detection** — `analyzeSerpIntent()` in `serp-intelligence.ts` detects `web_search` query type via regex patterns.
-- **Execution** — `executeWebSearch()` calls the existing `api-proxy` edge function with SerpAPI, normalizes results (up to 8), extracts answer box and related searches.
-- **Context injection** — `generateWebSearchContext()` formats results into a structured text block injected into the system prompt.
-- **Routing** — `enhanced-ai-chat/index.ts` routes `web_search` queries to `executeWebSearch()` and SEO/keyword queries to `executeSerpAnalysis()`.
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-No gaps found.
-
----
-
-## Potential Improvements (Not Bugs — Enhancement Opportunities)
-
-### A. Web search results not surfaced visually in the sidebar
-Currently web search results are injected as text context into the AI prompt — the AI references them in its response, but there's no structured `webSearchData` passed to the frontend for rich display (cards with titles/URLs/snippets). The analyst feed could show web search results as dedicated insight cards.
-
-### B. Analyst engine doesn't extract web search insights
-The `useAnalystEngine` has an `InsightItem.type` of `'search'` and `source: 'web'` defined but nothing currently produces items with those values. When the backend returns web search data, it could be tagged and displayed distinctly in the analyst feed.
-
-### C. No email/social platform data in analyst enrichment
-The backend `analystContext` enrichment only queries `content_items`, `campaigns`, and `ai_strategy_proposals`. Topics like Email and Social are detected by the engine but have no corresponding Supabase queries for platform stats.
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-## Plan: Wire Web Search Results into Analyst Feed
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-### 1. Backend: Include web search results in `analystContext` (`enhanced-ai-chat/index.ts`)
-When `analystActive` is true AND web search was executed, add the raw `WebSearchResponse` to the `analystContext` payload so the frontend can render rich search result cards.
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-### 2. Types: Add `webSearchResults` to `AnalystContext` (`src/types/enhancedChat.ts`)
-Add an optional `webSearchResults` field containing the structured search response (query, results with title/url/snippet, answer box, related searches).
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-### 3. Analyst Engine: Extract web search insights (`src/hooks/useAnalystEngine.ts`)
-When a message's `analystContext.webSearchResults` exists, generate `InsightItem` entries with `type: 'search'` and `source: 'web'`, making web search data visible in the analyst feed.
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
-### 4. Sidebar: Render web search cards (`src/components/ai-chat/VisualizationSidebar.tsx`)
-Add a "Web Intelligence" section in the analyst feed that shows search result cards (title, snippet, link) with proper styling distinct from platform insights.
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
 
-### 5. Backend: Add email/social platform stats to analyst enrichment (`enhanced-ai-chat/index.ts`)
-When Email or Social topics are detected, query `engage_email_campaigns` and `social_posts` tables for counts to enrich the analyst context.
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
-### Files to modify:
-- `supabase/functions/enhanced-ai-chat/index.ts` — pass web search results + email/social stats into analystContext
-- `src/types/enhancedChat.ts` — add `webSearchResults` to `AnalystContext`
-- `src/hooks/useAnalystEngine.ts` — extract web search insights into feed
-- `src/components/ai-chat/VisualizationSidebar.tsx` — render web search result cards in analyst mode
+---
 
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
+
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
+
+---
+
+# AI Chat Awareness Gaps — Implementation Tracker
+
+## ✅ Batch 1: Remove Glossary — COMPLETE
+- Removed `/glossary-builder` route (redirects to /ai-chat)
+- Removed RepositoryHeader "Build Glossary" button
+- Removed `get_glossary_terms` read tool from tools.ts
+- Removed `create_glossary_term` write tool from content-action-tools.ts
+- Removed glossary from query-analyzer.ts intent detection
+- Removed glossary from system prompt capabilities
+- Removed glossary from ContentType union and content type enums
+- Removed glossary from DashboardSummary stats
+- Removed glossary from ContentTypeSelection page
+- DB tables kept (no destructive migration)
+
+## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
+- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
+- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
+- Added `create_campaign` to cross-module-tools.ts
+- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
+- Added `update_email_template` to engage-action-tools.ts
+- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
+- Added cache invalidation for all new write tools
+- Updated query-analyzer.ts with new intent patterns
+- Updated system prompt with new tool capabilities + usage examples
+- Edge function deployed successfully
+
+## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
+- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
+- 3-step flow: content selection → format selection → generated results with copy/download
+- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
+- Imported RepurposePanel alongside other panels
+- Excluded `content_repurpose` from auto-chart-conversion in edge function
+- Updated system prompt to instruct AI to emit `content_repurpose` visualData
+- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
+- Edge function deployed
+
+## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
+- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
+- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
+- Auto-triggers after `create_content_item` — saves seo_score to content_items
+- Auto-triggers after `generate_full_content` — saves seo_score to content_items
+- Content Wizard already saves seo_score on insert (verified)
+- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
+- Edge function deployed
+## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
+- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
+- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
+- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
+- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
+- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
+- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
+- Updated system prompt tool listing (25 read tools) and usage examples
+- Edge function deployed
