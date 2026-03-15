@@ -628,9 +628,13 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
     
     // Create conversation if none exists
     let targetConversationId = conversationId;
+    let isFirstMessage = false;
     if (!targetConversationId) {
       targetConversationId = await createConversation("New Chat");
       if (!targetConversationId) return;
+      isFirstMessage = true;
+    } else if (state.messages.length === 0) {
+      isFirstMessage = true;
     }
 
     // Add user message immediately
@@ -656,6 +660,19 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
       ...prev,
       messageStatuses: { ...prev.messageStatuses, [userMessage.id]: 'sent' }
     }));
+
+    // Auto-name conversation from first user message
+    if (isFirstMessage) {
+      const autoTitle = content.slice(0, 40) + (content.length > 40 ? '...' : '');
+      try {
+        await supabase
+          .from('ai_conversations')
+          .update({ title: autoTitle })
+          .eq('id', targetConversationId);
+      } catch (err) {
+        console.warn('Failed to auto-name conversation:', err);
+      }
+    }
 
     if (mode === 'websocket' && websocketRef.current?.readyState === WebSocket.OPEN) {
       // WebSocket mode
