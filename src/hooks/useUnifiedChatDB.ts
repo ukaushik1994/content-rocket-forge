@@ -927,14 +927,23 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
 
       } catch (error: any) {
         console.error('Error in streaming message:', error);
-        setState(prev => ({ ...prev, isTyping: false }));
         currentMessageRef.current = null;
         
-        toast({
-          title: "Error",
-          description: error.message || "Failed to send message",
-          variant: "destructive"
-        });
+        const errorMessage: EnhancedChatMessage = {
+          id: `error-${Date.now()}`,
+          role: 'assistant',
+          content: error.message || 'Something went wrong. Please try again.',
+          timestamp: new Date(),
+          messageStatus: 'error'
+        };
+
+        setState(prev => ({
+          ...prev,
+          messages: [...prev.messages, errorMessage],
+          isTyping: false
+        }));
+
+        await saveMessageToDB(errorMessage, targetConversationId);
       }
     } else {
       // HTTP mode without streaming - fallback to enhanced-ai-chat
