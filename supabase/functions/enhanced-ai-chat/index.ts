@@ -1,4 +1,4 @@
-// Deploy v8: 2026-03-15T19:45:00Z - Hard eliminate bare requiresVisualData refs + deploy marker in error payloads
+// Deploy v9: 2026-03-15T20:30:00Z - Fix emitProgress scope + normalize all returns to Response
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
