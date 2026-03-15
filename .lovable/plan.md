@@ -1,153 +1,69 @@
 
+## AI Chat Failure Audit (Root Cause + What’s Missing)
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+### 1) What is actually failing
+The `enhanced-ai-chat` edge function is failing before normal AI processing, returning:
+- `500 Internal server error`
+- `details: "requiresVisualData is not defined"`
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+This is a backend runtime failure, not a frontend rendering issue.
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+### 2) Primary root cause
+The runtime serving your function is **not the same code currently in the repo** (stale/old deployed build).
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
+### 3) Evidence from your code + network
+1. Current `enhanced-ai-chat/index.ts` includes `deployVersion` in error responses (lines ~3528-3533).
+2. Your real failing network response does **not** include `deployVersion` (it only has `error/message/details`).
+3. Current source has no bare `requiresVisualData` symbol usage that should throw in normal execution.
+4. Therefore the error is coming from an older deployed artifact still running in Supabase edge, not the latest source snapshot.
 
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
+### 4) Missing logic/rules/process causing repeated failure
+1. **Missing deploy freshness guard**  
+   No enforced “runtime version must match source version” check after edge updates.
+2. **Missing post-deploy smoke verification**  
+   No mandatory immediate test request that validates returned `deployVersion`.
+3. **Missing strict deployment workflow**  
+   Code edits happened, but runtime did not reliably move to the same build.
+4. **Missing user-facing runtime diagnostics**  
+   Frontend mostly surfaces generic errors; deploy fingerprint isn’t shown to quickly identify stale runtime.
+5. **Missing defensive deployment strategy for large multi-file function**  
+   This function has many imports and high complexity; edge deployment drift risk is higher.
 
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
+### 5) Critical secondary findings (important before redeploy)
+In current source, there are latent defects that can become the next runtime crash once fresh code is deployed:
+1. `emitProgress(...)` is called outside `doProcessing` scope (around lines ~2087, ~2140), where it is undefined.
+2. Several top-level branches return plain objects like `{ data, status }` instead of `Response` (e.g., around ~1937, ~1951, ~1969, ~2078, ~2084). At top-level handler, that is invalid behavior.
+3. Duplicate intent logic exists (`index.ts` inlined analyzer + separate `query-analyzer.ts` file), increasing drift/confusion risk.
 
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+### 6) Step-by-step remediation plan
+1. **Stabilize handler control flow**
+   - Ensure all pre-processing that needs progress signaling is inside `doProcessing(emitProgress)`.
+   - Remove/replace any out-of-scope `emitProgress` calls.
+2. **Normalize return contract**
+   - Top-level `serve` handler must always return `Response`.
+   - Keep `{ data, status }` only as internal `doProcessing` return shape.
+3. **Keep single analyzer source of truth**
+   - Continue with inlined `analyzeQueryIntent` in `index.ts`.
+   - Stop using `query-analyzer.ts` in runtime path to avoid module-resolution drift.
+4. **Add hard runtime fingerprinting**
+   - Include `deployVersion` in both success and error payloads consistently.
+   - Optionally add `X-Deploy-Version` response header for easy Network inspection.
+5. **Redeploy edge function explicitly**
+   - Deploy `enhanced-ai-chat` after fixes (not just repo edits).
+6. **Verify immediately (required)**
+   - Send a test prompt and confirm Network response includes latest `deployVersion`.
+   - Confirm no `requiresVisualData` ReferenceError.
+7. **Regression checks**
+   - Test simple greeting path, normal data query (“Tell me about my solutions”), and one tool/action query.
+   - Validate both preview and published domains.
 
----
+### 7) Expected result after this plan
+- Current `requiresVisualData` runtime crash disappears.
+- Future stale-runtime incidents become easy to detect within one request.
+- Handler becomes structurally safe (no out-of-scope progress function, no invalid return objects), reducing new 500s.
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
-
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
-
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
-
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
-
----
-
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
-
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
-
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
-
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
-
----
-
-# AI Chat Awareness Gaps — Implementation Tracker
-
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
-
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
-
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
-
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+### 8) Implementation priority
+1. Fix control-flow defects (`emitProgress` scope + return types)  
+2. Add runtime fingerprinting everywhere  
+3. Redeploy explicitly  
+4. Run end-to-end validation in preview + published
