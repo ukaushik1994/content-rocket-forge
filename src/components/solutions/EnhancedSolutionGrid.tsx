@@ -79,7 +79,6 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
               onEdit={() => onEdit(solution)}
               onDelete={() => onDelete(solution)}
               onUseInContent={() => onUseInContent(solution)}
-              onViewDetail={() => setDetailSolution(solution)}
             />
           ))}
         </motion.div>
