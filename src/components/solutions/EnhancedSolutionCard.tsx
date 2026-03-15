@@ -11,14 +11,12 @@ interface EnhancedSolutionCardProps {
   onUseInContent: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onViewDetail?: () => void;
 }
 export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
   solution,
   onUseInContent,
   onEdit,
   onDelete,
-  onViewDetail
 }) => {
   const {
     name,
@@ -55,7 +53,7 @@ export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
       damping: 10
     }
   }} className="group relative">
-      <Card className={`card-3d overflow-hidden border border-border/50 bg-gradient-to-br ${getGradient(name)} h-full cursor-pointer`} onClick={onViewDetail}>
+      <Card className={`card-3d overflow-hidden border border-border/50 bg-gradient-to-br ${getGradient(name)} h-full`}>
         <div className="absolute inset-0 bg-glass backdrop-blur-sm" />
         
         <CardContent className="relative z-10 p-6 space-y-5">

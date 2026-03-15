@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { EnhancedSolutionCard } from './EnhancedSolutionCard';
-import { SolutionDetailDialog } from './SolutionDetailDialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, PlusCircle, Shuffle, Wand2 } from 'lucide-react';
@@ -28,7 +27,7 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
 }) => {
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState('grid');
-  const [detailSolution, setDetailSolution] = useState<EnhancedSolution | null>(null);
+
 
   const filteredSolutions = solutions;
   const containerVariants = {
@@ -80,7 +79,6 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
               onEdit={() => onEdit(solution)}
               onDelete={() => onDelete(solution)}
               onUseInContent={() => onUseInContent(solution)}
-              onViewDetail={() => setDetailSolution(solution)}
             />
           ))}
         </motion.div>
@@ -88,24 +86,6 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
         <EmptySolutionsState onAddNew={onAddNew} />
       )}
 
-      {/* Detail Dialog */}
-      <SolutionDetailDialog
-        solution={detailSolution}
-        open={!!detailSolution}
-        onOpenChange={(open) => { if (!open) setDetailSolution(null); }}
-        onEdit={() => {
-          if (detailSolution) {
-            onEdit(detailSolution);
-            setDetailSolution(null);
-          }
-        }}
-        onUseInContent={() => {
-          if (detailSolution) {
-            onUseInContent(detailSolution);
-            setDetailSolution(null);
-          }
-        }}
-      />
     </div>
   );
 };
