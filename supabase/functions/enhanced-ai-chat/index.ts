@@ -730,11 +730,9 @@ You are the AI brain of **Creaiter** — an end-to-end AI-powered content market
 - **Analytics** (/analytics) — Performance dashboards with ranking tracking, traffic analytics, conversion metrics, ROI reports. Date-range filtering.
 
 ### RESEARCH
-- **Content Strategy** (/research/content-strategy) — SERP-driven keyword strategies and proposals. Proposals link to offerings/competitors. Pipeline management.
-- **SERP Intelligence** (/research/serp-intelligence) — Live SERP analysis, competitor ranking data, search trend monitoring.
-- **Topic Clusters** (/research/topic-clusters) — Pillar/cluster content mapping for topical authority building.
-- **Content Gaps** (/research/content-gaps) — Identifies content opportunities competitors cover that the user doesn't.
-- **Editorial Calendar** (/research/calendar) — Schedule content, drag-and-drop calendar, status tracking. Calendar scheduling auto-updates proposal status (available→scheduled→completed).
+- **AI Proposals** (/ai-proposals) — SERP-driven keyword strategies and proposals. Proposals link to offerings/competitors. Pipeline management.
+- **Keywords** (/keywords) — Keyword library with SERP data, position tracking, search volume, difficulty, People Also Ask, content gap analysis.
+- **Editorial Calendar** (/calendar) — Schedule content, drag-and-drop calendar, status tracking. Calendar scheduling auto-updates proposal status (available→scheduled→completed).
 
 ### ENGAGE
 - **Email** (/engage/email) — Full email marketing suite: Inbox (3-panel layout), Campaigns (A/B testing, timezone scheduling), Drafts, Scheduled, Templates (drag-drop builder + HTML editor), Reporting (7d/30d/90d analytics).
