@@ -1665,7 +1665,7 @@ serve(async (req) => {
       // Simple conversational response without data fetching or chart generation
       const conversationalResponse = generateConversationalResponse(userQuery);
       
-      return new Response(JSON.stringify({
+      const fastPathPayload = JSON.stringify({
         message: conversationalResponse,
         content: conversationalResponse,
         fastPath: true,
@@ -1675,7 +1675,17 @@ serve(async (req) => {
           has_actions: false,
           has_visual_data: false
         }
-      }), {
+      });
+
+      // If client requested streaming, return SSE-formatted response
+      if (streamMode) {
+        const sseBody = `event: done\ndata: ${fastPathPayload}\n\n`;
+        return new Response(sseBody, {
+          headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" }
+        });
+      }
+
+      return new Response(fastPathPayload, {
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }

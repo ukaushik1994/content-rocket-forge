@@ -425,8 +425,8 @@ export const useEnhancedAIChatDB = () => {
       }
 
       // SSE streaming: use fetch() for real-time progress events
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token || supabaseKey;
 
@@ -490,6 +490,14 @@ export const useEnhancedAIChatDB = () => {
             currentEvent = '';
           }
         }
+      }
+
+      // Safety net: if no SSE 'done' event found, try parsing full buffer as plain JSON
+      if (!response && textBuffer.trim()) {
+        try {
+          response = JSON.parse(textBuffer.trim());
+          console.log('⚠️ Parsed response from plain JSON fallback');
+        } catch (_) { /* not valid JSON */ }
       }
 
       if (!response) throw new Error('No response received from AI');
