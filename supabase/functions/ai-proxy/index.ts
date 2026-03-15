@@ -887,12 +887,11 @@ async function chatLMStudio(apiKey: string, params: any) {
   // Normalize: remove trailing /v1 or /v1/ to prevent double /v1/v1
   baseUrl = baseUrl.replace(/\/v1\/?$/, '');
   
-  const requestBody = {
+  const requestBody: any = {
     model: params.model || 'local-model',
     messages: params.messages || [],
     temperature: params.temperature || 0.7,
     max_tokens: params.maxTokens || params.max_tokens || 1000,
-    ...params
   };
 
   try {

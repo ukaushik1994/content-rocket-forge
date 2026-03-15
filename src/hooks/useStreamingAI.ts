@@ -51,7 +51,7 @@ export const useStreamingAI = () => {
       }
 
       // Use the streaming endpoint
-      const streamUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-streaming`;
+      const streamUrl = `${import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co'}/functions/v1/ai-streaming`;
 
       const response = await fetch(streamUrl, {
         method: 'POST',

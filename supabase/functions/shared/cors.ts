@@ -1,6 +1,6 @@
 // Allowed origins for CORS - add your production domains here
 const ALLOWED_ORIGINS = [
-  'https://creaitesr.lovable.app', // Published URL
+  'https://creaiter.lovable.app', // Published URL
   'https://id-preview--ae13b72c-00ff-4e50-bd02-cd9edb6bbaf5.lovable.app', // Preview URL
   'https://iqiundzzcepmuykcnfbc.supabase.co', // Supabase project URL
   'http://localhost:5173', // Local development
