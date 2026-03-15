@@ -26,6 +26,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { supabase } from '@/integrations/supabase/client';
 import { useSerpServiceStatus } from '@/hooks/useSerpServiceStatus';
 import { EmptyDataState } from '@/components/content-builder/serp/EmptyDataState';
+import { useSettings } from '@/contexts/SettingsContext';
 
 type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
 
