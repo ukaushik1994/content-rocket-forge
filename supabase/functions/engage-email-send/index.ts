@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getApiKey } from "../shared/apiKeyService.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,15 +21,9 @@ async function getResendKey(supabase: any, workspaceId: string): Promise<string 
 
     if (!owner?.user_id) return null;
 
-    const { data: keyRow } = await supabase
-      .from("api_keys")
-      .select("encrypted_key")
-      .eq("user_id", owner.user_id)
-      .eq("service", "resend")
-      .eq("is_active", true)
-      .single();
-
-    return keyRow?.encrypted_key || null;
+    // Use shared decryption service instead of returning raw encrypted key
+    const decryptedKey = await getApiKey("resend", owner.user_id);
+    return decryptedKey;
   } catch (e) {
     console.error("Error looking up Resend key from api_keys:", e);
     return null;

@@ -388,7 +388,7 @@ export const useEnhancedAIChatDB = () => {
     const placeholderMessage: EnhancedChatMessage = {
       id: assistantId,
       role: 'assistant',
-      content: '',
+      content: 'Analyzing your request...',
       timestamp: new Date()
     };
 
@@ -397,10 +397,16 @@ export const useEnhancedAIChatDB = () => {
     try {
       // AWARENESS-FIRST: Use enhanced-ai-chat (tool-enabled) as default path
       // This ensures the AI always has access to tools for fetching solutions, competitors, company info etc.
-      const conversationHistory = [...messages, userMessage].slice(-10).map(m => ({
-        role: m.role,
-        content: m.content
-      }));
+      // Smart context: keep first message (original intent) + last 9 messages
+      const allMessages = [...messages, userMessage];
+      let conversationHistory: Array<{ role: string; content: string }>;
+      if (allMessages.length <= 10) {
+        conversationHistory = allMessages.map(m => ({ role: m.role, content: m.content }));
+      } else {
+        const first = allMessages[0];
+        const recent = allMessages.slice(-9);
+        conversationHistory = [first, ...recent].map(m => ({ role: m.role, content: m.content }));
+      }
 
       const { data: response, error } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
@@ -418,11 +424,29 @@ export const useEnhancedAIChatDB = () => {
       const responseActions = response?.actions || [];
       const responseVisualData = response?.visualData;
 
+      // Check if response contains a confirmation action from destructive tool guard
+      const confirmAction = responseActions.find((a: any) => a.action === 'confirm_action');
+      const confirmationData = confirmAction ? {
+        toolName: confirmAction.data?.action || 'unknown',
+        originalMessage: content,
+      } : undefined;
+
+      // If confirmation needed, store pending state for handler
+      if (confirmationData) {
+        setPendingConfirmation({
+          toolName: confirmationData.toolName,
+          originalMessage: content,
+          conversationId: conversationId!,
+          conversationHistory,
+        });
+      }
+
       const finalMessage: EnhancedChatMessage = {
         ...placeholderMessage,
-        content: responseContent,
-        actions: responseActions,
+        content: confirmationData ? '' : responseContent,
+        actions: responseActions.filter((a: any) => a.action !== 'confirm_action'),
         visualData: responseVisualData,
+        confirmationData,
       };
 
       setMessages(prev =>

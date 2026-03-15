@@ -159,6 +159,16 @@ export async function executeKeywordActionTool(
           return { success: false, message: 'SERP analysis service unavailable' };
         }
 
+        // Check if user has a SERP API key configured
+        const { getApiKey } = await import('../shared/apiKeyService.ts');
+        const serpKey = await getApiKey('serpapi', userId);
+        if (!serpKey) {
+          return {
+            success: false,
+            message: '🔑 No SerpAPI key configured. Please go to **Settings → API Keys** and add your SerpAPI key to use SERP analysis.'
+          };
+        }
+
         // Call the serp-api edge function
         const response = await fetch(`${supabaseUrl}/functions/v1/serp-api`, {
           method: 'POST',

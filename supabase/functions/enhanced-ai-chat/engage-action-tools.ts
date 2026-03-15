@@ -496,6 +496,16 @@ export async function executeEngageActionTool(
       }
 
       case 'send_email_campaign': {
+        // Check for Resend API key before attempting to send
+        const { getApiKey } = await import('../shared/apiKeyService.ts');
+        const resendKey = await getApiKey('resend', userId);
+        if (!resendKey) {
+          return {
+            success: false,
+            message: '🔑 No Resend API key configured. Please go to **Settings → API Keys** and add your Resend key to send emails.'
+          };
+        }
+
         const updates: any = {};
         if (toolArgs.scheduled_at) {
           updates.status = 'scheduled';
@@ -613,6 +623,16 @@ export async function executeEngageActionTool(
       }
 
       case 'send_quick_email': {
+        // Check for Resend API key before attempting to send
+        const { getApiKey: getApiKeyForEmail } = await import('../shared/apiKeyService.ts');
+        const resendKeyForQuick = await getApiKeyForEmail('resend', userId);
+        if (!resendKeyForQuick) {
+          return {
+            success: false,
+            message: '🔑 No Resend API key configured. Please go to **Settings → API Keys** and add your Resend key to send emails.'
+          };
+        }
+
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -673,8 +693,8 @@ export async function executeEngageActionTool(
         return {
           success: true,
           message: toolArgs.scheduled_at
-            ? `Scheduled social post for ${platforms.join(', ')} at ${toolArgs.scheduled_at}`
-            : `Created draft social post for ${platforms.join(', ')}`,
+            ? `📋 Social post saved and scheduled for ${platforms.join(', ')} at ${toolArgs.scheduled_at}. Note: Direct social publishing is coming soon — your post is saved as a draft and will be ready to publish once integrations are live.`
+            : `📋 Draft social post created for ${platforms.join(', ')}. Note: Direct social publishing is coming soon — your post is saved and ready to publish once integrations are live.`,
           item: { ...socialPost, platforms }
         };
       }
