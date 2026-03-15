@@ -623,6 +623,16 @@ export async function executeEngageActionTool(
       }
 
       case 'send_quick_email': {
+        // Check for Resend API key before attempting to send
+        const { getApiKey: getApiKeyForEmail } = await import('../shared/apiKeyService.ts');
+        const resendKeyForQuick = await getApiKeyForEmail('resend', userId);
+        if (!resendKeyForQuick) {
+          return {
+            success: false,
+            message: '🔑 No Resend API key configured. Please go to **Settings → API Keys** and add your Resend key to send emails.'
+          };
+        }
+
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
