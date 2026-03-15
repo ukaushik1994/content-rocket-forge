@@ -168,6 +168,13 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
         setStatus(testSuccess ? 'connected' : 'error');
         
         if (testSuccess) {
+          // Auto-activate provider so AI chat can use it immediately
+          try {
+            await toggleApiKeyStatus(provider.serviceKey as ApiProvider, true);
+            setIsEnabled(true);
+          } catch (e) {
+            console.warn('Auto-activate after test failed:', e);
+          }
           toast.success('Connection verified');
         } else {
           // Even if test fails, key is saved - show warning not error
