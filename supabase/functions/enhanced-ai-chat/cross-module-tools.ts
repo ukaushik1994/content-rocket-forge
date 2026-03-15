@@ -250,9 +250,13 @@ export async function executeCrossModuleTool(
         }
 
         const topContent = items[0];
-        const workspaceId = await getUserWorkspaceId(supabase, userId);
+        let workspaceId = await getUserWorkspaceId(supabase, userId);
         if (!workspaceId) {
-          return { success: false, message: 'No Engage workspace found.' };
+          const { data: newWsId, error: wsError } = await supabase.rpc('ensure_engage_workspace', { p_user_id: userId });
+          if (wsError || !newWsId) {
+            return { success: false, message: 'Failed to initialize Engage workspace.' };
+          }
+          workspaceId = newWsId;
         }
 
         const { data: emailCampaign, error: emailError } = await supabase.from('engage_email_campaigns').insert({
