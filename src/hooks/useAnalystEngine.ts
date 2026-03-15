@@ -212,8 +212,8 @@ export function useAnalystEngine(
       }
 
       // From analystContext metrics
-      if ((msg as any).analystContext?.metrics) {
-        for (const m of (msg as any).analystContext.metrics) {
+      if (msg.analystContext?.metrics) {
+        for (const m of msg.analystContext.metrics) {
           metricsMap.set(m.title, m);
         }
       }
