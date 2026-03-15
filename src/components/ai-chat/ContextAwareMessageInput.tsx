@@ -139,7 +139,10 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     const trimmed = message.trim();
     if (!trimmed || isLoading) return;
     
-    if (wizardMode && onLaunchWizard) {
+    if (webSearchMode) {
+      onSendMessage(`[web-search] ${trimmed}`);
+      setWebSearchMode(false);
+    } else if (wizardMode && onLaunchWizard) {
       onLaunchWizard(trimmed);
       setWizardMode(false);
     } else if (wizardMode) {
