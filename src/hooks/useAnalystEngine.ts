@@ -159,8 +159,8 @@ export function useAnalystEngine(
       }
 
       // Extract from analystContext (backend enrichment)
-      if ((msg as any).analystContext?.insights) {
-        for (const insight of (msg as any).analystContext.insights) {
+      if (msg.analystContext?.insights) {
+        for (const insight of msg.analystContext.insights) {
           feed.push({
             id: `platform-${msg.id}-${feed.length}`,
             content: typeof insight === 'string' ? insight : insight.content,
