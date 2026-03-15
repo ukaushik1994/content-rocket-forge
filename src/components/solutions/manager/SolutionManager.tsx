@@ -21,6 +21,7 @@ interface SolutionManagerProps {
 }
 
 export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) => {
+  const { user, loading: authLoading } = useAuth();
   const [filterTerm, setFilterTerm] = useState(searchTerm);
   
   // Use enhanced solution service instead of basic hook
