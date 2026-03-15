@@ -388,7 +388,7 @@ export const useEnhancedAIChatDB = () => {
     const placeholderMessage: EnhancedChatMessage = {
       id: assistantId,
       role: 'assistant',
-      content: '',
+      content: 'Analyzing your request...',
       timestamp: new Date()
     };
 
