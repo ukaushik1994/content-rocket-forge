@@ -295,7 +295,7 @@ export class MarketingIntegrationHooks {
       throw new Error('Webhook URL required');
     }
 
-    await fetch(integration.webhook, {
+    const response = await fetch(integration.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -305,6 +305,7 @@ export class MarketingIntegrationHooks {
         timestamp: Date.now()
       })
     });
+    if (!response.ok) throw new Error(`Webhook failed: ${response.status} ${response.statusText}`);
   }
 
   /**
