@@ -15,6 +15,7 @@ import Auth from "./pages/Auth";
 import CheckEmail from "./pages/CheckEmail";
 import AuthCallback from "./pages/AuthCallback";
 import Repository from "./pages/Repository";
+import AIProposals from "./pages/AIProposals";
 import { RepositoryBackfill } from "./pages/RepositoryBackfill";
 // ContentBuilder deprecated - redirects to /ai-chat
 import ContentTypeSelection from "./pages/ContentTypeSelection";
