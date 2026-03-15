@@ -1705,12 +1705,7 @@ serve(async (req) => {
 
     if (providerError) {
       console.error("❌ Error fetching providers:", providerError);
-      return new Response(JSON.stringify({ 
-        error: "Failed to fetch AI providers" 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return { data: { error: "Failed to fetch AI providers" }, status: 500 };
     }
 
     // 3. Filter valid providers with models configured
