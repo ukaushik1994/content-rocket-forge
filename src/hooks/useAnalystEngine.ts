@@ -196,7 +196,7 @@ export function useAnalystEngine(
       if (msg.role !== 'assistant') continue;
 
       // From visualData metricCards
-      const cards = msg.visualData?.summaryInsights?.metricCards || msg.visualData?.metrics || [];
+      const cards: any[] = msg.visualData?.summaryInsights?.metricCards || msg.visualData?.metrics || [];
       for (const card of cards) {
         const key = card.title || card.id || card.label;
         if (key) {
