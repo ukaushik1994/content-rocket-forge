@@ -298,13 +298,8 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   } else if (action.startsWith('send:')) {
                     onSendMessage?.(action.replace('send:', ''));
                   } else {
-                    onAction?.({
-                      id: `visual-action-${Date.now()}`,
-                      type: 'button',
-                      label: action,
-                      action,
-                      data
-                    });
+                    // Convert visual data actions to chat messages instead of unknown action errors
+                    onSendMessage?.(`Tell me more about: ${action}`);
                   }
                 }}
                 onExpandVisualization={onExpandVisualization}
