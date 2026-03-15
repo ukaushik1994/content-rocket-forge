@@ -44,6 +44,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const [isFocused, setIsFocused] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [wizardMode, setWizardMode] = useState(false);
+  const [webSearchMode, setWebSearchMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
