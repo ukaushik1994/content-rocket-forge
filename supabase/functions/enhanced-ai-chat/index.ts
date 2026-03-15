@@ -17,7 +17,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v10-2026-03-15T21:00:00Z';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v11-2026-03-15T22:00:00Z';
 
 // Token estimation (inlined from shared to avoid cross-folder import issues)
 function estimateTokens(text: string): number {
@@ -1948,16 +1948,64 @@ serve(async (req) => {
     });
 
     if (validProviders.length === 0) {
-      console.error("❌ No active AI provider found");
-      const hasInactive = (allProviders || []).length > 0;
-      return new Response(JSON.stringify({ 
-        error: hasInactive 
-          ? "No active AI provider found. Please toggle ON a provider in Settings → AI Service Hub." 
-          : "No AI provider configured. Please add and test an API key in Settings → AI Service Hub.",
-        deployVersion: DEPLOY_VERSION
-      }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      console.log("⚠️ No active provider in ai_service_providers — checking api_keys fallback...");
+      
+      // FALLBACK: Check api_keys table directly for any active AI key
+      const AI_SERVICES = ['openai', 'anthropic', 'gemini', 'mistral', 'openrouter'];
+      const { data: activeKeys } = await supabase
+        .from('api_keys')
+        .select('service')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .in('service', AI_SERVICES)
+        .limit(1);
+      
+      if (activeKeys && activeKeys.length > 0) {
+        const fallbackService = activeKeys[0].service;
+        console.log(`🔧 Self-healing: Found active key for ${fallbackService}, auto-activating provider...`);
+        
+        // Default models per provider
+        const defaultModels: Record<string, string> = {
+          openai: 'gpt-4o-mini',
+          anthropic: 'claude-3-5-sonnet-20241022',
+          gemini: 'gemini-2.0-flash-exp',
+          mistral: 'mistral-large-latest',
+          openrouter: 'openai/gpt-4o-mini'
+        };
+        const preferredModel = defaultModels[fallbackService] || 'gpt-4o-mini';
+        
+        // Auto-heal: upsert provider to active
+        await supabase
+          .from('ai_service_providers')
+          .upsert({
+            user_id: user.id,
+            provider: fallbackService,
+            status: 'active',
+            preferred_model: preferredModel,
+            api_key: '***encrypted***',
+            priority: 1,
+            error_message: null,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,provider' });
+        
+        // Use this as the active provider
+        validProviders.push({
+          provider: fallbackService,
+          preferred_model: preferredModel,
+          status: 'active',
+          priority: 1
+        });
+        
+        console.log(`✅ Self-healed provider: ${fallbackService} (model: ${preferredModel})`);
+      } else {
+        console.error("❌ No active AI provider found (no fallback keys either)");
+        return new Response(JSON.stringify({ 
+          error: "No AI provider configured. Please add and test an API key in Settings → AI Service Hub.",
+          deployVersion: DEPLOY_VERSION
+        }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
     }
 
     // Get the single active provider (only one should be active at a time)
