@@ -794,7 +794,7 @@ Trigger phrases: "what's pending approval", "approve the blog", "items need revi
 ## 🔗 KEY DATA PIPELINES
 - **Offering → Content**: Offering → mapOfferingToBrief() → Brief → AI generation → Repository (/repository)
 - **Offering → Campaign**: Offering → auto-fill strategy → AI briefs → queue → Repository → Campaign active (/campaigns)
-- **Strategy → Calendar → Content**: SERP → Proposals (/research/content-strategy) → Calendar (/research/calendar) → Builder/Wizard → Repository (auto-completes proposal)
+- **Strategy → Calendar → Content**: SERP → Proposals (/ai-proposals) → Calendar (/calendar) → Builder/Wizard → Repository (auto-completes proposal)
 - **Content → Approval**: Repository → Submit for review → Content Approval (/content-approval) → Approved/Rejected → Back to Repository
 - **Content → Email/Social**: Repository → Repurpose → Email campaign (/engage/email) or Social post (/engage/social)
 - **Contacts → Segments → Journeys**: Import contacts (/engage/contacts) → Build segments (/engage/segments) → Enroll in journeys (/engage/journeys) or automations (/engage/automations)
