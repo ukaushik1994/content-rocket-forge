@@ -1950,11 +1950,14 @@ serve(async (req) => {
     if (validProviders.length === 0) {
       console.error("❌ No active AI provider found");
       const hasInactive = (allProviders || []).length > 0;
-      return { data: { 
+      return new Response(JSON.stringify({ 
         error: hasInactive 
           ? "No active AI provider found. Please toggle ON a provider in Settings → AI Service Hub." 
-          : "No AI provider configured. Please add and test an API key in Settings → AI Service Hub."
-      }, status: 400 };
+          : "No AI provider configured. Please add and test an API key in Settings → AI Service Hub.",
+        deployVersion: DEPLOY_VERSION
+      }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     // Get the single active provider (only one should be active at a time)
