@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
 import { Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -16,7 +16,7 @@ export function SimpleAIServiceIndicator({
   className = ''
 }: SimpleAIServiceIndicatorProps) {
   const { isEnabled, hasProviders, activeProviders, isLoading } = useAIServiceStatus();
-  const navigate = useNavigate();
+  const { openSettings } = useSettings();
   
   const isActive = isEnabled && hasProviders && activeProviders > 0;
   
@@ -52,7 +52,7 @@ export function SimpleAIServiceIndicator({
           ? 'bg-primary/10 text-primary border-primary/20' 
           : 'bg-muted/30 text-muted-foreground border-border/30 cursor-pointer hover:bg-muted/50 hover:border-border/50 transition-colors'
       }`}
-      onClick={!isActive ? () => navigate('/ai-settings') : undefined}
+      onClick={!isActive ? () => openSettings('api') : undefined}
       role={!isActive ? 'button' : undefined}
     >
       <div className={`rounded-full ${

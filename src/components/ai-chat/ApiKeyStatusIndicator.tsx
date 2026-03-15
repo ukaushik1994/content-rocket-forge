@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { getAllApiKeysStatusSimple } from '@/services/apiKeys/crud';
-import { useNavigate } from 'react-router-dom';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface ApiKeyStatusIndicatorProps {
   className?: string;
@@ -16,7 +16,7 @@ export const ApiKeyStatusIndicator: React.FC<ApiKeyStatusIndicatorProps> = ({
 }) => {
   const [apiKeyStatus, setApiKeyStatus] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const { openSettings } = useSettings();
 
   useEffect(() => {
     checkApiKeyStatus();
@@ -38,7 +38,7 @@ export const ApiKeyStatusIndicator: React.FC<ApiKeyStatusIndicatorProps> = ({
   const hasAnyKey = configuredProviders.length > 0;
 
   const handleConfigureClick = () => {
-    navigate('/settings', { state: { activeTab: 'ai-settings' } });
+    openSettings('api');
   };
 
   if (isLoading) {

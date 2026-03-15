@@ -27,12 +27,14 @@ import { toast } from 'sonner';
 import { ArrowLeft, Plus, AlertTriangle, Settings } from 'lucide-react';
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Inner component that uses the context
 const CampaignsInner = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { openSettings } = useSettings();
   const { generateStrategies, isGenerating } = useCampaignStrategies();
   const { campaigns, isLoading: campaignsLoading, refetch: refetchCampaigns, deleteCampaign, updateCampaignName, updateCampaignStatus } = useCampaigns();
   const { generateAllContent } = useCampaignContentGeneration();
@@ -517,7 +519,7 @@ const CampaignsInner = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => navigate('/ai-settings')}
+                  onClick={() => openSettings('api')}
                   className="ml-4 gap-1.5"
                 >
                   <Settings className="h-3.5 w-3.5" />

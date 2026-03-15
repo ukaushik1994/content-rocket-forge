@@ -37,12 +37,14 @@ import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useSerpServiceStatus } from '@/hooks/useSerpServiceStatus';
 import { EmptyDataState } from '@/components/content-builder/serp/EmptyDataState';
+import { useSettings } from '@/contexts/SettingsContext';
 
 type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
 
 export const SerpPerformanceAnalytics = () => {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { openSettings } = useSettings();
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<ErrorType | null>(null);
@@ -120,7 +122,7 @@ export const SerpPerformanceAnalytics = () => {
         case 'no-api-keys':
           return {
             label: 'Configure API Keys',
-            onClick: () => window.location.href = '/ai-settings'
+            onClick: () => openSettings('api')
           };
         case 'api-error':
         case 'database-error':

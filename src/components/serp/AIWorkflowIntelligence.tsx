@@ -26,12 +26,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { supabase } from '@/integrations/supabase/client';
 import { useSerpServiceStatus } from '@/hooks/useSerpServiceStatus';
 import { EmptyDataState } from '@/components/content-builder/serp/EmptyDataState';
+import { useSettings } from '@/contexts/SettingsContext';
 
 type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
 
 export const AIWorkflowIntelligence = () => {
   const [insights, setInsights] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
+  const { openSettings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<ErrorType | null>(null);
@@ -126,7 +128,7 @@ export const AIWorkflowIntelligence = () => {
         case 'no-api-keys':
           return {
             label: 'Configure API Keys',
-            onClick: () => window.location.href = '/ai-settings'
+            onClick: () => openSettings('api')
           };
         case 'api-error':
         case 'database-error':
