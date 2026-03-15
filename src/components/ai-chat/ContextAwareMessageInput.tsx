@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X, PenLine } from 'lucide-react';
+import { Send, X, PenLine, Globe } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { PlusMenuDropdown } from './PlusMenuDropdown';
 import { FileUploadHandler } from './FileUploadHandler';
