@@ -251,6 +251,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     { icon: <FolderOpen className="h-4 w-4" />, label: 'Repository', action: () => handleNavigation('/repository') },
     { icon: <Package className="h-4 w-4" />, label: 'Offerings', action: () => handleNavigation('/offerings') },
     { icon: <CheckCircle className="h-4 w-4" />, label: 'Approvals', action: () => handleNavigation('/content-approval') },
+    { icon: <Sparkles className="h-4 w-4" />, label: 'AI Proposals', action: () => handleNavigation('/ai-proposals') },
   ];
 
   const toolsItems = [
