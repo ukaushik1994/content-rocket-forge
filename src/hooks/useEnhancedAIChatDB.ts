@@ -469,9 +469,7 @@ export const useEnhancedAIChatDB = () => {
             try {
               const payload = JSON.parse(trimmed.slice(6));
               if (currentEvent === 'progress') {
-                setMessages(prev =>
-                  prev.map(m => m.id === assistantId ? { ...m, content: payload.message || 'Processing...' } : m)
-                );
+                setProgressText(payload.message || 'Processing...');
               } else if (currentEvent === 'done') {
                 response = payload;
               } else if (currentEvent === 'error') {
