@@ -38,7 +38,9 @@ import {
   CheckCircle2,
   Search,
   Clock,
-  Loader2
+  Loader2,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
