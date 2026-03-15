@@ -6,6 +6,7 @@ import { Send, X, PenLine, Globe } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { PlusMenuDropdown } from './PlusMenuDropdown';
 import { FileUploadHandler } from './FileUploadHandler';
+import { cn } from '@/lib/utils';
 import { VoiceInputHandler } from './VoiceInputHandler';
 
 interface Solution {
