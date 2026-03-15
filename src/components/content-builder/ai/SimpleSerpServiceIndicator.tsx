@@ -16,7 +16,7 @@ export function SimpleSerpServiceIndicator({
   className = ''
 }: SimpleSerpServiceIndicatorProps) {
   const { isEnabled, hasProviders, activeProviders, isLoading } = useSerpServiceStatus();
-  const navigate = useNavigate();
+  const { openSettings } = useSettings();
   
   const isActive = isEnabled && hasProviders && activeProviders > 0;
   
