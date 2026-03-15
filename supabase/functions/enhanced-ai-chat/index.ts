@@ -1737,12 +1737,7 @@ serve(async (req) => {
       const decryptedKey = await getApiKey(provider.provider, user.id);
       if (!decryptedKey) {
         console.error(`❌ No decrypted API key found for provider: ${provider.provider}`);
-        return new Response(JSON.stringify({ 
-          error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.`
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return { data: { error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.` }, status: 400 };
       }
       provider.api_key = decryptedKey;
     }
