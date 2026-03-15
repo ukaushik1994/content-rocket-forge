@@ -7,6 +7,7 @@ import { useSidebarContext } from '@/contexts/SidebarContext';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useDueContentNotifications } from '@/hooks/useDueContentNotifications';
 
 interface AppLayoutProps {
   children: React.ReactNode;
