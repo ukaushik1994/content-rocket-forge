@@ -1075,6 +1075,7 @@ export const useEnhancedAIChatDB = () => {
     messages,
     isLoading,
     isTyping,
+    progressText,
     searchTerm,
     pendingConfirmation,
     loadConversations,

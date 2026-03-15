@@ -519,7 +519,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
               {/* Typing Indicator - Rotating Thinking Text */}
               <AnimatePresence>
-                {isTyping && <ThinkingTextRotator />}
+                {isTyping && <ThinkingTextRotator progressText={progressText} />}
               </AnimatePresence>
 
               <div ref={messagesEndRef} />
