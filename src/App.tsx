@@ -198,13 +198,5 @@ const App = () => (
   </QueryClientProvider>
 );
 
-// Add global event listener for settings from service layers
-if (typeof window !== 'undefined') {
-  window.addEventListener('openSettings', (event: CustomEvent) => {
-    const tab = event.detail || 'api';
-    // This will be handled by the GlobalSettingsBridge component
-    window.dispatchEvent(new CustomEvent('globalOpenSettings', { detail: tab }));
-  });
-}
 
 export default App;

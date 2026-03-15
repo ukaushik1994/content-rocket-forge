@@ -216,7 +216,8 @@ class ApiKeyService {
    */
   static async deleteApiKey(service: ApiProvider): Promise<boolean> {
     try {
-      console.log(`🗑️ Deleting ${service} API key...`);
+      const normalizedService = service === 'serpapi' ? 'serp' : service;
+      console.log(`🗑️ Deleting ${normalizedService} API key...`);
       
       // Validate user authentication - Fixed: Use ApiKeyService instead of this
       const { user, error: authError } = await ApiKeyService.validateUserAuth();
@@ -229,7 +230,7 @@ class ApiKeyService {
         .from('api_keys')
         .delete()
         .eq('user_id', user.id)
-        .eq('service', service);
+        .eq('service', normalizedService);
 
       if (error) {
         console.error(`❌ Error deleting ${service} API key:`, error);

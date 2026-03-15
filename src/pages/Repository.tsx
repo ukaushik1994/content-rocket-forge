@@ -27,7 +27,6 @@ const Repository = () => {
   useEffect(() => {
     // Force refresh of content items when the page loads
     refreshContent();
-    refreshContent();
 
     const contentDraftSaved = sessionStorage.getItem('content_draft_saved');
     const glossarySaved = sessionStorage.getItem('glossary_saved');
