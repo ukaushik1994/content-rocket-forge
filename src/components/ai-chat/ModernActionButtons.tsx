@@ -103,6 +103,12 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
       return;
     }
     
+    // Handle open_settings - open settings modal
+    if (actionStr === 'open_settings') {
+      window.dispatchEvent(new CustomEvent('openSettings', { detail: action.data?.tab || 'api' }));
+      return;
+    }
+    
     // Handle navigate actions (both "navigate" and "navigate:/path" formats)
     if (actionStr === 'navigate' || actionStr.startsWith('navigate:')) {
       const url = actionStr.startsWith('navigate:') 
