@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Target, 
   Eye, 
-  Book, 
+   
   Brain, 
   Swords, 
   BarChart3,
