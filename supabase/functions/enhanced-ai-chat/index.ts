@@ -1675,7 +1675,7 @@ serve(async (req) => {
       panelHint: queryIntent.panelHint || 'none'
     });
     
-    // ⚡ ISSUE #5 FIX: Fast-path for conversational queries (greetings, thanks, test, etc.)
+    const requiresVisualData = queryIntent?.requiresVisualData === true;
     if (queryIntent.isConversational) {
       console.log('⚡ FAST-PATH: Conversational query detected - skipping heavy processing');
       
