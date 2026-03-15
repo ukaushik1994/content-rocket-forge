@@ -16,7 +16,7 @@ export const ApiKeyStatusIndicator: React.FC<ApiKeyStatusIndicatorProps> = ({
 }) => {
   const [apiKeyStatus, setApiKeyStatus] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const { openSettings } = useSettings();
 
   useEffect(() => {
     checkApiKeyStatus();
