@@ -2310,6 +2310,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       }
       
       // Call AI again with tool results
+      emitProgress('final', 'Generating your response...');
       console.log(`🔧 Calling AI again with ${toolResults.length} tool results`);
       
       let secondCallResult = null;
