@@ -489,6 +489,7 @@ export const useEnhancedAIChatDB = () => {
         );
       }
     } catch (error) {
+      clearInterval(progressInterval);
       console.error('Error sending enhanced message:', error);
       // Remove placeholder on total failure
       setMessages(prev => prev.filter(m => m.id !== assistantId));
