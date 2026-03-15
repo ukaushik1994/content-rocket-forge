@@ -17,7 +17,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v9-2026-03-15T20:30:00Z';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v10-2026-03-15T21:00:00Z';
 
 // Token estimation (inlined from shared to avoid cross-folder import issues)
 function estimateTokens(text: string): number {
