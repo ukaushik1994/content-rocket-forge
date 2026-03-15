@@ -1,98 +1,153 @@
 
 
-# AI Chat Actions & Settings Consolidation — Fix Plan
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Summary
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-The uploaded audit document identifies 7 broken action bugs and a settings duplication problem across 9 components. After verifying the codebase, all issues are confirmed. Here's the implementation plan split into 3 sprints.
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
----
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-## Sprint 1: Fix Broken Chat Actions
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### 1. Error "Settings" button → 404 (`useEnhancedAIChatDB.ts` line 578-579)
-Change `action: 'navigate', data: { url: '/ai-service-hub' }` to `action: 'navigate:/ai-settings'` so `ModernActionButtons` handles it via its `navigate:` prefix logic.
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-### 2. Dead routes in edge function (`enhanced-ai-chat/index.ts`)
-Find-and-replace across the system prompt and hardcoded actions:
-- `/content` → `/repository`
-- `/content-builder` → `/ai-chat`
-- `/content-strategy` → `/research/content-strategy`
-
-### 3. `confirm_action` unhandled (`useEnhancedAIChatDB.ts` line 590+ `handleAction`)
-Add before the `default:` case:
-```ts
-case 'confirm_action':
-  const confirmedMsg = `CONFIRMED: Execute ${action.data?.action || 'action'}`;
-  await sendMessage(confirmedMsg);
-  return;
-```
-
-### 4. Unrecognized AI-generated actions → "Unknown Action" (`ModernActionButtons.tsx` line 152+)
-Replace the final `else { onAction(action); }` with a catch-all that converts unknown actions into chat follow-up messages:
-```ts
-const followUpMessage = action.data?.message || `Help me with: ${action.label}`;
-onAction({ ...action, action: 'send_message', data: { message: followUpMessage } });
-```
-
-### 5. Visual data action clicks → "Unknown Action" (`EnhancedMessageBubble.tsx` lines 301-307)
-Change the `else` fallback in the `onAction` handler to send as a chat message instead:
-```ts
-onSendMessage?.(`Tell me more about: ${action}`);
-```
-
-### 6. Workflow buttons do nothing visible (`useEnhancedAIChatDB.ts` line 687+)
-After updating workflow state, send the workflow action as a message to the AI so it triggers actual processing:
-```ts
-await sendMessage(`Execute workflow step: ${workflowAction}`);
-```
-
-### 7. Fix `handleAction` dead routes (lines 626-653)
-- `create-blog-post` / `create-landing-page` → navigate to `/repository` (not `/ai-chat`)
-- `navigate-content-builder` → navigate to `/ai-chat` (already correct but redundant)
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-## Sprint 2: Consolidate Settings (5 dead files + 1 duplicate page)
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-### A. `/ai-settings` page → popup redirect
-Replace `src/pages/AISettings.tsx` body with:
-- Call `openSettings('api')` on mount
-- Return `<Navigate to="/ai-chat" replace />`
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-### B. Delete dead settings components
-Remove these unused files:
-- `src/components/settings/APISettings.tsx`
-- `src/components/settings/MinimalAPISettings.tsx`
-- `src/components/settings/EnhancedAISettings.tsx`
-- `src/components/settings/EnhancedProviderManagement.tsx`
-- `src/components/settings/ProviderManagement.tsx`
-- `src/components/ai-chat/OpenRouterSettings.tsx`
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-Update `src/components/settings/index.ts` to remove dead exports.
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
-### C. Replace all `navigate('/ai-settings')` with `openSettings('api')`
-Files to update: `Campaigns.tsx`, `useEnhancedAIChat.ts`, `ErrorBoundary.tsx`, `OnboardingCarousel.tsx`, `SetupChecklist.tsx`, `SmartActionHandler.tsx`, `ApiKeyStatusIndicator.tsx`, and any content-builder/serp files referencing `/ai-settings`.
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
+
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
 ---
 
-## Sprint 3: UX — Deep Dive Prompts in Message Bubble
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-### Add deep dive prompts after action buttons (`EnhancedMessageBubble.tsx` after line 321)
-Render `message.visualData?.deepDivePrompts` as clickable pill buttons that call `onSendMessage?.(prompt)`. Show up to 3 prompts, styled as subtle bordered pills below the action buttons.
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
+
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
 
 ---
 
-## Files Changed Summary
+# AI Chat Awareness Gaps — Implementation Tracker
 
-| File | Changes |
-|------|---------|
-| `useEnhancedAIChatDB.ts` | Fix settings URL, add confirm_action, fix workflow handler, fix dead routes |
-| `ModernActionButtons.tsx` | Catch-all for unrecognized actions |
-| `EnhancedMessageBubble.tsx` | Fix visual action fallback, add deep dive prompts |
-| `enhanced-ai-chat/index.ts` | Fix dead route URLs in system prompt |
-| `AISettings.tsx` | Convert to popup redirect |
-| `settings/index.ts` | Remove dead exports |
-| 5 dead settings files + 1 duplicate | Delete |
-| ~8 files with `/ai-settings` navigations | Replace with `openSettings('api')` |
+## ✅ Batch 1: Remove Glossary — COMPLETE
+- Removed `/glossary-builder` route (redirects to /ai-chat)
+- Removed RepositoryHeader "Build Glossary" button
+- Removed `get_glossary_terms` read tool from tools.ts
+- Removed `create_glossary_term` write tool from content-action-tools.ts
+- Removed glossary from query-analyzer.ts intent detection
+- Removed glossary from system prompt capabilities
+- Removed glossary from ContentType union and content type enums
+- Removed glossary from DashboardSummary stats
+- Removed glossary from ContentTypeSelection page
+- DB tables kept (no destructive migration)
 
+## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
+- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
+- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
+- Added `create_campaign` to cross-module-tools.ts
+- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
+- Added `update_email_template` to engage-action-tools.ts
+- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
+- Added cache invalidation for all new write tools
+- Updated query-analyzer.ts with new intent patterns
+- Updated system prompt with new tool capabilities + usage examples
+- Edge function deployed successfully
+
+## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
+- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
+- 3-step flow: content selection → format selection → generated results with copy/download
+- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
+- Imported RepurposePanel alongside other panels
+- Excluded `content_repurpose` from auto-chart-conversion in edge function
+- Updated system prompt to instruct AI to emit `content_repurpose` visualData
+- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
+- Edge function deployed
+
+## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
+- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
+- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
+- Auto-triggers after `create_content_item` — saves seo_score to content_items
+- Auto-triggers after `generate_full_content` — saves seo_score to content_items
+- Content Wizard already saves seo_score on insert (verified)
+- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
+- Edge function deployed
+## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
+- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
+- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
+- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
+- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
+- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
+- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
+- Updated system prompt tool listing (25 read tools) and usage examples
+- Edge function deployed

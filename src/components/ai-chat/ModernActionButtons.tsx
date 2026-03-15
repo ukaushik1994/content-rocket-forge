@@ -150,8 +150,9 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
     } else if (actionStr.includes('strategy')) {
       navigate('/research/content-strategy');
     } else {
-      // Default: pass through to parent handler
-      onAction(action);
+      // Convert unknown actions into chat follow-up messages
+      const followUpMessage = action.data?.message || `Help me with: ${action.label}`;
+      onAction({ ...action, action: 'send_message', data: { message: followUpMessage } });
     }
   };
 

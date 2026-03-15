@@ -298,13 +298,8 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   } else if (action.startsWith('send:')) {
                     onSendMessage?.(action.replace('send:', ''));
                   } else {
-                    onAction?.({
-                      id: `visual-action-${Date.now()}`,
-                      type: 'button',
-                      label: action,
-                      action,
-                      data
-                    });
+                    // Convert visual data actions to chat messages instead of unknown action errors
+                    onSendMessage?.(`Tell me more about: ${action}`);
                   }
                 }}
                 onExpandVisualization={onExpandVisualization}
@@ -318,6 +313,26 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
               actions={message.actions} 
               onAction={onAction || (() => {})} 
             />
+          )}
+
+          {/* Deep Dive Prompts */}
+          {!isUser && message.visualData?.deepDivePrompts && message.visualData.deepDivePrompts.length > 0 && (
+            <motion.div
+              className="mt-3 flex flex-wrap gap-2"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              {(message.visualData.deepDivePrompts as string[]).slice(0, 3).map((prompt: string, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => onSendMessage?.(prompt)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-border/30 bg-muted/20 text-muted-foreground hover:text-foreground hover:border-border/50 hover:bg-muted/40 transition-all duration-200"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </motion.div>
           )}
 
           {/* SERP Data Visualization */}

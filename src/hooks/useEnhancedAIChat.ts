@@ -118,12 +118,12 @@ export const useEnhancedAIChat = () => {
     // Fallback to legacy action handlers
     switch (action) {
       case 'navigate_to_settings':
-        console.log('Navigating to settings...', data);
-        window.location.href = '/ai-settings';
+        console.log('Navigating to settings...');
+        openSettings('api');
         break;
       case 'open_settings':
         console.log('Opening settings...');
-        window.location.href = '/ai-settings';
+        openSettings('api');
         break;
       case 'optimize-content-gaps':
         // Handle content gap optimization
