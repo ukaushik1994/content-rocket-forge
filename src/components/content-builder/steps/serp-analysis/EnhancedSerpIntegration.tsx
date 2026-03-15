@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedSerpDashboard } from '@/components/content-builder/serp/EnhancedSerpDashboard';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { EnhancedSerpResult } from '@/services/enhancedSerpService';
-import { NoDataAvailable } from '../NoDataAvailable';
+import { EmptyDataState as NoDataAvailable } from '@/components/content-builder/serp/EmptyDataState';
 import { Zap, Database, TrendingUp } from 'lucide-react';
 
 export const EnhancedSerpIntegration: React.FC = () => {
