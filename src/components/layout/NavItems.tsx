@@ -160,11 +160,10 @@ const contentRoutes = [
 ];
 
 const contentItems = [
-  { path: '/content-type-selection', label: 'Builder', icon: Puzzle },
+  { path: '/ai-chat', label: 'Builder', icon: Puzzle },
   { path: '/content-approval', label: 'Approval', icon: CheckCircle },
   { path: '/repository', label: 'Repository', icon: FileText },
   { path: '/keywords', label: 'Keywords', icon: Search },
-  { path: '/research/content-strategy', label: 'Strategy', icon: Target },
 ];
 
 const marketingRoutes = [
