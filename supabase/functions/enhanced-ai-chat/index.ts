@@ -3214,14 +3214,11 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     const finalContent = cleanedResponse || aiMessage;
     if (!finalContent || finalContent.trim().length === 0) {
       console.error("❌ Empty clean content after processing");
-      return new Response(JSON.stringify({
+      return { data: {
         error: "No response content received",
         message: "Failed to process AI response properly. Please try again.",
         details: "Empty content after processing"
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }, status: 500 };
     }
 
     // Access allVisualData from scope (includes expanded multi-perspective charts)
