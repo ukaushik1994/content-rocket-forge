@@ -245,12 +245,20 @@ export interface VisualData {
   };
 }
 
+export interface AnalystContext {
+  insights?: Array<string | { content: string; type?: string }>;
+  metrics?: MetricCard[];
+  topics?: string[];
+  platformStats?: Record<string, number>;
+}
+
 export interface EnhancedChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
   visualData?: VisualData;
+  analystContext?: AnalystContext;
   allVisualData?: VisualData[]; // Phase 1: Store all generated charts
   serpData?: any[]; // Added SERP data support
   actions?: ContextualAction[];
