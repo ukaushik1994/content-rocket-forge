@@ -2123,6 +2123,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     let aiProxyError = null;
     const maxRetries = 3;
     
+    emitProgress('ai_call', 'Processing with AI...');
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       console.log(`🔄 AI call attempt ${attempt}/${maxRetries}`);
       
