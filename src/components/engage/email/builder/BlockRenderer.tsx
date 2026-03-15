@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { EmailBlock, getBlockDef } from './blockDefinitions';
 import { GripVertical, Trash2, Copy, ChevronUp, ChevronDown, Lock, Unlock, Eye, EyeOff, ImagePlus, Bookmark } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
