@@ -180,7 +180,7 @@ class OverdueContentService {
           message: `${criticalOverdue.length} content pieces are 7+ days overdue and need immediate attention.`,
           severity: 'high',
           category: 'content_management',
-          action_url: '/research/content-strategy#calendar',
+          action_url: '/calendar',
           metadata: {
             type: 'critical_overdue',
             count: criticalOverdue.length,
