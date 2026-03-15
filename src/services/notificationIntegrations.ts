@@ -142,7 +142,7 @@ export class ResearchNotifications {
           id: 'view_opportunity',
           label: 'View Details',
           action: 'navigate',
-          url: '/research/content-gaps',
+          url: '/ai-chat',
           variant: 'primary'
         },
         {
