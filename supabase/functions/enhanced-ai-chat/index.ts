@@ -1675,7 +1675,6 @@ serve(async (req) => {
       panelHint: queryIntent.panelHint || 'none'
     });
     
-    const requiresVisualData = queryIntent?.requiresVisualData === true;
     if (queryIntent.isConversational) {
       console.log('⚡ FAST-PATH: Conversational query detected - skipping heavy processing');
       
