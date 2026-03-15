@@ -184,7 +184,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
     /tell me about|show me|give me/i,
     /\d+/  // Any query with numbers likely benefits from visualization
   ];
-  const requiresVisualData: boolean = visualTriggers.some(pattern => pattern.test(q));
+  const visualDataRequired: boolean = visualTriggers.some(pattern => pattern.test(q));
   
   // Detect panel hints for repository, approvals, and content_repurpose
   const repositoryPatterns = /find\s+(my|the)\s+(blog|article|content|post)|show\s+(my|me)\s+(content|articles|blogs|posts)|what\s+did\s+i\s+write|open\s+(my\s+)?(content\s+)?library|read\s+my\s+(article|blog|post)|search\s+(my\s+)?content|browse\s+(my\s+)?content/i;
