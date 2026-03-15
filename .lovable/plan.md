@@ -1,115 +1,153 @@
 
 
-# Codebase Cleanup & Integration Plan
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Summary of Issues
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-### A. Dead / Orphan Pages to Remove (6 routes)
-| Route | Reason |
-|---|---|
-| `/ai-streaming-chat` | Redirect stub to `/ai-chat` |
-| `/content-type-selection` | Single-card dead-end; Content Wizard is in the + menu |
-| `/repository/backfill` | Admin-only URL hack; no UI path |
-| `/notifications/demo` | Dev demo page shipped to prod |
-| `/enterprise` | No sidebar link, no user path |
-| `/smart-actions/analytics` | Orphan page, no navigation link |
-| `/workflows/history` | Orphan page, only linked from analytics tab |
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-### B. Research Pages to Remove (5 routes — all duplicated in sidebar panels or AI chat)
-| Route | Duplication |
-|---|---|
-| `/research/content-strategy` | Proposals live in AI Proposals page + sidebar panel; Calendar is its own page |
-| `/research/serp-intelligence` | AI chat does SERP via tools; Keywords page shows SERP data |
-| `/research/topic-clusters` | AI chat `create_topic_cluster` tool + Research Intelligence sidebar |
-| `/research/content-gaps` | Research Intelligence sidebar "Content Gaps" tab |
-| `/research/calendar` | Keep as the only calendar route but remove from Research grouping |
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-**Keep `/research/calendar`** — rename route to `/calendar` and keep it in the sidebar bottom slot where it already lives.
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### C. Engage Layout Cleanup
-The `EngageLayout` wraps Engage pages in its own breadcrumb/background system, disconnecting from the main `AppLayout` sidebar. Since Engage is already wrapped in `AppLayout` in `App.tsx`, the `EngageLayout` just adds unnecessary padding/breadcrumbs.
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-**Action**: Remove `EngageLayout` wrapper. Engage pages render directly inside `AppLayout` like everything else. Keep `WorkspaceProvider`.
-
-### D. Disconnected Services to Integrate (4 services)
-
-1. **Conversation Memory** (`conversationMemory.ts` + `contextSummarization.ts`) — The enhanced-ai-chat backend only sends the last 10 messages. These services can enrich context sent to the backend.
-
-2. **Content Performance Prediction** (`contentPerformancePredictionService.ts`) — Has a hook (`useContentPerformancePrediction`) but nothing calls it. Surface in Repository content detail view.
-
-3. **Smart Calendar Scheduling** (`smartCalendarScheduling.ts`) — Already connected to proposal scheduling flows. The calendar page itself doesn't use it for manual scheduling. Wire into the calendar "add item" flow.
-
-4. **Due Content Notifications** (`dueContentNotificationService.ts`) — Hook exists and runs but only inside `ContentStrategyEngine` (a page being removed). Move activation to `AppLayout` so it runs globally.
-
-### E. Services to Leave Alone (not worth integrating)
-- **A/B experiments** (`experiments/ab.ts`) — Only used by smart approval recommendation. Working as intended.
-- **Content compliance** (`contentComplianceService.ts`) — Already used by Content Wizard's `WizardStepGenerate`. Working.
-- **Adaptive prompt service** — localStorage-only, no backend. Low value, skip.
-- **Content intelligence service** — Only type imports used. Low value, skip.
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-## Phased Execution Plan
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-### Phase 1: Remove Dead Pages & Routes
-**Files to modify:**
-- `src/App.tsx` — Remove 12 routes, their imports, and add redirects for any that might have bookmarks
-- Delete page files:
-  - `src/pages/AIStreamingChatPage.tsx`
-  - `src/pages/ContentTypeSelection.tsx`
-  - `src/pages/RepositoryBackfill.tsx`
-  - `src/pages/NotificationDemo.tsx`
-  - `src/pages/EnterpriseHubPage.tsx`
-  - `src/pages/SmartActionsAnalytics.tsx`
-  - `src/components/workflow/WorkflowHistoryPage.tsx`
-- Delete research page files:
-  - `src/pages/research/ContentStrategy.tsx`
-  - `src/pages/research/SerpIntelligence.tsx`
-  - `src/pages/research/TopicClusters.tsx`
-  - `src/pages/research/ContentGaps.tsx`
-- Rename `/research/calendar` route to `/calendar`
-- Update `src/components/layout/NavItems.tsx` — Remove `/content-type-selection` from contentItems, replace with `/ai-chat` (Builder). Remove `/research/content-strategy` from contentItems. Update references to `/research/calendar` to `/calendar`.
-- Update `src/components/ai-chat/ChatHistorySidebar.tsx` — Update calendar link from `/research/calendar` to `/calendar`
-- Add redirect routes: `/research/content-strategy` → `/ai-chat`, `/research/*` → `/ai-chat`, `/content-type-selection` → `/ai-chat`
-- Clean up any internal references (imports, navigation links) pointing to removed pages
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-### Phase 2: Engage Layout Cleanup
-**Files to modify:**
-- `src/pages/Engage.tsx` — Remove `EngageLayout` wrapper, keep `WorkspaceProvider`, render children directly
-- `src/components/engage/EngageLayout.tsx` — Delete file
-- `src/components/engage/shared/EngageBreadcrumb.tsx` — Delete file (no longer needed)
-- Check/update any Engage sub-pages that depend on EngageLayout's styling (add appropriate container padding if needed)
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-### Phase 3: Wire Due Content Notifications Globally
-**Files to modify:**
-- `src/components/layout/AppLayout.tsx` — Add `useDueContentNotifications()` call inside `AppLayoutInner` so it runs on every authenticated page, not just the (now-deleted) ContentStrategy page
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
-### Phase 4: Wire Conversation Memory into AI Chat
-**Files to modify:**
-- `src/hooks/useEnhancedAIChatDB.ts` — Before sending messages to the backend, call `getUserPreferences()` and `getConversationSummary()` to build a condensed context block that gets prepended to the messages array. This delivers on the "learns from you" promise without changing the backend.
-- The edge function already accepts a messages array; we just enrich what's sent.
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
 
-### Phase 5: Surface Content Performance Prediction in Repository
-**Files to modify:**
-- `src/components/content/repository/ContentDetailView.tsx` (or equivalent detail component) — When viewing a draft, call `useContentPerformancePrediction` and show a small prediction card (estimated score, topic gaps) below the content metadata.
-
-### Phase 6: Wire Smart Calendar Scheduling to Calendar UI
-**Files to modify:**
-- `src/pages/research/Calendar.tsx` (now `/calendar`) — When adding a new calendar item, offer "AI Schedule" button that calls `smartCalendarScheduling.findOptimalSlots()` to suggest the best date/time.
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
 ---
 
-## What Gets Deleted (file count)
-- **7 page files** (dead pages)
-- **4 research page files** (duplicated)
-- **2 layout/component files** (EngageLayout, EngageBreadcrumb)
-- **~12 route definitions** removed from App.tsx
-- **0 services deleted** — all services stay; we're wiring them in, not removing them
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-## What Gets Added
-- Redirect routes for removed pages (so bookmarks don't 404)
-- Due content notification hook in AppLayout
-- Conversation memory enrichment in chat DB hook
-- Performance prediction card in Repository detail view
-- AI scheduling button in Calendar
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
 
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
+
+---
+
+# AI Chat Awareness Gaps — Implementation Tracker
+
+## ✅ Batch 1: Remove Glossary — COMPLETE
+- Removed `/glossary-builder` route (redirects to /ai-chat)
+- Removed RepositoryHeader "Build Glossary" button
+- Removed `get_glossary_terms` read tool from tools.ts
+- Removed `create_glossary_term` write tool from content-action-tools.ts
+- Removed glossary from query-analyzer.ts intent detection
+- Removed glossary from system prompt capabilities
+- Removed glossary from ContentType union and content type enums
+- Removed glossary from DashboardSummary stats
+- Removed glossary from ContentTypeSelection page
+- DB tables kept (no destructive migration)
+
+## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
+- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
+- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
+- Added `create_campaign` to cross-module-tools.ts
+- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
+- Added `update_email_template` to engage-action-tools.ts
+- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
+- Added cache invalidation for all new write tools
+- Updated query-analyzer.ts with new intent patterns
+- Updated system prompt with new tool capabilities + usage examples
+- Edge function deployed successfully
+
+## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
+- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
+- 3-step flow: content selection → format selection → generated results with copy/download
+- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
+- Imported RepurposePanel alongside other panels
+- Excluded `content_repurpose` from auto-chart-conversion in edge function
+- Updated system prompt to instruct AI to emit `content_repurpose` visualData
+- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
+- Edge function deployed
+
+## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
+- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
+- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
+- Auto-triggers after `create_content_item` — saves seo_score to content_items
+- Auto-triggers after `generate_full_content` — saves seo_score to content_items
+- Content Wizard already saves seo_score on insert (verified)
+- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
+- Edge function deployed
+## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
+- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
+- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
+- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
+- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
+- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
+- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
+- Updated system prompt tool listing (25 read tools) and usage examples
+- Edge function deployed

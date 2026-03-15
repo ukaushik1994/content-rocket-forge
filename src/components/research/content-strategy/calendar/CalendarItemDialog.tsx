@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
+import { X, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
+import { format } from 'date-fns';
 
 interface CalendarItemDialogProps {
   open: boolean;
@@ -174,7 +176,39 @@ export const CalendarItemDialog: React.FC<CalendarItemDialogProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="scheduled_date" className="text-white">Scheduled Date</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label htmlFor="scheduled_date" className="text-white">Scheduled Date</Label>
+              {!item && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-primary hover:text-primary/80"
+                  onClick={async () => {
+                    try {
+                      const proposal = {
+                        title: formData.title || 'Untitled',
+                        primary_keyword: formData.title || '',
+                        content_type: formData.content_type,
+                        priority_tag: formData.priority === 'high' ? 'quick_win' : 'evergreen',
+                      };
+                      const schedule = await smartCalendarScheduling.generateOptimalSchedule([proposal]);
+                      if (schedule.length > 0) {
+                        setFormData(prev => ({
+                          ...prev,
+                          scheduled_date: format(schedule[0].scheduledDate, 'yyyy-MM-dd')
+                        }));
+                      }
+                    } catch (e) {
+                      console.error('Smart scheduling failed:', e);
+                    }
+                  }}
+                >
+                  <Zap className="h-3 w-3 mr-1" />
+                  AI Suggest
+                </Button>
+              )}
+            </div>
             <Input
               id="scheduled_date"
               type="date"

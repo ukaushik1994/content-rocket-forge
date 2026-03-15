@@ -7,6 +7,7 @@ import { useSidebarContext } from '@/contexts/SidebarContext';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useDueContentNotifications } from '@/hooks/useDueContentNotifications';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,9 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
   const location = useLocation();
   const { isSidebarOpen, toggleSidebar, setPendingPanel } = useSidebarContext();
   const { isMobile } = useResponsiveBreakpoint();
+
+  // Global due content notifications — runs for all authenticated pages
+  useDueContentNotifications();
 
   const {
     conversations,

@@ -1,13 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ContentItemType } from '@/contexts/content';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { StatusBadge } from './StatusBadge';
 import { ScoreBadge } from './ScoreBadge';
-import { Edit, BarChart2, Archive, FileText, Copy, Trash } from 'lucide-react';
+import { Edit, BarChart2, Archive, FileText, Copy, Trash, TrendingUp, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useContentPerformancePrediction } from '@/hooks/useContentPerformancePrediction';
 
 interface ContentDetailViewProps {
   item: ContentItemType | null;
@@ -26,6 +27,8 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
   onArchive,
   onDelete
 }) => {
+  const { isPredicting, prediction, predictPerformance } = useContentPerformancePrediction();
+
   if (!item) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[400px] border rounded-lg border-dashed border-border/60 bg-background/50">
@@ -50,6 +53,14 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
       toast.success('Content copied to clipboard');
     } else {
       toast.error('No content to copy');
+    }
+  };
+
+  const canPredict = item.content && item.title && item.keywords && item.keywords.length > 0;
+
+  const handlePredict = () => {
+    if (canPredict) {
+      predictPerformance(item.content!, item.title, item.keywords!, item.content_type || 'blog');
     }
   };
 
@@ -79,6 +90,63 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Performance Prediction Card */}
+        {item.status === 'draft' && canPredict && (
+          <div className="mb-4 p-3 rounded-lg border border-border/40 bg-muted/20">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Performance Prediction
+              </div>
+              {!prediction && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePredict}
+                  disabled={isPredicting}
+                  className="h-7 text-xs"
+                >
+                  {isPredicting ? (
+                    <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Analyzing...</>
+                  ) : (
+                    'Predict'
+                  )}
+                </Button>
+              )}
+            </div>
+            {prediction && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">{Math.round(prediction.successProbability * 100)}%</div>
+                    <div className="text-[10px] text-muted-foreground">Success</div>
+                  </div>
+                  <div className="flex-1 grid grid-cols-3 gap-2 text-xs">
+                    <div className="text-center p-1.5 rounded bg-background/60">
+                      <div className="font-medium">{prediction.competitionLevel}</div>
+                      <div className="text-muted-foreground">Competition</div>
+                    </div>
+                    <div className="text-center p-1.5 rounded bg-background/60">
+                      <div className="font-medium">{prediction.timeToRank.days}d</div>
+                      <div className="text-muted-foreground">Time to Rank</div>
+                    </div>
+                    <div className="text-center p-1.5 rounded bg-background/60">
+                      <div className="font-medium">{prediction.estimatedTraffic.average}</div>
+                      <div className="text-muted-foreground">Est. Traffic</div>
+                    </div>
+                  </div>
+                </div>
+                {prediction.topicGaps && prediction.topicGaps.length > 0 && (
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Topic gaps: </span>
+                    <span>{prediction.topicGaps.slice(0, 3).map(g => g.topic).join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
         

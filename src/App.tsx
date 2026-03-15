@@ -16,38 +16,21 @@ import CheckEmail from "./pages/CheckEmail";
 import AuthCallback from "./pages/AuthCallback";
 import Repository from "./pages/Repository";
 import AIProposals from "./pages/AIProposals";
-import { RepositoryBackfill } from "./pages/RepositoryBackfill";
-// ContentBuilder deprecated - redirects to /ai-chat
-import ContentTypeSelection from "./pages/ContentTypeSelection";
 import ContentApproval from "./pages/ContentApproval";
-// GlossaryBuilder removed — feature deprecated
 import Solutions from "./pages/Solutions";
 import KeywordsPage from "./pages/keywords/KeywordsPage";
 import { migrateKeywordsToArray } from "@/utils/migration/keywordArrayMigration";
 
 import Analytics from "./pages/Analytics";
-import ContentStrategy from "./pages/research/ContentStrategy";
-
-import SerpIntelligence from "./pages/research/SerpIntelligence";
-import TopicClusters from "./pages/research/TopicClusters";
-
-import ContentGapsPage from "./pages/research/ContentGaps";
 import CalendarPage from "./pages/research/Calendar";
 import Campaigns from "./pages/Campaigns";
 import Engage from "./pages/Engage";
-// Pipeline route removed - integrated into Content Strategy
-
 
 import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
-import { AIStreamingChatPage } from "./pages/AIStreamingChatPage";
 import WixCallback from "./pages/WixCallback";
 import SharedConversation from "./pages/SharedConversation";
-import { EnterpriseHubPage } from "./pages/EnterpriseHubPage";
-import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
-import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
-import WorkflowHistoryPage from "./components/workflow/WorkflowHistoryPage";
 import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
@@ -85,7 +68,7 @@ const KeywordMigrationRunner = () => {
       const migrationCompleted = localStorage.getItem('keywords_migration_completed');
       
       if (migrationCompleted === 'true') {
-        return; // Already migrated, skip silently
+        return;
       }
 
       try {
@@ -144,14 +127,11 @@ const App = () => (
 
                   {/* AI Chat - uses AppLayout for persistent sidebar */}
                   <Route path="/ai-chat" element={<ProtectedRoute><AppLayout><AIChat /></AppLayout></ProtectedRoute>} />
-                  <Route path="/ai-streaming-chat" element={<ProtectedRoute><AIStreamingChatPage /></ProtectedRoute>} />
                   <Route path="/shared-conversation/:conversationId" element={<SharedConversation />} />
 
                   {/* All other protected routes wrapped in AppLayout for persistent sidebar */}
                   <Route path="/drafts" element={<ProtectedRoute><AppLayout><Repository /></AppLayout></ProtectedRoute>} />
                   <Route path="/repository" element={<ProtectedRoute><AppLayout><Repository /></AppLayout></ProtectedRoute>} />
-                  <Route path="/repository/backfill" element={<ProtectedRoute><AppLayout><RepositoryBackfill /></AppLayout></ProtectedRoute>} />
-                  <Route path="/content-type-selection" element={<ProtectedRoute><AppLayout><ContentTypeSelection /></AppLayout></ProtectedRoute>} />
                   <Route path="/content-approval" element={<ProtectedRoute><AppLayout><ContentApproval /></AppLayout></ProtectedRoute>} />
                   <Route path="/ai-proposals" element={<ProtectedRoute><AppLayout><AIProposals /></AppLayout></ProtectedRoute>} />
                   <Route path="/glossary-builder" element={<Navigate to="/ai-chat" replace />} />
@@ -159,15 +139,9 @@ const App = () => (
                   <Route path="/keywords" element={<ProtectedRoute><AppLayout><KeywordsPage /></AppLayout></ProtectedRoute>} />
                   <Route path="/analytics" element={<ProtectedRoute><AppLayout><Analytics /></AppLayout></ProtectedRoute>} />
                   <Route path="/ai-settings" element={<ProtectedRoute><AppLayout><AISettings /></AppLayout></ProtectedRoute>} />
-                  <Route path="/enterprise" element={<ProtectedRoute><AppLayout><EnterpriseHubPage /></AppLayout></ProtectedRoute>} />
                   
-                  {/* Research routes */}
-                  <Route path="/research/content-strategy" element={<ProtectedRoute><AppLayout><ContentStrategy /></AppLayout></ProtectedRoute>} />
-                  <Route path="/research/serp-intelligence" element={<ProtectedRoute><AppLayout><SerpIntelligence /></AppLayout></ProtectedRoute>} />
-                  <Route path="/research/topic-clusters" element={<ProtectedRoute><AppLayout><TopicClusters /></AppLayout></ProtectedRoute>} />
-                  <Route path="/research/content-gaps" element={<ProtectedRoute><AppLayout><ContentGapsPage /></AppLayout></ProtectedRoute>} />
-                  <Route path="/research/calendar" element={<ProtectedRoute><AppLayout><CalendarPage /></AppLayout></ProtectedRoute>} />
-                  <Route path="/research/pipeline" element={<Navigate to="/research/content-strategy#pipeline" replace />} />
+                  {/* Calendar (moved from /research/calendar) */}
+                  <Route path="/calendar" element={<ProtectedRoute><AppLayout><CalendarPage /></AppLayout></ProtectedRoute>} />
                   
                   {/* Campaigns */}
                   <Route path="/campaigns" element={<ProtectedRoute><AppLayout><Campaigns /></AppLayout></ProtectedRoute>} />
@@ -175,18 +149,24 @@ const App = () => (
                   {/* Engage */}
                   <Route path="/engage/*" element={<ProtectedRoute><AppLayout><Engage /></AppLayout></ProtectedRoute>} />
                   
-                  {/* Smart Actions Analytics */}
-                  <Route path="/smart-actions/analytics" element={<ProtectedRoute><AppLayout><SmartActionsAnalytics /></AppLayout></ProtectedRoute>} />
-                  
-                  {/* Workflow History */}
-                  <Route path="/workflows/history" element={<ProtectedRoute><AppLayout><WorkflowHistoryPage /></AppLayout></ProtectedRoute>} />
-                  
-                  {/* Notification Demo */}
-                  <Route path="/notifications/demo" element={<ProtectedRoute><AppLayout><NotificationDemo /></AppLayout></ProtectedRoute>} />
-                  
+                  {/* Redirects for removed pages */}
+                  <Route path="/ai-streaming-chat" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/content-type-selection" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/repository/backfill" element={<Navigate to="/repository" replace />} />
+                  <Route path="/notifications/demo" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/enterprise" element={<Navigate to="/ai-settings" replace />} />
+                  <Route path="/smart-actions/analytics" element={<Navigate to="/analytics" replace />} />
+                  <Route path="/workflows/history" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/research/content-strategy" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/research/serp-intelligence" element={<Navigate to="/keywords" replace />} />
+                  <Route path="/research/topic-clusters" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/research/content-gaps" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/research/calendar" element={<Navigate to="/calendar" replace />} />
+                  <Route path="/research/pipeline" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/research" element={<Navigate to="/ai-chat" replace />} />
+
                   {/* Redirects for legacy routes */}
                   <Route path="/settings" element={<Navigate to="/ai-settings" replace />} />
-                  <Route path="/research" element={<Navigate to="/research/content-strategy" replace />} />
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />

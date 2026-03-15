@@ -64,7 +64,7 @@ export const AIProposalsHero = React.memo(({ stats }: AIProposalsHeroProps) => {
           transition={{ delay: 0.6, duration: 0.8 }}
         >
           <Button
-            onClick={() => navigate('/research/content-strategy')}
+            onClick={() => navigate('/ai-chat')}
             className="bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 text-white font-semibold px-8 py-6 rounded-2xl text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
           >
             <Sparkles className="mr-2 h-5 w-5" />

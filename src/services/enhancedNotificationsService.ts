@@ -263,7 +263,7 @@ export async function executeNotificationAction(
       }));
     }
   } else if (actionId === 'view_calendar') {
-    window.location.href = '/research/calendar';
+    window.location.href = '/calendar';
   }
 }
 
