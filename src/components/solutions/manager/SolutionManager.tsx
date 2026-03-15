@@ -96,8 +96,14 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   }, [searchTerm]);
   
   useEffect(() => {
-    fetchSolutions();
-  }, []);
+    if (user && !authLoading) {
+      fetchSolutions();
+    } else if (!authLoading && !user) {
+      setSolutions([]);
+      setIsLoading(false);
+      setIsInitialLoading(false);
+    }
+  }, [user, authLoading]);
 
   // Filter solutions based on search term
   const filteredSolutions = solutions.filter(solution => {
