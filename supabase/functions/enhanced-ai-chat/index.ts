@@ -1719,14 +1719,11 @@ serve(async (req) => {
     if (validProviders.length === 0) {
       console.error("❌ No active AI provider found");
       const hasInactive = (allProviders || []).length > 0;
-      return new Response(JSON.stringify({ 
+      return { data: { 
         error: hasInactive 
           ? "No active AI provider found. Please toggle ON a provider in Settings → AI Service Hub." 
           : "No AI provider configured. Please add and test an API key in Settings → AI Service Hub."
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }, status: 400 };
     }
 
     // Get the single active provider (only one should be active at a time)
