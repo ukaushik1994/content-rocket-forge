@@ -35,6 +35,7 @@ const CampaignsInner = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { openSettings } = useSettings();
+  const { generateStrategies, isGenerating } = useCampaignStrategies();
   const { campaigns, isLoading: campaignsLoading, refetch: refetchCampaigns, deleteCampaign, updateCampaignName, updateCampaignStatus } = useCampaigns();
   const { generateAllContent } = useCampaignContentGeneration();
   const { openPanel } = useContentGeneration();
