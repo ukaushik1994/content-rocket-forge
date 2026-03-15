@@ -157,7 +157,7 @@ export function SetupChecklist() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            onClick={() => navigate(item.route)}
+            onClick={() => { item.onClick?.(); navigate(item.route); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left group ${
               item.completed 
                 ? 'bg-muted/20 text-muted-foreground' 
