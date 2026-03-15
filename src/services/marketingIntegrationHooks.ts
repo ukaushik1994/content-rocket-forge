@@ -406,7 +406,7 @@ export class MarketingIntegrationHooks {
     switch (integration.provider) {
       case 'slack':
         if (integration.webhook) {
-          await fetch(integration.webhook, {
+          const slackResp = await fetch(integration.webhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -420,6 +420,7 @@ export class MarketingIntegrationHooks {
               }]
             })
           });
+          if (!slackResp.ok) throw new Error(`Slack action webhook failed: ${slackResp.status}`);
         }
         break;
       
