@@ -424,11 +424,29 @@ export const useEnhancedAIChatDB = () => {
       const responseActions = response?.actions || [];
       const responseVisualData = response?.visualData;
 
+      // Check if response contains a confirmation action from destructive tool guard
+      const confirmAction = responseActions.find((a: any) => a.action === 'confirm_action');
+      const confirmationData = confirmAction ? {
+        toolName: confirmAction.data?.action || 'unknown',
+        originalMessage: content,
+      } : undefined;
+
+      // If confirmation needed, store pending state for handler
+      if (confirmationData) {
+        setPendingConfirmation({
+          toolName: confirmationData.toolName,
+          originalMessage: content,
+          conversationId: conversationId!,
+          conversationHistory,
+        });
+      }
+
       const finalMessage: EnhancedChatMessage = {
         ...placeholderMessage,
-        content: responseContent,
-        actions: responseActions,
+        content: confirmationData ? '' : responseContent,
+        actions: responseActions.filter((a: any) => a.action !== 'confirm_action'),
         visualData: responseVisualData,
+        confirmationData,
       };
 
       setMessages(prev =>
