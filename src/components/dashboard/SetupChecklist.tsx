@@ -16,6 +16,7 @@ interface ChecklistItem {
   icon: React.ElementType;
   route: string;
   completed: boolean;
+  onClick?: () => void;
 }
 
 export function SetupChecklist() {
