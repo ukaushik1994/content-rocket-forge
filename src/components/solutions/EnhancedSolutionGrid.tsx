@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { EnhancedSolutionCard } from './EnhancedSolutionCard';
-import { SolutionDetailDialog } from './SolutionDetailDialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, PlusCircle, Shuffle, Wand2 } from 'lucide-react';
