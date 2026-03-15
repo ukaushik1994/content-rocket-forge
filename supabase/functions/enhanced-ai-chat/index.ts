@@ -2544,14 +2544,11 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     if (!aiMessage) {
       console.error("No response from AI", data);
       console.log("Full AI response data:", JSON.stringify(data, null, 2));
-      return new Response(JSON.stringify({ 
+      return { data: { 
         error: "No response content received",
         message: "The AI service returned an empty response. Please try rephrasing your question or try again in a moment.",
         details: "Empty AI response"
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }, status: 500 };
     }
 
     console.log(`📝 AI Response received (${aiMessage.length} characters)`);
