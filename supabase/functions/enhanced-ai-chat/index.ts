@@ -3527,7 +3527,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     return new Response(JSON.stringify({ 
       error: "Internal server error",
       message: "An unexpected error occurred while processing your request. Please try again.",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error instanceof Error ? error.message : "Unknown error",
+      deployVersion: DEPLOY_VERSION
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
