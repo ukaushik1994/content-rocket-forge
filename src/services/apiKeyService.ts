@@ -415,20 +415,7 @@ class ApiKeyService {
             updated_at: new Date().toISOString()
           };
           
-          // Sync DECRYPTED api_key field when activating (edge functions need plain text)
-          // Use getApiKey which goes through the secure edge function
-          if (isActive && apiKeyData) {
-            try {
-              const decryptedKey = await ApiKeyService.getApiKey(service);
-              if (decryptedKey) {
-                updateData.api_key = decryptedKey;
-                console.log(`🔓 Decrypted ${service} API key for ai_service_providers sync`);
-              }
-            } catch (decryptError) {
-              console.error(`❌ Failed to decrypt ${service} key for sync:`, decryptError);
-              // Don't update api_key if decryption fails
-            }
-          }
+          // No longer sync plaintext api_key — edge functions now decrypt from api_keys table directly
 
           const { error: providerError } = await supabase
             .from('ai_service_providers')
