@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { corsHeaders } from '../_shared/cors.ts'
+import { corsHeaders } from '../shared/cors.ts'
 
 // Rate limit detection patterns
 const RATE_LIMIT_PATTERNS = [
