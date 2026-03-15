@@ -149,7 +149,7 @@ export const DashboardSummary = () => {
   const handleOpportunityClick = (item: any, type: 'opportunity' | 'ai-strategy' | 'dashboard') => {
     switch (type) {
       case 'opportunity':
-        navigate('/research/opportunity-hunter');
+        navigate('/ai-chat');
         break;
       case 'ai-strategy':
         navigate('/ai-proposals');

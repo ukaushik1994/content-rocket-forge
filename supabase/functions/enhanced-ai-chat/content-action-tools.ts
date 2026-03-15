@@ -452,6 +452,7 @@ export async function executeContentActionTool(
             params: {
               provider: provider.provider,
               model: provider.preferred_model || 'gpt-4',
+              apiKey: decryptedApiKey,
               messages: [
                 {
                   role: 'system',

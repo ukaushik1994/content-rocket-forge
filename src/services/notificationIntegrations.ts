@@ -189,7 +189,7 @@ export class ResearchNotifications {
           id: 'view_clusters',
           label: 'View Clusters',
           action: 'navigate',
-          url: '/research/topic-clusters',
+          url: '/ai-chat',
           variant: 'primary'
         }
       ]

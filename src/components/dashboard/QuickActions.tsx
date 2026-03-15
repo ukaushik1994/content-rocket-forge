@@ -53,7 +53,7 @@ const quickActions: QuickAction[] = [
     title: 'Competitor Insights',
     description: 'Track and analyze competitor content strategies',
     icon: Swords,
-    route: '/research/competitor-analysis',
+    route: '/ai-chat',
     gradient: 'from-red-500/10 via-red-500/5 to-transparent',
     iconGradient: 'from-red-400 to-pink-400'
   },

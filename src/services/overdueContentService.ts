@@ -197,7 +197,7 @@ class OverdueContentService {
           message: `${moderateOverdue.length} content pieces are overdue and should be addressed soon.`,
           severity: 'medium',
           category: 'content_management',
-          action_url: '/research/content-strategy#calendar',
+          action_url: '/calendar',
           metadata: {
             type: 'moderate_overdue',
             count: moderateOverdue.length,

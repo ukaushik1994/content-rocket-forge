@@ -30,7 +30,7 @@ export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
       title: 'Keyword Research',
       description: 'Find high-performing keywords for your content',
       icon: Search,
-      action: 'navigate:/research/keyword-research',
+      action: 'navigate:/keywords',
       color: 'from-blue-500/20 to-blue-600/20',
       borderColor: 'border-blue-500/30'
     },
