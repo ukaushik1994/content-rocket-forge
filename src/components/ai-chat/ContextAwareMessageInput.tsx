@@ -269,9 +269,9 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
         )}
       </AnimatePresence>
 
-      {/* Wizard Mode Chip */}
+      {/* Mode Chip (Wizard or Web Search) */}
       <AnimatePresence>
-        {wizardMode && (
+        {(wizardMode || webSearchMode) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -279,14 +279,24 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             transition={{ duration: 0.2 }}
             className="flex items-center gap-2 mb-2 px-1"
           >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">
-              <PenLine className="h-3 w-3" />
-              <span>Content Wizard</span>
-              <span className="text-primary/60">— type a topic and press Enter</span>
+            <div className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium",
+              webSearchMode
+                ? "bg-accent/10 border-accent/20 text-accent"
+                : "bg-primary/10 border-primary/20 text-primary"
+            )}>
+              {webSearchMode ? <Globe className="h-3 w-3" /> : <PenLine className="h-3 w-3" />}
+              <span>{webSearchMode ? 'Web Search' : 'Content Wizard'}</span>
+              <span className={webSearchMode ? "text-accent/60" : "text-primary/60"}>
+                — type your query and press Enter
+              </span>
               <button
                 type="button"
                 onClick={handleCancelWizard}
-                className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                className={cn(
+                  "ml-1 rounded-full p-0.5 transition-colors",
+                  webSearchMode ? "hover:bg-accent/20" : "hover:bg-primary/20"
+                )}
               >
                 <X className="h-3 w-3" />
               </button>
