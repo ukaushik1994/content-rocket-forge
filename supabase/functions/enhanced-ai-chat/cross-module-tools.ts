@@ -3,6 +3,8 @@
  * Chain reads and writes across modules atomically
  */
 
+import { getApiKey } from '../shared/apiKeyService.ts';
+
 export const CROSS_MODULE_TOOL_DEFINITIONS = [
   {
     type: "function",
