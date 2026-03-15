@@ -225,11 +225,12 @@ export class MarketingIntegrationHooks {
       source: 'serp_intelligence'
     };
 
-    await fetch(integration.webhook, {
+    const response = await fetch(integration.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(zapierPayload)
     });
+    if (!response.ok) throw new Error(`Zapier webhook failed: ${response.status} ${response.statusText}`);
   }
 
   /**
