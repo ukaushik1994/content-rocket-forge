@@ -1737,7 +1737,7 @@ serve(async (req) => {
     const provider = validProviders[0] as any;
     
     // 4. Resolve API key from encrypted api_keys table (never use plaintext ai_service_providers.api_key)
-    const { getApiKey } = await import('./shared/../shared/apiKeyService.ts');
+    const { getApiKey } = await import('../shared/apiKeyService.ts');
     if (provider.provider === 'openrouter' && openrouterKey) {
       provider.api_key = openrouterKey;
     } else {
