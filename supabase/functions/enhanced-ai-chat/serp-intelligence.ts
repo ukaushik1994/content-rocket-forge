@@ -5,7 +5,7 @@
 
 export interface SerpQueryPattern {
   pattern: RegExp;
-  type: 'trend' | 'competitive' | 'content_gap' | 'seo' | 'market_research' | 'keyword_analysis';
+  type: 'trend' | 'competitive' | 'content_gap' | 'seo' | 'market_research' | 'keyword_analysis' | 'web_search';
   extractKeywords: (match: RegExpMatchArray) => string[];
   priority: number;
 }
@@ -118,6 +118,66 @@ export const SERP_QUERY_PATTERNS: SerpQueryPattern[] = [
     type: 'competitive',
     extractKeywords: (match) => [match[1].trim(), match[2].trim()],
     priority: 8
+  },
+
+  // =========================================================================
+  // WEB SEARCH PATTERNS - General knowledge queries needing live web data
+  // =========================================================================
+
+  // Explicit search requests
+  {
+    pattern: /(?:search\s+(?:for|the\s+web\s+for)|look\s+up|google)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 10
+  },
+
+  // "What's new/latest" patterns
+  {
+    pattern: /(?:what'?s?\s+(?:new|latest|recent)|latest\s+(?:news|updates?|developments?))\s+(?:in|about|for|on|with|regarding)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 7
+  },
+
+  // "Best practices / how to" (external knowledge)
+  {
+    pattern: /(?:best\s+practices?|how\s+to|tips?\s+(?:for|on)|guide\s+(?:to|for|on))\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 6
+  },
+
+  // "Find articles/resources"
+  {
+    pattern: /(?:find|show|get)\s+(?:me\s+)?(?:articles?|resources?|information|info|examples?)\s+(?:about|on|for|regarding)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 7
+  },
+
+  // "What is" / "Explain" factual queries
+  {
+    pattern: /(?:what\s+(?:is|are)|explain|define)\s+(.{4,})/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 5
+  },
+
+  // "News about"
+  {
+    pattern: /(?:news|updates?|announcements?)\s+(?:about|on|for|from|regarding)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 7
+  },
+
+  // Compare external products/services
+  {
+    pattern: /(?:compare|difference\s+between|which\s+is\s+better)\s+(.+?)\s+(?:and|vs\.?|or|versus)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [`${match[1].trim()} vs ${match[2].trim()}`],
+    priority: 7
   }
 ];
 
@@ -277,7 +337,8 @@ function getSuggestedAnalysis(queryType: string): string[] {
     'content_gap': ['missing_content', 'opportunity_analysis', 'topic_clusters'],
     'seo': ['keyword_difficulty', 'search_volume', 'ranking_factors'],
     'market_research': ['audience_insights', 'search_trends', 'related_topics'],
-    'keyword_analysis': ['keyword_metrics', 'serp_features', 'competition_analysis']
+    'keyword_analysis': ['keyword_metrics', 'serp_features', 'competition_analysis'],
+    'web_search': ['organic_results', 'answer_box', 'related_topics']
   };
 
   return analysisMap[queryType] || ['basic_analysis'];
@@ -546,4 +607,121 @@ export function generateSmartSuggestions(results: SerpQueryResult[]): string[] {
   });
   
   return suggestions;
+}
+
+// =============================================================================
+// WEB SEARCH EXECUTION - General web search via existing api-proxy
+// =============================================================================
+
+export interface WebSearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+  position: number;
+}
+
+export interface WebSearchResponse {
+  query: string;
+  results: WebSearchResult[];
+  answerBox?: string;
+  relatedSearches?: string[];
+  timestamp: string;
+}
+
+/**
+ * Execute a general web search using the existing api-proxy 'search' endpoint
+ */
+export async function executeWebSearch(
+  query: string,
+  location: string = 'us'
+): Promise<WebSearchResponse> {
+  console.log('🌐 Executing web search for:', query);
+  
+  try {
+    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/api-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+      },
+      body: JSON.stringify({
+        service: 'serpapi',
+        endpoint: 'search',
+        params: { keyword: query, location }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      console.error('❌ Web search failed:', data.error || response.statusText);
+      return { query, results: [], timestamp: new Date().toISOString() };
+    }
+
+    // Normalize results from SerpAPI/Serpstack response formats
+    const organicResults: WebSearchResult[] = [];
+    const rawResults = data.organic_results || data.data?.organic_results || data.results || [];
+    
+    for (let i = 0; i < Math.min(rawResults.length, 8); i++) {
+      const r = rawResults[i];
+      organicResults.push({
+        title: r.title || '',
+        url: r.link || r.url || '',
+        snippet: r.snippet || r.description || '',
+        position: r.position || i + 1
+      });
+    }
+
+    // Extract answer box if present
+    const answerBox = data.answer_box?.snippet || data.answer_box?.answer || 
+                      data.data?.answer_box?.snippet || undefined;
+
+    // Extract related searches
+    const relatedRaw = data.related_searches || data.data?.related_searches || [];
+    const relatedSearches = relatedRaw.slice(0, 5).map((r: any) => r.query || r.title || r);
+
+    console.log(`✅ Web search returned ${organicResults.length} results`);
+
+    return {
+      query,
+      results: organicResults,
+      answerBox,
+      relatedSearches: relatedSearches.length > 0 ? relatedSearches : undefined,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('❌ Web search error:', error);
+    return { query, results: [], timestamp: new Date().toISOString() };
+  }
+}
+
+/**
+ * Format web search results into a context block for the AI
+ */
+export function generateWebSearchContext(searchResponse: WebSearchResponse): string {
+  if (searchResponse.results.length === 0) return '';
+
+  let context = `\n\n🌐 WEB SEARCH RESULTS for "${searchResponse.query}":\n`;
+
+  if (searchResponse.answerBox) {
+    context += `\n📋 QUICK ANSWER:\n${searchResponse.answerBox}\n`;
+  }
+
+  context += '\n📄 TOP RESULTS:\n';
+  searchResponse.results.forEach((r, i) => {
+    context += `${i + 1}. **${r.title}**\n   ${r.url}\n   ${r.snippet}\n\n`;
+  });
+
+  if (searchResponse.relatedSearches && searchResponse.relatedSearches.length > 0) {
+    context += `\n🔗 RELATED SEARCHES: ${searchResponse.relatedSearches.join(' | ')}\n`;
+  }
+
+  context += '\n✨ WEB SEARCH INSTRUCTIONS:';
+  context += '\n- Synthesize and summarize findings in your own words';
+  context += '\n- ALWAYS cite sources with their URLs when referencing specific information';
+  context += '\n- Indicate this information comes from live web search';
+  context += '\n- Highlight the most relevant and recent information first';
+  context += '\n- If the answer box has a direct answer, lead with that';
+
+  return context;
 }
