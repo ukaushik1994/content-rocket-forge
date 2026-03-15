@@ -36,7 +36,8 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   onOpenProposals,
   onOpenResearch,
   onOpenAnalyst,
-  onLaunchWizard
+  onLaunchWizard,
+  onWebSearch
 }) => {
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
