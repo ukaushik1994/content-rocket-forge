@@ -2,7 +2,6 @@
 export * from './api/ApiKeyInput';
 export * from './api/AvailableProviders';
 export * from './api/ApiSettingsHeader';
-export * from './APISettings';
 export * from './ProfileSettings';
 export * from './NotificationSettings';
 export * from './AppearanceSettings';
@@ -11,8 +10,5 @@ export * from './BillingSettings';
 export * from './AdvancedSettings';
 export * from './FormatPromptSettings';
 export * from './AIServiceToggle';
-export * from './ProviderManagement';
-export * from './EnhancedProviderManagement';
 export * from './ServiceStatusDashboard';
-export * from './EnhancedAISettings';
 export * from './MigrationNotification';

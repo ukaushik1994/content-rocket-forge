@@ -2464,8 +2464,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
                   ]
                 },
                 actionableItems: [
-                  { id: '1', title: 'View All Content', actionType: 'navigate', targetUrl: '/content', icon: 'FileText' },
-                  { id: '2', title: 'Create New Content', actionType: 'navigate', targetUrl: '/content-builder', icon: 'Plus' }
+                  { id: '1', title: 'View All Content', actionType: 'navigate', targetUrl: '/repository', icon: 'FileText' },
+                  { id: '2', title: 'Create New Content', actionType: 'navigate', targetUrl: '/repository', icon: 'Plus' }
                 ]
               };
             }

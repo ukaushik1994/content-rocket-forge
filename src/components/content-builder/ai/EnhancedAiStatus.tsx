@@ -133,7 +133,7 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
             <Button
               variant="default"
               size="sm"
-              onClick={() => window.location.href = '/ai-settings'}
+              onClick={() => openSettings('api')}
             >
               AI Settings
             </Button>

@@ -49,7 +49,7 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
 
         case 'navigate:/settings':
           navigate('/ai-settings');
-          result = { navigated: true, route: '/ai-settings' };
+          result = { navigated: true, route: '/settings' };
           break;
 
         // Content Builder integration

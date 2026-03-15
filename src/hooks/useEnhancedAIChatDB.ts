@@ -651,13 +651,15 @@ export const useEnhancedAIChatDB = () => {
           case 'navigate-strategy':
             navigate('/research/content-strategy');
             break;
+          case 'confirm_action':
+            const confirmedMsg = `CONFIRMED: Execute ${action.data?.action || action.label || 'action'} with params: ${JSON.stringify(action.data?.args || action.data || {})}`;
+            await sendMessage(confirmedMsg);
+            break;
           default:
-            console.warn('❓ Unknown action:', actionString);
-            toast({
-              title: "Unknown Action",
-              description: `Action "${actionString}" not recognized`,
-              variant: "destructive"
-            });
+            // Convert unknown actions into chat follow-up messages instead of showing error
+            console.warn('❓ Unknown action, converting to chat message:', actionString);
+            const fallbackMessage = action.data?.message || `Help me with: ${action.label || actionString}`;
+            await sendMessage(fallbackMessage);
             break;
         }
       }
