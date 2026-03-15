@@ -43,6 +43,18 @@ class OfferingService {
 
   async getAllOfferings(): Promise<EnhancedOffering[]> {
     try {
+      // Ensure we have a valid session before querying (prevents RLS silent empty results)
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        console.warn('No valid session for offerings query, attempting refresh...');
+        const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+        if (!refreshedSession) {
+          console.error('Cannot fetch offerings: no authenticated session');
+          toast.error('Session expired. Please log in again.');
+          return [];
+        }
+      }
+
       const { data, error } = await supabase
         .from('solutions')
         .select('*')
@@ -54,6 +66,7 @@ class OfferingService {
         return [];
       }
 
+      console.log('Fetched offerings count:', data?.length ?? 0);
       return this.transformDatabaseToEnhanced(data || []);
     } catch (error) {
       console.error('Service error fetching offerings:', error);
