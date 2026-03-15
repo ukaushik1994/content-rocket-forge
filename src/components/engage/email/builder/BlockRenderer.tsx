@@ -180,7 +180,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
                 cursor: isSelected && !isLocked ? 'text' : 'pointer',
                 ...getBorderStyle(),
               }}
-              dangerouslySetInnerHTML={!isSelected ? { __html: p.content } : undefined}
+              dangerouslySetInnerHTML={!isSelected ? { __html: DOMPurify.sanitize(p.content || '') } : undefined}
             />
           </div>
         );
