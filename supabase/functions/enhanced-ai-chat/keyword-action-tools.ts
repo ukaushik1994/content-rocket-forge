@@ -265,10 +265,11 @@ export async function executeKeywordActionTool(
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            service: provider.provider,
+            endpoint: 'chat',
+            apiKey: decryptedApiKey,
             params: {
-              provider: provider.provider,
               model: provider.preferred_model || 'gpt-4',
-              apiKey: decryptedApiKey,
               messages: [
                 {
                   role: 'system',
@@ -279,8 +280,7 @@ export async function executeKeywordActionTool(
                   content: `Create a topic cluster with "${toolArgs.pillar_topic}" as the pillar topic. Generate ${count} subtopics. Return JSON: { "pillar": "topic", "subtopics": [{ "title": "...", "keyword": "...", "content_type": "blog", "search_intent": "informational|transactional|navigational" }] }`
                 }
               ],
-              maxTokens: 2000,
-              userId
+              maxTokens: 2000
             }
           })
         });

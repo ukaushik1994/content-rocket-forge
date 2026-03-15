@@ -3,6 +3,8 @@
  * Chain reads and writes across modules atomically
  */
 
+import { getApiKey } from '../shared/apiKeyService.ts';
+
 export const CROSS_MODULE_TOOL_DEFINITIONS = [
   {
     type: "function",
@@ -203,10 +205,14 @@ export async function executeCrossModuleTool(
           return { success: false, message: 'Content not found or access denied' };
         }
 
-        // Get workspace
-        const workspaceId = await getUserWorkspaceId(supabase, userId);
+        // Get or auto-provision workspace
+        let workspaceId = await getUserWorkspaceId(supabase, userId);
         if (!workspaceId) {
-          return { success: false, message: 'No Engage workspace found. Visit the Engage module first.' };
+          const { data: newWsId, error: wsError } = await supabase.rpc('ensure_engage_workspace', { p_user_id: userId });
+          if (wsError || !newWsId) {
+            return { success: false, message: 'Failed to initialize Engage workspace.' };
+          }
+          workspaceId = newWsId;
         }
 
         // Create email campaign
@@ -244,9 +250,13 @@ export async function executeCrossModuleTool(
         }
 
         const topContent = items[0];
-        const workspaceId = await getUserWorkspaceId(supabase, userId);
+        let workspaceId = await getUserWorkspaceId(supabase, userId);
         if (!workspaceId) {
-          return { success: false, message: 'No Engage workspace found.' };
+          const { data: newWsId, error: wsError } = await supabase.rpc('ensure_engage_workspace', { p_user_id: userId });
+          if (wsError || !newWsId) {
+            return { success: false, message: 'Failed to initialize Engage workspace.' };
+          }
+          workspaceId = newWsId;
         }
 
         const { data: emailCampaign, error: emailError } = await supabase.from('engage_email_campaigns').insert({
@@ -295,6 +305,12 @@ export async function executeCrossModuleTool(
           return { success: false, message: 'No AI provider configured.' };
         }
 
+        // Decrypt API key from secure vault
+        const decryptedApiKey = await getApiKey(provider.provider, userId);
+        if (!decryptedApiKey) {
+          return { success: false, message: 'API key not found. Please re-enter your API key in Settings.' };
+        }
+
         // Truncate content for the prompt
         const contentPreview = (content.content || '').replace(/<[^>]+>/g, '').substring(0, 2000);
 
@@ -305,8 +321,10 @@ export async function executeCrossModuleTool(
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            service: provider.provider,
+            endpoint: 'chat',
+            apiKey: decryptedApiKey,
             params: {
-              provider: provider.provider,
               model: provider.preferred_model || 'gpt-4',
               messages: [
                 {
@@ -318,8 +336,7 @@ export async function executeCrossModuleTool(
                   content: `Repurpose this article for ${toolArgs.platforms.join(', ')}. Title: "${content.title}". Content: ${contentPreview}`
                 }
               ],
-              maxTokens: 1500,
-              userId
+              maxTokens: 1500
             }
           })
         });
@@ -437,9 +454,13 @@ export async function executeCrossModuleTool(
       }
 
       case 'schedule_social_from_repurpose': {
-        const workspaceId = await getUserWorkspaceId(supabase, userId);
+        let workspaceId = await getUserWorkspaceId(supabase, userId);
         if (!workspaceId) {
-          return { success: false, message: 'No Engage workspace found. Visit the Engage module first.' };
+          const { data: newWsId, error: wsError } = await supabase.rpc('ensure_engage_workspace', { p_user_id: userId });
+          if (wsError || !newWsId) {
+            return { success: false, message: 'Failed to initialize Engage workspace.' };
+          }
+          workspaceId = newWsId;
         }
 
         const posts = toolArgs.posts || [];
@@ -473,7 +494,7 @@ export async function executeCrossModuleTool(
           await supabase.from('social_post_targets').insert({
             post_id: socialPost.id,
             platform: post.platform,
-            status: toolArgs.scheduled_at ? 'pending' : 'draft'
+            status: toolArgs.scheduled_at ? 'scheduled' : 'draft'
           });
 
           createdPosts.push({ id: socialPost.id, platform: post.platform });

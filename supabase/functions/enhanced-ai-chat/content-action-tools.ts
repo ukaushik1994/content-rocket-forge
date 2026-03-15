@@ -449,10 +449,11 @@ export async function executeContentActionTool(
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            service: provider.provider,
+            endpoint: 'chat',
+            apiKey: decryptedApiKey,
             params: {
-              provider: provider.provider,
               model: provider.preferred_model || 'gpt-4',
-              apiKey: decryptedApiKey,
               messages: [
                 {
                   role: 'system',
@@ -463,8 +464,7 @@ export async function executeContentActionTool(
                   content: `Write a comprehensive ${toolArgs.content_type || 'blog post'} about "${toolArgs.keyword}".${toolArgs.additional_instructions ? ` Additional instructions: ${toolArgs.additional_instructions}` : ''}`
                 }
               ],
-              maxTokens: targetWords * 3,
-              userId
+              maxTokens: targetWords * 3
             }
           })
         });
