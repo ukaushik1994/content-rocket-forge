@@ -2090,7 +2090,9 @@ serve(async (req) => {
       // Fallback if no tool call (shouldn't happen)
       console.error('🎯❌ No tool call in campaign strategy response');
       console.error('🎯 Response data:', JSON.stringify(data, null, 2));
-      return { data: { error: 'Failed to generate campaign strategies', details: 'AI did not return a tool call', response: data }, status: 500 };
+      return new Response(JSON.stringify({ error: 'Failed to generate campaign strategies', details: 'AI did not return a tool call', deployVersion: DEPLOY_VERSION }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     emitProgress('serp', 'Researching market intelligence...');
