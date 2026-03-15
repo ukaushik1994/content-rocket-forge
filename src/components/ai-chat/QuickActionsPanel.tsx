@@ -48,7 +48,7 @@ export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
       title: 'Content Strategy',
       description: 'Analyze competitors and plan your strategy',
       icon: Target,
-      action: 'navigate:/research/content-strategy',
+      action: 'send:Help me plan a content strategy',
       color: 'from-purple-500/20 to-purple-600/20',
       borderColor: 'border-purple-500/30'
     },

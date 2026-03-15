@@ -77,7 +77,7 @@ const AIProposals = () => {
   }, []);
 
   const handleSendToBuilder = useCallback((proposal: any) => {
-    navigate('/research/content-strategy', { state: { selectedProposal: proposal } });
+    navigate('/ai-chat', { state: { selectedProposal: proposal } });
   }, [navigate]);
 
   const heroStats = useMemo(() => ({

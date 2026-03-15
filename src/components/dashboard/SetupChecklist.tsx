@@ -16,6 +16,7 @@ interface ChecklistItem {
   icon: React.ElementType;
   route: string;
   completed: boolean;
+  onClick?: () => void;
 }
 
 export function SetupChecklist() {
@@ -70,7 +71,8 @@ export function SetupChecklist() {
           label: 'Configure AI API keys',
           description: 'Connect OpenAI or another AI provider',
           icon: Key,
-          route: '/ai-settings',
+          route: '/ai-chat',
+          onClick: () => window.dispatchEvent(new CustomEvent('openSettings', { detail: 'api' })),
           completed: (apiKeysRes.data?.length ?? 0) > 0,
         },
         {
@@ -78,7 +80,7 @@ export function SetupChecklist() {
           label: 'Run your first research',
           description: 'Start with keyword or competitor research',
           icon: Search,
-          route: '/research/content-strategy',
+          route: '/ai-chat',
           completed: false, // Always show as incomplete to encourage exploration
         },
       ];
@@ -155,7 +157,7 @@ export function SetupChecklist() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            onClick={() => navigate(item.route)}
+            onClick={() => { item.onClick?.(); navigate(item.route); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left group ${
               item.completed 
                 ? 'bg-muted/20 text-muted-foreground' 

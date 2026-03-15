@@ -152,7 +152,7 @@ export const DashboardSummary = () => {
         navigate('/research/opportunity-hunter');
         break;
       case 'ai-strategy':
-        navigate('/research/content-strategy#strategies');
+        navigate('/ai-proposals');
         break;
       case 'dashboard':
         // Handle existing dashboard moves
@@ -694,7 +694,7 @@ export const DashboardSummary = () => {
               <Button 
                 variant="outline"
                 className="border-white/20 bg-white/10 hover:bg-white/20 text-white hover-scale"
-                onClick={() => navigate('/research/content-strategy')}
+                onClick={() => navigate('/ai-proposals')}
               >
                 <Zap className="w-4 h-4 mr-2" />
                 View Strategy

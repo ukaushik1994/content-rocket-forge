@@ -730,11 +730,9 @@ You are the AI brain of **Creaiter** — an end-to-end AI-powered content market
 - **Analytics** (/analytics) — Performance dashboards with ranking tracking, traffic analytics, conversion metrics, ROI reports. Date-range filtering.
 
 ### RESEARCH
-- **Content Strategy** (/research/content-strategy) — SERP-driven keyword strategies and proposals. Proposals link to offerings/competitors. Pipeline management.
-- **SERP Intelligence** (/research/serp-intelligence) — Live SERP analysis, competitor ranking data, search trend monitoring.
-- **Topic Clusters** (/research/topic-clusters) — Pillar/cluster content mapping for topical authority building.
-- **Content Gaps** (/research/content-gaps) — Identifies content opportunities competitors cover that the user doesn't.
-- **Editorial Calendar** (/research/calendar) — Schedule content, drag-and-drop calendar, status tracking. Calendar scheduling auto-updates proposal status (available→scheduled→completed).
+- **AI Proposals** (/ai-proposals) — SERP-driven keyword strategies and proposals. Proposals link to offerings/competitors. Pipeline management.
+- **Keywords** (/keywords) — Keyword library with SERP data, position tracking, search volume, difficulty, People Also Ask, content gap analysis.
+- **Editorial Calendar** (/calendar) — Schedule content, drag-and-drop calendar, status tracking. Calendar scheduling auto-updates proposal status (available→scheduled→completed).
 
 ### ENGAGE
 - **Email** (/engage/email) — Full email marketing suite: Inbox (3-panel layout), Campaigns (A/B testing, timezone scheduling), Drafts, Scheduled, Templates (drag-drop builder + HTML editor), Reporting (7d/30d/90d analytics).
@@ -796,7 +794,7 @@ Trigger phrases: "what's pending approval", "approve the blog", "items need revi
 ## 🔗 KEY DATA PIPELINES
 - **Offering → Content**: Offering → mapOfferingToBrief() → Brief → AI generation → Repository (/repository)
 - **Offering → Campaign**: Offering → auto-fill strategy → AI briefs → queue → Repository → Campaign active (/campaigns)
-- **Strategy → Calendar → Content**: SERP → Proposals (/research/content-strategy) → Calendar (/research/calendar) → Builder/Wizard → Repository (auto-completes proposal)
+- **Strategy → Calendar → Content**: SERP → Proposals (/ai-proposals) → Calendar (/calendar) → Builder/Wizard → Repository (auto-completes proposal)
 - **Content → Approval**: Repository → Submit for review → Content Approval (/content-approval) → Approved/Rejected → Back to Repository
 - **Content → Email/Social**: Repository → Repurpose → Email campaign (/engage/email) or Social post (/engage/social)
 - **Contacts → Segments → Journeys**: Import contacts (/engage/contacts) → Build segments (/engage/segments) → Enroll in journeys (/engage/journeys) or automations (/engage/automations)
@@ -2740,8 +2738,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
                   ]
                 },
                 actionableItems: [
-                  { id: '1', title: 'View Strategy Proposals', actionType: 'navigate', targetUrl: '/research/content-strategy', icon: 'FileText' },
-                  { id: '2', title: 'Create New Strategy', actionType: 'navigate', targetUrl: '/research/content-strategy?new=true', icon: 'Plus' }
+                  { id: '1', title: 'View Strategy Proposals', actionType: 'navigate', targetUrl: '/ai-proposals', icon: 'FileText' },
+                  { id: '2', title: 'Create New Strategy', actionType: 'navigate', targetUrl: '/ai-proposals', icon: 'Plus' }
                 ],
                 deepDivePrompts: [
                   'Which proposal has the best potential?',

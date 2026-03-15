@@ -35,7 +35,7 @@ const quickActions: QuickAction[] = [
     title: 'Create New Strategy',
     description: 'Start a new content strategy with AI guidance',
     icon: Target,
-    route: '/research/content-strategy',
+    route: '/ai-proposals',
     gradient: 'from-neon-blue/10 via-neon-blue/5 to-transparent',
     iconGradient: 'from-neon-blue to-cyan-400'
   },
@@ -44,7 +44,7 @@ const quickActions: QuickAction[] = [
     title: 'Content Builder',
     description: 'Create and optimize content with AI assistance',
     icon: Brain,
-    route: '/content-builder',
+    route: '/ai-chat',
     gradient: 'from-orange-500/10 via-orange-500/5 to-transparent',
     iconGradient: 'from-orange-400 to-yellow-400'
   },

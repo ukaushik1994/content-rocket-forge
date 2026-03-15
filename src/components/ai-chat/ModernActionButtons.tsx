@@ -103,6 +103,12 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
       return;
     }
     
+    // Handle open_settings - open settings modal
+    if (actionStr === 'open_settings') {
+      window.dispatchEvent(new CustomEvent('openSettings', { detail: action.data?.tab || 'api' }));
+      return;
+    }
+    
     // Handle navigate actions (both "navigate" and "navigate:/path" formats)
     if (actionStr === 'navigate' || actionStr.startsWith('navigate:')) {
       const url = actionStr.startsWith('navigate:') 
@@ -144,11 +150,9 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
       };
       navigate('/ai-chat', { state: { prefilledData: preloadData } });
     } else if (actionStr.includes('keyword-research') || actionStr.includes('research')) {
-      navigate('/research/content-strategy', { 
-        state: { prefilledKeyword: action.data?.keyword || action.data?.mainKeyword || action.label }
-      });
+      navigate('/keywords');
     } else if (actionStr.includes('strategy')) {
-      navigate('/research/content-strategy');
+      navigate('/ai-proposals');
     } else {
       // Convert unknown actions into chat follow-up messages
       const followUpMessage = action.data?.message || `Help me with: ${action.label}`;

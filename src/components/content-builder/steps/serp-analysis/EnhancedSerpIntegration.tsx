@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedSerpDashboard } from '@/components/content-builder/serp/EnhancedSerpDashboard';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { EnhancedSerpResult } from '@/services/enhancedSerpService';
-import { NoDataAvailable } from '../NoDataAvailable';
+import { EmptyDataState as NoDataAvailable } from '@/components/content-builder/serp/EmptyDataState';
 import { Zap, Database, TrendingUp } from 'lucide-react';
 
 export const EnhancedSerpIntegration: React.FC = () => {
@@ -100,8 +100,10 @@ export const EnhancedSerpIntegration: React.FC = () => {
       {/* Enhanced Dashboard or No Data */}
       {mainKeyword && !serpData && !showManualInput && (
         <NoDataAvailable 
-          keyword={mainKeyword}
-          onManualInput={handleManualInput}
+          title={`No SERP data for "${mainKeyword}"`}
+          description="Run a SERP analysis or enter data manually to get started."
+          actionLabel="Enter Manually"
+          onAction={handleManualInput}
         />
       )}
       

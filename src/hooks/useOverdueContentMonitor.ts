@@ -34,7 +34,7 @@ export const useOverdueContentMonitor = () => {
             description: 'Consider moving them back to proposals for rescheduling',
             action: {
               label: 'View Calendar',
-              onClick: () => window.location.href = '/research/content-strategy#calendar'
+              onClick: () => window.location.href = '/calendar'
             }
           });
         } else if (moderateCount > 0) {
@@ -42,7 +42,7 @@ export const useOverdueContentMonitor = () => {
             description: 'Please review and update their status',
             action: {
               label: 'View Calendar', 
-              onClick: () => window.location.href = '/research/content-strategy#calendar'
+              onClick: () => window.location.href = '/calendar'
             }
           });
         }

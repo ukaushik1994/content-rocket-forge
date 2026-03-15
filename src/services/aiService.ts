@@ -168,7 +168,7 @@ function generateContextualActions(
       id: 'content-strategy',
       type: 'button',
       label: 'Content Strategy',
-      action: 'navigate:/research/content-strategy',
+      action: 'navigate:/ai-proposals',
       variant: 'secondary'
     });
   }
