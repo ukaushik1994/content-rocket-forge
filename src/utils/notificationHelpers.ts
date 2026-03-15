@@ -180,7 +180,7 @@ export class NotificationHelper {
           label: 'View Details',
           action: 'navigate',
           variant: 'secondary',
-          url: '/research/content-strategy'
+          url: '/ai-proposals'
         }
       ],
       previewData: { opportunityType, keyword, potential },
