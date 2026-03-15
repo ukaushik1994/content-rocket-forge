@@ -205,10 +205,14 @@ export async function executeCrossModuleTool(
           return { success: false, message: 'Content not found or access denied' };
         }
 
-        // Get workspace
-        const workspaceId = await getUserWorkspaceId(supabase, userId);
+        // Get or auto-provision workspace
+        let workspaceId = await getUserWorkspaceId(supabase, userId);
         if (!workspaceId) {
-          return { success: false, message: 'No Engage workspace found. Visit the Engage module first.' };
+          const { data: newWsId, error: wsError } = await supabase.rpc('ensure_engage_workspace', { p_user_id: userId });
+          if (wsError || !newWsId) {
+            return { success: false, message: 'Failed to initialize Engage workspace.' };
+          }
+          workspaceId = newWsId;
         }
 
         // Create email campaign
