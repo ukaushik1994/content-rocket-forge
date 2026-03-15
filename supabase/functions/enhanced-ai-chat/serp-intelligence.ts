@@ -132,9 +132,17 @@ export const SERP_QUERY_PATTERNS: SerpQueryPattern[] = [
     priority: 10
   },
 
-  // "What's new/latest" patterns
+  // "What's new/latest/happening" patterns
   {
-    pattern: /(?:what'?s?\s+(?:new|latest|recent)|latest\s+(?:news|updates?|developments?))\s+(?:in|about|for|on|with|regarding)\s+(.+)/i,
+    pattern: /(?:what'?s?\s+(?:new|latest|recent|happening|going\s+on)|latest\s+(?:news|updates?|developments?)|what\s+(?:is|are)\s+(?:happening|going\s+on))\s+(?:in|about|for|on|with|regarding)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim().replace(/\s*(right now|today|currently|now|at the moment)\s*\??$/i, '').trim()],
+    priority: 7
+  },
+
+  // "Current state / current trends" patterns
+  {
+    pattern: /(?:current\s+(?:state|trends?|status|landscape)|state\s+of)\s+(?:of\s+|in\s+)?(.+)/i,
     type: 'web_search',
     extractKeywords: (match) => [match[1].trim()],
     priority: 7
