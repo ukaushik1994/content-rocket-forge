@@ -249,6 +249,7 @@ export class MarketingIntegrationHooks {
       }
     };
 
+    console.warn('⚠️ SECURITY: HubSpot API call made directly from browser. This exposes your API key. Consider proxying through an edge function.');
     const response = await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
       method: 'POST',
       headers: {

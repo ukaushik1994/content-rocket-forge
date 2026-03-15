@@ -430,20 +430,7 @@ class ApiKeyService {
           }
         } else if (isActive && apiKeyData) {
           // Insert new provider record only if activating
-          // Decrypt the key using secure edge function before storing
-          let plainTextKey: string | null = null;
-          try {
-            plainTextKey = await ApiKeyService.getApiKey(service);
-            if (!plainTextKey) {
-              throw new Error('Failed to retrieve decrypted key');
-            }
-            console.log(`🔓 Decrypted ${service} API key for ai_service_providers insert`);
-          } catch (decryptError) {
-            console.error(`❌ Failed to decrypt ${service} key for insert:`, decryptError);
-            toast.error(`Failed to configure ${service}. Please re-enter your API key.`);
-            return false;
-          }
-
+          // No plaintext key — edge functions decrypt from api_keys table directly
           const { error: insertError } = await supabase
             .from('ai_service_providers')
             .insert({
@@ -452,7 +439,6 @@ class ApiKeyService {
               status: 'active',
               priority: DEFAULT_PRIORITIES[service] ?? 99,
               preferred_model: DEFAULT_MODELS[service],
-              api_key: plainTextKey,
               capabilities: ['chat', 'completion'],
               available_models: [DEFAULT_MODELS[service]]
             });

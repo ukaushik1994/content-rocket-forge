@@ -73,8 +73,8 @@ Deno.serve(async (req) => {
       await supabase.from("engage_activity_log").insert({
         workspace_id: post.workspace_id,
         channel: "social",
-        type: allPosted ? "social_posted" : "social_failed",
-        message: `Social post ${allPosted ? "published" : "failed"}: ${post.content.substring(0, 60)}`,
+        type: allPosted ? "social_posted" : "social_pending",
+        message: `Social post ${allPosted ? "published" : "queued for retry"}: ${post.content.substring(0, 60)}`,
         payload: { post_id: post.id },
       });
 

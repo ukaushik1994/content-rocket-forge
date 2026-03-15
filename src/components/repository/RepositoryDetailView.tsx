@@ -87,7 +87,7 @@ const RepositoryDetailViewBody: React.FC<RepositoryDetailViewBodyProps> = ({ ope
 
   const handleEdit = () => {
     if (content.content_type === 'glossary') {
-      navigate(`/glossary-builder?edit=${content.id}`);
+      navigate(`/ai-chat`);
     } else {
       navigate(`/ai-chat`);
     }

@@ -250,7 +250,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
         return (
           <div style={{ padding: blockPadding, display: 'flex', gap: p.gap || 16, ...getBorderStyle() }}>
             {cols.slice(0, count).map((col: any, i: number) => (
-              <div key={i} style={{ flex: 1, fontSize: 14, color: '#333' }} dangerouslySetInnerHTML={{ __html: col.content || '' }} />
+              <div key={i} style={{ flex: 1, fontSize: 14, color: '#333' }} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(col.content || '') }} />
             ))}
           </div>
         );
