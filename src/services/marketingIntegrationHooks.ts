@@ -199,11 +199,12 @@ export class MarketingIntegrationHooks {
       ]
     };
 
-    await fetch(integration.webhook, {
+    const response = await fetch(integration.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(slackMessage)
     });
+    if (!response.ok) throw new Error(`Slack webhook failed: ${response.status} ${response.statusText}`);
   }
 
   /**
@@ -224,11 +225,12 @@ export class MarketingIntegrationHooks {
       source: 'serp_intelligence'
     };
 
-    await fetch(integration.webhook, {
+    const response = await fetch(integration.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(zapierPayload)
     });
+    if (!response.ok) throw new Error(`Zapier webhook failed: ${response.status} ${response.statusText}`);
   }
 
   /**
@@ -247,7 +249,7 @@ export class MarketingIntegrationHooks {
       }
     };
 
-    await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
+    const response = await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${integration.apiKey}`,
@@ -255,6 +257,7 @@ export class MarketingIntegrationHooks {
       },
       body: JSON.stringify(hubspotData)
     });
+    if (!response.ok) throw new Error(`HubSpot API failed: ${response.status} ${response.statusText}`);
   }
 
   /**
@@ -276,11 +279,12 @@ export class MarketingIntegrationHooks {
       ]]
     };
 
-    await fetch(integration.webhook, {
+    const response = await fetch(integration.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(sheetsData)
     });
+    if (!response.ok) throw new Error(`Google Sheets webhook failed: ${response.status} ${response.statusText}`);
   }
 
   /**
@@ -291,7 +295,7 @@ export class MarketingIntegrationHooks {
       throw new Error('Webhook URL required');
     }
 
-    await fetch(integration.webhook, {
+    const response = await fetch(integration.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -301,6 +305,7 @@ export class MarketingIntegrationHooks {
         timestamp: Date.now()
       })
     });
+    if (!response.ok) throw new Error(`Webhook failed: ${response.status} ${response.statusText}`);
   }
 
   /**
@@ -401,7 +406,7 @@ export class MarketingIntegrationHooks {
     switch (integration.provider) {
       case 'slack':
         if (integration.webhook) {
-          await fetch(integration.webhook, {
+          const slackResp = await fetch(integration.webhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -415,16 +420,18 @@ export class MarketingIntegrationHooks {
               }]
             })
           });
+          if (!slackResp.ok) throw new Error(`Slack action webhook failed: ${slackResp.status}`);
         }
         break;
       
       default:
         if (integration.webhook) {
-          await fetch(integration.webhook, {
+          const webhookResp = await fetch(integration.webhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(actionData)
           });
+          if (!webhookResp.ok) throw new Error(`Webhook action failed: ${webhookResp.status}`);
         }
         break;
     }
