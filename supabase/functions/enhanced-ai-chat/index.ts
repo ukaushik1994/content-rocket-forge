@@ -1,4 +1,4 @@
-// Force redeploy: 2026-03-15T17:10:00Z - Ensure query-analyzer bundled with requiresVisualData fix
+// Deploy v3: 2026-03-15T17:15:00Z - Guard requiresVisualData property access
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
