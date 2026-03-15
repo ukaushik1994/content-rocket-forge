@@ -2557,18 +2557,15 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     // ✅ CRITICAL: Bypass JSON parser for strategy generation
     if (use_case === 'strategy') {
       console.log('📋 Strategy use case detected - returning raw JSON response');
-      return new Response(
-        JSON.stringify({
-          response: aiMessage, // Raw JSON array for strategies
-          content: aiMessage,  // Fallback
-          metadata: {
-            processed_at: new Date().toISOString(),
-            use_case: 'strategy',
-            bypass_json_parser: true
-          }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return { data: {
+        response: aiMessage,
+        content: aiMessage,
+        metadata: {
+          processed_at: new Date().toISOString(),
+          use_case: 'strategy',
+          bypass_json_parser: true
+        }
+      }, status: 200 };
     }
 
     // Phase 4: Response size monitoring for large context models
