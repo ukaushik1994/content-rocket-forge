@@ -1,4 +1,4 @@
-// Deploy v6: 2026-03-15T19:20:00Z - Request-scope requiresVisualData guard + forced redeploy marker
+// Deploy v8: 2026-03-15T19:45:00Z - Hard eliminate bare requiresVisualData refs + deploy marker in error payloads
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
@@ -16,6 +16,8 @@ import {
 import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
+
+const DEPLOY_VERSION = 'enhanced-ai-chat-v8-2026-03-15T19:45:00Z';
 
 // Token estimation (inlined from shared to avoid cross-folder import issues)
 function estimateTokens(text: string): number {
@@ -184,7 +186,7 @@ function analyzeQueryIntent(query: string): QueryIntent {
     /tell me about|show me|give me/i,
     /\d+/
   ];
-  const requiresVisualData: boolean = visualTriggers.some(pattern => pattern.test(q));
+  const visualDataRequired: boolean = visualTriggers.some(pattern => pattern.test(q));
   
   const repositoryPatterns = /find\s+(my|the)\s+(blog|article|content|post)|show\s+(my|me)\s+(content|articles|blogs|posts)|what\s+did\s+i\s+write|open\s+(my\s+)?(content\s+)?library|read\s+my\s+(article|blog|post)|search\s+(my\s+)?content|browse\s+(my\s+)?content/i;
   const approvalsPatterns = /pending\s+(approval|review)|what('s|\s+is)\s+pending|approve\s+the|reject\s+the|items?\s+need\s+review|show\s+(my\s+)?approvals|needs?\s+(my\s+)?review/i;
@@ -213,7 +215,7 @@ function analyzeQueryIntent(query: string): QueryIntent {
     scope,
     categories,
     estimatedTokens: tokenEstimates[scope],
-    requiresVisualData,
+    requiresVisualData: visualDataRequired,
     confidence: categories.length > 0 ? 0.8 : 0.5,
     isConversational: false,
     panelHint,
@@ -1874,7 +1876,7 @@ serve(async (req) => {
     });
 
     // Runtime-safe alias to prevent out-of-scope ReferenceError in any prompt path
-    const requiresVisualData = queryIntent?.requiresVisualData === true;
+    const isVisualPromptRequired = queryIntent?.requiresVisualData === true;
     
     if (queryIntent.isConversational) {
       console.log('⚡ FAST-PATH: Conversational query detected - skipping heavy processing');
@@ -2226,7 +2228,7 @@ serve(async (req) => {
         const shouldPrioritizeVisualPrompt =
           queryIntent.scope === 'detailed' ||
           queryIntent.scope === 'full' ||
-          requiresVisualData === true;
+          isVisualPromptRequired === true;
 
         if (shouldPrioritizeVisualPrompt) {
           console.log('📊 Using standard chart analysis prompt');
@@ -3501,7 +3503,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
           } catch (error) {
             emit('error', { 
               error: 'Internal server error',
-              message: error instanceof Error ? error.message : 'Unknown error'
+              message: error instanceof Error ? error.message : 'Unknown error',
+              deployVersion: DEPLOY_VERSION
             });
           }
           controller.close();
@@ -3525,7 +3528,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     return new Response(JSON.stringify({ 
       error: "Internal server error",
       message: "An unexpected error occurred while processing your request. Please try again.",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error instanceof Error ? error.message : "Unknown error",
+      deployVersion: DEPLOY_VERSION
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
