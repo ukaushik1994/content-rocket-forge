@@ -575,8 +575,8 @@ export const useEnhancedAIChatDB = () => {
             id: 'settings-' + assistantId,
             type: 'button' as const,
             label: '⚙️ API Settings',
-            action: 'navigate',
-            data: { url: '/ai-service-hub' }
+            action: 'navigate:/ai-settings',
+            data: {}
           }
         ]
       };
