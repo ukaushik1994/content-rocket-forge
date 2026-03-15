@@ -249,7 +249,7 @@ export class MarketingIntegrationHooks {
       }
     };
 
-    await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
+    const response = await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${integration.apiKey}`,
@@ -257,6 +257,7 @@ export class MarketingIntegrationHooks {
       },
       body: JSON.stringify(hubspotData)
     });
+    if (!response.ok) throw new Error(`HubSpot API failed: ${response.status} ${response.statusText}`);
   }
 
   /**
