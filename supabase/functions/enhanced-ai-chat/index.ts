@@ -19,7 +19,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v12-2026-03-15T23:00:00Z-web-search';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v13-2026-03-15T24:00:00Z-analyst-engine';
 
 // Token estimation (inlined from shared to avoid cross-folder import issues)
 function estimateTokens(text: string): number {
@@ -3549,6 +3549,36 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       console.log(`🎯 Merged ${requestPromotedActions.length} promoted tool actions into response`);
     }
     
+    // Build analystContext when analyst mode is active
+    let analystContext: any = undefined;
+    if (context?.analystActive) {
+      try {
+        const analyticsInsights: string[] = [];
+        
+        // Pull lightweight platform stats for analyst enrichment
+        const [contentRes, campaignRes, proposalRes] = await Promise.all([
+          supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+          supabase.from('campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+          supabase.from('ai_strategy_proposals').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+        ]);
+        
+        const platformStats: Record<string, number> = {};
+        if (contentRes.count !== null) { platformStats['totalContent'] = contentRes.count; analyticsInsights.push(`You have ${contentRes.count} content items in your repository`); }
+        if (campaignRes.count !== null) { platformStats['totalCampaigns'] = campaignRes.count; analyticsInsights.push(`${campaignRes.count} campaigns tracked`); }
+        if (proposalRes.count !== null) { platformStats['totalProposals'] = proposalRes.count; analyticsInsights.push(`${proposalRes.count} strategy proposals available`); }
+
+        if (analyticsInsights.length > 0) {
+          analystContext = {
+            insights: analyticsInsights,
+            platformStats,
+          };
+          console.log(`📊 Analyst context enriched with ${analyticsInsights.length} insights`);
+        }
+      } catch (acErr) {
+        console.error('Analyst context enrichment failed (non-critical):', acErr);
+      }
+    }
+
     const responseData = {
       message: finalContent,
       content: finalContent, // Fallback for different response formats
@@ -3557,6 +3587,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       allVisualData: allCharts, // All charts for modal (only if multiple exist)
       serpData: serpData || undefined, // Include SERP data from our analysis
       insights: aiInsights.length > 0 ? aiInsights : undefined, // Include AI-generated insights
+      analystContext: analystContext || undefined, // Analyst panel enrichment
       metadata: {
         processed_at: new Date().toISOString(),
         has_actions: !!actions,
@@ -3564,7 +3595,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
         visual_data_count: allCharts ? allCharts.length : (visualData ? 1 : 0),
         has_serp_data: !!serpData,
         insights_generated: aiInsights.length,
-        serp_keywords: serpData?.keywords || []
+        serp_keywords: serpData?.keywords || [],
+        has_analyst_context: !!analystContext,
       }
     };
 

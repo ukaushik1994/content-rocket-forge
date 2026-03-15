@@ -79,6 +79,7 @@ interface VisualizationSidebarProps {
   description?: string;
   onSendMessage?: (message: string) => void;
   onInteract?: () => void; // Track user interaction for smart persistence
+  analystState?: import('@/hooks/useAnalystEngine').AnalystState | null;
 }
 
 export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
@@ -89,7 +90,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   title,
   description,
   onSendMessage,
-  onInteract
+  onInteract,
+  analystState
 }) => {
   const [activeView, setActiveView] = useState<'chart' | 'table'>('chart');
   const [chartType, setChartType] = useState<ChartType>(
@@ -945,14 +947,13 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     return <RepurposePanel isOpen={isOpen} onClose={onClose} contentId={visualData.contentId} />;
   }
 
-  // Analyst mode — empty state when no chart data, otherwise falls through to default chart view
-  if (visualData?.type === 'analyst' && chartData.length === 0) {
-    const suggestedPrompts = [
-      'Show content performance',
-      'Campaign health overview',
-      'Keyword rankings analysis',
-      'Content pipeline status',
-    ];
+  if (visualData?.type === 'analyst') {
+    const hasAnalystData = analystState && (
+      analystState.insightsFeed.length > 0 || 
+      analystState.cumulativeMetrics.length > 0 || 
+      analystState.accumulatedCharts.length > 0 ||
+      analystState.platformData.length > 0
+    );
 
     return (
       <AnimatePresence>
@@ -982,10 +983,19 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 {/* Header */}
                 <div className="flex-shrink-0 px-6 py-5 border-b border-border/10">
                   <div className="flex items-start gap-3">
-                    <BarChart3 className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="relative">
+                      <BarChart3 className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      {analystState?.isEnriching && (
+                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="text-base font-medium text-foreground">Analyst</h2>
-                      <p className="text-sm text-muted-foreground mt-0.5">Charts & insights companion</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {hasAnalystData 
+                          ? `${analystState!.insightsFeed.length} insights · ${analystState!.topics.length} topics`
+                          : 'Charts & insights companion'}
+                      </p>
                     </div>
                     <Button
                       variant="ghost"
@@ -996,35 +1006,204 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
 
-                {/* Empty State */}
-                <div className="flex-1 flex items-center justify-center p-8">
-                  <div className="text-center max-w-xs space-y-6">
-                    <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/30 border border-border/20 flex items-center justify-center">
-                      <BarChart3 className="w-8 h-8 text-muted-foreground/60" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-medium text-foreground">Ask about your data</h3>
-                      <p className="text-sm text-muted-foreground">
-                        I'll visualize your metrics, trends, and insights right here as we chat.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {suggestedPrompts.map((prompt, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            onSendMessage?.(prompt);
-                          }}
-                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
+                  {/* Topic tags */}
+                  {analystState && analystState.topics.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {analystState.topics.map((topic) => (
+                        <Badge 
+                          key={topic.name} 
+                          variant="outline" 
+                          className="text-[10px] px-2 py-0.5 bg-muted/20 border-border/30 text-muted-foreground"
                         >
-                          {prompt}
-                        </button>
+                          {topic.name}
+                          {topic.mentionCount > 1 && (
+                            <span className="ml-1 text-primary/70">×{topic.mentionCount}</span>
+                          )}
+                        </Badge>
                       ))}
                     </div>
-                  </div>
+                  )}
                 </div>
+
+                {/* Content */}
+                <ScrollArea className="flex-1">
+                  <div className="p-6 pb-28 space-y-5">
+                    {/* Cumulative Metrics Strip */}
+                    {analystState && analystState.cumulativeMetrics.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-2"
+                      >
+                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+                          Key Metrics
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {analystState.cumulativeMetrics.slice(0, 4).map((metric, idx) => (
+                            <PremiumMetricCard
+                              key={metric.id || idx}
+                              label={metric.title}
+                              value={metric.value}
+                              trend={metric.change?.type === 'increase' ? 'up' : metric.change?.type === 'decrease' ? 'down' : 'neutral'}
+                              trendValue={metric.change ? `${metric.change.value > 0 ? '+' : ''}${metric.change.value}%` : undefined}
+                              index={idx}
+                            />
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Platform Data Cards */}
+                    {analystState && analystState.platformData.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.05 }}
+                        className="space-y-2"
+                      >
+                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+                          Platform Stats
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {analystState.platformData.map((dp, idx) => (
+                            <Card key={dp.label} className="p-3 bg-muted/10 border-border/20">
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
+                              <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
+                            </Card>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Accumulated Charts Waterfall */}
+                    {analystState && analystState.accumulatedCharts.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="space-y-3"
+                      >
+                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+                          Charts ({analystState.accumulatedCharts.length})
+                        </span>
+                        {analystState.accumulatedCharts.map((chart, idx) => (
+                          <ChartBlock key={`analyst-chart-${idx}`} title={chart.title} compact>
+                            {renderChart((chart.type as ChartType) || 'bar', 180)}
+                          </ChartBlock>
+                        ))}
+                      </motion.div>
+                    )}
+
+                    {/* Live Insights Feed */}
+                    {analystState && analystState.insightsFeed.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 }}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+                            Insights Feed
+                          </span>
+                          <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">
+                            {analystState.insightsFeed.length} items
+                          </Badge>
+                        </div>
+                        <div className="space-y-1.5">
+                          {analystState.insightsFeed.slice(-12).reverse().map((insight) => {
+                            const config = getInsightConfig(insight.type);
+                            const InsightIcon = config.icon;
+                            return (
+                              <Card 
+                                key={insight.id}
+                                className={cn(
+                                  "p-2.5 border bg-transparent border-border/15",
+                                  "border-l-2",
+                                  config.borderColor.replace('border-', 'border-l-')
+                                )}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <InsightIcon className={cn("w-3.5 h-3.5 mt-0.5 flex-shrink-0", config.textColor)} />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-foreground/80 leading-relaxed">{insight.content}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-[9px] text-muted-foreground/40">
+                                        {insight.source === 'platform' ? '📊 Platform' : insight.source === 'web' ? '🌐 Web' : '🤖 AI'}
+                                      </span>
+                                      {onSendMessage && (
+                                        <button
+                                          onClick={() => onSendMessage(`Tell me more about: ${insight.content}`)}
+                                          className="text-[9px] text-primary/50 hover:text-primary transition-colors"
+                                        >
+                                          Explore →
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Smart Suggestions */}
+                    {analystState && analystState.suggestedActions.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="space-y-2"
+                      >
+                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+                          Explore Next
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {analystState.suggestedActions.map((action) => (
+                            <button
+                              key={action.id}
+                              onClick={() => onSendMessage?.(action.action || action.title)}
+                              className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
+                            >
+                              {action.title}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Empty state - only when truly nothing */}
+                    {!hasAnalystData && (
+                      <div className="flex-1 flex items-center justify-center py-16">
+                        <div className="text-center max-w-xs space-y-6">
+                          <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/30 border border-border/20 flex items-center justify-center">
+                            <BarChart3 className="w-8 h-8 text-muted-foreground/60" />
+                          </div>
+                          <div className="space-y-2">
+                            <h3 className="text-lg font-medium text-foreground">Ask about your data</h3>
+                            <p className="text-sm text-muted-foreground">
+                              I'll accumulate insights, metrics, and charts as we chat — building a live intelligence feed.
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap justify-center gap-2">
+                            {['Show content performance', 'Campaign health overview', 'Keyword rankings analysis', 'Content pipeline status'].map((prompt, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => onSendMessage?.(prompt)}
+                                className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
+                              >
+                                {prompt}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
               </motion.div>
             </>
           </TooltipProvider>

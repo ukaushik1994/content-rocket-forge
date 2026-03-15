@@ -497,6 +497,7 @@ export const useEnhancedAIChatDB = () => {
       const responseContent = response?.message || response?.content || 'No response received';
       const responseActions = response?.actions || [];
       const responseVisualData = response?.visualData;
+      const responseAnalystContext = response?.analystContext;
 
       // Check if response contains a confirmation action from destructive tool guard
       const confirmAction = responseActions.find((a: any) => a.action === 'confirm_action');
@@ -522,6 +523,7 @@ export const useEnhancedAIChatDB = () => {
         timestamp: new Date(),
         actions: responseActions.filter((a: any) => a.action !== 'confirm_action'),
         visualData: responseVisualData,
+        analystContext: responseAnalystContext,
         confirmationData,
       };
 
