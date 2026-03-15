@@ -21,6 +21,7 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
   onResearchIntelligence,
   onAnalyst,
   onAIProposals,
+  onWebSearch,
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
