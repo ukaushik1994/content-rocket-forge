@@ -121,21 +121,21 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{prediction.overallScore}</div>
-                    <div className="text-[10px] text-muted-foreground">Score</div>
+                    <div className="text-2xl font-bold text-primary">{Math.round(prediction.successProbability * 100)}%</div>
+                    <div className="text-[10px] text-muted-foreground">Success</div>
                   </div>
                   <div className="flex-1 grid grid-cols-3 gap-2 text-xs">
                     <div className="text-center p-1.5 rounded bg-background/60">
-                      <div className="font-medium">{prediction.readabilityScore}</div>
-                      <div className="text-muted-foreground">Readability</div>
+                      <div className="font-medium">{prediction.competitionLevel}</div>
+                      <div className="text-muted-foreground">Competition</div>
                     </div>
                     <div className="text-center p-1.5 rounded bg-background/60">
-                      <div className="font-medium">{prediction.seoScore}</div>
-                      <div className="text-muted-foreground">SEO</div>
+                      <div className="font-medium">{prediction.timeToRank.days}d</div>
+                      <div className="text-muted-foreground">Time to Rank</div>
                     </div>
                     <div className="text-center p-1.5 rounded bg-background/60">
-                      <div className="font-medium">{prediction.engagementScore}</div>
-                      <div className="text-muted-foreground">Engagement</div>
+                      <div className="font-medium">{prediction.estimatedTraffic.average}</div>
+                      <div className="text-muted-foreground">Est. Traffic</div>
                     </div>
                   </div>
                 </div>
