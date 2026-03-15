@@ -2205,6 +2205,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     let requestPromotedVisualData: any = null;
 
     if (toolCalls && toolCalls.length > 0) {
+      emitProgress('tools', 'Executing actions...');
       console.log(`🔧 AI requested ${toolCalls.length} tool calls`);
       
       const toolResults = [];
