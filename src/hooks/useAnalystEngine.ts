@@ -34,6 +34,7 @@ export interface AnalystState {
   suggestedActions: ActionableItem[];
   accumulatedCharts: ChartConfiguration[];
   platformData: PlatformDataPoint[];
+  webSearchResults: AnalystWebSearchData[];
   lastUpdated: Date | null;
   isEnriching: boolean;
   messageCount: number;
