@@ -155,8 +155,7 @@ const MobileNavDropdown: React.FC<MobileNavDropdownProps> = ({ icon, label, item
 
 const contentRoutes = [
   '/content-builder', '/content-approval',
-  '/repository', '/drafts', '/content-type-selection', '/keywords',
-  '/research/content-strategy'
+  '/repository', '/drafts', '/ai-chat', '/keywords'
 ];
 
 const contentItems = [
