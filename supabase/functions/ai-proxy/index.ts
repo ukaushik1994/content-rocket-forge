@@ -450,7 +450,7 @@ async function testAnthropic(apiKey: string) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
       },
