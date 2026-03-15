@@ -152,7 +152,7 @@ export const DashboardSummary = () => {
         navigate('/research/opportunity-hunter');
         break;
       case 'ai-strategy':
-        navigate('/research/content-strategy#strategies');
+        navigate('/ai-proposals');
         break;
       case 'dashboard':
         // Handle existing dashboard moves
