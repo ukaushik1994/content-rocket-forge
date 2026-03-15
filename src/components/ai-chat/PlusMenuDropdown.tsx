@@ -48,6 +48,12 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
       description: 'Charts & insights companion',
       onClick: onAnalyst,
     }] : []),
+    ...(onAIProposals ? [{
+      icon: Lightbulb,
+      label: 'AI Proposals',
+      description: 'Generate smart proposals',
+      onClick: onAIProposals,
+    }] : []),
   ];
 
   return (
