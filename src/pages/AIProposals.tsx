@@ -80,27 +80,21 @@ const AIProposals = () => {
     navigate('/research/content-strategy', { state: { selectedProposal: proposal } });
   }, [navigate]);
 
-  return (
-    <div className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto">
-      <PageBreadcrumb section="Library" page="AI Proposals" sectionPath="/repository" />
+  const heroStats = useMemo(() => ({
+    total: proposals.length,
+    available: statusCounts.available,
+    scheduled: statusCounts.scheduled,
+    completed: statusCounts.completed,
+  }), [proposals.length, statusCounts]);
 
-      {/* Hero header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Sparkles className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">AI Proposals</h1>
-              <p className="text-sm text-muted-foreground">
-                {proposals.length} proposal{proposals.length !== 1 ? 's' : ''} generated
-              </p>
-            </div>
-          </div>
-          <ViewToggle view={viewMode} onViewChange={setViewMode} />
-        </div>
-      </div>
+  return (
+    <PageContainer className="relative overflow-hidden">
+      <AnimatedBackground intensity="medium" />
+      
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <PageBreadcrumb section="Library" page="AI Proposals" sectionPath="/repository" />
+
+        <AIProposalsHero stats={heroStats} />
 
       {/* Search + Filters */}
       <div className="space-y-3 mb-6">
