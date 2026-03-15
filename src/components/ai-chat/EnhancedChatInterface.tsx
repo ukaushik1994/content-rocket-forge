@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useAnalystEngine } from '@/hooks/useAnalystEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { ContextAwareMessageInput } from './ContextAwareMessageInput';
