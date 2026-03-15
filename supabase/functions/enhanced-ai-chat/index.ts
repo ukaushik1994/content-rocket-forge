@@ -2082,7 +2082,9 @@ serve(async (req) => {
           console.error('🎯 Failed to parse tool arguments for logging:', e);
         }
         
-        return { data: { choices: [{ message: { tool_calls: toolCalls } }] }, status: 200 };
+        return new Response(JSON.stringify({ choices: [{ message: { tool_calls: toolCalls } }], deployVersion: DEPLOY_VERSION }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
       }
       
       // Fallback if no tool call (shouldn't happen)
