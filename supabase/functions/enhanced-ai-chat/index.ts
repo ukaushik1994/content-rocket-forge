@@ -1855,6 +1855,8 @@ serve(async (req) => {
       return { data: { error: 'Failed to generate campaign strategies', details: 'AI did not return a tool call', response: data }, status: 500 };
     }
 
+    emitProgress('serp', 'Researching market intelligence...');
+
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     
