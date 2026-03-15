@@ -1641,7 +1641,7 @@ serve(async (req) => {
       });
     }
 
-    const { messages, context, useCampaignStrategyTool } = validationResult.data;
+    const { messages, context, useCampaignStrategyTool, stream: streamMode } = validationResult.data;
     const use_case = context?.use_case; // Extract use_case from context
     console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
 
