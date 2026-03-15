@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState, useCallback, useRef } from 'react';
-import { EnhancedChatMessage, MetricCard, ChartConfiguration, ActionableItem } from '@/types/enhancedChat';
+import { EnhancedChatMessage, MetricCard, ChartConfiguration, ActionableItem, AnalystWebSearchData } from '@/types/enhancedChat';
 import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
