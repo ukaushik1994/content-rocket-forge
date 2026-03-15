@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       }
 
       await supabase.from("social_posts").update({
-        status: allPosted ? "posted" : "failed",
+        status: allPosted ? "posted" : "pending_integration",
       }).eq("id", post.id);
 
       // Log activity
