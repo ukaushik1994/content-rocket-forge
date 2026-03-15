@@ -70,7 +70,8 @@ export function SetupChecklist() {
           label: 'Configure AI API keys',
           description: 'Connect OpenAI or another AI provider',
           icon: Key,
-          route: '/ai-settings',
+          route: '/ai-chat',
+          onClick: () => window.dispatchEvent(new CustomEvent('openSettings', { detail: 'api' })),
           completed: (apiKeysRes.data?.length ?? 0) > 0,
         },
         {
