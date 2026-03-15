@@ -34,7 +34,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const CampaignsInner = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { generateStrategies, isGenerating } = useCampaignStrategies();
+  const { openSettings } = useSettings();
   const { campaigns, isLoading: campaignsLoading, refetch: refetchCampaigns, deleteCampaign, updateCampaignName, updateCampaignStatus } = useCampaigns();
   const { generateAllContent } = useCampaignContentGeneration();
   const { openPanel } = useContentGeneration();

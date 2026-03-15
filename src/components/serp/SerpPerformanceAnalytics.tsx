@@ -43,6 +43,7 @@ type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'n
 export const SerpPerformanceAnalytics = () => {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { openSettings } = useSettings();
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<ErrorType | null>(null);

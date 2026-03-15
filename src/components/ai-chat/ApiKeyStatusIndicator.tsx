@@ -38,7 +38,7 @@ export const ApiKeyStatusIndicator: React.FC<ApiKeyStatusIndicatorProps> = ({
   const hasAnyKey = configuredProviders.length > 0;
 
   const handleConfigureClick = () => {
-    navigate('/settings', { state: { activeTab: 'ai-settings' } });
+    openSettings('api');
   };
 
   if (isLoading) {

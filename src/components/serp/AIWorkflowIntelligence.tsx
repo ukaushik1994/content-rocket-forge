@@ -32,6 +32,7 @@ type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'n
 export const AIWorkflowIntelligence = () => {
   const [insights, setInsights] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
+  const { openSettings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<ErrorType | null>(null);
