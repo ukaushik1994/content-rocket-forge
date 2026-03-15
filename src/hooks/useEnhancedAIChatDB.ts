@@ -572,7 +572,7 @@ export const useEnhancedAIChatDB = () => {
           }
         ]
       };
-      setMessages(prev => prev.map(m => m.id === assistantId ? errorMessage : m));
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
       setIsTyping(false);
