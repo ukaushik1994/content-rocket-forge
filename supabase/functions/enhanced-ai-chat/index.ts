@@ -9,9 +9,11 @@ import { CAMPAIGN_STRATEGY_TOOL } from './campaign-strategy-tool.ts';
 import { 
   analyzeSerpIntent, 
   executeSerpAnalysis,
+  executeWebSearch,
   generateSerpContext, 
   generateSmartSuggestions,
-  generateStructuredSerpData
+  generateStructuredSerpData,
+  generateWebSearchContext
 } from './serp-intelligence.ts';
 import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
