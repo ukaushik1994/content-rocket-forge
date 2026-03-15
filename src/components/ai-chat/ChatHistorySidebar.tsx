@@ -443,7 +443,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
               ))}
             </CollapsibleSection>
 
-            <div className="mb-4" />
+            <div className="mb-6" />
 
             {/* ── CHATS ── */}
             <CollapsibleSection label="Chats" icon={<CalendarDays className="h-4 w-4" />} showDivider>
