@@ -14,12 +14,14 @@ import { motion } from 'framer-motion';
 import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
 import { MultiSolutionPickerDialog } from './MultiSolutionPickerDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SolutionManagerProps {
   searchTerm: string;
 }
 
 export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) => {
+  const { user, loading: authLoading } = useAuth();
   const [filterTerm, setFilterTerm] = useState(searchTerm);
   
   // Use enhanced solution service instead of basic hook
@@ -94,8 +96,14 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   }, [searchTerm]);
   
   useEffect(() => {
-    fetchSolutions();
-  }, []);
+    if (user && !authLoading) {
+      fetchSolutions();
+    } else if (!authLoading && !user) {
+      setSolutions([]);
+      setIsLoading(false);
+      setIsInitialLoading(false);
+    }
+  }, [user, authLoading]);
 
   // Filter solutions based on search term
   const filteredSolutions = solutions.filter(solution => {
