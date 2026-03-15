@@ -706,8 +706,8 @@ async function chatOpenRouter(apiKey: string, params: any) {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://localhost:5173',
-        'X-Title': 'AI Content Creator'
+        'HTTP-Referer': 'https://creaiter.lovable.app',
+        'X-Title': 'Creaiter'
       },
       body: JSON.stringify(requestBody),
     });
