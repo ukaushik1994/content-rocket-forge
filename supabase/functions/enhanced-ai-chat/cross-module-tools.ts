@@ -494,7 +494,7 @@ export async function executeCrossModuleTool(
           await supabase.from('social_post_targets').insert({
             post_id: socialPost.id,
             platform: post.platform,
-            status: toolArgs.scheduled_at ? 'pending' : 'draft'
+            status: toolArgs.scheduled_at ? 'scheduled' : 'draft'
           });
 
           createdPosts.push({ id: socialPost.id, platform: post.platform });
