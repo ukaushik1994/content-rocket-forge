@@ -294,7 +294,7 @@ export class NotificationHelper {
           label: 'Review Proposals',
           action: 'navigate',
           variant: 'primary',
-          url: '/research/content-strategy'
+           url: '/ai-chat'
         }
       ],
       previewData: { restoredProposals, count },
