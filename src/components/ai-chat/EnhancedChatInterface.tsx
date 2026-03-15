@@ -531,7 +531,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       {/* Input Area - ALWAYS full width, respects left sidebar only on desktop */}
       <div className={cn(
         "fixed bottom-0 left-0 right-0 z-40",
-        "border-t border-border/20 bg-background/80 backdrop-blur-md",
+        "border-t border-white/5 bg-background/80 backdrop-blur-md",
         "transition-all duration-300 ease-out",
         !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
       )}>
