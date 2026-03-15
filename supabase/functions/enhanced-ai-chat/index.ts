@@ -2226,7 +2226,7 @@ serve(async (req) => {
         const shouldPrioritizeVisualPrompt =
           queryIntent.scope === 'detailed' ||
           queryIntent.scope === 'full' ||
-          queryIntent?.requiresVisualData === true;
+          requiresVisualData === true;
 
         if (shouldPrioritizeVisualPrompt) {
           console.log('📊 Using standard chart analysis prompt');
