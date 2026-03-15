@@ -454,9 +454,13 @@ export async function executeCrossModuleTool(
       }
 
       case 'schedule_social_from_repurpose': {
-        const workspaceId = await getUserWorkspaceId(supabase, userId);
+        let workspaceId = await getUserWorkspaceId(supabase, userId);
         if (!workspaceId) {
-          return { success: false, message: 'No Engage workspace found. Visit the Engage module first.' };
+          const { data: newWsId, error: wsError } = await supabase.rpc('ensure_engage_workspace', { p_user_id: userId });
+          if (wsError || !newWsId) {
+            return { success: false, message: 'Failed to initialize Engage workspace.' };
+          }
+          workspaceId = newWsId;
         }
 
         const posts = toolArgs.posts || [];
