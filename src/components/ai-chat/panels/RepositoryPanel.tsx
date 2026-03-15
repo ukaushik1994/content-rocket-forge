@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import DOMPurify from 'dompurify';
 import { formatDistanceToNow } from 'date-fns';
 
 const typeIcon: Record<string, React.ElementType> = {
