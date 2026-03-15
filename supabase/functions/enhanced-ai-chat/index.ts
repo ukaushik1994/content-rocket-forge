@@ -2095,7 +2095,7 @@ serve(async (req) => {
       });
     }
 
-    emitProgress('serp', 'Researching market intelligence...');
+    console.log('📡 Researching market intelligence...');
 
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
