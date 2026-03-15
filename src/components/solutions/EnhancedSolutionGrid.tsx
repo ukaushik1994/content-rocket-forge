@@ -27,7 +27,7 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
 }) => {
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState('grid');
-  const [detailSolution, setDetailSolution] = useState<EnhancedSolution | null>(null);
+
 
   const filteredSolutions = solutions;
   const containerVariants = {
