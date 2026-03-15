@@ -277,7 +277,7 @@ const MULTI_CHART_MODULE = `
         "description": "19 draft articles ready for review and publishing",
         "priority": "high",
         "actionType": "navigate",
-        "targetUrl": "/content",
+        "targetUrl": "/repository",
         "icon": "FileText",
         "estimatedImpact": "+40% visibility",
         "timeRequired": "2 hours"
