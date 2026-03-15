@@ -50,11 +50,12 @@ Deno.serve(async (req) => {
           .single();
 
         if (account) {
-          // Stub: mark as posted (real integration would call provider API)
+          // Social API integration not yet implemented — save as pending
           await supabase.from("social_post_targets").update({
-            status: "posted",
-            provider_post_id: `stub_${Date.now()}`,
+            status: "pending_integration",
+            error: "Social publishing integration coming soon. Post saved as draft.",
           }).eq("id", target.id);
+          allPosted = false;
         } else {
           await supabase.from("social_post_targets").update({
             status: "failed",
