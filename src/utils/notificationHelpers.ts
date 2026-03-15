@@ -268,7 +268,7 @@ export class NotificationHelper {
           label: 'Back to Strategy',
           action: 'navigate',
           variant: 'secondary',
-          url: '/research/content-strategy'
+           url: '/ai-chat'
         }
       ],
       previewData: { itemCount, startDate, endDate },
