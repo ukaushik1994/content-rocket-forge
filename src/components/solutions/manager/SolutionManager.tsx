@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
 import { MultiSolutionPickerDialog } from './MultiSolutionPickerDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SolutionManagerProps {
   searchTerm: string;

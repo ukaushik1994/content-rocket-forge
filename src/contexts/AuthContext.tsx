@@ -32,10 +32,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session with validation
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        // Validate the token is not expired/corrupted
+        const expiresAt = session.expires_at;
+        const now = Math.floor(Date.now() / 1000);
+        if (expiresAt && expiresAt < now) {
+          console.warn('Session expired, clearing for fresh login');
+          supabase.auth.signOut().then(() => {
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            toast.error('Your session has expired. Please sign in again.');
+          });
+          return;
+        }
+      }
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch((err) => {
+      console.error('Failed to get session, clearing auth state:', err);
+      setSession(null);
+      setUser(null);
       setLoading(false);
     });
 
