@@ -207,7 +207,6 @@ async function chatOpenAI(apiKey: string, params: any) {
   const requestBody: any = {
     model,
     messages: params.messages || [],
-    ...params
   };
 
   // Handle token limits based on model type
@@ -450,7 +449,7 @@ async function testAnthropic(apiKey: string) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
       },
@@ -483,19 +482,23 @@ async function testAnthropic(apiKey: string) {
 async function chatAnthropic(apiKey: string, params: any) {
   console.log('💬 Processing Anthropic chat request');
   
-  const requestBody = {
+  const requestBody: any = {
     model: params.model || 'claude-3-sonnet-20240229',
     max_tokens: params.maxTokens || params.max_tokens || 1000,
     messages: params.messages || [],
     temperature: params.temperature || 0.7,
-    ...params
   };
+  
+  // Add system message if provided
+  if (params.system) {
+    requestBody.system = params.system;
+  }
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
       },
@@ -675,7 +678,6 @@ async function chatOpenRouter(apiKey: string, params: any) {
   const requestBody: any = {
     model,
     messages: params.messages || [],
-    ...params
   };
 
   // Handle token limits based on model type
@@ -778,12 +780,11 @@ async function testMistral(apiKey: string) {
 async function chatMistral(apiKey: string, params: any) {
   console.log('💬 Processing Mistral chat request');
   
-  const requestBody = {
+  const requestBody: any = {
     model: params.model || 'mistral-large-latest',
     messages: params.messages || [],
     temperature: params.temperature || 0.7,
     max_tokens: params.maxTokens || params.max_tokens || 1000,
-    ...params
   };
 
   try {
@@ -886,12 +887,11 @@ async function chatLMStudio(apiKey: string, params: any) {
   // Normalize: remove trailing /v1 or /v1/ to prevent double /v1/v1
   baseUrl = baseUrl.replace(/\/v1\/?$/, '');
   
-  const requestBody = {
+  const requestBody: any = {
     model: params.model || 'local-model',
     messages: params.messages || [],
     temperature: params.temperature || 0.7,
     max_tokens: params.maxTokens || params.max_tokens || 1000,
-    ...params
   };
 
   try {
