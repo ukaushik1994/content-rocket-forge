@@ -329,6 +329,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onResearchIntelligence={onOpenResearch}
             onAnalyst={onOpenAnalyst}
             onAIProposals={handleAIProposalsClick}
+            onWebSearch={onWebSearch || handleWebSearchClick}
             disabled={isLoading}
           />
 
