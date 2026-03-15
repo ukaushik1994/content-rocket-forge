@@ -2324,6 +2324,10 @@ serve(async (req) => {
         systemPrompt += '\n\n' + SERP_MODULE;
         systemPrompt += `\n\n### 🔍 SERP DATA (USE THIS REAL DATA):\n${serpContext}`;
       }
+      // Add web search results if present
+      if (webSearchContext) {
+        systemPrompt += webSearchContext;
+      }
       
       // Add action module for complex queries
       if (queryIntent.scope !== 'summary') {
