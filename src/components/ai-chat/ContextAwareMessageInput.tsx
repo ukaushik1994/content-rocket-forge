@@ -165,7 +165,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
       handleSubmit();
     }
     if (e.key === 'Escape') {
-      if (wizardMode) {
+      if (wizardMode || webSearchMode) {
         handleCancelWizard();
       } else {
         setShowSuggestions(false);
