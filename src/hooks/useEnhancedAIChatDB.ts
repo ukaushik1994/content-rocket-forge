@@ -523,6 +523,7 @@ export const useEnhancedAIChatDB = () => {
         timestamp: new Date(),
         actions: responseActions.filter((a: any) => a.action !== 'confirm_action'),
         visualData: responseVisualData,
+        analystContext: responseAnalystContext,
         confirmationData,
       };
 
