@@ -39,7 +39,7 @@ import {
   BookOpen,
   Wrench,
   MessageCircle,
-  Sparkles,
+  Sparkles
 } from 'lucide-react';
 import {
   DropdownMenu,
