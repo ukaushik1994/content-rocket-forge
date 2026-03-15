@@ -199,11 +199,12 @@ export class MarketingIntegrationHooks {
       ]
     };
 
-    await fetch(integration.webhook, {
+    const response = await fetch(integration.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(slackMessage)
     });
+    if (!response.ok) throw new Error(`Slack webhook failed: ${response.status} ${response.statusText}`);
   }
 
   /**
