@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
+import { X, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
+import { format } from 'date-fns';
 
 interface CalendarItemDialogProps {
   open: boolean;
