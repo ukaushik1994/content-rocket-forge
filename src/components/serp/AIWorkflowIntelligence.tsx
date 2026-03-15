@@ -126,7 +126,7 @@ export const AIWorkflowIntelligence = () => {
         case 'no-api-keys':
           return {
             label: 'Configure API Keys',
-            onClick: () => window.location.href = '/ai-settings'
+            onClick: () => openSettings('api')
           };
         case 'api-error':
         case 'database-error':

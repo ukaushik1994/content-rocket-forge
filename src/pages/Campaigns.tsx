@@ -517,7 +517,7 @@ const CampaignsInner = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => navigate('/ai-settings')}
+                  onClick={() => openSettings('api')}
                   className="ml-4 gap-1.5"
                 >
                   <Settings className="h-3.5 w-3.5" />
