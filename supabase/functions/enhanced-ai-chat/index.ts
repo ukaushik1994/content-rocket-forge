@@ -3503,7 +3503,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
           } catch (error) {
             emit('error', { 
               error: 'Internal server error',
-              message: error instanceof Error ? error.message : 'Unknown error'
+              message: error instanceof Error ? error.message : 'Unknown error',
+              deployVersion: DEPLOY_VERSION
             });
           }
           controller.close();
