@@ -412,25 +412,7 @@ export const useEnhancedAIChatDB = () => {
         });
     }
 
-    // Smart rotating progress messages for better UX during AI processing
-    const progressSteps = [
-      'Analyzing your request...',
-      'Gathering your data context...',
-      'Processing with AI...',
-      'Executing tool actions...',
-      'Generating your response...',
-    ];
-    let stepIndex = 0;
-    const progressInterval = setInterval(() => {
-      stepIndex = Math.min(stepIndex + 1, progressSteps.length - 1);
-      setMessages(prev =>
-        prev.map(m => m.id === assistantId ? { ...m, content: progressSteps[stepIndex] } : m)
-      );
-    }, 3000);
-
     try {
-      // AWARENESS-FIRST: Use enhanced-ai-chat (tool-enabled) as default path
-      // This ensures the AI always has access to tools for fetching solutions, competitors, company info etc.
       // Smart context: keep first message (original intent) + last 9 messages
       const allMessages = [...messages, userMessage];
       let conversationHistory: Array<{ role: string; content: string }>;
@@ -442,19 +424,75 @@ export const useEnhancedAIChatDB = () => {
         conversationHistory = [first, ...recent].map(m => ({ role: m.role, content: m.content }));
       }
 
-      const { data: response, error } = await supabase.functions.invoke('enhanced-ai-chat', {
-        body: {
+      // SSE streaming: use fetch() for real-time progress events
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token || supabaseKey;
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/enhanced-ai-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': supabaseKey,
+        },
+        body: JSON.stringify({
           messages: conversationHistory,
           context: { 
             conversation_id: conversationId, 
             analystActive: analystActiveRef.current 
-          }
-        }
+          },
+          stream: true
+        })
       });
 
-      clearInterval(progressInterval);
+      if (!resp.ok || !resp.body) {
+        const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(errData.error || errData.message || `HTTP ${resp.status}`);
+      }
 
-      if (error) throw error;
+      // Parse SSE events
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let response: any = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        const lines = textBuffer.split('\n');
+        textBuffer = lines.pop() || '';
+
+        let currentEvent = '';
+        for (const line of lines) {
+          const trimmed = line.replace(/\r$/, '');
+          if (trimmed.startsWith('event: ')) {
+            currentEvent = trimmed.slice(7).trim();
+          } else if (trimmed.startsWith('data: ') && currentEvent) {
+            try {
+              const payload = JSON.parse(trimmed.slice(6));
+              if (currentEvent === 'progress') {
+                setMessages(prev =>
+                  prev.map(m => m.id === assistantId ? { ...m, content: payload.message || 'Processing...' } : m)
+                );
+              } else if (currentEvent === 'done') {
+                response = payload;
+              } else if (currentEvent === 'error') {
+                throw new Error(payload.error || payload.message || 'AI processing failed');
+              }
+            } catch (e) {
+              if (e instanceof SyntaxError) continue;
+              throw e;
+            }
+            currentEvent = '';
+          }
+        }
+      }
+
+      if (!response) throw new Error('No response received from AI');
 
       const responseContent = response?.message || response?.content || 'No response received';
       const responseActions = response?.actions || [];
