@@ -625,11 +625,11 @@ export const useEnhancedAIChatDB = () => {
         switch (actionString) {
           case 'create-blog-post':
             console.log('📝 Creating blog post');
-            navigate('/ai-chat');
+            navigate('/repository');
             break;
           case 'create-landing-page':
             console.log('🏗️ Creating landing page');
-            navigate('/ai-chat');
+            navigate('/repository');
             break;
           case 'keyword-research':
             console.log('🔍 Opening keyword research');
