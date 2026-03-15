@@ -194,6 +194,7 @@ const App = () => (
               </ChatContextBridgeProvider>
         </ContentProvider>
         </SettingsProvider>
+        </TourProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
