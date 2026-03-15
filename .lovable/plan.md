@@ -1,18 +1,22 @@
 
 
-## Short Answer
+# Why AI Chat Isn't Working (Simple Explanation)
 
-Your API keys are fine. The AI chat **never reaches the point of reading them** because it crashes immediately on startup.
+## The Problem
+Think of it like having two locks on a door:
+- **Lock 1 (API Keys)**: Your API key is saved and working — this lock is open ✓
+- **Lock 2 (Provider Status)**: There's a second switch that says "this provider is allowed to be used" — this switch is OFF ✗
 
-The error `requiresVisualData is not defined` comes from a **stale cached file** (`query-analyzer.ts`) that Supabase's edge runtime compiled previously. We deleted the file from source, but the runtime is still using its old cached copy (visible in the stack trace: `file:///var/tmp/sb-compile-edge-runtime/enhanced-ai-chat/query-analyzer.ts:186:5`).
+The AI chat checks Lock 2 before even looking at Lock 1. Since Lock 2 is off, it says "no provider found" and gives up — even though your key is perfectly fine.
 
-## Fix (one step)
+## Why It Happened
+When you save and test your API key in Settings, the app saves the key but forgets to flip that second switch to "on." It's a bug.
 
-Force-redeploy the `enhanced-ai-chat` edge function using the deploy tool. This clears the runtime cache and picks up the current source (which no longer has `query-analyzer.ts`).
+## The Fix (What I'll Do)
+1. **Make saving a key automatically flip the switch on** — so when you save a working key, the AI chat knows it can use it
+2. **Add a safety net** — if the switch somehow gets stuck off, the AI chat will check for your key directly and use it anyway
+3. **Fix it for right now** — activate your existing provider so chat works immediately
 
-No code changes needed — just a forced deployment of the existing function.
-
-## After deploy
-
-Send any message in the AI chat. If the response includes `deployVersion: "enhanced-ai-chat-v10-..."`, the fresh code is live and it will successfully read your API keys.
+## What You Need To Do
+Nothing — just approve this plan and I'll make the changes. After that, send a test message in the AI chat to confirm it works.
 
