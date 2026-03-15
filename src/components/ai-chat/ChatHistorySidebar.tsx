@@ -446,7 +446,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             <div className="mb-6" />
 
             {/* ── CHATS ── */}
-            <CollapsibleSection label="Chats" icon={<CalendarDays className="h-4 w-4" />} showDivider>
+            <CollapsibleSection label="Chats" showDivider>
               {/* Conversations List */}
               <AnimatePresence mode="wait">
                 {conversations && conversations.length > 0 ? (
