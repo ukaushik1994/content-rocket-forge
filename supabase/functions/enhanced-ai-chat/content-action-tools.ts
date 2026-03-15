@@ -2,6 +2,7 @@
  * Content Builder, Repository & Approval Action Tools
  * Write/Create/Update/Delete operations for content items
  */
+import { getApiKey } from '../shared/apiKeyService.ts';
 
 // Inline SEO score calculator for auto-scoring on content creation
 function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: string, metaDescription?: string): number {
