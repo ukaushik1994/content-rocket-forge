@@ -415,20 +415,7 @@ class ApiKeyService {
             updated_at: new Date().toISOString()
           };
           
-          // Sync DECRYPTED api_key field when activating (edge functions need plain text)
-          // Use getApiKey which goes through the secure edge function
-          if (isActive && apiKeyData) {
-            try {
-              const decryptedKey = await ApiKeyService.getApiKey(service);
-              if (decryptedKey) {
-                updateData.api_key = decryptedKey;
-                console.log(`🔓 Decrypted ${service} API key for ai_service_providers sync`);
-              }
-            } catch (decryptError) {
-              console.error(`❌ Failed to decrypt ${service} key for sync:`, decryptError);
-              // Don't update api_key if decryption fails
-            }
-          }
+          // No longer sync plaintext api_key — edge functions now decrypt from api_keys table directly
 
           const { error: providerError } = await supabase
             .from('ai_service_providers')
@@ -443,20 +430,7 @@ class ApiKeyService {
           }
         } else if (isActive && apiKeyData) {
           // Insert new provider record only if activating
-          // Decrypt the key using secure edge function before storing
-          let plainTextKey: string | null = null;
-          try {
-            plainTextKey = await ApiKeyService.getApiKey(service);
-            if (!plainTextKey) {
-              throw new Error('Failed to retrieve decrypted key');
-            }
-            console.log(`🔓 Decrypted ${service} API key for ai_service_providers insert`);
-          } catch (decryptError) {
-            console.error(`❌ Failed to decrypt ${service} key for insert:`, decryptError);
-            toast.error(`Failed to configure ${service}. Please re-enter your API key.`);
-            return false;
-          }
-
+          // No plaintext key — edge functions decrypt from api_keys table directly
           const { error: insertError } = await supabase
             .from('ai_service_providers')
             .insert({
@@ -465,7 +439,7 @@ class ApiKeyService {
               status: 'active',
               priority: DEFAULT_PRIORITIES[service] ?? 99,
               preferred_model: DEFAULT_MODELS[service],
-              api_key: plainTextKey,
+              api_key: '', // Intentionally empty — edge functions decrypt from api_keys table
               capabilities: ['chat', 'completion'],
               available_models: [DEFAULT_MODELS[service]]
             });

@@ -64,10 +64,22 @@ async function decryptApiKey(encryptedData: string, userId: string): Promise<str
   return new TextDecoder().decode(decrypted);
 }
 
+// Normalize service name aliases
+function normalizeServiceName(service: string): string {
+  const aliases: Record<string, string> = {
+    'serpapi': 'serp',
+    'serp_api': 'serp',
+    'open_router': 'openrouter',
+  };
+  return aliases[service.toLowerCase()] || service;
+}
+
 export async function getApiKey(service: string, userId?: string): Promise<string | null> {
   try {
+    const normalizedService = normalizeServiceName(service);
+    
     if (!userId) {
-      console.log(`No user ID provided for ${service} API key lookup`);
+      console.log(`No user ID provided for ${normalizedService} API key lookup`);
       return null;
     }
 
@@ -76,7 +88,7 @@ export async function getApiKey(service: string, userId?: string): Promise<strin
     const { data, error } = await supabase
       .from('api_keys')
       .select('encrypted_key')
-      .eq('service', service)
+      .eq('service', normalizedService)
       .eq('user_id', userId)
       .eq('is_active', true)
       .single();

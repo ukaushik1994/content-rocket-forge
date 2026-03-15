@@ -50,7 +50,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           title: 'No glossaries yet',
           description: 'Build comprehensive glossaries to explain key terms in your industry.',
           actionLabel: 'Build Glossary',
-          action: () => navigate('/glossary-builder')
+          action: () => navigate('/ai-chat')
         },
         email: {
           icon: Mail,

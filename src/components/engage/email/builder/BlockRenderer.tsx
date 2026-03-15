@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { EmailBlock, getBlockDef } from './blockDefinitions';
 import { GripVertical, Trash2, Copy, ChevronUp, ChevronDown, Lock, Unlock, Eye, EyeOff, ImagePlus, Bookmark } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -179,7 +180,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
                 cursor: isSelected && !isLocked ? 'text' : 'pointer',
                 ...getBorderStyle(),
               }}
-              dangerouslySetInnerHTML={!isSelected ? { __html: p.content } : undefined}
+              dangerouslySetInnerHTML={!isSelected ? { __html: DOMPurify.sanitize(p.content || '') } : undefined}
             />
           </div>
         );
@@ -249,7 +250,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
         return (
           <div style={{ padding: blockPadding, display: 'flex', gap: p.gap || 16, ...getBorderStyle() }}>
             {cols.slice(0, count).map((col: any, i: number) => (
-              <div key={i} style={{ flex: 1, fontSize: 14, color: '#333' }} dangerouslySetInnerHTML={{ __html: col.content || '' }} />
+              <div key={i} style={{ flex: 1, fontSize: 14, color: '#333' }} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(col.content || '') }} />
             ))}
           </div>
         );
