@@ -115,7 +115,7 @@ export function useAnalystEngine(
 
       // Extract from visualData insights
       if (msg.visualData?.insights) {
-        const insights = Array.isArray(msg.visualData.insights) ? msg.visualData.insights : [];
+        const insights: any[] = Array.isArray(msg.visualData.insights) ? msg.visualData.insights : [];
         for (const insight of insights) {
           const content = typeof insight === 'string' ? insight : insight?.content || '';
           if (!content) continue;
