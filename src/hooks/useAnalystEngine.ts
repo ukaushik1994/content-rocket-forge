@@ -317,61 +317,51 @@ export function useAnalystEngine(
       const fetches: Promise<void>[] = [];
 
       if (coveredCategories.has('content') || coveredCategories.has('analytics')) {
-        fetches.push(
-          supabase
+        fetches.push((async () => {
+          const { count } = await supabase
+            .from('content_items')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId);
+          if (count !== null) newData.push({ label: 'Total Content', value: count, category: 'content', fetchedAt: now });
+        })());
+        fetches.push((async () => {
+          const { count } = await supabase
             .from('content_items')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .then(({ count }) => {
-              if (count !== null) newData.push({ label: 'Total Content', value: count, category: 'content', fetchedAt: now });
-            })
-        );
-        fetches.push(
-          supabase
-            .from('content_items')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .eq('status', 'published')
-            .then(({ count }) => {
-              if (count !== null) newData.push({ label: 'Published', value: count, category: 'content', fetchedAt: now });
-            })
-        );
+            .eq('status', 'published');
+          if (count !== null) newData.push({ label: 'Published', value: count, category: 'content', fetchedAt: now });
+        })());
       }
 
       if (coveredCategories.has('campaigns')) {
-        fetches.push(
-          supabase
+        fetches.push((async () => {
+          const { count } = await supabase
             .from('campaigns')
             .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .then(({ count }) => {
-              if (count !== null) newData.push({ label: 'Active Campaigns', value: count, category: 'campaigns', fetchedAt: now });
-            })
-        );
+            .eq('user_id', userId);
+          if (count !== null) newData.push({ label: 'Active Campaigns', value: count, category: 'campaigns', fetchedAt: now });
+        })());
       }
 
       if (coveredCategories.has('keywords')) {
-        fetches.push(
-          supabase
+        fetches.push((async () => {
+          const { count } = await supabase
             .from('ai_strategy_proposals')
             .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .then(({ count }) => {
-              if (count !== null) newData.push({ label: 'Keyword Proposals', value: count, category: 'keywords', fetchedAt: now });
-            })
-        );
+            .eq('user_id', userId);
+          if (count !== null) newData.push({ label: 'Keyword Proposals', value: count, category: 'keywords', fetchedAt: now });
+        })());
       }
 
       if (coveredCategories.has('competitors')) {
-        fetches.push(
-          supabase
+        fetches.push((async () => {
+          const { count } = await supabase
             .from('company_competitors')
             .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .then(({ count }) => {
-              if (count !== null) newData.push({ label: 'Tracked Competitors', value: count, category: 'competitors', fetchedAt: now });
-            })
-        );
+            .eq('user_id', userId);
+          if (count !== null) newData.push({ label: 'Tracked Competitors', value: count, category: 'competitors', fetchedAt: now });
+        })());
       }
 
       await Promise.all(fetches);
