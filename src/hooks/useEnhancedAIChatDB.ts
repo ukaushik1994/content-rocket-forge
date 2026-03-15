@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ContextualAction } from '@/services/aiService';
 import { useNavigate } from 'react-router-dom';
 import { detectActionIntent, detectAIResponseIntent, detectContextualContentIntent } from '@/utils/actionIntentDetector';
+import { getUserPreferences } from '@/services/conversationMemory';
 
 export interface AIConversation {
   id: string;
