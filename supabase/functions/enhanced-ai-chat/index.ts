@@ -1874,7 +1874,7 @@ serve(async (req) => {
     });
 
     // Runtime-safe alias to prevent out-of-scope ReferenceError in any prompt path
-    const requiresVisualData = queryIntent?.requiresVisualData === true;
+    const isVisualPromptRequired = queryIntent?.requiresVisualData === true;
     
     if (queryIntent.isConversational) {
       console.log('⚡ FAST-PATH: Conversational query detected - skipping heavy processing');
