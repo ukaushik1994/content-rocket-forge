@@ -24,6 +24,7 @@ export const useEnhancedAIChatDB = () => {
   const [messages, setMessages] = useState<EnhancedChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [progressText, setProgressText] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingConfirmation, setPendingConfirmation] = useState<{
     toolName: string;
@@ -383,16 +384,9 @@ export const useEnhancedAIChatDB = () => {
     setMessages(prev => [...prev, userMessage]);
     await saveMessage(userMessage, conversationId);
 
-    // Create placeholder assistant message for streaming
+    // Track assistant message ID for later insertion (no placeholder in messages array)
     const assistantId = `assistant-${Date.now()}`;
-    const placeholderMessage: EnhancedChatMessage = {
-      id: assistantId,
-      role: 'assistant',
-      content: 'Analyzing your request...',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, placeholderMessage]);
+    setProgressText('');
 
     // Auto-name conversation early (before AI call) so it works even if backend fails
     if (messages.length === 0 && conversationId) {
@@ -475,9 +469,7 @@ export const useEnhancedAIChatDB = () => {
             try {
               const payload = JSON.parse(trimmed.slice(6));
               if (currentEvent === 'progress') {
-                setMessages(prev =>
-                  prev.map(m => m.id === assistantId ? { ...m, content: payload.message || 'Processing...' } : m)
-                );
+                setProgressText(payload.message || 'Processing...');
               } else if (currentEvent === 'done') {
                 response = payload;
               } else if (currentEvent === 'error') {
@@ -524,16 +516,16 @@ export const useEnhancedAIChatDB = () => {
       }
 
       const finalMessage: EnhancedChatMessage = {
-        ...placeholderMessage,
+        id: assistantId,
+        role: 'assistant',
         content: confirmationData ? '' : responseContent,
+        timestamp: new Date(),
         actions: responseActions.filter((a: any) => a.action !== 'confirm_action'),
         visualData: responseVisualData,
         confirmationData,
       };
 
-      setMessages(prev =>
-        prev.map(m => m.id === assistantId ? finalMessage : m)
-      );
+      setMessages(prev => [...prev, finalMessage]);
       await saveMessage(finalMessage, conversationId);
 
       // Update conversation title if first exchange
@@ -580,10 +572,11 @@ export const useEnhancedAIChatDB = () => {
           }
         ]
       };
-      setMessages(prev => prev.map(m => m.id === assistantId ? errorMessage : m));
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
       setIsTyping(false);
+      setProgressText('');
     }
   }, [messages, toast, user, activeConversation, createConversation, saveMessage, executeToolAction]);
 
@@ -1082,6 +1075,7 @@ export const useEnhancedAIChatDB = () => {
     messages,
     isLoading,
     isTyping,
+    progressText,
     searchTerm,
     pendingConfirmation,
     loadConversations,

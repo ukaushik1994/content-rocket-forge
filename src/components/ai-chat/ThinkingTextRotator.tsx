@@ -14,15 +14,23 @@ const THINKING_PHRASES = [
   "Processing...",
 ];
 
-export const ThinkingTextRotator: React.FC = () => {
+interface ThinkingTextRotatorProps {
+  progressText?: string;
+}
+
+export const ThinkingTextRotator: React.FC<ThinkingTextRotatorProps> = ({ progressText }) => {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    // Don't rotate if we have live progress text
+    if (progressText) return;
     const interval = setInterval(() => {
       setIndex(prev => (prev + 1) % THINKING_PHRASES.length);
     }, 2500);
     return () => clearInterval(interval);
-  }, []);
+  }, [progressText]);
+
+  const displayText = progressText || THINKING_PHRASES[index];
 
   return (
     <motion.div
@@ -58,14 +66,14 @@ export const ThinkingTextRotator: React.FC = () => {
         </div>
         <AnimatePresence mode="wait">
           <motion.span
-            key={index}
+            key={progressText ? 'progress' : index}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.2 }}
             className="text-sm"
           >
-            {THINKING_PHRASES[index]}
+            {displayText}
           </motion.span>
         </AnimatePresence>
       </Card>
