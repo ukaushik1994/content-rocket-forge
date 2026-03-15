@@ -394,6 +394,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         description={visualizationData?.description}
         onSendMessage={sendMessage}
         onInteract={handleSidebarInteraction}
+        analystState={isAnalystPanelActive ? analystState : null}
       />
 
       {/* Main Content Area - Chat and Visualization side by side */}
