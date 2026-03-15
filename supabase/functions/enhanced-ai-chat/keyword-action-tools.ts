@@ -2,6 +2,7 @@
  * Keyword & Research Action Tools
  * Write/Create/Delete operations for keywords and SERP analysis
  */
+import { getApiKey } from '../shared/apiKeyService.ts';
 
 export const KEYWORD_ACTION_TOOL_DEFINITIONS = [
   {
