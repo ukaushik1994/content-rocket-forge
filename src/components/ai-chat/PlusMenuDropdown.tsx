@@ -11,6 +11,7 @@ interface PlusMenuDropdownProps {
   onResearchIntelligence?: () => void;
   onAnalyst?: () => void;
   onAIProposals?: () => void;
+  onWebSearch?: () => void;
   disabled?: boolean;
 }
 
