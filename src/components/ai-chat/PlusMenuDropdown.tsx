@@ -57,6 +57,12 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
       description: 'Generate smart proposals',
       onClick: onAIProposals,
     }] : []),
+    ...(onWebSearch ? [{
+      icon: Globe,
+      label: 'Web Search',
+      description: 'Search the web for info',
+      onClick: onWebSearch,
+    }] : []),
   ];
 
   return (
