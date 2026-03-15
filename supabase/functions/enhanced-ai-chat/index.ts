@@ -2152,48 +2152,64 @@ serve(async (req) => {
     
     console.log("🧠 Analyzing query for context and SERP opportunities:", userQuery);
     
-    // STEP 1: Detect if query would benefit from SERP data
-    const serpIntelligence = await analyzeSerpIntent(userQuery);
+    // STEP 1: Detect if query would benefit from SERP data or web search
+    const serpIntelligence = analyzeSerpIntent(userQuery);
     let serpContext = '';
     let serpData = null;
+    let webSearchContext = '';
     
     if (serpIntelligence.shouldTriggerSerp && serpIntelligence.keywords.length > 0) {
-      console.log("🔍 SERP opportunity detected, fetching real-time data:", serpIntelligence);
-      try {
-        const serpResults = await executeSerpAnalysis(serpIntelligence.keywords, serpIntelligence.queryType);
-        if (serpResults.length > 0) {
-          serpContext = generateSerpContext(serpResults);
-          
-          // Generate structured SERP data for chart generation
-          const structuredSerpData = generateStructuredSerpData(serpResults);
-          
-          serpData = {
-            keywords: serpIntelligence.keywords,
-            results: serpResults,
-            analysisType: serpIntelligence.queryType,
-            suggestions: generateSmartSuggestions(serpResults),
-            structured: structuredSerpData
-          };
-          
-          // Add structured data to context as JSON for easy AI parsing
-          if (structuredSerpData) {
-            serpContext += `\n\n📊 STRUCTURED SERP DATA FOR CHARTS:\n\`\`\`json\n${JSON.stringify(structuredSerpData, null, 2)}\n\`\`\`\n`;
+      // Route based on query type: web_search vs keyword/SEO analysis
+      if (serpIntelligence.queryType === 'web_search') {
+        // ── WEB SEARCH PATH ──
+        console.log("🌐 Web search intent detected, fetching live results:", serpIntelligence.keywords);
+        try {
+          const searchQuery = serpIntelligence.keywords.join(' ');
+          const webResults = await executeWebSearch(searchQuery);
+          if (webResults.results.length > 0) {
+            webSearchContext = generateWebSearchContext(webResults);
+            console.log(`✅ Web search returned ${webResults.results.length} results`);
+          } else {
+            console.warn('⚠️ Web search returned no results');
           }
-          
-          console.log("✅ SERP data successfully integrated into AI context with structured data");
+        } catch (error: any) {
+          console.error("❌ Web search failed, continuing without:", error);
         }
-      } catch (error: any) {
-        // Check if it's a rate limit error
-        if (error.message?.includes('rate limit') || error.message?.includes('exceeded')) {
-          console.warn("⚠️ SERP API rate limited - continuing without SERP data");
-          // Add informative message to context instead of failing
-          serpContext = `\n\n⚠️ Note: SERP data temporarily unavailable due to API rate limits. Providing analysis based on internal data.\n`;
-        } else {
-          console.error("❌ SERP analysis failed, continuing without SERP data:", error);
+      } else {
+        // ── KEYWORD/SEO SERP PATH (existing) ──
+        console.log("🔍 SERP opportunity detected, fetching real-time data:", serpIntelligence);
+        try {
+          const serpResults = await executeSerpAnalysis(serpIntelligence.keywords, serpIntelligence.queryType);
+          if (serpResults.length > 0) {
+            serpContext = generateSerpContext(serpResults);
+            
+            const structuredSerpData = generateStructuredSerpData(serpResults);
+            
+            serpData = {
+              keywords: serpIntelligence.keywords,
+              results: serpResults,
+              analysisType: serpIntelligence.queryType,
+              suggestions: generateSmartSuggestions(serpResults),
+              structured: structuredSerpData
+            };
+            
+            if (structuredSerpData) {
+              serpContext += `\n\n📊 STRUCTURED SERP DATA FOR CHARTS:\n\`\`\`json\n${JSON.stringify(structuredSerpData, null, 2)}\n\`\`\`\n`;
+            }
+            
+            console.log("✅ SERP data successfully integrated into AI context with structured data");
+          }
+        } catch (error: any) {
+          if (error.message?.includes('rate limit') || error.message?.includes('exceeded')) {
+            console.warn("⚠️ SERP API rate limited - continuing without SERP data");
+            serpContext = `\n\n⚠️ Note: SERP data temporarily unavailable due to API rate limits. Providing analysis based on internal data.\n`;
+          } else {
+            console.error("❌ SERP analysis failed, continuing without SERP data:", error);
+          }
         }
       }
     } else {
-      console.log('❌ No SERP intent detected');
+      console.log('❌ No SERP/web search intent detected');
     }
 
     // Build enhanced system prompt with context
