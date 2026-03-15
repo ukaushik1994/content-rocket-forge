@@ -106,7 +106,7 @@ export const KeywordLibraryStats = ({ className, compact = false }: KeywordLibra
             <Button 
               size="sm" 
               variant="outline"
-              onClick={() => navigate('/research/keyword-research')}
+              onClick={() => navigate('/keywords')}
               className="text-xs bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
             >
               <ExternalLink className="h-3 w-3 mr-1" />
