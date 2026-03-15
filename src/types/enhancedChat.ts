@@ -245,11 +245,26 @@ export interface VisualData {
   };
 }
 
+export interface WebSearchResultItem {
+  title: string;
+  url: string;
+  snippet: string;
+  position?: number;
+}
+
+export interface AnalystWebSearchData {
+  query: string;
+  results: WebSearchResultItem[];
+  answerBox?: string;
+  relatedSearches?: string[];
+}
+
 export interface AnalystContext {
   insights?: Array<string | { content: string; type?: string }>;
   metrics?: MetricCard[];
   topics?: string[];
   platformStats?: Record<string, number>;
+  webSearchResults?: AnalystWebSearchData;
 }
 
 export interface EnhancedChatMessage {

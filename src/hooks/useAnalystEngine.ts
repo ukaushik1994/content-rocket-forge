@@ -171,6 +171,31 @@ export function useAnalystEngine(
           });
         }
       }
+
+      // Extract web search results as search-type insights
+      if (msg.analystContext?.webSearchResults) {
+        const ws = msg.analystContext.webSearchResults;
+        // Add query-level insight
+        feed.push({
+          id: `ws-query-${msg.id}`,
+          content: `Web search: "${ws.query}" — ${ws.results.length} results found`,
+          type: 'search',
+          source: 'web',
+          timestamp: msg.timestamp,
+          messageId: msg.id,
+        });
+        // Add top 3 results as individual insights
+        for (const result of ws.results.slice(0, 3)) {
+          feed.push({
+            id: `ws-${msg.id}-${feed.length}`,
+            content: `${result.title}: ${result.snippet}`,
+            type: 'search',
+            source: 'web',
+            timestamp: msg.timestamp,
+            messageId: msg.id,
+          });
+        }
+      }
     }
 
     // Add platform data as insights
