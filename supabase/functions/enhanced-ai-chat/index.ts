@@ -1000,7 +1000,7 @@ function buildMultiChartSystemPrompt(): string {
         "description": "Action description",
         "priority": "high",
         "actionType": "navigate",
-        "targetUrl": "/content-builder",
+        "targetUrl": "/repository",
         "icon": "FileText",
         "estimatedImpact": "+20% engagement",
         "timeRequired": "15 minutes"
