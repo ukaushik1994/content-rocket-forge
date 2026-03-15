@@ -11,14 +11,12 @@ interface EnhancedSolutionCardProps {
   onUseInContent: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onViewDetail?: () => void;
 }
 export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
   solution,
   onUseInContent,
   onEdit,
   onDelete,
-  onViewDetail
 }) => {
   const {
     name,
