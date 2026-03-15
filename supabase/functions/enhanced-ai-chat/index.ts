@@ -1,4 +1,4 @@
-// Deploy v5: 2026-03-15T19:00:00Z - Inline query-analyzer to fix module resolution ReferenceError
+// Deploy v6: 2026-03-15T19:20:00Z - Request-scope requiresVisualData guard + forced redeploy marker
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
