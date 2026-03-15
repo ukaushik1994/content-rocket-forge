@@ -118,6 +118,66 @@ export const SERP_QUERY_PATTERNS: SerpQueryPattern[] = [
     type: 'competitive',
     extractKeywords: (match) => [match[1].trim(), match[2].trim()],
     priority: 8
+  },
+
+  // =========================================================================
+  // WEB SEARCH PATTERNS - General knowledge queries needing live web data
+  // =========================================================================
+
+  // Explicit search requests
+  {
+    pattern: /(?:search\s+(?:for|the\s+web\s+for)|look\s+up|google)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 10
+  },
+
+  // "What's new/latest" patterns
+  {
+    pattern: /(?:what'?s?\s+(?:new|latest|recent)|latest\s+(?:news|updates?|developments?))\s+(?:in|about|for|on|with|regarding)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 7
+  },
+
+  // "Best practices / how to" (external knowledge)
+  {
+    pattern: /(?:best\s+practices?|how\s+to|tips?\s+(?:for|on)|guide\s+(?:to|for|on))\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 6
+  },
+
+  // "Find articles/resources"
+  {
+    pattern: /(?:find|show|get)\s+(?:me\s+)?(?:articles?|resources?|information|info|examples?)\s+(?:about|on|for|regarding)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 7
+  },
+
+  // "What is" / "Explain" factual queries
+  {
+    pattern: /(?:what\s+(?:is|are)|explain|define)\s+(.{4,})/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 5
+  },
+
+  // "News about"
+  {
+    pattern: /(?:news|updates?|announcements?)\s+(?:about|on|for|from|regarding)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 7
+  },
+
+  // Compare external products/services
+  {
+    pattern: /(?:compare|difference\s+between|which\s+is\s+better)\s+(.+?)\s+(?:and|vs\.?|or|versus)\s+(.+)/i,
+    type: 'web_search',
+    extractKeywords: (match) => [`${match[1].trim()} vs ${match[2].trim()}`],
+    priority: 7
   }
 ];
 
