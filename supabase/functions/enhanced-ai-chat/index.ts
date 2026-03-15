@@ -184,7 +184,7 @@ function analyzeQueryIntent(query: string): QueryIntent {
     /tell me about|show me|give me/i,
     /\d+/
   ];
-  const requiresVisualData: boolean = visualTriggers.some(pattern => pattern.test(q));
+  const visualDataRequired: boolean = visualTriggers.some(pattern => pattern.test(q));
   
   const repositoryPatterns = /find\s+(my|the)\s+(blog|article|content|post)|show\s+(my|me)\s+(content|articles|blogs|posts)|what\s+did\s+i\s+write|open\s+(my\s+)?(content\s+)?library|read\s+my\s+(article|blog|post)|search\s+(my\s+)?content|browse\s+(my\s+)?content/i;
   const approvalsPatterns = /pending\s+(approval|review)|what('s|\s+is)\s+pending|approve\s+the|reject\s+the|items?\s+need\s+review|show\s+(my\s+)?approvals|needs?\s+(my\s+)?review/i;
