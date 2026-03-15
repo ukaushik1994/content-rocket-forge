@@ -483,13 +483,17 @@ async function testAnthropic(apiKey: string) {
 async function chatAnthropic(apiKey: string, params: any) {
   console.log('💬 Processing Anthropic chat request');
   
-  const requestBody = {
+  const requestBody: any = {
     model: params.model || 'claude-3-sonnet-20240229',
     max_tokens: params.maxTokens || params.max_tokens || 1000,
     messages: params.messages || [],
     temperature: params.temperature || 0.7,
-    ...params
   };
+  
+  // Add system message if provided
+  if (params.system) {
+    requestBody.system = params.system;
+  }
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
