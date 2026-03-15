@@ -512,7 +512,7 @@ export async function executeContentActionTool(
           message: `Opening Content Builder with keyword "${toolArgs.keyword}"`,
           action: {
             type: 'navigate',
-            url: '/content-builder',
+            url: '/ai-chat',
             payload: {
               keyword: toolArgs.keyword,
               solution_id: toolArgs.solution_id,

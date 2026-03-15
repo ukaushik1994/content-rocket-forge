@@ -2738,8 +2738,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
                   ]
                 },
                 actionableItems: [
-                  { id: '1', title: 'View Strategy Proposals', actionType: 'navigate', targetUrl: '/research/content-strategy', icon: 'FileText' },
-                  { id: '2', title: 'Create New Strategy', actionType: 'navigate', targetUrl: '/research/content-strategy?new=true', icon: 'Plus' }
+                  { id: '1', title: 'View Strategy Proposals', actionType: 'navigate', targetUrl: '/ai-proposals', icon: 'FileText' },
+                  { id: '2', title: 'Create New Strategy', actionType: 'navigate', targetUrl: '/ai-proposals', icon: 'Plus' }
                 ],
                 deepDivePrompts: [
                   'Which proposal has the best potential?',

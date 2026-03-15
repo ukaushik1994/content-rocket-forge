@@ -33,6 +33,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
+  // Listen for custom openSettings events from components that can't access context
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const tab = e.detail || 'api';
+      setActiveTab(tab);
+      setIsOpen(true);
+    };
+    window.addEventListener('openSettings', handler as EventListener);
+    return () => window.removeEventListener('openSettings', handler as EventListener);
+  }, []);
+
   // Update URL when tab changes
   useEffect(() => {
     if (isOpen) {
