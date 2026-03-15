@@ -516,16 +516,16 @@ export const useEnhancedAIChatDB = () => {
       }
 
       const finalMessage: EnhancedChatMessage = {
-        ...placeholderMessage,
+        id: assistantId,
+        role: 'assistant',
         content: confirmationData ? '' : responseContent,
+        timestamp: new Date(),
         actions: responseActions.filter((a: any) => a.action !== 'confirm_action'),
         visualData: responseVisualData,
         confirmationData,
       };
 
-      setMessages(prev =>
-        prev.map(m => m.id === assistantId ? finalMessage : m)
-      );
+      setMessages(prev => [...prev, finalMessage]);
       await saveMessage(finalMessage, conversationId);
 
       // Update conversation title if first exchange
