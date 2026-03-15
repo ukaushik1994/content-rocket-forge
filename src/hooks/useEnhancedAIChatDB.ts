@@ -492,6 +492,14 @@ export const useEnhancedAIChatDB = () => {
         }
       }
 
+      // Safety net: if no SSE 'done' event found, try parsing full buffer as plain JSON
+      if (!response && textBuffer.trim()) {
+        try {
+          response = JSON.parse(textBuffer.trim());
+          console.log('⚠️ Parsed response from plain JSON fallback');
+        } catch (_) { /* not valid JSON */ }
+      }
+
       if (!response) throw new Error('No response received from AI');
 
       const responseContent = response?.message || response?.content || 'No response received';
