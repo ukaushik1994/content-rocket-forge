@@ -85,9 +85,18 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     onOpenProposals?.();
   }, [onOpenProposals]);
 
+  // Handle Web Search selection
+  const handleWebSearchClick = useCallback(() => {
+    setWebSearchMode(true);
+    setWizardMode(false);
+    setMessage('');
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  }, []);
+
   // Cancel wizard mode
   const handleCancelWizard = useCallback(() => {
     setWizardMode(false);
+    setWebSearchMode(false);
     setMessage('');
   }, []);
 
