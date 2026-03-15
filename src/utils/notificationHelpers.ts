@@ -151,7 +151,7 @@ export class NotificationHelper {
           label: 'View Results',
           action: 'navigate',
           variant: 'primary',
-          url: '/research/keyword-research'
+          url: '/keywords'
         }
       ],
       previewData: { keyword, resultCount },

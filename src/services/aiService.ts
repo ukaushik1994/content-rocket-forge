@@ -148,7 +148,7 @@ function generateContextualActions(
       id: 'keyword-research',
       type: 'button',
       label: 'Start Keyword Research',
-      action: 'navigate:/research/keyword-research',
+      action: 'navigate:/keywords',
       variant: 'primary'
     });
   }

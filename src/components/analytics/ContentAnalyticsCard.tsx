@@ -160,7 +160,7 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
   const handleCheckSERP = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (mainKeyword) {
-      navigate(`/research/serp?keyword=${encodeURIComponent(mainKeyword)}&contentId=${contentId}`);
+      navigate(`/keywords?keyword=${encodeURIComponent(mainKeyword)}&contentId=${contentId}`);
     }
   };
 

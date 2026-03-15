@@ -142,7 +142,7 @@ export class ResearchNotifications {
           id: 'view_opportunity',
           label: 'View Details',
           action: 'navigate',
-          url: '/research/content-gaps',
+          url: '/ai-chat',
           variant: 'primary'
         },
         {
@@ -169,7 +169,7 @@ export class ResearchNotifications {
           id: 'view_gaps',
           label: 'View Gaps',
           action: 'navigate',
-          url: '/research/content-gaps',
+          url: '/ai-chat',
           variant: 'primary'
         }
       ]
@@ -189,7 +189,7 @@ export class ResearchNotifications {
           id: 'view_clusters',
           label: 'View Clusters',
           action: 'navigate',
-          url: '/research/topic-clusters',
+          url: '/ai-chat',
           variant: 'primary'
         }
       ]

@@ -2,6 +2,7 @@
  * Content Builder, Repository & Approval Action Tools
  * Write/Create/Update/Delete operations for content items
  */
+import { getApiKey } from '../shared/apiKeyService.ts';
 
 // Inline SEO score calculator for auto-scoring on content creation
 function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: string, metaDescription?: string): number {
@@ -424,7 +425,7 @@ export async function executeContentActionTool(
 
         // Get user's AI provider
         const { data: provider } = await supabase.from('ai_service_providers')
-          .select('api_key, provider, preferred_model')
+          .select('provider, preferred_model')
           .eq('user_id', userId)
           .eq('status', 'active')
           .order('priority', { ascending: true })
@@ -432,6 +433,12 @@ export async function executeContentActionTool(
 
         if (!provider) {
           return { success: false, message: 'No AI provider configured. Go to Settings to add your API key.' };
+        }
+
+        // Decrypt API key from secure vault
+        const decryptedApiKey = await getApiKey(provider.provider, userId);
+        if (!decryptedApiKey) {
+          return { success: false, message: 'API key not found. Please re-enter your API key in Settings.' };
         }
 
         // Generate content via ai-proxy
@@ -445,6 +452,7 @@ export async function executeContentActionTool(
             params: {
               provider: provider.provider,
               model: provider.preferred_model || 'gpt-4',
+              apiKey: decryptedApiKey,
               messages: [
                 {
                   role: 'system',

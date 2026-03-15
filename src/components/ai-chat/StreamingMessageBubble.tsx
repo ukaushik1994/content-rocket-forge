@@ -78,7 +78,7 @@ export const StreamingMessageBubble: React.FC<StreamingMessageBubbleProps> = ({
         state: { prefilledData: preloadData }
       });
     } else if (action.action?.includes('keyword-research') || action.action?.includes('research')) {
-      navigate('/research', { 
+      navigate('/keywords', { 
         state: { 
           prefilledKeyword: action.data?.keyword || action.data?.mainKeyword || action.label 
         }

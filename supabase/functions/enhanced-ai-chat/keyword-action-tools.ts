@@ -2,6 +2,7 @@
  * Keyword & Research Action Tools
  * Write/Create/Delete operations for keywords and SERP analysis
  */
+import { getApiKey } from '../shared/apiKeyService.ts';
 
 export const KEYWORD_ACTION_TOOL_DEFINITIONS = [
   {
@@ -239,7 +240,7 @@ export async function executeKeywordActionTool(
 
         // Get user's AI provider
         const { data: provider } = await supabase.from('ai_service_providers')
-          .select('api_key, provider, preferred_model')
+          .select('provider, preferred_model')
           .eq('user_id', userId)
           .eq('status', 'active')
           .order('priority', { ascending: true })
@@ -247,6 +248,12 @@ export async function executeKeywordActionTool(
 
         if (!provider) {
           return { success: false, message: 'No AI provider configured. Go to Settings to add your API key.' };
+        }
+
+        // Decrypt API key from secure vault
+        const decryptedApiKey = await getApiKey(provider.provider, userId);
+        if (!decryptedApiKey) {
+          return { success: false, message: 'API key not found. Please re-enter your API key in Settings.' };
         }
 
         const count = toolArgs.subtopic_count || 8;
@@ -261,6 +268,7 @@ export async function executeKeywordActionTool(
             params: {
               provider: provider.provider,
               model: provider.preferred_model || 'gpt-4',
+              apiKey: decryptedApiKey,
               messages: [
                 {
                   role: 'system',

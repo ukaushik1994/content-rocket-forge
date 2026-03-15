@@ -46,10 +46,10 @@ export const modules: ModuleData[] = [
     description: 'Discover high-value keywords and analyze competitor content strategies with advanced research tools.',
     features: ['Keyword Research', 'Competitor Analysis', 'Topic Clusters', 'Search Trends'],
     icon: Search,
-    route: '/research/keyword-research',
+    route: '/keywords',
     cta: 'Research Keywords',
     secondaryCta: 'Analyze Competitors',
-    secondaryRoute: '/research/competitor-analysis',
+    secondaryRoute: '/ai-chat',
     theme: {
       gradient: 'from-emerald-400 via-teal-500 to-cyan-600',
       glowColor: 'from-emerald-400/30 via-teal-500/20 to-cyan-600/30',
