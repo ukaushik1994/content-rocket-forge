@@ -25,6 +25,7 @@ interface ContextAwareMessageInputProps {
   onOpenResearch?: () => void;
   onOpenAnalyst?: () => void;
   onLaunchWizard?: (userPrompt: string) => void;
+  onWebSearch?: () => void;
 }
 
 export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> = ({
