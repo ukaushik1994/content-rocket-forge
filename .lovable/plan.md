@@ -1,153 +1,57 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Plan: Update Project Memories
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
-
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+Three memory operations to bring project knowledge up to date.
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## 1. Sidebar Strategy Memory — Already Done
+The memory `architecture/sidebar-panel-strategy` already exists and is accurate. It documents the 6 panel modules (Wizard, Proposals, Repository, Approvals, Research Intelligence, Content Repurposing) and lists all text-only modules. No changes needed.
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+## 2. Create New Memory: 92 Tools Inventory
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+**Memory key:** `features/ai-chat/tool-inventory`
 
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
+Organized by module with read/write classification:
 
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
+- **Repository**: 5 READ (`get_content_items`, `get_calendar_items`, `get_content_performance`, `get_seo_scores`, `get_repurposed_content`) + 8 WRITE (`create_content_item`, `update_content_item`, `delete_content_item`, `generate_full_content`, `launch_content_wizard`, `start_content_builder`, `create_calendar_item`, `update_calendar_item`, `delete_calendar_item`, `submit_for_review`)
+- **Approvals**: 1 READ (`get_pending_approvals`) + 2 WRITE (`approve_content`, `reject_content`)
+- **Offerings**: 3 READ (`get_solutions`, `get_company_info`, `get_competitors`, `get_competitor_solutions`) + 6 WRITE (`create_solution`, `update_solution`, `delete_solution`, `update_company_info`, `add_competitor`, `update_competitor`, `trigger_competitor_analysis`)
+- **Contacts**: 2 READ (`get_contacts`, `get_segments`) + 6 WRITE (`create_contact`, `update_contact`, `delete_contact`, `tag_contacts`, `create_segment`, `delete_segment`, `enroll_contacts_in_journey`)
+- **Campaigns**: 3 READ (`get_campaign_intelligence`, `get_queue_status`, `get_campaign_content`) + 4 WRITE (`create_campaign`, `trigger_content_generation`, `retry_failed_content`, `promote_content_to_campaign`, `campaign_content_to_engage`)
+- **Email**: 3 READ (`get_email_templates`, `get_engage_email_campaigns`, `get_email_threads`) + 5 WRITE (`create_email_campaign`, `send_email_campaign`, `send_quick_email`, `content_to_email`, `create_email_template`, `update_email_template`, `delete_email_campaign`)
+- **Social**: 1 READ (`get_social_posts`) + 5 WRITE (`create_social_post`, `update_social_post`, `schedule_social_post`, `delete_social_post`, `repurpose_for_social`, `schedule_social_from_repurpose`)
+- **Keywords**: 2 READ (`get_keywords`, `get_serp_analysis`) + 4 WRITE (`add_keywords`, `remove_keywords`, `trigger_serp_analysis`, `trigger_content_gap_analysis`, `create_topic_cluster`)
+- **Analytics**: 2 READ (`get_content_performance`, `get_seo_scores`)
+- **Journeys**: 1 READ (`get_engage_journeys`) + 3 WRITE (`create_journey`, `activate_journey`, `delete_journey`)
+- **Automations**: 1 READ (`get_engage_automations`) + 3 WRITE (`create_automation`, `toggle_automation`, `delete_automation`)
+- **Research**: 2 READ (`get_topic_clusters`, `get_content_gaps`)
+- **Proposals/Strategy**: 2 READ (`get_proposals`, `get_strategy_recommendations`) + 4 WRITE (`accept_proposal`, `reject_proposal`, `create_proposal`, `accept_recommendation`, `dismiss_recommendation`)
+- **Brand Voice**: 1 READ (`get_brand_voice`) + 1 WRITE (`update_brand_voice`)
+- **Activity**: 1 READ (`get_activity_log`)
+- **Publishing**: 1 WRITE (`publish_to_website`)
 
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+## 3. Update Existing Memories
+
+**`architecture/unified-chat-architecture-v4`** — Add:
+- `panelHint` and `disambiguationHint` fields in QueryIntent
+- Cross-module chain confirmation rule (user approval between sequential write tools)
+- Navigate-away fix (action clicks open new tab instead of leaving chat)
+
+**`features/ai-chat/intelligence`** — Add:
+- Expanded regex patterns for social post editing, competitor detection, content repurposing
+- `content_repurpose` panelHint trigger
+- Email disambiguation rules (templates vs campaigns vs threads)
+- Brand voice category detection fix
+
+**`features/ai-chat/expanded-action-suite`** — Add:
+- Calendar CRUD tools (`create_calendar_item`, `update_calendar_item`, `delete_calendar_item`)
+- Contact enrollment tool (`enroll_contacts_in_journey`)
+- Publishing tool (`publish_to_website`)
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## Implementation
+All three are memory-only operations — no code files change. I will create/update project knowledge entries.
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
-
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
-
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
-
----
-
-# AI Chat Awareness Gaps — Implementation Tracker
-
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
-
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
-
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
-
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
