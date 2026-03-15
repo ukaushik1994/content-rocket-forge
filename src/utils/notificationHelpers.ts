@@ -316,7 +316,7 @@ export class NotificationHelper {
           label: 'View Calendar',
           action: 'navigate',
           variant: 'primary',
-          url: '/research/calendar'
+          url: '/calendar'
         }
       ],
       previewData: { contentTitle, originalDate, newDate },

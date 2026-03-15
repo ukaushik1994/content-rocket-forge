@@ -19,6 +19,9 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
   const { isSidebarOpen, toggleSidebar, setPendingPanel } = useSidebarContext();
   const { isMobile } = useResponsiveBreakpoint();
 
+  // Global due content notifications — runs for all authenticated pages
+  useDueContentNotifications();
+
   const {
     conversations,
     activeConversation,
