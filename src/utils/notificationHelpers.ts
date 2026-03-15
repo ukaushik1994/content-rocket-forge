@@ -261,7 +261,7 @@ export class NotificationHelper {
           label: 'View Schedule',
           action: 'navigate',
           variant: 'primary',
-          url: '/research/calendar'
+          url: '/calendar'
         },
         {
           id: 'view_strategy',
