@@ -1,14 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
-import { EnhancedAIProposalCard } from '@/components/research/content-strategy/components/EnhancedAIProposalCard';
+import { ProposalCard } from '@/components/research/content-strategy/ProposalCard';
 import { ProposalStatusFilter } from '@/components/research/content-strategy/ProposalStatusFilter';
+import { ViewToggle, type ViewMode } from '@/components/research/content-strategy/ViewToggle';
 import { type ProposalStatus } from '@/services/proposalStatusService';
-import { Sparkles, Search, SlidersHorizontal } from 'lucide-react';
+import { Sparkles, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -17,6 +18,8 @@ const AIProposals = () => {
   const navigate = useNavigate();
   const [selectedStatuses, setSelectedStatuses] = useState<ProposalStatus[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProposals, setSelectedProposals] = useState<Record<number, boolean>>({});
+  const [viewMode, setViewMode] = useState<ViewMode>('tiles');
 
   const { data: proposals = [], isLoading } = useQuery({
     queryKey: ['ai-proposals', user?.id],
@@ -66,22 +69,33 @@ const AIProposals = () => {
     );
   };
 
+  const handleSelectionChange = useCallback((index: number, selected: boolean) => {
+    setSelectedProposals(prev => ({ ...prev, [index]: selected }));
+  }, []);
+
+  const handleSendToBuilder = useCallback((proposal: any) => {
+    navigate('/research/content-strategy', { state: { selectedProposal: proposal } });
+  }, [navigate]);
+
   return (
     <div className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto">
       <PageBreadcrumb section="Library" page="AI Proposals" sectionPath="/repository" />
 
       {/* Hero header */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Sparkles className="h-6 w-6 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">AI Proposals</h1>
+              <p className="text-sm text-muted-foreground">
+                {proposals.length} proposal{proposals.length !== 1 ? 's' : ''} generated
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">AI Proposals</h1>
-            <p className="text-sm text-muted-foreground">
-              {proposals.length} proposal{proposals.length !== 1 ? 's' : ''} generated
-            </p>
-          </div>
+          <ViewToggle view={viewMode} onViewChange={setViewMode} />
         </div>
       </div>
 
@@ -106,7 +120,7 @@ const AIProposals = () => {
 
       {/* Results */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={`grid gap-4 ${viewMode === 'tiles' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-56 rounded-lg" />
           ))}
@@ -122,7 +136,7 @@ const AIProposals = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={`grid gap-4 ${viewMode === 'tiles' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
           {filtered.map((proposal: any, index: number) => (
             <motion.div
               key={proposal.id}
@@ -130,11 +144,12 @@ const AIProposals = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.04 }}
             >
-              <EnhancedAIProposalCard
+              <ProposalCard
                 proposal={proposal}
-                showActions={true}
-                onViewDetails={() => navigate('/ai-chat')}
-                onScheduleToCalendar={() => navigate('/research/content-strategy')}
+                index={index}
+                isSelected={!!selectedProposals[index]}
+                onSelectionChange={handleSelectionChange}
+                onSendToBuilder={handleSendToBuilder}
               />
             </motion.div>
           ))}
