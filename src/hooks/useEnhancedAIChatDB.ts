@@ -576,6 +576,7 @@ export const useEnhancedAIChatDB = () => {
     } finally {
       setIsLoading(false);
       setIsTyping(false);
+      setProgressText('');
     }
   }, [messages, toast, user, activeConversation, createConversation, saveMessage, executeToolAction]);
 
