@@ -79,6 +79,7 @@ interface VisualizationSidebarProps {
   description?: string;
   onSendMessage?: (message: string) => void;
   onInteract?: () => void; // Track user interaction for smart persistence
+  analystState?: import('@/hooks/useAnalystEngine').AnalystState | null;
 }
 
 export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
