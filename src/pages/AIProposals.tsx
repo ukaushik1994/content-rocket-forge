@@ -96,63 +96,67 @@ const AIProposals = () => {
 
         <AIProposalsHero stats={heroStats} />
 
-      {/* Search + Filters */}
-      <div className="space-y-3 mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search proposals by title, keyword, or description..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="pl-9 bg-background/60 backdrop-blur-sm border-border/50"
+        {/* Search + Filters */}
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search proposals by title, keyword, or description..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-9 bg-background/60 backdrop-blur-sm border-border/50"
+              />
+            </div>
+            <ViewToggle view={viewMode} onViewChange={setViewMode} />
+          </div>
+          <ProposalStatusFilter
+            statusCounts={statusCounts}
+            selectedStatuses={selectedStatuses}
+            onStatusToggle={handleStatusToggle}
+            onClearFilters={() => setSelectedStatuses([])}
           />
         </div>
-        <ProposalStatusFilter
-          statusCounts={statusCounts}
-          selectedStatuses={selectedStatuses}
-          onStatusToggle={handleStatusToggle}
-          onClearFilters={() => setSelectedStatuses([])}
-        />
-      </div>
 
-      {/* Results */}
-      {isLoading ? (
-        <div className={`grid gap-4 ${viewMode === 'tiles' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-56 rounded-lg" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Sparkles className="h-12 w-12 text-muted-foreground/30 mb-4" />
-          <h3 className="text-lg font-medium mb-1">No proposals found</h3>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            {proposals.length === 0
-              ? 'Generate your first proposals from Content Strategy or AI Chat.'
-              : 'Try adjusting your filters or search query.'}
-          </p>
-        </div>
-      ) : (
-        <div className={`grid gap-4 ${viewMode === 'tiles' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-          {filtered.map((proposal: any, index: number) => (
-            <motion.div
-              key={proposal.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.04 }}
-            >
-              <ProposalCard
-                proposal={proposal}
-                index={index}
-                isSelected={!!selectedProposals[index]}
-                onSelectionChange={handleSelectionChange}
-                onSendToBuilder={handleSendToBuilder}
-              />
-            </motion.div>
-          ))}
-        </div>
-      )}
-    </div>
+        {/* Results */}
+        {isLoading ? (
+          <div className={`grid gap-4 ${viewMode === 'tiles' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-56 rounded-lg" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Sparkles className="h-12 w-12 text-muted-foreground/30 mb-4" />
+            <h3 className="text-lg font-medium mb-1">No proposals found</h3>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              {proposals.length === 0
+                ? 'Generate your first proposals from Content Strategy or AI Chat.'
+                : 'Try adjusting your filters or search query.'}
+            </p>
+          </div>
+        ) : (
+          <div className={`grid gap-4 ${viewMode === 'tiles' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+            {filtered.map((proposal: any, index: number) => (
+              <motion.div
+                key={proposal.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.04 }}
+              >
+                <ProposalCard
+                  proposal={proposal}
+                  index={index}
+                  isSelected={!!selectedProposals[index]}
+                  onSelectionChange={handleSelectionChange}
+                  onSendToBuilder={handleSendToBuilder}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+    </PageContainer>
   );
 };
 
