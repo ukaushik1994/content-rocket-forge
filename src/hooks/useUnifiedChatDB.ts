@@ -979,12 +979,22 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
         await saveMessageToDB(aiMessage, targetConversationId);
       } catch (error: any) {
         console.error('Error sending message:', error);
-        setState(prev => ({ ...prev, isTyping: false }));
-        toast({
-          title: "Error",
-          description: "Failed to send message",
-          variant: "destructive"
-        });
+        
+        const errorMessage: EnhancedChatMessage = {
+          id: `error-${Date.now()}`,
+          role: 'assistant',
+          content: error.message || 'Something went wrong. Please try again.',
+          timestamp: new Date(),
+          messageStatus: 'error'
+        };
+
+        setState(prev => ({
+          ...prev,
+          messages: [...prev.messages, errorMessage],
+          isTyping: false
+        }));
+
+        await saveMessageToDB(errorMessage, targetConversationId);
       }
     }
 
