@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Paperclip, PenLine, BookOpen, BarChart3, Lightbulb, X } from 'lucide-react';
+import { Plus, Paperclip, PenLine, BookOpen, BarChart3, Lightbulb, Globe, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PlusMenuDropdownProps {
@@ -11,6 +11,7 @@ interface PlusMenuDropdownProps {
   onResearchIntelligence?: () => void;
   onAnalyst?: () => void;
   onAIProposals?: () => void;
+  onWebSearch?: () => void;
   disabled?: boolean;
 }
 
@@ -20,6 +21,7 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
   onResearchIntelligence,
   onAnalyst,
   onAIProposals,
+  onWebSearch,
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,6 +56,12 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
       label: 'AI Proposals',
       description: 'Generate smart proposals',
       onClick: onAIProposals,
+    }] : []),
+    ...(onWebSearch ? [{
+      icon: Globe,
+      label: 'Web Search',
+      description: 'Search the web for info',
+      onClick: onWebSearch,
     }] : []),
   ];
 

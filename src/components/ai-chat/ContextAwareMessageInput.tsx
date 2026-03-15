@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X, PenLine } from 'lucide-react';
+import { Send, X, PenLine, Globe } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { PlusMenuDropdown } from './PlusMenuDropdown';
 import { FileUploadHandler } from './FileUploadHandler';
+import { cn } from '@/lib/utils';
 import { VoiceInputHandler } from './VoiceInputHandler';
 
 interface Solution {
@@ -25,6 +26,7 @@ interface ContextAwareMessageInputProps {
   onOpenResearch?: () => void;
   onOpenAnalyst?: () => void;
   onLaunchWizard?: (userPrompt: string) => void;
+  onWebSearch?: () => void;
 }
 
 export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> = ({
@@ -35,13 +37,15 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   onOpenProposals,
   onOpenResearch,
   onOpenAnalyst,
-  onLaunchWizard
+  onLaunchWizard,
+  onWebSearch
 }) => {
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [wizardMode, setWizardMode] = useState(false);
+  const [webSearchMode, setWebSearchMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -82,9 +86,18 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     onOpenProposals?.();
   }, [onOpenProposals]);
 
+  // Handle Web Search selection
+  const handleWebSearchClick = useCallback(() => {
+    setWebSearchMode(true);
+    setWizardMode(false);
+    setMessage('');
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  }, []);
+
   // Cancel wizard mode
   const handleCancelWizard = useCallback(() => {
     setWizardMode(false);
+    setWebSearchMode(false);
     setMessage('');
   }, []);
 
@@ -127,7 +140,10 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     const trimmed = message.trim();
     if (!trimmed || isLoading) return;
     
-    if (wizardMode && onLaunchWizard) {
+    if (webSearchMode) {
+      onSendMessage(`[web-search] ${trimmed}`);
+      setWebSearchMode(false);
+    } else if (wizardMode && onLaunchWizard) {
       onLaunchWizard(trimmed);
       setWizardMode(false);
     } else if (wizardMode) {
@@ -150,7 +166,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
       handleSubmit();
     }
     if (e.key === 'Escape') {
-      if (wizardMode) {
+      if (wizardMode || webSearchMode) {
         handleCancelWizard();
       } else {
         setShowSuggestions(false);
@@ -229,9 +245,11 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const activePlaceholder = wizardMode
-    ? "Enter a topic or keyword to write about..."
-    : placeholder;
+  const activePlaceholder = webSearchMode
+    ? "What do you want to search the web for?"
+    : wizardMode
+      ? "Enter a topic or keyword to write about..."
+      : placeholder;
 
   return (
     <motion.div
@@ -252,9 +270,9 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
         )}
       </AnimatePresence>
 
-      {/* Wizard Mode Chip */}
+      {/* Mode Chip (Wizard or Web Search) */}
       <AnimatePresence>
-        {wizardMode && (
+        {(wizardMode || webSearchMode) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -262,14 +280,24 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             transition={{ duration: 0.2 }}
             className="flex items-center gap-2 mb-2 px-1"
           >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">
-              <PenLine className="h-3 w-3" />
-              <span>Content Wizard</span>
-              <span className="text-primary/60">— type a topic and press Enter</span>
+            <div className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium",
+              webSearchMode
+                ? "bg-accent/10 border-accent/20 text-accent"
+                : "bg-primary/10 border-primary/20 text-primary"
+            )}>
+              {webSearchMode ? <Globe className="h-3 w-3" /> : <PenLine className="h-3 w-3" />}
+              <span>{webSearchMode ? 'Web Search' : 'Content Wizard'}</span>
+              <span className={webSearchMode ? "text-accent/60" : "text-primary/60"}>
+                — type your query and press Enter
+              </span>
               <button
                 type="button"
                 onClick={handleCancelWizard}
-                className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                className={cn(
+                  "ml-1 rounded-full p-0.5 transition-colors",
+                  webSearchMode ? "hover:bg-accent/20" : "hover:bg-primary/20"
+                )}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -281,11 +309,13 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
       <form onSubmit={handleSubmit} className="relative">
         <div 
           className={`relative flex items-end gap-2 p-2.5 bg-background/60 backdrop-blur-xl border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
-            wizardMode
-              ? 'border-primary/30 ring-1 ring-primary/10'
-              : isFocused 
-                ? 'border-primary/40 shadow-[0_0_20px_rgba(139,92,246,0.1)]' 
-                : 'border-white/[0.08] hover:border-white/[0.15]'
+            webSearchMode
+              ? 'border-accent/30 ring-1 ring-accent/10'
+              : wizardMode
+                ? 'border-primary/30 ring-1 ring-primary/10'
+                : isFocused 
+                  ? 'border-primary/40 shadow-[0_0_20px_rgba(139,92,246,0.1)]' 
+                  : 'border-white/[0.08] hover:border-white/[0.15]'
           }`}
         >
           {/* File Upload Handler */}
@@ -302,6 +332,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onResearchIntelligence={onOpenResearch}
             onAnalyst={onOpenAnalyst}
             onAIProposals={handleAIProposalsClick}
+            onWebSearch={onWebSearch || handleWebSearchClick}
             disabled={isLoading}
           />
 
