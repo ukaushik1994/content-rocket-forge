@@ -79,6 +79,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_OUT') {
           console.log('Security event: User signed out', { timestamp: new Date().toISOString() });
         }
+
+        // Handle token refresh failure - clear corrupted state
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.warn('Token refresh failed, session lost. Prompting re-login.');
+          toast.error('Your session has expired. Please sign in again.');
+        }
       }
     );
 
