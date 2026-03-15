@@ -496,6 +496,16 @@ export async function executeEngageActionTool(
       }
 
       case 'send_email_campaign': {
+        // Check for Resend API key before attempting to send
+        const { getApiKey } = await import('../shared/apiKeyService.ts');
+        const resendKey = await getApiKey('resend', userId);
+        if (!resendKey) {
+          return {
+            success: false,
+            message: '🔑 No Resend API key configured. Please go to **Settings → API Keys** and add your Resend key to send emails.'
+          };
+        }
+
         const updates: any = {};
         if (toolArgs.scheduled_at) {
           updates.status = 'scheduled';
