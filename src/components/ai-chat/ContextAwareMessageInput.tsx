@@ -285,7 +285,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
               ? 'border-primary/30 ring-1 ring-primary/10'
               : isFocused 
                 ? 'border-primary/40 shadow-[0_0_20px_rgba(139,92,246,0.1)]' 
-                : 'border-border/20 hover:border-border/40'
+                : 'border-white/[0.08] hover:border-white/[0.15]'
           }`}
         >
           {/* File Upload Handler */}
