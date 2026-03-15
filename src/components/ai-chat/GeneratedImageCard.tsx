@@ -80,6 +80,14 @@ export const GeneratedImageCard: React.FC<GeneratedImageCardProps> = ({
       // Default download behavior
       try {
         const response = await fetch(image.url);
+        if (!response.ok) {
+          toast({
+            title: "Image expired",
+            description: "This image URL has expired. Please regenerate the image.",
+            variant: "destructive"
+          });
+          return;
+        }
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

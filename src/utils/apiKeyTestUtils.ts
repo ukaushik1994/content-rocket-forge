@@ -104,88 +104,25 @@ export const testSerpApiConnection = async (apiKey: string): Promise<{ success: 
       return { success: false, error: 'Invalid SERP API key format' };
     }
     
-    console.log('🌐 Making test request to SerpAPI...');
-    
-    // Make a minimal test request to SerpAPI directly
-    const testUrl = 'https://serpapi.com/search';
-    const params = new URLSearchParams({
-      api_key: cleanKey,
-      engine: 'google',
-      q: 'test',
-      num: '1'
-    });
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    console.log('🌐 Testing SerpAPI via edge function...');
     
     try {
-      const response = await fetch(`${testUrl}?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; ContentBuilder/1.0)',
-        },
-        signal: controller.signal
+      const { data, error } = await supabase.functions.invoke('api-test', {
+        body: { service: 'serp', apiKey: cleanKey }
       });
       
-      clearTimeout(timeoutId);
-      
-      console.log('📊 SerpAPI response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ SerpAPI error response:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText.substring(0, 500)
-        });
-        
-        // Parse error response
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.error) {
-            return { success: false, error: errorData.error };
-          }
-        } catch (parseError) {
-          // If not JSON, use the raw text
-          console.warn('⚠️ Could not parse error response as JSON');
-        }
-        
-        // Provide specific error messages based on status
-        if (response.status === 401) {
-          return { success: false, error: 'Invalid API key. Please check your SerpAPI key.' };
-        }
-        
-        if (response.status === 429) {
-          return { success: false, error: 'API rate limit exceeded. Please try again later.' };
-        }
-        
-        if (response.status === 403) {
-          return { success: false, error: 'Access forbidden. Please check your API key permissions.' };
-        }
-        
-        return { success: false, error: `HTTP ${response.status}: ${response.statusText}` };
+      if (error) {
+        console.error('❌ SerpAPI test error:', error);
+        return { success: false, error: error.message || 'SerpAPI test failed' };
       }
       
-      const data = await response.json();
-      console.log('✅ SerpAPI test successful');
-      
-      // Check if we got valid search results
-      if (data.organic_results || data.search_metadata) {
+      if (data?.success) {
+        console.log('✅ SerpAPI test successful');
         return { success: true };
-      } else if (data.error) {
-        return { success: false, error: data.error };
       } else {
-        console.warn('⚠️ Unexpected response format from SerpAPI:', Object.keys(data));
-        return { success: false, error: 'Unexpected response format from SerpAPI' };
+        return { success: false, error: data?.error || 'SerpAPI test returned unexpected response' };
       }
-      
     } catch (fetchError: any) {
-      clearTimeout(timeoutId);
-      
-      if (fetchError.name === 'AbortError') {
-        return { success: false, error: 'Request timeout - SerpAPI did not respond within 10 seconds' };
-      }
-      
       throw fetchError;
     }
     

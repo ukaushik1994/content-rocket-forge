@@ -426,11 +426,12 @@ export class MarketingIntegrationHooks {
       
       default:
         if (integration.webhook) {
-          await fetch(integration.webhook, {
+          const webhookResp = await fetch(integration.webhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(actionData)
           });
+          if (!webhookResp.ok) throw new Error(`Webhook action failed: ${webhookResp.status}`);
         }
         break;
     }

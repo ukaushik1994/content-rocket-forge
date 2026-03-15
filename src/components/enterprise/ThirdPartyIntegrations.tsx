@@ -248,12 +248,11 @@ export const ThirdPartyIntegrations: React.FC = () => {
         }
       }
       
-      await fetch(webhookUrl, {
+      const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        mode: "no-cors",
         body: JSON.stringify({
           timestamp: new Date().toISOString(),
           triggered_from: window.location.origin,
@@ -261,6 +260,10 @@ export const ThirdPartyIntegrations: React.FC = () => {
           data: testData
         }),
       });
+
+      if (!response.ok) {
+        throw new Error(`Webhook returned ${response.status}: ${response.statusText}`);
+      }
 
       toast({
         title: "Webhook Triggered",

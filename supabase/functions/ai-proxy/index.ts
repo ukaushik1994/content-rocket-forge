@@ -85,8 +85,12 @@ serve(async (req) => {
         result = await handleMistral(endpoint, apiKey, params);
         break;
       case 'lmstudio':
-        result = await handleLMStudio(endpoint, apiKey, params);
-        break;
+        return createErrorResponse(
+          'LM Studio runs on localhost and is not reachable from cloud edge functions. Use LM Studio only in local development, or switch to a cloud-hosted provider (OpenAI, Anthropic, OpenRouter, etc.).',
+          400,
+          'lmstudio',
+          endpoint
+        );
       default:
         throw new Error(`Unsupported service: ${service}. Supported services: openai, anthropic, gemini, openrouter, mistral, lmstudio`);
     }
