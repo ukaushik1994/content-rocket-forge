@@ -82,7 +82,7 @@ const RepositoryPanelInner: React.FC<{ isOpen: boolean; onClose: () => void }> =
           <div className="border-t border-border/10 pt-4">
             <div 
               className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: selectedItem.content || '<p class="text-muted-foreground">No content body available.</p>' }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedItem.content || '<p class="text-muted-foreground">No content body available.</p>') }}
             />
           </div>
         </div>
