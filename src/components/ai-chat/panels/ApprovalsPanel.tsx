@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import DOMPurify from 'dompurify';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -97,7 +98,7 @@ const ApprovalsPanelInner: React.FC<{ isOpen: boolean; onClose: () => void }> = 
           <div className="border border-border/10 rounded-lg p-4 bg-muted/20 max-h-[240px] overflow-y-auto">
             <div 
               className="prose prose-sm dark:prose-invert max-w-none text-sm"
-              dangerouslySetInnerHTML={{ __html: selectedItem.content?.slice(0, 2000) || '<p class="text-muted-foreground">No content.</p>' }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedItem.content?.slice(0, 2000) || '<p class="text-muted-foreground">No content.</p>') }}
             />
           </div>
 
