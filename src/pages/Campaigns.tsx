@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Plus, AlertTriangle, Settings } from 'lucide-react';
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Inner component that uses the context
