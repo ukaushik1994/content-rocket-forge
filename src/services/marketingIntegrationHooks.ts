@@ -279,11 +279,12 @@ export class MarketingIntegrationHooks {
       ]]
     };
 
-    await fetch(integration.webhook, {
+    const response = await fetch(integration.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(sheetsData)
     });
+    if (!response.ok) throw new Error(`Google Sheets webhook failed: ${response.status} ${response.statusText}`);
   }
 
   /**
