@@ -3249,9 +3249,42 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       }
     };
 
-    return new Response(JSON.stringify(responseData), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return { data: responseData, status: 200 };
+
+    }; // end doProcessing
+
+    // =========================================================================
+    // RESPONSE DISPATCH — SSE stream vs JSON
+    // =========================================================================
+    if (streamMode) {
+      const enc = new TextEncoder();
+      const readable = new ReadableStream({
+        async start(controller) {
+          const emit = (evt: string, d: any) => {
+            try { controller.enqueue(enc.encode(`event: ${evt}\ndata: ${JSON.stringify(d)}\n\n`)); } catch {}
+          };
+          try {
+            const result = await doProcessing((stage, msg) => emit('progress', { stage, message: msg }));
+            emit(result.status >= 400 ? 'error' : 'done', result.data);
+          } catch (error) {
+            emit('error', { 
+              error: 'Internal server error',
+              message: error instanceof Error ? error.message : 'Unknown error'
+            });
+          }
+          controller.close();
+        }
+      });
+      return new Response(readable, { 
+        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } 
+      });
+    } else {
+      const result = await doProcessing(() => {});
+      return new Response(JSON.stringify(result.data), {
+        status: result.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
   } catch (error) {
     console.error("❌ Error in enhanced AI chat:", error);
