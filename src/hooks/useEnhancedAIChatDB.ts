@@ -434,6 +434,8 @@ export const useEnhancedAIChatDB = () => {
         }
       });
 
+      clearInterval(progressInterval);
+
       if (error) throw error;
 
       const responseContent = response?.message || response?.content || 'No response received';
