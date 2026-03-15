@@ -384,16 +384,9 @@ export const useEnhancedAIChatDB = () => {
     setMessages(prev => [...prev, userMessage]);
     await saveMessage(userMessage, conversationId);
 
-    // Create placeholder assistant message for streaming
+    // Track assistant message ID for later insertion (no placeholder in messages array)
     const assistantId = `assistant-${Date.now()}`;
-    const placeholderMessage: EnhancedChatMessage = {
-      id: assistantId,
-      role: 'assistant',
-      content: 'Analyzing your request...',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, placeholderMessage]);
+    setProgressText('');
 
     // Auto-name conversation early (before AI call) so it works even if backend fails
     if (messages.length === 0 && conversationId) {
