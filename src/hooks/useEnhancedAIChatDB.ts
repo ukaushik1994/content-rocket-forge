@@ -24,6 +24,7 @@ export const useEnhancedAIChatDB = () => {
   const [messages, setMessages] = useState<EnhancedChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [progressText, setProgressText] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingConfirmation, setPendingConfirmation] = useState<{
     toolName: string;
