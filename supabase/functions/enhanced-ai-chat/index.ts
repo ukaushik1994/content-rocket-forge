@@ -2119,6 +2119,14 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       throw new Error(`Context too large (${totalTokens} tokens). Maximum input: ${maxInputTokens.toLocaleString()} tokens. Please reduce context or use more specific queries.`);
     }
 
+    // =========================================================================
+    // MAIN PROCESSING — wrapped in doProcessing() for SSE streaming support
+    // =========================================================================
+    const doProcessing = async (
+      emitProgress: (stage: string, message: string) => void
+    ): Promise<{ data: any; status: number }> => {
+
+      emitProgress('provider', 'Connecting to AI service...');
 
     // Initialize tool cache for this request
     const toolCache = new Map<string, { data: any; timestamp: number }>();
