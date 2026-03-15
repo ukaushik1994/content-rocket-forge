@@ -439,6 +439,7 @@ class ApiKeyService {
               status: 'active',
               priority: DEFAULT_PRIORITIES[service] ?? 99,
               preferred_model: DEFAULT_MODELS[service],
+              api_key: '', // Intentionally empty — edge functions decrypt from api_keys table
               capabilities: ['chat', 'completion'],
               available_models: [DEFAULT_MODELS[service]]
             });
