@@ -112,6 +112,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
+        <TourProvider>
         <SettingsProvider>
           <GlobalSettingsBridge />
           <KeywordMigrationRunner />

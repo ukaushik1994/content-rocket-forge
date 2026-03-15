@@ -8,10 +8,8 @@ import { TourProvider } from '@/contexts/TourContext';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <TourProvider>
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
-    </TourProvider>
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
   </React.StrictMode>,
 );
