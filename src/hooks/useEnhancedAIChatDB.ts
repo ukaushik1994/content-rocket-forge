@@ -545,7 +545,7 @@ export const useEnhancedAIChatDB = () => {
         );
       }
     } catch (error) {
-      clearInterval(progressInterval);
+      // progressInterval removed — SSE streaming handles progress
       console.error('Error sending enhanced message:', error);
       
       // Replace placeholder with inline error message containing retry + settings actions
