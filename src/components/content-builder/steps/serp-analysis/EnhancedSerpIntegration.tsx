@@ -100,8 +100,10 @@ export const EnhancedSerpIntegration: React.FC = () => {
       {/* Enhanced Dashboard or No Data */}
       {mainKeyword && !serpData && !showManualInput && (
         <NoDataAvailable 
-          keyword={mainKeyword}
-          onManualInput={handleManualInput}
+          title={`No SERP data for "${mainKeyword}"`}
+          description="Run a SERP analysis or enter data manually to get started."
+          actionLabel="Enter Manually"
+          onAction={handleManualInput}
         />
       )}
       
