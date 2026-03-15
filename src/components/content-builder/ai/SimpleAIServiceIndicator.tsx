@@ -16,7 +16,7 @@ export function SimpleAIServiceIndicator({
   className = ''
 }: SimpleAIServiceIndicatorProps) {
   const { isEnabled, hasProviders, activeProviders, isLoading } = useAIServiceStatus();
-  const navigate = useNavigate();
+  const { openSettings } = useSettings();
   
   const isActive = isEnabled && hasProviders && activeProviders > 0;
   
