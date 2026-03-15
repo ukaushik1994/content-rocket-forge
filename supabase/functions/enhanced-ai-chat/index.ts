@@ -1852,14 +1852,7 @@ serve(async (req) => {
       // Fallback if no tool call (shouldn't happen)
       console.error('🎯❌ No tool call in campaign strategy response');
       console.error('🎯 Response data:', JSON.stringify(data, null, 2));
-      return new Response(JSON.stringify({ 
-        error: 'Failed to generate campaign strategies',
-        details: 'AI did not return a tool call',
-        response: data
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return { data: { error: 'Failed to generate campaign strategies', details: 'AI did not return a tool call', response: data }, status: 500 };
     }
 
     // Analyze the user query for intent and SERP opportunities
