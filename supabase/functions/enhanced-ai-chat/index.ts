@@ -730,7 +730,8 @@ const ContextSchema = z.object({
 const EnhancedAIChatSchema = z.object({
   messages: z.array(MessageSchema).min(1).max(100),
   context: ContextSchema,
-  useCampaignStrategyTool: z.boolean().optional()
+  useCampaignStrategyTool: z.boolean().optional(),
+  stream: z.boolean().optional()
 });
 
 // PHASE 1: Multi-chart detection - detects when user needs multiple perspectives
