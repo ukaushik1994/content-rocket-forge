@@ -509,14 +509,28 @@ export const useEnhancedAIChatDB = () => {
     } catch (error) {
       clearInterval(progressInterval);
       console.error('Error sending enhanced message:', error);
-      // Remove placeholder on total failure
-      setMessages(prev => prev.filter(m => m.id !== assistantId));
       
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive"
-      });
+      // Replace placeholder with inline error message containing retry + settings actions
+      const errorMessage: EnhancedChatMessage = {
+        id: assistantId,
+        role: 'assistant',
+        content: "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.",
+        timestamp: new Date().toISOString(),
+        messageStatus: 'error',
+        actions: [
+          {
+            label: '🔄 Retry',
+            action: 'send_message',
+            data: { message: content }
+          },
+          {
+            label: '⚙️ API Settings',
+            action: 'navigate',
+            data: { url: '/ai-service-hub' }
+          }
+        ]
+      };
+      setMessages(prev => prev.map(m => m.id === assistantId ? errorMessage : m));
     } finally {
       setIsLoading(false);
       setIsTyping(false);
