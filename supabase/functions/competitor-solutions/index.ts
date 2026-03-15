@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders } from '../shared/cors.ts';
 import { extractPageContent } from '../shared/content-extractor.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
