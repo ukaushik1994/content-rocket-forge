@@ -419,6 +419,25 @@ export const useEnhancedAIChatDB = () => {
         conversationHistory = [first, ...recent].map(m => ({ role: m.role, content: m.content }));
       }
 
+      // Enrich context with conversation memory (non-blocking, graceful fallback)
+      try {
+        const prefs = await getUserPreferences();
+        if (prefs.length > 0) {
+          const highConfPrefs = prefs.filter(p => p.confidenceScore >= 0.4).slice(0, 8);
+          if (highConfPrefs.length > 0) {
+            const prefSummary = highConfPrefs
+              .map(p => `${p.preferenceType}: ${typeof p.preferenceValue === 'string' ? p.preferenceValue : JSON.stringify(p.preferenceValue)}`)
+              .join('; ');
+            conversationHistory.unshift({
+              role: 'system',
+              content: `[User memory context] Known preferences: ${prefSummary}`
+            });
+          }
+        }
+      } catch (memoryError) {
+        console.warn('⚠️ Conversation memory enrichment failed (non-critical):', memoryError);
+      }
+
       // SSE streaming: use fetch() for real-time progress events
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
