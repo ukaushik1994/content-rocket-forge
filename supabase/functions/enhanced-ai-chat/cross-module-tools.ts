@@ -305,6 +305,12 @@ export async function executeCrossModuleTool(
           return { success: false, message: 'No AI provider configured.' };
         }
 
+        // Decrypt API key from secure vault
+        const decryptedApiKey = await getApiKey(provider.provider, userId);
+        if (!decryptedApiKey) {
+          return { success: false, message: 'API key not found. Please re-enter your API key in Settings.' };
+        }
+
         // Truncate content for the prompt
         const contentPreview = (content.content || '').replace(/<[^>]+>/g, '').substring(0, 2000);
 
@@ -315,8 +321,10 @@ export async function executeCrossModuleTool(
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            service: provider.provider,
+            endpoint: 'chat',
+            apiKey: decryptedApiKey,
             params: {
-              provider: provider.provider,
               model: provider.preferred_model || 'gpt-4',
               messages: [
                 {
@@ -328,8 +336,7 @@ export async function executeCrossModuleTool(
                   content: `Repurpose this article for ${toolArgs.platforms.join(', ')}. Title: "${content.title}". Content: ${contentPreview}`
                 }
               ],
-              maxTokens: 1500,
-              userId
+              maxTokens: 1500
             }
           })
         });
