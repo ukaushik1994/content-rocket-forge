@@ -8,10 +8,13 @@ import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { ProposalCard } from '@/components/research/content-strategy/ProposalCard';
 import { ProposalStatusFilter } from '@/components/research/content-strategy/ProposalStatusFilter';
 import { ViewToggle, type ViewMode } from '@/components/research/content-strategy/ViewToggle';
+import { AIProposalsHero } from '@/components/proposals/AIProposalsHero';
 import { type ProposalStatus } from '@/services/proposalStatusService';
 import { Sparkles, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageContainer } from '@/components/ui/PageContainer';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 
 const AIProposals = () => {
   const { user } = useAuth();
