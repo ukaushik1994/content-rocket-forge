@@ -394,6 +394,22 @@ export const useEnhancedAIChatDB = () => {
 
     setMessages(prev => [...prev, placeholderMessage]);
 
+    // Smart rotating progress messages for better UX during AI processing
+    const progressSteps = [
+      'Analyzing your request...',
+      'Gathering your data context...',
+      'Processing with AI...',
+      'Executing tool actions...',
+      'Generating your response...',
+    ];
+    let stepIndex = 0;
+    const progressInterval = setInterval(() => {
+      stepIndex = Math.min(stepIndex + 1, progressSteps.length - 1);
+      setMessages(prev =>
+        prev.map(m => m.id === assistantId ? { ...m, content: progressSteps[stepIndex] } : m)
+      );
+    }, 3000);
+
     try {
       // AWARENESS-FIRST: Use enhanced-ai-chat (tool-enabled) as default path
       // This ensures the AI always has access to tools for fetching solutions, competitors, company info etc.
