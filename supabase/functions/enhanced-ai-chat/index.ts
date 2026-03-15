@@ -1,4 +1,4 @@
-// Force redeploy: 2025-01-15T14:00:00Z - Removed xhr polyfill, using npm: imports
+// Force redeploy: 2026-03-15T16:30:00Z - Fixed requiresVisualData + SSE streaming
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
