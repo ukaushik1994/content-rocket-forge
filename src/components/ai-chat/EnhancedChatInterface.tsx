@@ -72,6 +72,10 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   } = useSharedAIChatDB();
   const { user } = useAuth();
 
+  // Analyst engine: track if analyst is active and provide cumulative state
+  const [isAnalystPanelActive, setIsAnalystPanelActive] = useState(false);
+  const analystState = useAnalystEngine(messages, user?.id || null, isAnalystPanelActive);
+
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
   const [messageSearchResults, setMessageSearchResults] = useState<string[]>([]);
