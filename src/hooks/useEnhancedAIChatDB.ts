@@ -589,8 +589,8 @@ export const useEnhancedAIChatDB = () => {
             id: 'settings-' + assistantId,
             type: 'button' as const,
             label: '⚙️ API Settings',
-            action: 'navigate:/ai-settings',
-            data: {}
+            action: 'open_settings',
+            data: { tab: 'api' }
           }
         ]
       };

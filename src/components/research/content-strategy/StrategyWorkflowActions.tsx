@@ -65,7 +65,7 @@ export const StrategyWorkflowActions: React.FC<StrategyWorkflowActionsProps> = (
   };
 
   const handleScheduleContent = () => {
-    navigate('/research/content-strategy?tab=calendar');
+    navigate('/calendar');
   };
 
   const handleAnalyzeKeywords = () => {

@@ -48,7 +48,7 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
           break;
 
         case 'navigate:/settings':
-          navigate('/ai-settings');
+          window.dispatchEvent(new CustomEvent('openSettings', { detail: 'api' }));
           result = { navigated: true, route: '/settings' };
           break;
 

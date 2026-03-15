@@ -72,7 +72,7 @@ const getStepConfigs = (): StepConfig[] => [
     benefits: ['Live SERP analysis', 'AI proposals', 'Editorial calendar', 'Topic clusters'],
     illustration: <ResearchIllustration />,
     icon: <Search className="w-7 h-7" />,
-    route: '/research/content-strategy',
+    route: '/ai-chat',
     actionLabel: 'Explore Research',
   },
   {
