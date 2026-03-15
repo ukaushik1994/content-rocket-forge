@@ -5,7 +5,7 @@
 
 export interface SerpQueryPattern {
   pattern: RegExp;
-  type: 'trend' | 'competitive' | 'content_gap' | 'seo' | 'market_research' | 'keyword_analysis';
+  type: 'trend' | 'competitive' | 'content_gap' | 'seo' | 'market_research' | 'keyword_analysis' | 'web_search';
   extractKeywords: (match: RegExpMatchArray) => string[];
   priority: number;
 }
