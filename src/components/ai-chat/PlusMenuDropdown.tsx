@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Paperclip, PenLine, BookOpen, BarChart3, X } from 'lucide-react';
+import { Plus, Paperclip, PenLine, BookOpen, BarChart3, Lightbulb, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PlusMenuDropdownProps {
