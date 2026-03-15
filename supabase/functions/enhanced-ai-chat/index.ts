@@ -2005,7 +2005,7 @@ serve(async (req) => {
         systemPrompt += '\n\n' + MULTI_CHART_MODULE; // Use multi-chart module instead of regular CHART_MODULE
         systemPrompt += '\n\n' + TABLE_MODULE;
         systemPrompt += '\n\n' + ACTION_MODULE;
-      } else if (queryIntent.requiresVisualData || queryIntent.scope === 'detailed' || queryIntent.scope === 'full') {
+      } else if ((queryIntent && queryIntent.requiresVisualData === true) || queryIntent.scope === 'detailed' || queryIntent.scope === 'full') {
         console.log('📊 Using standard chart analysis prompt');
         systemPrompt += '\n\n' + CHART_MODULE;
         systemPrompt += '\n\n' + TABLE_MODULE;
