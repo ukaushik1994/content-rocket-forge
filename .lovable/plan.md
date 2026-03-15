@@ -1,153 +1,117 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Remaining Fixes — Phase-by-Phase Plan
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
-
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+After cross-referencing the uploaded document against the current codebase, here is the status and execution plan.
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## Already Fixed (skip these)
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
-
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
-
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+| Item | Evidence |
+|------|----------|
+| Fix 7 (Context limit) | Lines 419-425: first message + last 9 already implemented |
+| Loading placeholder | Line 391: already shows "Analyzing your request..." with rotating steps |
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## Still Open — 14 items across 5 phases
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+### Phase 1: Unblock AI Chat (P0 — critical)
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+**P0-0: Provider key lookup uses plaintext column — chat fails**
+- `enhanced-ai-chat/index.ts` line 1700 selects `api_key` from `ai_service_providers` and line 1728 filters on it being non-empty
+- Fix: Stop selecting `api_key`, use `shared/apiKeyService.ts` `getApiKey()` to decrypt from `api_keys` table instead
+- This also fixes P1-1 (plaintext keys)
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+**P0-2: SERP tool uses wrong service name `'serpapi'` instead of `'serp'`**
+- `keyword-action-tools.ts` line 164: `getApiKey('serpapi', userId)` — but keys stored as `service = 'serp'`
+- Fix: Change to `getApiKey('serp', userId)`. Also add normalization in `shared/apiKeyService.ts` as safety net.
+
+**P1-6: No error UI when backend fails**
+- Lines 491-495: silently removes placeholder, shows easily-missed toast
+- Fix: Replace placeholder with error message containing retry + settings buttons instead of removing it
+
+**P1-7: Auto-naming fails on backend error**
+- Lines 475-490: title update is after AI response, inside try block
+- Fix: Move title update to right after user message is added, before AI call
 
 ---
 
-# AI Chat Awareness Gaps — Implementation Tracker
+### Phase 2: Security Fixes (P1)
 
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
+**P1-1: Plaintext keys written to ai_service_providers**
+- `src/services/apiKeyService.ts` lines 418-431 (update path) and 444-468 (insert path) decrypt and write plaintext keys
+- Fix: Remove `api_key` from both update and insert objects — edge functions now use encrypted `api_keys` table directly (after Phase 1 P0-0 fix)
 
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
+**P1-2: Email builder BlockRenderer unsanitized HTML**
+- `BlockRenderer.tsx` line 182 and line 252: `dangerouslySetInnerHTML` without DOMPurify
+- Fix: Import DOMPurify, wrap both usages
 
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
+**P1-3: HubSpot API key sent from browser**
+- `marketingIntegrationHooks.ts` line 252: direct `fetch` to `hubapi.com` with key in header
+- Fix: Add a prominent console warning and toast. Full fix (edge function proxy) is out of scope for now.
 
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+**P1-4: .gitignore missing .env files**
+- Current `.gitignore` has no `.env` entries
+- Fix: Add `.env`, `.env.*`, `.env.local`, `.env.production`
+
+**P1-5: Social poster activity log shows "social_failed"**
+- `engage-social-poster/index.ts` line 76: uses `social_failed` when `allPosted` is false
+- Fix: Change to `social_pending` with honest messaging
+
+---
+
+### Phase 3: UX & Code Quality (P2)
+
+**P2-1 / P3-2: Dead LM Studio handlers (~100 lines)**
+- `ai-proxy/index.ts` lines 825-928: `handleLMStudio`, `testLMStudio`, `chatLMStudio` — unreachable because line 87 returns error before reaching them
+- Fix: Delete all three functions
+
+**P2-3: Glossary references still in code**
+- `NavItems.tsx` line 157: `/glossary-builder` in route array
+- `ContentDetailModal.tsx` line 277: navigates to `/glossary-builder`
+- `RepositoryDetailView.tsx` line 90: same
+- `EmptyState.tsx` line 53: navigates to `/glossary-builder`
+- Fix: Remove from NavItems, change navigations to `/ai-chat`
+
+**P2-4: Content-repurposing components**
+- 27 files still import from `src/components/content-repurposing/` — these are actively used by ContentRepurposingModal, RepurposePanel, ContentBuilder, etc.
+- Status: **Keep** — these are live components, only the page files were dead
+
+---
+
+### Phase 4: Build & Cleanup (P3)
+
+**P3-1: Console logs in production**
+- 1,143 console calls ship in production
+- Fix: Add `esbuild: { drop: mode === 'production' ? ['console', 'debugger'] : [] }` to `vite.config.ts`
+
+**P3-3: Hardcoded Supabase URL**
+- Low priority, Lovable-generated pattern. Skip — document only.
+
+**P3-4: `transition: all` performance**
+- 330 elements affected. Plugin-level issue. Skip for now — note for future optimization.
+
+---
+
+### Phase 5: Streaming (P0-1) — Optional / Complex
+
+**P0-1: AI Chat has no real streaming**
+- Currently blocks 5-30s with fake rotating text
+- Implement Option B: Convert `enhanced-ai-chat` to return `ReadableStream` with progress events during tool execution, then stream final AI response tokens
+- Frontend: Replace `supabase.functions.invoke()` with direct `fetch()` + stream reader
+- This is the biggest UX improvement but also the highest-effort item (2-4 hours)
+
+---
+
+## Summary
+
+| Phase | Items | Effort |
+|-------|-------|--------|
+| 1: Unblock AI Chat | P0-0, P0-2, P1-6, P1-7 | 45 min |
+| 2: Security | P1-1, P1-2, P1-3, P1-4, P1-5 | 30 min |
+| 3: UX & Quality | P2-1, P2-3, P2-4 (keep) | 15 min |
+| 4: Build Cleanup | P3-1 | 5 min |
+| 5: Streaming | P0-1 | 2-4 hrs |
+
