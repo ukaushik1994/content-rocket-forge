@@ -63,9 +63,9 @@ export const StrategyTabs = React.memo(() => {
       const stored = localStorage.getItem('cs.activeTab') || '';
       const legacyTabs = new Set(['calendar', 'pipeline', 'content-gaps', 'performance', 'progress']);
       const redirectMap: Record<string, string> = {
-        'calendar': '/research/calendar',
-        'pipeline': '/research/pipeline',
-        'content-gaps': '/research/content-gaps',
+        'calendar': '/calendar',
+        'pipeline': '/ai-chat',
+        'content-gaps': '/ai-chat',
         'performance': '#dashboard',
         'progress': '#dashboard'
       };

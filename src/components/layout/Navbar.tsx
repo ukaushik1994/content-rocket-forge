@@ -52,7 +52,7 @@ const Navbar = () => {
             variant="ghost" 
             size="icon" 
             className="rounded-full border border-border/10 hover:border-border/30 text-muted-foreground hover:text-foreground"
-            onClick={() => navigate('/research/calendar')}
+            onClick={() => navigate('/calendar')}
             title="Content Calendar"
           >
             <CalendarDays className="h-4 w-4" />

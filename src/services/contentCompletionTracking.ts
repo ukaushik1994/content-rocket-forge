@@ -262,7 +262,7 @@ class ContentCompletionTrackingService {
         action: {
           label: "View Calendar",
           onClick: () => {
-            window.location.href = '/research/calendar';
+            window.location.href = '/calendar';
           }
         }
       });

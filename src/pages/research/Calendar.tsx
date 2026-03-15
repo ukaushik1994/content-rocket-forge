@@ -32,8 +32,8 @@ const CalendarInner: React.FC = () => {
 
 const CalendarPage: React.FC = () => {
   const canonicalUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/research/calendar`
-    : '/research/calendar';
+    ? `${window.location.origin}/calendar`
+    : '/calendar';
 
   return (
     <ContentStrategyProvider>

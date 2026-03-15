@@ -628,11 +628,11 @@ export const useEnhancedAIChatDB = () => {
             break;
           case 'keyword-research':
             console.log('🔍 Opening keyword research');
-            navigate('/research/content-strategy');
+            navigate('/keywords');
             break;
           case 'content-strategy':
             console.log('📊 Opening content strategy');
-            navigate('/research/content-strategy');
+            navigate('/ai-chat');
             break;
           case 'navigate-content-builder':
             navigate('/ai-chat');
@@ -641,10 +641,10 @@ export const useEnhancedAIChatDB = () => {
             navigate('/analytics');
             break;
           case 'navigate-keyword-research':
-            navigate('/research/content-strategy');
+            navigate('/keywords');
             break;
           case 'navigate-strategy':
-            navigate('/research/content-strategy');
+            navigate('/ai-chat');
             break;
           case 'confirm_action':
             const confirmedMsg = `CONFIRMED: Execute ${action.data?.action || action.label || 'action'} with params: ${JSON.stringify(action.data?.args || action.data || {})}`;
