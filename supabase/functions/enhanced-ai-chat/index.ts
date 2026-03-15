@@ -2270,6 +2270,10 @@ serve(async (req) => {
         systemPrompt += '\n\n' + SERP_MODULE;
         systemPrompt += `\n\n### 🔍 SERP DATA (USE THIS REAL DATA):\n${serpContext}`;
       }
+      // Add web search results if present
+      if (webSearchContext) {
+        systemPrompt += webSearchContext;
+      }
     } else {
       // NORMAL: Full prompt with all modules
       console.log('✅ Normal token usage (<25k) - using full dynamic prompt');
