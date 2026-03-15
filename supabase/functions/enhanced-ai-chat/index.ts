@@ -1697,7 +1697,7 @@ serve(async (req) => {
     // 2. Get the single active AI service provider (Single Active Provider Mode)
     const { data: allProviders, error: providerError } = await supabase
       .from('ai_service_providers')
-      .select('provider, api_key, preferred_model, status, priority')
+      .select('provider, preferred_model, status, priority')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .limit(1); // Only one provider should be active at a time
@@ -1712,24 +1712,16 @@ serve(async (req) => {
       });
     }
 
-    // 3. Filter valid providers with API keys and models
+    // 3. Filter valid providers with models configured
     const validProviders = (allProviders || []).filter(p => {
-      // Must have a model configured
       if (!p.preferred_model || p.preferred_model.trim() === '') {
         return false;
       }
-      
-      // OpenRouter uses user_llm_keys table
-      if (p.provider === 'openrouter' && openrouterKey) {
-        return true;
-      }
-      
-      // Other providers must have api_key in ai_service_providers
-      return p.api_key && p.api_key.trim() !== '';
+      return true;
     });
 
     if (validProviders.length === 0) {
-      console.error("❌ No active AI provider with valid API key found");
+      console.error("❌ No active AI provider found");
       const hasInactive = (allProviders || []).length > 0;
       return new Response(JSON.stringify({ 
         error: hasInactive 
@@ -1742,11 +1734,24 @@ serve(async (req) => {
     }
 
     // Get the single active provider (only one should be active at a time)
-    const provider = validProviders[0];
+    const provider = validProviders[0] as any;
     
-    // Use openrouter key from user_llm_keys if available
+    // 4. Resolve API key from encrypted api_keys table (never use plaintext ai_service_providers.api_key)
+    const { getApiKey } = await import('./shared/../shared/apiKeyService.ts');
     if (provider.provider === 'openrouter' && openrouterKey) {
       provider.api_key = openrouterKey;
+    } else {
+      const decryptedKey = await getApiKey(provider.provider, user.id);
+      if (!decryptedKey) {
+        console.error(`❌ No decrypted API key found for provider: ${provider.provider}`);
+        return new Response(JSON.stringify({ 
+          error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.`
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      provider.api_key = decryptedKey;
     }
 
     console.log(`🔑 Using active provider: ${provider.provider} (model: ${provider.preferred_model})`)

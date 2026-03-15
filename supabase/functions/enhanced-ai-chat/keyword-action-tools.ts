@@ -161,7 +161,7 @@ export async function executeKeywordActionTool(
 
         // Check if user has a SERP API key configured
         const { getApiKey } = await import('../shared/apiKeyService.ts');
-        const serpKey = await getApiKey('serpapi', userId);
+        const serpKey = await getApiKey('serp', userId);
         if (!serpKey) {
           return {
             success: false,

@@ -394,6 +394,24 @@ export const useEnhancedAIChatDB = () => {
 
     setMessages(prev => [...prev, placeholderMessage]);
 
+    // Auto-name conversation early (before AI call) so it works even if backend fails
+    if (messages.length === 0 && conversationId) {
+      const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
+      supabase
+        .from('ai_conversations')
+        .update({ title })
+        .eq('id', conversationId)
+        .then(() => {
+          setConversations(prev => 
+            prev.map(conv => 
+              conv.id === conversationId 
+                ? { ...conv, title }
+                : conv
+            )
+          );
+        });
+    }
+
     // Smart rotating progress messages for better UX during AI processing
     const progressSteps = [
       'Analyzing your request...',
