@@ -1,4 +1,4 @@
-// Deploy v8: 2026-03-15T19:45:00Z - Hard eliminate bare requiresVisualData refs + deploy marker in error payloads
+// Deploy v9: 2026-03-15T20:30:00Z - Fix emitProgress scope + normalize all returns to Response
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
@@ -17,7 +17,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v8-2026-03-15T19:45:00Z';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v9-2026-03-15T20:30:00Z';
 
 // Token estimation (inlined from shared to avoid cross-folder import issues)
 function estimateTokens(text: string): number {
@@ -1934,7 +1934,9 @@ serve(async (req) => {
 
     if (providerError) {
       console.error("❌ Error fetching providers:", providerError);
-      return { data: { error: "Failed to fetch AI providers" }, status: 500 };
+      return new Response(JSON.stringify({ error: "Failed to fetch AI providers", deployVersion: DEPLOY_VERSION }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     // 3. Filter valid providers with models configured
@@ -1948,11 +1950,14 @@ serve(async (req) => {
     if (validProviders.length === 0) {
       console.error("❌ No active AI provider found");
       const hasInactive = (allProviders || []).length > 0;
-      return { data: { 
+      return new Response(JSON.stringify({ 
         error: hasInactive 
           ? "No active AI provider found. Please toggle ON a provider in Settings → AI Service Hub." 
-          : "No AI provider configured. Please add and test an API key in Settings → AI Service Hub."
-      }, status: 400 };
+          : "No AI provider configured. Please add and test an API key in Settings → AI Service Hub.",
+        deployVersion: DEPLOY_VERSION
+      }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     // Get the single active provider (only one should be active at a time)
@@ -1966,7 +1971,9 @@ serve(async (req) => {
       const decryptedKey = await getApiKey(provider.provider, user.id);
       if (!decryptedKey) {
         console.error(`❌ No decrypted API key found for provider: ${provider.provider}`);
-        return { data: { error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.` }, status: 400 };
+        return new Response(JSON.stringify({ error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.`, deployVersion: DEPLOY_VERSION }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
       }
       provider.api_key = decryptedKey;
     }
@@ -2075,16 +2082,20 @@ serve(async (req) => {
           console.error('🎯 Failed to parse tool arguments for logging:', e);
         }
         
-        return { data: { choices: [{ message: { tool_calls: toolCalls } }] }, status: 200 };
+        return new Response(JSON.stringify({ choices: [{ message: { tool_calls: toolCalls } }], deployVersion: DEPLOY_VERSION }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
       }
       
       // Fallback if no tool call (shouldn't happen)
       console.error('🎯❌ No tool call in campaign strategy response');
       console.error('🎯 Response data:', JSON.stringify(data, null, 2));
-      return { data: { error: 'Failed to generate campaign strategies', details: 'AI did not return a tool call', response: data }, status: 500 };
+      return new Response(JSON.stringify({ error: 'Failed to generate campaign strategies', details: 'AI did not return a tool call', deployVersion: DEPLOY_VERSION }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    emitProgress('serp', 'Researching market intelligence...');
+    console.log('📡 Researching market intelligence...');
 
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
@@ -2137,7 +2148,7 @@ serve(async (req) => {
 
     // Build enhanced system prompt with context
     // Fetch real data from database using tiered context (Phase 3 enhanced)
-    emitProgress('context', 'Loading your workspace data...');
+    console.log('📦 Loading workspace data...');
     const contextResult = await fetchRealDataContext(user.id, queryIntent, userQuery);
     const realDataContext = contextResult.contextString || contextResult;
     const counts = contextResult.counts || {};
