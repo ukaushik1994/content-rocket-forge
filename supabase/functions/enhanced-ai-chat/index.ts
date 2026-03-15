@@ -730,7 +730,8 @@ const ContextSchema = z.object({
 const EnhancedAIChatSchema = z.object({
   messages: z.array(MessageSchema).min(1).max(100),
   context: ContextSchema,
-  useCampaignStrategyTool: z.boolean().optional()
+  useCampaignStrategyTool: z.boolean().optional(),
+  stream: z.boolean().optional()
 });
 
 // PHASE 1: Multi-chart detection - detects when user needs multiple perspectives
@@ -1640,7 +1641,7 @@ serve(async (req) => {
       });
     }
 
-    const { messages, context, useCampaignStrategyTool } = validationResult.data;
+    const { messages, context, useCampaignStrategyTool, stream: streamMode } = validationResult.data;
     const use_case = context?.use_case; // Extract use_case from context
     console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
 
@@ -1704,12 +1705,7 @@ serve(async (req) => {
 
     if (providerError) {
       console.error("❌ Error fetching providers:", providerError);
-      return new Response(JSON.stringify({ 
-        error: "Failed to fetch AI providers" 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return { data: { error: "Failed to fetch AI providers" }, status: 500 };
     }
 
     // 3. Filter valid providers with models configured
@@ -1723,14 +1719,11 @@ serve(async (req) => {
     if (validProviders.length === 0) {
       console.error("❌ No active AI provider found");
       const hasInactive = (allProviders || []).length > 0;
-      return new Response(JSON.stringify({ 
+      return { data: { 
         error: hasInactive 
           ? "No active AI provider found. Please toggle ON a provider in Settings → AI Service Hub." 
           : "No AI provider configured. Please add and test an API key in Settings → AI Service Hub."
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }, status: 400 };
     }
 
     // Get the single active provider (only one should be active at a time)
@@ -1744,12 +1737,7 @@ serve(async (req) => {
       const decryptedKey = await getApiKey(provider.provider, user.id);
       if (!decryptedKey) {
         console.error(`❌ No decrypted API key found for provider: ${provider.provider}`);
-        return new Response(JSON.stringify({ 
-          error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.`
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return { data: { error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.` }, status: 400 };
       }
       provider.api_key = decryptedKey;
     }
@@ -1858,29 +1846,16 @@ serve(async (req) => {
           console.error('🎯 Failed to parse tool arguments for logging:', e);
         }
         
-        return new Response(JSON.stringify({
-          choices: [{
-            message: {
-              tool_calls: toolCalls
-            }
-          }]
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+        return { data: { choices: [{ message: { tool_calls: toolCalls } }] }, status: 200 };
       }
       
       // Fallback if no tool call (shouldn't happen)
       console.error('🎯❌ No tool call in campaign strategy response');
       console.error('🎯 Response data:', JSON.stringify(data, null, 2));
-      return new Response(JSON.stringify({ 
-        error: 'Failed to generate campaign strategies',
-        details: 'AI did not return a tool call',
-        response: data
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return { data: { error: 'Failed to generate campaign strategies', details: 'AI did not return a tool call', response: data }, status: 500 };
     }
+
+    emitProgress('serp', 'Researching market intelligence...');
 
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
@@ -1933,6 +1908,7 @@ serve(async (req) => {
 
     // Build enhanced system prompt with context
     // Fetch real data from database using tiered context (Phase 3 enhanced)
+    emitProgress('context', 'Loading your workspace data...');
     const contextResult = await fetchRealDataContext(user.id, queryIntent, userQuery);
     const realDataContext = contextResult.contextString || contextResult;
     const counts = contextResult.counts || {};
@@ -2118,6 +2094,14 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       throw new Error(`Context too large (${totalTokens} tokens). Maximum input: ${maxInputTokens.toLocaleString()} tokens. Please reduce context or use more specific queries.`);
     }
 
+    // =========================================================================
+    // MAIN PROCESSING — wrapped in doProcessing() for SSE streaming support
+    // =========================================================================
+    const doProcessing = async (
+      emitProgress: (stage: string, message: string) => void
+    ): Promise<{ data: any; status: number }> => {
+
+      emitProgress('provider', 'Connecting to AI service...');
 
     // Initialize tool cache for this request
     const toolCache = new Map<string, { data: any; timestamp: number }>();
@@ -2139,6 +2123,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     let aiProxyError = null;
     const maxRetries = 3;
     
+    emitProgress('ai_call', 'Processing with AI...');
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       console.log(`🔄 AI call attempt ${attempt}/${maxRetries}`);
       
@@ -2196,14 +2181,11 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
 
     if (aiProxyError || !aiProxyResult?.success) {
       console.error("AI request failed after all retries:", aiProxyError);
-      return new Response(JSON.stringify({ 
+      return { data: { 
         error: "Failed to get AI response",
         details: typeof aiProxyError === 'string' ? aiProxyError : (aiProxyError?.message || aiProxyResult?.error),
         message: "AI service temporarily unavailable. Please try again in a moment."
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }, status: 500 };
     }
 
     const data = aiProxyResult.data;
@@ -2223,6 +2205,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     let requestPromotedVisualData: any = null;
 
     if (toolCalls && toolCalls.length > 0) {
+      emitProgress('tools', 'Executing actions...');
       console.log(`🔧 AI requested ${toolCalls.length} tool calls`);
       
       const toolResults = [];
@@ -2327,6 +2310,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       }
       
       // Call AI again with tool results
+      emitProgress('final', 'Generating your response...');
       console.log(`🔧 Calling AI again with ${toolResults.length} tool results`);
       
       let secondCallResult = null;
@@ -2560,14 +2544,11 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     if (!aiMessage) {
       console.error("No response from AI", data);
       console.log("Full AI response data:", JSON.stringify(data, null, 2));
-      return new Response(JSON.stringify({ 
+      return { data: { 
         error: "No response content received",
         message: "The AI service returned an empty response. Please try rephrasing your question or try again in a moment.",
         details: "Empty AI response"
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }, status: 500 };
     }
 
     console.log(`📝 AI Response received (${aiMessage.length} characters)`);
@@ -2576,18 +2557,15 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     // ✅ CRITICAL: Bypass JSON parser for strategy generation
     if (use_case === 'strategy') {
       console.log('📋 Strategy use case detected - returning raw JSON response');
-      return new Response(
-        JSON.stringify({
-          response: aiMessage, // Raw JSON array for strategies
-          content: aiMessage,  // Fallback
-          metadata: {
-            processed_at: new Date().toISOString(),
-            use_case: 'strategy',
-            bypass_json_parser: true
-          }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return { data: {
+        response: aiMessage,
+        content: aiMessage,
+        metadata: {
+          processed_at: new Date().toISOString(),
+          use_case: 'strategy',
+          bypass_json_parser: true
+        }
+      }, status: 200 };
     }
 
     // Phase 4: Response size monitoring for large context models
@@ -3236,14 +3214,11 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     const finalContent = cleanedResponse || aiMessage;
     if (!finalContent || finalContent.trim().length === 0) {
       console.error("❌ Empty clean content after processing");
-      return new Response(JSON.stringify({
+      return { data: {
         error: "No response content received",
         message: "Failed to process AI response properly. Please try again.",
         details: "Empty content after processing"
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }, status: 500 };
     }
 
     // Access allVisualData from scope (includes expanded multi-perspective charts)
@@ -3274,9 +3249,42 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       }
     };
 
-    return new Response(JSON.stringify(responseData), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return { data: responseData, status: 200 };
+
+    }; // end doProcessing
+
+    // =========================================================================
+    // RESPONSE DISPATCH — SSE stream vs JSON
+    // =========================================================================
+    if (streamMode) {
+      const enc = new TextEncoder();
+      const readable = new ReadableStream({
+        async start(controller) {
+          const emit = (evt: string, d: any) => {
+            try { controller.enqueue(enc.encode(`event: ${evt}\ndata: ${JSON.stringify(d)}\n\n`)); } catch {}
+          };
+          try {
+            const result = await doProcessing((stage, msg) => emit('progress', { stage, message: msg }));
+            emit(result.status >= 400 ? 'error' : 'done', result.data);
+          } catch (error) {
+            emit('error', { 
+              error: 'Internal server error',
+              message: error instanceof Error ? error.message : 'Unknown error'
+            });
+          }
+          controller.close();
+        }
+      });
+      return new Response(readable, { 
+        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } 
+      });
+    } else {
+      const result = await doProcessing(() => {});
+      return new Response(JSON.stringify(result.data), {
+        status: result.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
   } catch (error) {
     console.error("❌ Error in enhanced AI chat:", error);
