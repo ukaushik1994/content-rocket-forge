@@ -3,6 +3,8 @@
  * Enhanced utility functions for testing API key functionality with comprehensive error handling
  */
 
+import { supabase } from "@/integrations/supabase/client";
+
 export interface ApiKeyTestResult {
   success: boolean;
   provider: string;
