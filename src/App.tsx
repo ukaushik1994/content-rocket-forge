@@ -15,6 +15,7 @@ import Auth from "./pages/Auth";
 import CheckEmail from "./pages/CheckEmail";
 import AuthCallback from "./pages/AuthCallback";
 import Repository from "./pages/Repository";
+import AIProposals from "./pages/AIProposals";
 import { RepositoryBackfill } from "./pages/RepositoryBackfill";
 // ContentBuilder deprecated - redirects to /ai-chat
 import ContentTypeSelection from "./pages/ContentTypeSelection";
@@ -152,6 +153,7 @@ const App = () => (
                   <Route path="/repository/backfill" element={<ProtectedRoute><AppLayout><RepositoryBackfill /></AppLayout></ProtectedRoute>} />
                   <Route path="/content-type-selection" element={<ProtectedRoute><AppLayout><ContentTypeSelection /></AppLayout></ProtectedRoute>} />
                   <Route path="/content-approval" element={<ProtectedRoute><AppLayout><ContentApproval /></AppLayout></ProtectedRoute>} />
+                  <Route path="/ai-proposals" element={<ProtectedRoute><AppLayout><AIProposals /></AppLayout></ProtectedRoute>} />
                   <Route path="/glossary-builder" element={<Navigate to="/ai-chat" replace />} />
                   <Route path="/offerings" element={<ProtectedRoute><AppLayout><Solutions /></AppLayout></ProtectedRoute>} />
                   <Route path="/keywords" element={<ProtectedRoute><AppLayout><KeywordsPage /></AppLayout></ProtectedRoute>} />
