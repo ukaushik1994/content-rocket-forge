@@ -1908,6 +1908,7 @@ serve(async (req) => {
 
     // Build enhanced system prompt with context
     // Fetch real data from database using tiered context (Phase 3 enhanced)
+    emitProgress('context', 'Loading your workspace data...');
     const contextResult = await fetchRealDataContext(user.id, queryIntent, userQuery);
     const realDataContext = contextResult.contextString || contextResult;
     const counts = contextResult.counts || {};
