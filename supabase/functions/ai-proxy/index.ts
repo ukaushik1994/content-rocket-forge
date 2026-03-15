@@ -780,12 +780,11 @@ async function testMistral(apiKey: string) {
 async function chatMistral(apiKey: string, params: any) {
   console.log('💬 Processing Mistral chat request');
   
-  const requestBody = {
+  const requestBody: any = {
     model: params.model || 'mistral-large-latest',
     messages: params.messages || [],
     temperature: params.temperature || 0.7,
     max_tokens: params.maxTokens || params.max_tokens || 1000,
-    ...params
   };
 
   try {
