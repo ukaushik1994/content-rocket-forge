@@ -515,15 +515,19 @@ export const useEnhancedAIChatDB = () => {
         id: assistantId,
         role: 'assistant',
         content: "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.",
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
         messageStatus: 'error',
         actions: [
           {
+            id: 'retry-' + assistantId,
+            type: 'button' as const,
             label: '🔄 Retry',
             action: 'send_message',
             data: { message: content }
           },
           {
+            id: 'settings-' + assistantId,
+            type: 'button' as const,
             label: '⚙️ API Settings',
             action: 'navigate',
             data: { url: '/ai-service-hub' }
