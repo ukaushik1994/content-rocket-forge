@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Bot, User, RefreshCw, Search, FileText, HelpCircle, Users } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EnhancedChatMessage, ChartConfiguration } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { ModernActionButtons } from './ModernActionButtons';
@@ -416,16 +417,24 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {/* Retry Button for AI messages */}
           {!isUser && onRetry && (
             <div className="mt-3 flex justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onRetry}
-                disabled={isRetrying}
-                className="h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <RefreshCw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
-                {isRetrying ? 'Retrying...' : 'Retry'}
-              </Button>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onRetry}
+                      disabled={isRetrying}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${isRetrying ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isRetrying ? 'Retrying…' : 'Retry'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           )}
 

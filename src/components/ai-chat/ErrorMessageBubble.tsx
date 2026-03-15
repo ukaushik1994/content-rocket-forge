@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, Bot } from 'lucide-react';
-import { RefreshButton } from '@/components/ui/refresh-button';
+import { AlertCircle, Bot, RefreshCw, Settings, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface ErrorMessageBubbleProps {
   message: EnhancedChatMessage;
@@ -15,6 +17,8 @@ export const ErrorMessageBubble: React.FC<ErrorMessageBubbleProps> = ({
   onRetry,
   isRetrying = false
 }) => {
+  const { openSettings } = useSettings();
+
   const bubbleVariants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
     visible: { 
@@ -60,17 +64,42 @@ export const ErrorMessageBubble: React.FC<ErrorMessageBubbleProps> = ({
             </div>
           </div>
 
-          {/* Retry Button */}
-          <div className="mt-3 flex justify-end">
-            <RefreshButton
-              isRefreshing={isRetrying}
-              onClick={onRetry}
-              variant="outline"
-              size="sm"
-              className="border-destructive/30 text-destructive hover:bg-destructive/10"
-            >
-              {isRetrying ? 'Retrying...' : 'Retry'}
-            </RefreshButton>
+          {/* Action Buttons */}
+          <div className="mt-3 flex justify-end gap-1">
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onRetry}
+                    disabled={isRetrying}
+                    className="h-8 w-8 border-destructive/30 text-destructive hover:bg-destructive/10"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isRetrying ? 'Retrying…' : 'Retry'}</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => openSettings('api')}
+                    className="h-8 w-8 border-destructive/30 text-destructive hover:bg-destructive/10"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>API Settings</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           {/* Message Tail */}
