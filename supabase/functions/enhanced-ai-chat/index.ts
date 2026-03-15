@@ -2181,14 +2181,11 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
 
     if (aiProxyError || !aiProxyResult?.success) {
       console.error("AI request failed after all retries:", aiProxyError);
-      return new Response(JSON.stringify({ 
+      return { data: { 
         error: "Failed to get AI response",
         details: typeof aiProxyError === 'string' ? aiProxyError : (aiProxyError?.message || aiProxyResult?.error),
         message: "AI service temporarily unavailable. Please try again in a moment."
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }, status: 500 };
     }
 
     const data = aiProxyResult.data;
