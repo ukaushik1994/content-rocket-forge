@@ -628,9 +628,13 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
     
     // Create conversation if none exists
     let targetConversationId = conversationId;
+    let isFirstMessage = false;
     if (!targetConversationId) {
       targetConversationId = await createConversation("New Chat");
       if (!targetConversationId) return;
+      isFirstMessage = true;
+    } else if (state.messages.length === 0) {
+      isFirstMessage = true;
     }
 
     // Add user message immediately
@@ -656,6 +660,19 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
       ...prev,
       messageStatuses: { ...prev.messageStatuses, [userMessage.id]: 'sent' }
     }));
+
+    // Auto-name conversation from first user message
+    if (isFirstMessage) {
+      const autoTitle = content.slice(0, 40) + (content.length > 40 ? '...' : '');
+      try {
+        await supabase
+          .from('ai_conversations')
+          .update({ title: autoTitle })
+          .eq('id', targetConversationId);
+      } catch (err) {
+        console.warn('Failed to auto-name conversation:', err);
+      }
+    }
 
     if (mode === 'websocket' && websocketRef.current?.readyState === WebSocket.OPEN) {
       // WebSocket mode
@@ -927,14 +944,23 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
 
       } catch (error: any) {
         console.error('Error in streaming message:', error);
-        setState(prev => ({ ...prev, isTyping: false }));
         currentMessageRef.current = null;
         
-        toast({
-          title: "Error",
-          description: error.message || "Failed to send message",
-          variant: "destructive"
-        });
+        const errorMessage: EnhancedChatMessage = {
+          id: `error-${Date.now()}`,
+          role: 'assistant',
+          content: error.message || 'Something went wrong. Please try again.',
+          timestamp: new Date(),
+          messageStatus: 'error'
+        };
+
+        setState(prev => ({
+          ...prev,
+          messages: [...prev.messages, errorMessage],
+          isTyping: false
+        }));
+
+        await saveMessageToDB(errorMessage, targetConversationId);
       }
     } else {
       // HTTP mode without streaming - fallback to enhanced-ai-chat
@@ -970,12 +996,22 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
         await saveMessageToDB(aiMessage, targetConversationId);
       } catch (error: any) {
         console.error('Error sending message:', error);
-        setState(prev => ({ ...prev, isTyping: false }));
-        toast({
-          title: "Error",
-          description: "Failed to send message",
-          variant: "destructive"
-        });
+        
+        const errorMessage: EnhancedChatMessage = {
+          id: `error-${Date.now()}`,
+          role: 'assistant',
+          content: error.message || 'Something went wrong. Please try again.',
+          timestamp: new Date(),
+          messageStatus: 'error'
+        };
+
+        setState(prev => ({
+          ...prev,
+          messages: [...prev.messages, errorMessage],
+          isTyping: false
+        }));
+
+        await saveMessageToDB(errorMessage, targetConversationId);
       }
     }
 
