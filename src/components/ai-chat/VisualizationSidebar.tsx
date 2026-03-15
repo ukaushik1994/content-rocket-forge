@@ -90,7 +90,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   title,
   description,
   onSendMessage,
-  onInteract
+  onInteract,
+  analystState
 }) => {
   const [activeView, setActiveView] = useState<'chart' | 'table'>('chart');
   const [chartType, setChartType] = useState<ChartType>(
