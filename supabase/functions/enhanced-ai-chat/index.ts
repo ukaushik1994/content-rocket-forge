@@ -213,7 +213,7 @@ function analyzeQueryIntent(query: string): QueryIntent {
     scope,
     categories,
     estimatedTokens: tokenEstimates[scope],
-    requiresVisualData,
+    requiresVisualData: visualDataRequired,
     confidence: categories.length > 0 ? 0.8 : 0.5,
     isConversational: false,
     panelHint,
