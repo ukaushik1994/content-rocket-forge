@@ -337,7 +337,8 @@ function getSuggestedAnalysis(queryType: string): string[] {
     'content_gap': ['missing_content', 'opportunity_analysis', 'topic_clusters'],
     'seo': ['keyword_difficulty', 'search_volume', 'ranking_factors'],
     'market_research': ['audience_insights', 'search_trends', 'related_topics'],
-    'keyword_analysis': ['keyword_metrics', 'serp_features', 'competition_analysis']
+    'keyword_analysis': ['keyword_metrics', 'serp_features', 'competition_analysis'],
+    'web_search': ['organic_results', 'answer_box', 'related_topics']
   };
 
   return analysisMap[queryType] || ['basic_analysis'];
