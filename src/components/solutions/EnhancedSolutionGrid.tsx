@@ -86,24 +86,6 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
         <EmptySolutionsState onAddNew={onAddNew} />
       )}
 
-      {/* Detail Dialog */}
-      <SolutionDetailDialog
-        solution={detailSolution}
-        open={!!detailSolution}
-        onOpenChange={(open) => { if (!open) setDetailSolution(null); }}
-        onEdit={() => {
-          if (detailSolution) {
-            onEdit(detailSolution);
-            setDetailSolution(null);
-          }
-        }}
-        onUseInContent={() => {
-          if (detailSolution) {
-            onUseInContent(detailSolution);
-            setDetailSolution(null);
-          }
-        }}
-      />
     </div>
   );
 };
