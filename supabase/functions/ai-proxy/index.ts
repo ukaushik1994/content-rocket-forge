@@ -207,7 +207,6 @@ async function chatOpenAI(apiKey: string, params: any) {
   const requestBody: any = {
     model,
     messages: params.messages || [],
-    ...params
   };
 
   // Handle token limits based on model type
