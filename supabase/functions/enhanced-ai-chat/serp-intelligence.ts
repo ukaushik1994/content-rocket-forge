@@ -286,7 +286,7 @@ export function analyzeSerpIntent(query: string): SerpIntelligence {
     };
   }
 
-  // Check for implicit keyword mentions
+  // Check for implicit keyword mentions (SEO-specific)
   const implicitKeywords = extractImplicitKeywords(query);
   if (implicitKeywords.length > 0) {
     console.log('🔍 Implicit keywords detected:', implicitKeywords);
@@ -297,6 +297,32 @@ export function analyzeSerpIntent(query: string): SerpIntelligence {
       priority: 5,
       suggestedAnalysis: ['keyword_metrics', 'competition_analysis']
     };
+  }
+
+  // TEMPORAL MARKER HEURISTIC: Queries with "right now", "today", "2025/2026",
+  // "currently", "this week/month/year" likely need fresh external data
+  const temporalMarkers = /\b(right now|today|currently|this (?:week|month|year)|202[4-9]|latest|recent(?:ly)?|at the moment)\b/i;
+  const isQuestion = /\?/.test(query) || /^(what|how|who|where|when|why|which|is|are|do|does|can|will|should)\b/i.test(query.trim());
+  
+  if (temporalMarkers.test(query) && isQuestion && query.trim().split(/\s+/).length >= 4) {
+    // Extract the main topic by removing temporal markers, question words, and filler
+    const topic = query
+      .replace(temporalMarkers, '')
+      .replace(/^(what|how|who|where|when|why|which|is|are|do|does|can|will|should)\s+/i, '')
+      .replace(/\b(the|a|an|in|on|of|for|with|about|right|is|are|happening|going)\b/gi, '')
+      .replace(/[?\s]+/g, ' ')
+      .trim();
+    
+    if (topic.length > 2) {
+      console.log('🕐 Temporal web search detected via heuristic:', topic);
+      return {
+        shouldTriggerSerp: true,
+        queryType: 'web_search',
+        keywords: [topic],
+        priority: 4,
+        suggestedAnalysis: ['organic_results', 'answer_box', 'related_topics']
+      };
+    }
   }
 
   console.log('❌ No SERP intent detected');
