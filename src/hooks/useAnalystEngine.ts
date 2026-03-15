@@ -413,6 +413,18 @@ export function useAnalystEngine(
     }
   }, [isActive, topics, fetchPlatformData]);
 
+  // ─── Accumulated web search results ──────────────────────────────────
+  const webSearchResults = useMemo(() => {
+    if (!isActive) return [];
+    const results: AnalystWebSearchData[] = [];
+    for (const msg of messages) {
+      if (msg.role === 'assistant' && msg.analystContext?.webSearchResults) {
+        results.push(msg.analystContext.webSearchResults);
+      }
+    }
+    return results;
+  }, [messages, isActive]);
+
   return {
     topics,
     insightsFeed,
@@ -420,6 +432,7 @@ export function useAnalystEngine(
     suggestedActions,
     accumulatedCharts,
     platformData,
+    webSearchResults,
     lastUpdated: messages.length > 0 ? messages[messages.length - 1].timestamp : null,
     isEnriching,
     messageCount: messages.filter(m => m.role === 'assistant').length,
