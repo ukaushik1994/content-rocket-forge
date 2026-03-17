@@ -384,7 +384,8 @@ function getSuggestedAnalysis(queryType: string): string[] {
 export async function executeSerpAnalysis(
   keywords: string[],
   analysisType: string,
-  location: string = 'us'
+  location: string = 'us',
+  apiKey?: string
 ): Promise<SerpQueryResult[]> {
   console.log('🚀 Executing SERP analysis for keywords:', keywords);
   
@@ -398,17 +399,22 @@ export async function executeSerpAnalysis(
     const batchPromises = batch.map(async (keyword) => {
       try {
         // Call api-proxy with SerpAPI (it will auto-fallback to Serpstack if needed)
+        const requestBody: any = {
+          service: 'serpapi',
+          endpoint: 'analyze',
+          params: { keyword, location }
+        };
+        // Pass user's decrypted API key if available
+        if (apiKey) {
+          requestBody.apiKey = apiKey;
+        }
         const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/api-proxy`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
           },
-          body: JSON.stringify({
-            service: 'serpapi', // Primary: SerpAPI, will fallback to Serpstack
-            endpoint: 'analyze',
-            params: { keyword, location }
-          })
+          body: JSON.stringify(requestBody)
         });
 
         const data = await response.json();

@@ -2207,7 +2207,7 @@ serve(async (req) => {
         // ── KEYWORD/SEO SERP PATH (existing) ──
         console.log("🔍 SERP opportunity detected, fetching real-time data:", serpIntelligence);
         try {
-          const serpResults = await executeSerpAnalysis(serpIntelligence.keywords, serpIntelligence.queryType);
+          const serpResults = await executeSerpAnalysis(serpIntelligence.keywords, serpIntelligence.queryType, 'us', serpApiKey);
           if (serpResults.length > 0) {
             serpContext = generateSerpContext(serpResults);
             
@@ -3238,111 +3238,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       return false;
     })();
     
-    if (needsDataRecovery && !hasAttemptedToolCalls) {
-      console.warn('⚠️ Empty visualization detected - attempting automatic data recovery...');
-      
-      // Generate intelligent tool call based on query intent
-      const recoveryToolCall = (() => {
-        const query = userQuery.toLowerCase();
-        
-        if (query.includes('proposal')) {
-          return {
-            type: 'function' as const,
-            function: {
-              name: 'get_proposals',
-              arguments: JSON.stringify({ limit: 10, status: 'available' })
-            }
-          };
-        }
-        
-        if (query.includes('content')) {
-          return {
-            type: 'function' as const,
-            function: {
-              name: 'get_content_items',
-              arguments: JSON.stringify({ limit: 10, sort_by: 'seo_score', sort_order: 'desc' })
-            }
-          };
-        }
-        
-        if (query.includes('keyword')) {
-          return {
-            type: 'function' as const,
-            function: {
-              name: 'get_keywords',
-              arguments: JSON.stringify({ limit: 20 })
-            }
-          };
-        }
-        
-        // Fallback - use the most likely tool based on context
-        if (context?.proposalCount > 0) {
-          return {
-            type: 'function' as const,
-            function: {
-              name: 'get_proposals',
-              arguments: JSON.stringify({ limit: 10 })
-            }
-          };
-        }
-        
-        return null;
-      })();
-      
-      if (recoveryToolCall) {
-        console.log('🔧 Triggering automatic tool call for data recovery:', recoveryToolCall.function.name);
-        
-        // Create simulated tool call result
-        const toolCall = {
-          id: `recovery-${Date.now()}`,
-          ...recoveryToolCall
-        };
-        
-        // Execute the tool
-        try {
-          const toolResult = await executeToolCall(toolCall, userId, supabase);
-          
-          if (toolResult.success && toolResult.data) {
-            console.log(`✅ Recovery tool call successful, got ${Array.isArray(toolResult.data) ? toolResult.data.length : 'some'} results`);
-            
-            // Call AI again with tool result to regenerate visualization
-            const recoveryMessages = [
-              ...messages,
-              {
-                role: 'assistant' as const,
-                content: aiMessage,
-                tool_calls: [toolCall]
-              },
-              {
-                role: 'tool' as const,
-                tool_call_id: toolCall.id,
-                content: JSON.stringify(toolResult.data)
-              }
-            ];
-            
-            console.log('🔄 Calling AI again with recovered data...');
-            const recoveryResponse = await callAI(recoveryMessages, supabase);
-            
-            if (recoveryResponse && recoveryResponse.choices?.[0]?.message?.content) {
-              const recoveryMessage = recoveryResponse.choices[0].message.content;
-              console.log('✅ Recovery successful, re-parsing response with data');
-              
-              // Parse the new response
-              const recoveryParsed = parseResponseWithFallback(recoveryMessage);
-              if (recoveryParsed.visualData) {
-                visualData = recoveryParsed.visualData;
-                cleanedResponse = recoveryParsed.message;
-                console.log('🎉 Data recovery complete - visualization now has data');
-              }
-            }
-          }
-        } catch (recoveryError) {
-          console.error('❌ Data recovery failed:', recoveryError);
-          // Continue with empty data - user can manually retry
-        }
-      } else {
-        console.log('💡 No suitable recovery tool found for this query');
-      }
+    if (needsDataRecovery) {
+      console.warn('⚠️ Empty visualization detected — fallback chart generation will handle this downstream');
     }
     
     console.log('✅ Parsed response:', {

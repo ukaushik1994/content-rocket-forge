@@ -550,22 +550,7 @@ export const useEnhancedAIChatDB = () => {
       setMessages(prev => [...prev, finalMessage]);
       await saveMessage(finalMessage, conversationId);
 
-      // Update conversation title if first exchange
-      if (messages.length === 0) {
-        const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
-        await supabase
-          .from('ai_conversations')
-          .update({ title })
-          .eq('id', conversationId);
-        
-        setConversations(prev => 
-          prev.map(conv => 
-            conv.id === conversationId 
-              ? { ...conv, title }
-              : conv
-          )
-        );
-      }
+      // Title already set early (line 392-408) — no duplicate update needed
     } catch (error) {
       // progressInterval removed — SSE streaming handles progress
       console.error('Error sending enhanced message:', error);
@@ -1010,6 +995,21 @@ export const useEnhancedAIChatDB = () => {
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
     if (!user) return;
     
+    // Enforce 5-minute edit window
+    const msg = messages.find(m => m.id === messageId);
+    if (msg) {
+      const msgTime = new Date(msg.timestamp).getTime();
+      const fiveMinutes = 5 * 60 * 1000;
+      if (Date.now() - msgTime > fiveMinutes) {
+        toast({
+          title: "Edit window expired",
+          description: "Messages can only be edited within 5 minutes of sending.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     try {
       const { error } = await supabase
         .from('ai_messages')
@@ -1036,7 +1036,7 @@ export const useEnhancedAIChatDB = () => {
       });
       throw error;
     }
-  }, [user, toast]);
+  }, [user, toast, messages]);
 
   // Delete message (soft delete - marks as deleted)
   const deleteMessage = useCallback(async (messageId: string) => {
