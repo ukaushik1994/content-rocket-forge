@@ -1,153 +1,72 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# AI Chat Diagnostic Report — Bugs Found
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
-
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+After thorough analysis of the full `enhanced-ai-chat` backend (3746 lines), the frontend hook (`useEnhancedAIChatDB`, 1127 lines), and the tool execution layer, here are the issues discovered:
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## BUG-1 (P0 — Crash): Data recovery `executeToolCall` called with wrong signature
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+**File:** `supabase/functions/enhanced-ai-chat/index.ts` line 3303
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+The "empty visualization recovery" path calls:
+```
+executeToolCall(toolCall, userId, supabase)
+```
+But the actual function signature is:
+```
+executeToolCall(toolName: string, toolArgs: any, supabase, userId, cache)
+```
+This passes a whole object as `toolName` and `userId` as `toolArgs`. It will always throw a runtime error, meaning **automatic data recovery never works**. Additionally, `hasAttemptedToolCalls` (line 3241) is **never declared** anywhere in the file — this is an undefined variable reference that would crash the entire response pipeline before recovery even starts.
 
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
+**Fix:** Declare `let hasAttemptedToolCalls = toolCalls && toolCalls.length > 0;` near line 2554, and fix the call to `executeToolCall(toolCall.function.name, JSON.parse(toolCall.function.arguments), supabase, user.id, toolCache)`. Also fix the `callAI` function reference on line 3324 which doesn't exist.
 
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
+Since the whole recovery block is broken and unreachable (crashes on the undefined `hasAttemptedToolCalls` variable), the simplest fix is to **remove the dead recovery block entirely** (lines 3241-3346) — the fallback chart generation from tool results (lines 3519-3528) already covers this case.
 
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+## BUG-2 (P1 — Silent failure): `executeSerpAnalysis` uses env secret, not user's key
 
----
+**File:** `supabase/functions/enhanced-ai-chat/index.ts` lines 2206-2237
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+The keyword/SEO SERP analysis path (`executeSerpAnalysis`) does NOT use the user's decrypted SERP key. Only the `executeWebSearch` path (lines 2172-2205) was fixed to use `getApiKey('serp', user.id)`. So keyword-triggered SERP queries still fail silently because the env secret `SERP_API_KEY` doesn't exist.
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+**Fix:** Pass the already-decrypted `serpApiKey` to `executeSerpAnalysis`, or decrypt before entering the keyword path (same pattern as the web search path).
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+## BUG-3 (P2 — UX): Share conversation generates broken link
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+**File:** `src/hooks/useEnhancedAIChatDB.ts` line 972
+
+`shareConversation` generates a URL to `/shared-conversation/${conversationId}`. This path requires no auth check — any user with the link can see the conversation. More critically, the comment says "Fixed: Use /shared-conversation route which now exists" but we should verify this route actually exists and has proper RLS on the `ai_messages` table to prevent data leakage.
+
+**Recommendation:** Verify the route exists. If not, remove the share feature or add a proper sharing mechanism with access tokens.
+
+## BUG-4 (P2 — UX): `editMessage` has no server-side time window check
+
+**File:** `src/hooks/useEnhancedAIChatDB.ts` lines 1010-1039
+
+The comment says "Edit message (within 5-minute window)" but there's no actual time check — neither client-side nor server-side. Any message can be edited at any time. The RLS policy likely allows unrestricted updates.
+
+**Recommendation:** Add a client-side check (`Date.now() - msg.created_at < 5 * 60 * 1000`) and an RLS policy with `created_at > now() - interval '5 minutes'`.
+
+## BUG-5 (P2 — UX): Conversation title double-update race condition
+
+**File:** `src/hooks/useEnhancedAIChatDB.ts` lines 393-408 and 554-568
+
+The conversation title is updated **twice** on the first message: once immediately (line 396, fire-and-forget) and again after the AI response (line 556). Both use `content.slice(0, 40)` so the result is the same, but it's a wasted DB write and could race with a user rename.
+
+**Fix:** Remove the second title update block (lines 554-568).
 
 ---
 
-# AI Chat Awareness Gaps — Implementation Tracker
+## Summary of Recommended Fixes
 
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
+| Bug | Severity | Fix |
+|-----|----------|-----|
+| BUG-1: Dead recovery block with undefined vars | P0 | Remove lines 3241-3346 (dead code) |
+| BUG-2: SERP keyword analysis ignores user key | P1 | Pass decrypted key to `executeSerpAnalysis` |
+| BUG-3: Share link may be broken/insecure | P2 | Verify route + RLS, or disable |
+| BUG-4: Edit window not enforced | P2 | Add time check client-side |
+| BUG-5: Double title update | P2 | Remove duplicate block |
 
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
+Total: 2 backend files + 1 frontend file + 1 deploy.
 
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
-
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
