@@ -550,22 +550,7 @@ export const useEnhancedAIChatDB = () => {
       setMessages(prev => [...prev, finalMessage]);
       await saveMessage(finalMessage, conversationId);
 
-      // Update conversation title if first exchange
-      if (messages.length === 0) {
-        const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
-        await supabase
-          .from('ai_conversations')
-          .update({ title })
-          .eq('id', conversationId);
-        
-        setConversations(prev => 
-          prev.map(conv => 
-            conv.id === conversationId 
-              ? { ...conv, title }
-              : conv
-          )
-        );
-      }
+      // Title already set early (line 392-408) — no duplicate update needed
     } catch (error) {
       // progressInterval removed — SSE streaming handles progress
       console.error('Error sending enhanced message:', error);
