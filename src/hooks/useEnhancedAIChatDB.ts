@@ -1036,7 +1036,7 @@ export const useEnhancedAIChatDB = () => {
       });
       throw error;
     }
-  }, [user, toast]);
+  }, [user, toast, messages]);
 
   // Delete message (soft delete - marks as deleted)
   const deleteMessage = useCallback(async (messageId: string) => {
