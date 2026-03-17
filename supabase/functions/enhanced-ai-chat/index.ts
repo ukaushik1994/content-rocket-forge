@@ -2167,18 +2167,23 @@ serve(async (req) => {
     let webSearchContext = '';
     
     if (serpIntelligence.shouldTriggerSerp && serpIntelligence.keywords.length > 0) {
+      // Decrypt user's SERP API key ONCE for both paths
+      let serpApiKey: string | null = null;
+      try {
+        const { getApiKey } = await import('../shared/apiKeyService.ts');
+        serpApiKey = await getApiKey('serp', user.id);
+        if (!serpApiKey) {
+          serpApiKey = await getApiKey('serpstack', user.id);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to decrypt SERP key:', e);
+      }
+
       // Route based on query type: web_search vs keyword/SEO analysis
       if (serpIntelligence.queryType === 'web_search') {
         // ── WEB SEARCH PATH ──
         console.log("🌐 Web search intent detected, fetching live results:", serpIntelligence.keywords);
         try {
-          // Decrypt user's SERP API key from the settings vault
-          const { getApiKey } = await import('../shared/apiKeyService.ts');
-          let serpApiKey = await getApiKey('serp', user.id);
-          if (!serpApiKey) {
-            serpApiKey = await getApiKey('serpstack', user.id);
-          }
-          
           if (!serpApiKey) {
             console.warn('⚠️ No SERP API key found in user settings');
             if (forceWebSearch) {
