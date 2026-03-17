@@ -1846,7 +1846,15 @@ serve(async (req) => {
     console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
 
     // ✅ NEW: Analyze query intent BEFORE fetching context (with runtime-safe fallback)
-    const userQuery = messages[messages.length - 1]?.content || '';
+    let userQuery = messages[messages.length - 1]?.content || '';
+    
+    // ── DETECT & STRIP [web-search] PREFIX ──
+    let forceWebSearch = false;
+    if (userQuery.startsWith('[web-search]')) {
+      forceWebSearch = true;
+      userQuery = userQuery.replace(/^\[web-search\]\s*/, '').trim();
+      console.log('🌐 [web-search] prefix detected — forcing web search for:', userQuery);
+    }
     console.log('🎯 Analyzing query intent...');
 
     let queryIntent;
