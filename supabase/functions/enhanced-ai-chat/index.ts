@@ -19,7 +19,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v13-2026-03-15T24:00:00Z-analyst-engine';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v14-2026-03-17T00:00:00Z-web-search-fix';
 
 // Token estimation (inlined from shared to avoid cross-folder import issues)
 function estimateTokens(text: string): number {
@@ -1846,7 +1846,15 @@ serve(async (req) => {
     console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
 
     // ✅ NEW: Analyze query intent BEFORE fetching context (with runtime-safe fallback)
-    const userQuery = messages[messages.length - 1]?.content || '';
+    let userQuery = messages[messages.length - 1]?.content || '';
+    
+    // ── DETECT & STRIP [web-search] PREFIX ──
+    let forceWebSearch = false;
+    if (userQuery.startsWith('[web-search]')) {
+      forceWebSearch = true;
+      userQuery = userQuery.replace(/^\[web-search\]\s*/, '').trim();
+      console.log('🌐 [web-search] prefix detected — forcing web search for:', userQuery);
+    }
     console.log('🎯 Analyzing query intent...');
 
     let queryIntent;
@@ -2151,7 +2159,9 @@ serve(async (req) => {
     console.log("🧠 Analyzing query for context and SERP opportunities:", userQuery);
     
     // STEP 1: Detect if query would benefit from SERP data or web search
-    const serpIntelligence = analyzeSerpIntent(userQuery);
+    const serpIntelligence = forceWebSearch
+      ? { shouldTriggerSerp: true, queryType: 'web_search', keywords: [userQuery], priority: 10, suggestedAnalysis: ['organic_results'] }
+      : analyzeSerpIntent(userQuery);
     let serpContext = '';
     let serpData = null;
     let webSearchContext = '';
@@ -2162,16 +2172,36 @@ serve(async (req) => {
         // ── WEB SEARCH PATH ──
         console.log("🌐 Web search intent detected, fetching live results:", serpIntelligence.keywords);
         try {
-          const searchQuery = serpIntelligence.keywords.join(' ');
-          const webResults = await executeWebSearch(searchQuery);
-          if (webResults.results.length > 0) {
-            webSearchContext = generateWebSearchContext(webResults);
-            console.log(`✅ Web search returned ${webResults.results.length} results`);
+          // Decrypt user's SERP API key from the settings vault
+          const { getApiKey } = await import('../shared/apiKeyService.ts');
+          let serpApiKey = await getApiKey('serp', user.id);
+          if (!serpApiKey) {
+            serpApiKey = await getApiKey('serpstack', user.id);
+          }
+          
+          if (!serpApiKey) {
+            console.warn('⚠️ No SERP API key found in user settings');
+            if (forceWebSearch) {
+              webSearchContext = '\n\n⚠️ Web search was requested but no SERP API key is configured. Please add a SerpAPI or Serpstack API key in Settings → API Keys to enable web search.\n';
+            }
           } else {
-            console.warn('⚠️ Web search returned no results');
+            const searchQuery = serpIntelligence.keywords.join(' ');
+            const webResults = await executeWebSearch(searchQuery, 'us', serpApiKey);
+            if (webResults.results.length > 0) {
+              webSearchContext = generateWebSearchContext(webResults);
+              console.log(`✅ Web search returned ${webResults.results.length} results`);
+            } else {
+              console.warn('⚠️ Web search returned no results');
+              if (forceWebSearch) {
+                webSearchContext = '\n\n⚠️ Web search returned no results for this query. The AI will respond using its training data.\n';
+              }
+            }
           }
         } catch (error: any) {
           console.error("❌ Web search failed, continuing without:", error);
+          if (forceWebSearch) {
+            webSearchContext = '\n\n⚠️ Web search encountered an error. The AI will respond using its training data.\n';
+          }
         }
       } else {
         // ── KEYWORD/SEO SERP PATH (existing) ──

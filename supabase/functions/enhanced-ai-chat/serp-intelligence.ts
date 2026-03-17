@@ -664,25 +664,34 @@ export interface WebSearchResponse {
 
 /**
  * Execute a general web search using the existing api-proxy 'search' endpoint
+ * @param apiKey - Optional decrypted SERP API key from user's settings vault
  */
 export async function executeWebSearch(
   query: string,
-  location: string = 'us'
+  location: string = 'us',
+  apiKey?: string | null
 ): Promise<WebSearchResponse> {
-  console.log('🌐 Executing web search for:', query);
+  console.log('🌐 Executing web search for:', query, apiKey ? '(using user API key)' : '(no user key)');
   
   try {
+    const requestBody: Record<string, unknown> = {
+      service: 'serpapi',
+      endpoint: 'search',
+      params: { keyword: query, location }
+    };
+    
+    // Pass the user's decrypted API key so api-proxy uses it instead of env secret
+    if (apiKey) {
+      requestBody.apiKey = apiKey;
+    }
+
     const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/api-proxy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
       },
-      body: JSON.stringify({
-        service: 'serpapi',
-        endpoint: 'search',
-        params: { keyword: query, location }
-      })
+      body: JSON.stringify(requestBody)
     });
 
     const data = await response.json();
