@@ -995,6 +995,21 @@ export const useEnhancedAIChatDB = () => {
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
     if (!user) return;
     
+    // Enforce 5-minute edit window
+    const msg = messages.find(m => m.id === messageId);
+    if (msg) {
+      const msgTime = new Date(msg.timestamp).getTime();
+      const fiveMinutes = 5 * 60 * 1000;
+      if (Date.now() - msgTime > fiveMinutes) {
+        toast({
+          title: "Edit window expired",
+          description: "Messages can only be edited within 5 minutes of sending.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     try {
       const { error } = await supabase
         .from('ai_messages')

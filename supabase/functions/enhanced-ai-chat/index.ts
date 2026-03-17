@@ -2207,7 +2207,7 @@ serve(async (req) => {
         // ── KEYWORD/SEO SERP PATH (existing) ──
         console.log("🔍 SERP opportunity detected, fetching real-time data:", serpIntelligence);
         try {
-          const serpResults = await executeSerpAnalysis(serpIntelligence.keywords, serpIntelligence.queryType);
+          const serpResults = await executeSerpAnalysis(serpIntelligence.keywords, serpIntelligence.queryType, 'us', serpApiKey);
           if (serpResults.length > 0) {
             serpContext = generateSerpContext(serpResults);
             
