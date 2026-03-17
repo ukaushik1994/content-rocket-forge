@@ -2159,7 +2159,9 @@ serve(async (req) => {
     console.log("🧠 Analyzing query for context and SERP opportunities:", userQuery);
     
     // STEP 1: Detect if query would benefit from SERP data or web search
-    const serpIntelligence = analyzeSerpIntent(userQuery);
+    const serpIntelligence = forceWebSearch
+      ? { shouldTriggerSerp: true, queryType: 'web_search', keywords: [userQuery], priority: 10, suggestedAnalysis: ['organic_results'] }
+      : analyzeSerpIntent(userQuery);
     let serpContext = '';
     let serpData = null;
     let webSearchContext = '';
@@ -2170,16 +2172,36 @@ serve(async (req) => {
         // ── WEB SEARCH PATH ──
         console.log("🌐 Web search intent detected, fetching live results:", serpIntelligence.keywords);
         try {
-          const searchQuery = serpIntelligence.keywords.join(' ');
-          const webResults = await executeWebSearch(searchQuery);
-          if (webResults.results.length > 0) {
-            webSearchContext = generateWebSearchContext(webResults);
-            console.log(`✅ Web search returned ${webResults.results.length} results`);
+          // Decrypt user's SERP API key from the settings vault
+          const { getApiKey } = await import('../shared/apiKeyService.ts');
+          let serpApiKey = await getApiKey('serp', user.id);
+          if (!serpApiKey) {
+            serpApiKey = await getApiKey('serpstack', user.id);
+          }
+          
+          if (!serpApiKey) {
+            console.warn('⚠️ No SERP API key found in user settings');
+            if (forceWebSearch) {
+              webSearchContext = '\n\n⚠️ Web search was requested but no SERP API key is configured. Please add a SerpAPI or Serpstack API key in Settings → API Keys to enable web search.\n';
+            }
           } else {
-            console.warn('⚠️ Web search returned no results');
+            const searchQuery = serpIntelligence.keywords.join(' ');
+            const webResults = await executeWebSearch(searchQuery, 'us', serpApiKey);
+            if (webResults.results.length > 0) {
+              webSearchContext = generateWebSearchContext(webResults);
+              console.log(`✅ Web search returned ${webResults.results.length} results`);
+            } else {
+              console.warn('⚠️ Web search returned no results');
+              if (forceWebSearch) {
+                webSearchContext = '\n\n⚠️ Web search returned no results for this query. The AI will respond using its training data.\n';
+              }
+            }
           }
         } catch (error: any) {
           console.error("❌ Web search failed, continuing without:", error);
+          if (forceWebSearch) {
+            webSearchContext = '\n\n⚠️ Web search encountered an error. The AI will respond using its training data.\n';
+          }
         }
       } else {
         // ── KEYWORD/SEO SERP PATH (existing) ──
