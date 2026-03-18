@@ -1037,16 +1037,22 @@ export const useEnhancedAIChatDB = () => {
 
   // Rename conversation
   const renameConversation = useCallback(async (conversationId: string, newTitle: string) => {
+    // Guard against empty string rename
+    if (!newTitle.trim()) {
+      toast({ title: "Invalid name", description: "Conversation name cannot be empty", variant: "destructive" });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('ai_conversations')
-        .update({ title: newTitle })
+        .update({ title: newTitle.trim() })
         .eq('id', conversationId);
 
       if (error) throw error;
 
       setConversations(prev => prev.map(conv =>
-        conv.id === conversationId ? { ...conv, title: newTitle } : conv
+        conv.id === conversationId ? { ...conv, title: newTitle.trim() } : conv
       ));
 
       toast({ title: "Renamed", description: "Conversation renamed successfully" });
