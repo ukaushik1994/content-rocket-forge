@@ -1,153 +1,85 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Phased Plan: Make AI Chat Fully Functional
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
-
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+Based on the audit, here's what needs building vs. what's dead code, organized into 4 phases from most critical to polish.
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## Phase 1: Cleanup Dead Code & Fix Security (1 session)
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+**Goal:** Remove orphaned hooks/components that could confuse imports, and close the share security gap.
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+1. **Delete dead hooks** — none of these are imported by active code:
+   - `src/hooks/useStreamingChat.ts` (WebSocket-based, WSS not supported by Edge Functions)
+   - `src/hooks/useStreamingChatDB.ts` (only imported by useEnhancedStreamingChat)
+   - `src/hooks/useEnhancedStreamingChat.ts` (only imported by StreamingChatInterface)
+   - `src/hooks/useUnifiedChatDB.ts` (not imported anywhere)
+   - `src/components/ai-chat/StreamingChatInterface.tsx` (only imported by EnhancedStreamingInterface)
+   - `src/components/ai-chat/EnhancedStreamingInterface.tsx` (not imported anywhere)
 
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+2. **Fix Share Conversation security** — the `/shared-conversation/:id` route queries `ai_conversations` and `ai_messages` without auth. Since RLS requires `user_id = auth.uid()`, unauthenticated users get "not found." Two options:
+   - **Option A (simple):** Remove the share feature entirely since it can't work without a token system
+   - **Option B (proper):** Add `is_shared` boolean column + `share_token` to `ai_conversations`, create an RLS policy allowing SELECT when `is_shared = true`, and update the share URL to include the token
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## Phase 2: Wire Voice Input & File Upload Properly (1 session)
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+**Goal:** Both components exist and are rendered in `ContextAwareMessageInput`, but need verification and fixes.
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+1. **Voice Input (`VoiceInputHandler`)** — Already uses browser `SpeechRecognition` API and is wired into the input via `onTranscript`. Verify it works end-to-end:
+   - Check that `handleVoiceTranscript` in `ContextAwareMessageInput` properly populates the input field
+   - Add a fallback message for unsupported browsers (Firefox, some mobile)
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+2. **File Upload (`FileUploadHandler`)** — Uses `enhancedFileAnalysisService` which likely calls an edge function. Verify:
+   - That the analysis service actually processes files (check if it's scaffolded or functional)
+   - That analyzed file content is injected into the chat message context
+   - That the Supabase storage bucket exists and has correct policies
 
 ---
 
-# AI Chat Awareness Gaps — Implementation Tracker
+## Phase 3: Complete Engage Integration (2 sessions)
 
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
+**Goal:** Email campaigns and social posting work end-to-end from the chat.
 
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
+### Session 1: Email Campaigns
+1. **Resend integration** — The `engage-email-send` edge function exists. Verify it has a working Resend API key secret configured and sends real emails.
+2. **Domain verification flow** — Add a UI guidance flow when domain isn't verified (currently fails silently).
+3. **Campaign creation from chat** — Verify the `create_email_campaign` tool in `enhanced-ai-chat` properly creates campaigns with correct workspace_id filtering.
 
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
+### Session 2: Social Posting
+1. **Social post saving** — `engage-social-poster` saves to `social_posts` table. This works for scheduling/drafting.
+2. **External API scaffolding** — Add clear UI indicators that posts are "scheduled locally" and external publishing requires API integration (Twitter/LinkedIn/etc). No fake "posted" status.
 
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+---
+
+## Phase 4: Analytics & Image Generation (2 sessions)
+
+**Goal:** Connect the remaining scaffolded features.
+
+### Session 1: Analytics Tools
+1. **Google Analytics** — `google-analytics-fetch` edge function exists but needs OAuth. Add setup guidance in the AI chat when user asks for analytics data ("Connect Google Analytics in Settings to see real data").
+2. **Content Performance** — `get_content_performance` reads from `content_analytics`. Verify this table is populated and add a graceful "no data yet" response.
+3. **Search Console** — Same pattern as GA — add guided setup messaging.
+
+### Session 2: Image Generation
+1. **Wire image gen tools** — `generate-image` edge function exists. Add corresponding tools to `enhanced-ai-chat` tool definitions: `generate_image` and `edit_image`.
+2. **API key requirement** — Image gen needs an API key (DALL-E/Stability). Add detection: if no key configured, respond with setup instructions instead of failing silently.
+3. **Display generated images** — Ensure `GeneratedImageCard` component renders in message bubbles when image URLs are returned.
+
+---
+
+## Summary Table
+
+```text
+Phase  | Effort   | What
+-------|----------|------------------------------------------
+  1    | ~1 hr    | Delete 6 dead files, fix share security
+  2    | ~2 hrs   | Verify voice & file upload work E2E
+  3    | ~4 hrs   | Email send + social post from chat
+  4    | ~4 hrs   | Analytics guidance + image gen tools
+```
+
+Each phase is independently shippable. Phase 1 should be done first since dead code creates confusion. Phases 2-4 can be done in any order based on priority.
+
