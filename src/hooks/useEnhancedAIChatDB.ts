@@ -413,6 +413,9 @@ export const useEnhancedAIChatDB = () => {
                 : conv
             )
           );
+        })
+        .catch((err) => {
+          console.warn('Failed to update conversation title:', err);
         });
     }
 
