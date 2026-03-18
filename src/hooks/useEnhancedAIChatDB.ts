@@ -51,6 +51,9 @@ export const useEnhancedAIChatDB = () => {
   const freshConversationRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesRef = useRef<EnhancedChatMessage[]>([]);
+  const isSendingRef = useRef(false);
+  const isEditingRef = useRef(false);
+  const loadRequestRef = useRef(0);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
