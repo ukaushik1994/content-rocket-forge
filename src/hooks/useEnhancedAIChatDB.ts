@@ -1055,7 +1055,30 @@ export const useEnhancedAIChatDB = () => {
 
       const safeTitle = conversation.title.replace(/[^a-z0-9]/gi, '_');
 
-      if (format === 'txt') {
+      const downloadFile = (blob: Blob, filename: string) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+      if (format === 'markdown') {
+        const lines = [`# ${conversation.title}`, '', `> Exported: ${new Date().toLocaleString()}`, '---', ''];
+        (messagesData || []).forEach(msg => {
+          const role = msg.type === 'user' ? '**You**' : '**AI**';
+          lines.push(`### ${role} — _${new Date(msg.created_at).toLocaleString()}_`);
+          lines.push('');
+          lines.push(msg.content);
+          lines.push('');
+          lines.push('---');
+          lines.push('');
+        });
+        downloadFile(new Blob([lines.join('\n')], { type: 'text/markdown' }), `conversation-${safeTitle}.md`);
+      } else if (format === 'txt') {
         const lines = [`# ${conversation.title}`, `Exported: ${new Date().toLocaleString()}`, ''];
         (messagesData || []).forEach(msg => {
           const role = msg.type === 'user' ? 'You' : 'AI';
@@ -1063,15 +1086,7 @@ export const useEnhancedAIChatDB = () => {
           lines.push(msg.content);
           lines.push('');
         });
-        const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `conversation-${safeTitle}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        downloadFile(new Blob([lines.join('\n')], { type: 'text/plain' }), `conversation-${safeTitle}.txt`);
       } else {
         const exportData = {
           conversation: {
