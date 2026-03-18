@@ -1394,11 +1394,13 @@ export const useEnhancedAIChatDB = () => {
   }, [user, loadConversations]);
 
   // Load messages when active conversation changes (skip freshly created)
+  // Clear messages immediately to prevent stale content flash
   useEffect(() => {
     if (activeConversation) {
       if (freshConversationRef.current === activeConversation) {
         freshConversationRef.current = null; // Clear flag, skip the load
       } else {
+        setMessages([]); // Clear immediately to show loading state
         loadMessages(activeConversation);
       }
     } else {
