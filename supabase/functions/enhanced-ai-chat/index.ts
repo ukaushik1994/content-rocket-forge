@@ -1611,69 +1611,95 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       supabase.from('solutions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('company_competitors').select('*', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('competitor_solutions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-      // Phase 3: Campaign counts
+    // Core counts (always needed for prompt context) — 7 queries
+    const coreQueries: Promise<any>[] = [
+      supabase.from('content_items').select('status', { count: 'exact' }).eq('user_id', userId),
+      supabase.from('ai_strategy_proposals').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('keywords').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('solutions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('company_competitors').select('*', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('campaigns').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'active'),
-      // Phase 3: Queue status counts
       supabase.from('content_generation_queue').select('status').eq('user_id', userId),
-      // Phase 3: Content by status
-      supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'draft'),
-      supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'published'),
-      // Phase 3: Recent activity
-      supabase.from('content_items').select('title, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-      // Phase 4: Engage workspace
-      supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle(),
-      // Phase 5: Business identity
-      supabase.from('company_info').select('name, industry, website, description').eq('user_id', userId).limit(1).maybeSingle(),
-      supabase.from('solutions').select('name').eq('user_id', userId).order('created_at', { ascending: false }).limit(3),
-      supabase.from('company_competitors').select('name').eq('user_id', userId).order('priority_order', { ascending: true }).limit(3)
-    ]);
+    ];
 
-    const contentCount = contentResult.count || 0;
+    // Conditional queries based on intent categories
+    const needsEngage = queryIntent.categories.includes('engage') || queryIntent.categories.includes('social');
+    const needsIdentity = queryIntent.categories.some(c => ['competitors', 'solutions', 'campaigns', 'proposals'].includes(c));
+    const needsRecent = queryIntent.categories.some(c => ['content', 'performance', 'activity_log'].includes(c));
+
+    const [
+      contentStatusResult,
+      proposalResult,
+      keywordResult,
+      solutionResult,
+      competitorResult,
+      campaignResult,
+      queueResult,
+    ] = await Promise.all(coreQueries);
+
+    // Calculate content status counts from single query
+    const contentStatusData = contentStatusResult.data || [];
+    const contentCount = contentStatusResult.count || contentStatusData.length;
+    const draftCount = contentStatusData.filter((c: any) => c.status === 'draft').length;
+    const publishedCount = contentStatusData.filter((c: any) => c.status === 'published').length;
     const proposalCount = proposalResult.count || 0;
     const keywordCount = keywordResult.count || 0;
     const solutionCount = solutionResult.count || 0;
     const competitorCount = competitorResult.count || 0;
-    const competitorSolutionCount = competitorSolutionResult.count || 0;
     const activeCampaignCount = campaignResult.count || 0;
-    const draftCount = draftContentResult.count || 0;
-    const publishedCount = publishedContentResult.count || 0;
-    
-    // Calculate queue status counts
-    const queueItems = queueResult.data || [];
-    const pendingQueueCount = queueItems.filter(i => i.status === 'pending').length;
-    const processingQueueCount = queueItems.filter(i => i.status === 'processing').length;
-    const completedQueueCount = queueItems.filter(i => i.status === 'completed').length;
-    const failedQueueCount = queueItems.filter(i => i.status === 'failed').length;
-    
-    // Recent content for activity context
-    const recentContent = recentContentResult.data || [];
-    const recentActivitySection = recentContent.length > 0
-      ? `\n## Recent Activity:\n${recentContent.map(c => `• "${c.title}" (${new Date(c.created_at).toLocaleDateString()})`).join('\n')}`
-      : '';
 
-    // Phase 4: Engage module counts
-    const engageWorkspaceId = engageWorkspaceResult.data?.workspace_id || null;
-    let engageContactCount = 0, engageSegmentCount = 0, engageJourneyCount = 0, engageAutomationCount = 0, engageEmailCampaignCount = 0;
-    
-    if (engageWorkspaceId) {
-      const [contactsR, segmentsR, journeysR, automationsR, emailCampaignsR] = await Promise.all([
-        supabase.from('engage_contacts').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
-        supabase.from('engage_segments').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
-        supabase.from('engage_journeys').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
-        supabase.from('engage_automations').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
-        supabase.from('engage_email_campaigns').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
-      ]);
-      engageContactCount = contactsR.count || 0;
-      engageSegmentCount = segmentsR.count || 0;
-      engageJourneyCount = journeysR.count || 0;
-      engageAutomationCount = automationsR.count || 0;
-      engageEmailCampaignCount = emailCampaignsR.count || 0;
+    // Conditional: recent content
+    let recentContent: any[] = [];
+    if (needsRecent) {
+      const recentContentResult = await supabase.from('content_items').select('title, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5);
+      recentContent = recentContentResult.data || [];
     }
 
-    // Phase 5: Build business identity snippet
-    const companyInfo = companyInfoResult.data;
-    const topSolutions = (topSolutionsResult.data || []).map((s: any) => s.name);
-    const topCompetitors = (topCompetitorsResult.data || []).map((c: any) => c.name);
+    // Conditional: Engage module counts (only when engage-related)
+    let engageWorkspaceId: string | null = null;
+    let engageContactCount = 0, engageSegmentCount = 0, engageJourneyCount = 0, engageAutomationCount = 0, engageEmailCampaignCount = 0;
+    
+    if (needsEngage) {
+      const engageWorkspaceResult = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
+      engageWorkspaceId = engageWorkspaceResult.data?.workspace_id || null;
+      
+      if (engageWorkspaceId) {
+        const [contactsR, segmentsR, journeysR, automationsR, emailCampaignsR] = await Promise.all([
+          supabase.from('engage_contacts').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+          supabase.from('engage_segments').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+          supabase.from('engage_journeys').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+          supabase.from('engage_automations').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+          supabase.from('engage_email_campaigns').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+        ]);
+        engageContactCount = contactsR.count || 0;
+        engageSegmentCount = segmentsR.count || 0;
+        engageJourneyCount = journeysR.count || 0;
+        engageAutomationCount = automationsR.count || 0;
+        engageEmailCampaignCount = emailCampaignsR.count || 0;
+      }
+    } else {
+      // Quick workspace check for engage section display (single query only)
+      const engageWorkspaceResult = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
+      engageWorkspaceId = engageWorkspaceResult.data?.workspace_id || null;
+    }
+
+    // Conditional: Business identity (only when relevant)
+    let companyInfo: any = null;
+    let topSolutions: string[] = [];
+    let topCompetitors: string[] = [];
+    
+    if (needsIdentity) {
+      const [companyInfoResult, topSolutionsResult, topCompetitorsResult] = await Promise.all([
+        supabase.from('company_info').select('name, industry, website, description').eq('user_id', userId).limit(1).maybeSingle(),
+        supabase.from('solutions').select('name').eq('user_id', userId).order('created_at', { ascending: false }).limit(3),
+        supabase.from('company_competitors').select('name').eq('user_id', userId).order('priority_order', { ascending: true }).limit(3)
+      ]);
+      companyInfo = companyInfoResult.data;
+      topSolutions = (topSolutionsResult.data || []).map((s: any) => s.name);
+      topCompetitors = (topCompetitorsResult.data || []).map((c: any) => c.name);
+    }
+    
+    const competitorSolutionCount = 0; // Only fetched on-demand via tools now
     
     const identitySnippet = companyInfo ? `
 ## 🏢 Business Identity:
