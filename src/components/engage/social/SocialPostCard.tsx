@@ -9,8 +9,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Calendar, MoreVertical, Pencil, Trash2, Clock, CheckCircle2, AlertCircle, FileEdit,
-  Twitter, Linkedin, Instagram, Facebook, Copy, BarChart3,
+  Twitter, Linkedin, Instagram, Facebook, Copy, BarChart3, Loader2, Info,
 } from 'lucide-react';
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface SocialPostCardProps {
   post: any;
@@ -20,11 +23,17 @@ interface SocialPostCardProps {
   onDuplicate?: (post: any) => void;
 }
 
-const statusConfig: Record<string, { label: string; icon: React.ElementType; className: string }> = {
+const statusConfig: Record<string, { label: string; icon: React.ElementType; className: string; tooltip?: string }> = {
   draft: { label: 'Draft', icon: FileEdit, className: 'bg-muted/50 text-muted-foreground border-border/50' },
   scheduled: { label: 'Scheduled', icon: Clock, className: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
   posted: { label: 'Posted', icon: CheckCircle2, className: 'bg-green-500/10 text-green-400 border-green-500/30' },
   failed: { label: 'Failed', icon: AlertCircle, className: 'bg-destructive/10 text-destructive border-destructive/30' },
+  pending_integration: {
+    label: 'Saved Locally',
+    icon: Loader2,
+    className: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+    tooltip: 'This post is saved and ready to publish once social platform integrations (Twitter, LinkedIn, etc.) are connected.',
+  },
 };
 
 const channelIcons: Record<string, React.ElementType> = {
@@ -88,6 +97,14 @@ export const SocialPostCard: React.FC<SocialPostCardProps> = ({ post, index, onE
               <span className="text-muted-foreground/60">{charCount} chars</span>
             </div>
 
+            {/* Pending integration notice */}
+            {post.status === 'pending_integration' && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-400/80">
+                <Info className="h-3 w-3 flex-shrink-0" />
+                <span>Saved locally — connect social accounts in Settings to publish</span>
+              </div>
+            )}
+
             {/* Analytics placeholder for posted items */}
             {post.status === 'posted' && (
               <div className="flex items-center gap-1.5">
@@ -99,10 +116,21 @@ export const SocialPostCard: React.FC<SocialPostCardProps> = ({ post, index, onE
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Badge variant="outline" className={`gap-1 text-xs ${status.className}`}>
-              <StatusIcon className="h-3 w-3" />
-              {status.label}
-            </Badge>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className={`gap-1 text-xs ${status.className}`}>
+                    <StatusIcon className="h-3 w-3" />
+                    {status.label}
+                  </Badge>
+                </TooltipTrigger>
+                {status.tooltip && (
+                  <TooltipContent side="left" className="max-w-[240px] text-xs">
+                    {status.tooltip}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
