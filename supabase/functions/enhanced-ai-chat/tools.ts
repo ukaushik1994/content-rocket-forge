@@ -62,6 +62,12 @@ import {
   executeBrandAnalyticsTool
 } from './brand-analytics-tools.ts';
 
+import {
+  IMAGE_GENERATION_TOOL_DEFINITIONS,
+  IMAGE_GENERATION_TOOL_NAMES,
+  executeImageGenerationTool
+} from './image-generation-tools.ts';
+
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Core data tools
