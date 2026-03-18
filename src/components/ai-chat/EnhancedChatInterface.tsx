@@ -299,7 +299,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             .select('id, name')
             .eq('user_id', user.id)
             .limit(50);
-          solutions = (solutionData || []) as { id: string; name: string }[];
+          solutions = (solutionData || []) as unknown as { id: string; name: string }[];
         } catch (e) {
           console.warn('Solutions table query failed, continuing without solutions:', e);
         }
