@@ -2937,7 +2937,11 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       let secondCallError = null;
       const maxRetriesPhase2 = 3;
       
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // Use the latest data reference (may have been updated by retry path)
+      const latestData = aiProxyResult.data.data || aiProxyResult.data;
+      const toolCallsMessage = latestData?.choices?.[0]?.message;
+
+      for (let attempt = 1; attempt <= maxRetriesPhase2; attempt++) {
         const result = await supabase.functions.invoke('ai-proxy', {
           body: {
             service: provider.provider,
@@ -2951,7 +2955,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
                   content: systemPrompt,
                 },
                 ...messages,
-                data.choices[0].message, // Original AI message with tool_calls
+                toolCallsMessage, // Use latest (possibly retried) AI message with tool_calls
                 ...toolResults // Tool results
               ],
               temperature: 0.7,
