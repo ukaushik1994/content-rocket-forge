@@ -23,6 +23,18 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
   // Global due content notifications — runs for all authenticated pages
   useDueContentNotifications();
 
+  // Sync AIChatDB state → ChatContextBridge so downstream consumers get live data
+  const { updateActiveConversation, syncMessages } = useChatContextBridge();
+  const { messages } = useSharedAIChatDB();
+
+  useEffect(() => {
+    updateActiveConversation(activeConversation);
+  }, [activeConversation, updateActiveConversation]);
+
+  useEffect(() => {
+    syncMessages(messages);
+  }, [messages, syncMessages]);
+
   const {
     conversations,
     activeConversation,
