@@ -223,13 +223,19 @@ export const useEnhancedAIChatDB = () => {
         status: 'completed'
       };
 
-      const { error } = await supabase
+      const { data: insertedData, error } = await supabase
         .from('ai_messages')
-        .insert(messageData);
+        .insert(messageData)
+        .select('id')
+        .single();
       
       if (error) {
         console.error('Database error saving message:', error);
+        return null;
       }
+      
+      // Return the DB-generated UUID so callers can update local state
+      return insertedData?.id || null;
     } catch (error) {
       console.error('Error saving message:', error);
     }
@@ -383,7 +389,10 @@ export const useEnhancedAIChatDB = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    await saveMessage(userMessage, conversationId);
+    const userDbId = await saveMessage(userMessage, conversationId);
+    if (userDbId) {
+      setMessages(prev => prev.map(m => m.id === userMessage.id ? { ...m, id: userDbId } : m));
+    }
 
     // Track assistant message ID for later insertion (no placeholder in messages array)
     const assistantId = `assistant-${Date.now()}`;
@@ -392,11 +401,12 @@ export const useEnhancedAIChatDB = () => {
     // Auto-name conversation early (before AI call) so it works even if backend fails
     if (messages.length === 0 && conversationId) {
       const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
-      supabase
-        .from('ai_conversations')
-        .update({ title })
-        .eq('id', conversationId)
-        .then(() => {
+      Promise.resolve(
+        supabase
+          .from('ai_conversations')
+          .update({ title })
+          .eq('id', conversationId)
+      ).then(() => {
           setConversations(prev => 
             prev.map(conv => 
               conv.id === conversationId 
@@ -404,6 +414,8 @@ export const useEnhancedAIChatDB = () => {
                 : conv
             )
           );
+        }).catch((err: unknown) => {
+          console.warn('Failed to update conversation title:', err);
         });
     }
 
@@ -548,7 +560,10 @@ export const useEnhancedAIChatDB = () => {
       };
 
       setMessages(prev => [...prev, finalMessage]);
-      await saveMessage(finalMessage, conversationId);
+      const assistantDbId = await saveMessage(finalMessage, conversationId);
+      if (assistantDbId) {
+        setMessages(prev => prev.map(m => m.id === finalMessage.id ? { ...m, id: assistantDbId } : m));
+      }
 
       // Title already set early (line 392-408) — no duplicate update needed
     } catch (error) {
@@ -951,9 +966,10 @@ export const useEnhancedAIChatDB = () => {
   }, [conversations, toast]);
 
   // Share conversation (generate shareable link)
+  // TODO: Implement proper share token system with expiry for secure sharing.
+  // Currently shares the conversation UUID directly which relies on RLS for protection.
   const shareConversation = useCallback(async (conversationId: string) => {
     try {
-      // Fixed: Use /shared-conversation route which now exists
       const shareUrl = `${window.location.origin}/shared-conversation/${conversationId}`;
       
       if (navigator.share) {

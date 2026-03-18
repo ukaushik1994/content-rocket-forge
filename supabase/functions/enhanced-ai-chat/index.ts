@@ -1651,9 +1651,9 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
         engageEmailCampaignCount = emailCampaignsR.count || 0;
       }
     } else {
-      // Quick workspace check for engage section display (single query only)
-      const engageWorkspaceResult = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
-      engageWorkspaceId = engageWorkspaceResult.data?.workspace_id || null;
+      // Only query for workspace ID if engage context might be needed downstream
+      // Skip unnecessary query when engage is not relevant
+      engageWorkspaceId = null;
     }
 
     // Conditional: Business identity (only when relevant)
@@ -2669,6 +2669,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     // =========================================================================
     if ((!toolCalls || toolCalls.length === 0) && queryRequiresToolExecution(queryIntent) && !useCampaignStrategyTool) {
       console.log('⚠️ Data query returned text-only response without tool_calls. Retrying with tool_choice=required...');
+      emitProgress('retry', 'Refining response...');
       
       const retryResult = await aiRequestQueue.enqueue(() =>
         supabase.functions.invoke('ai-proxy', {
@@ -2934,9 +2935,13 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       
       let secondCallResult = null;
       let secondCallError = null;
-      const maxRetries = 3;
+      const maxRetriesPhase2 = 3;
       
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // Use the latest data reference (may have been updated by retry path)
+      const latestData = aiProxyResult.data.data || aiProxyResult.data;
+      const toolCallsMessage = latestData?.choices?.[0]?.message;
+
+      for (let attempt = 1; attempt <= maxRetriesPhase2; attempt++) {
         const result = await supabase.functions.invoke('ai-proxy', {
           body: {
             service: provider.provider,
@@ -2950,7 +2955,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
                   content: systemPrompt,
                 },
                 ...messages,
-                data.choices[0].message, // Original AI message with tool_calls
+                toolCallsMessage, // Use latest (possibly retried) AI message with tool_calls
                 ...toolResults // Tool results
               ],
               temperature: 0.7,
@@ -2974,14 +2979,14 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
           secondCallError.message?.includes('rate limit') || 
           secondCallError.message?.includes('Rate limit')
         )) {
-          console.warn(`⏰ Rate limit hit on second call, attempt ${attempt}/${maxRetries}`);
-          if (attempt < maxRetries) {
+          console.warn(`⏰ Rate limit hit on second call, attempt ${attempt}/${maxRetriesPhase2}`);
+          if (attempt < maxRetriesPhase2) {
             const waitTime = 5000 * attempt;
             console.log(`⏳ Waiting ${waitTime}ms before retry...`);
             await new Promise(r => setTimeout(r, waitTime));
             continue;
           }
-        } else if (attempt < maxRetries) {
+        } else if (attempt < maxRetriesPhase2) {
           await new Promise(r => setTimeout(r, 2000 * attempt));
         }
       }
@@ -2998,130 +3003,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       // FIX: FALLBACK CHART GENERATION FROM TOOL RESULTS
       // =============================================================================
       // If AI didn't generate visualData, create charts from tool results automatically
-      const generateFallbackChartFromToolResults = (results: any[], userQuery: string): any => {
-        // Parse tool results
-        for (const result of results) {
-          try {
-            const data = JSON.parse(result.content);
-            const toolName = result.name;
-            
-            // Skip empty results
-            if (!data || (Array.isArray(data) && data.length === 0)) continue;
-            
-            console.log(`📊 Generating fallback chart from ${toolName} tool (${Array.isArray(data) ? data.length : 1} items)`);
-            
-            // Generate chart based on tool type
-            if (toolName === 'get_proposals' && Array.isArray(data) && data.length > 0) {
-              return {
-                type: 'chart',
-                title: 'AI Strategy Proposals Analysis',
-                chartConfig: {
-                  type: 'bar',
-                  data: data.slice(0, 10).map((p: any) => ({
-                    name: (p.title || 'Untitled').substring(0, 35),
-                    impressions: p.estimated_impressions || 0,
-                    status: p.status || 'draft'
-                  })),
-                  categories: ['name'],
-                  series: [{ dataKey: 'impressions', name: 'Est. Impressions' }]
-                },
-                summaryInsights: {
-                  metricCards: [
-                    { id: '1', title: 'Total Proposals', value: data.length.toString(), icon: 'FileText', color: 'blue' },
-                    { id: '2', title: 'Avg Impressions', value: Math.round(data.reduce((s: number, p: any) => s + (p.estimated_impressions || 0), 0) / data.length).toLocaleString(), icon: 'TrendingUp', color: 'green' },
-                    { id: '3', title: 'Available', value: data.filter((p: any) => p.status === 'available').length.toString(), icon: 'CheckCircle', color: 'emerald' }
-                  ],
-                  bulletPoints: [
-                    `${data.length} total AI strategy proposals in your database`,
-                    `Top proposal: "${(data[0]?.title || 'N/A').substring(0, 40)}" with ${(data[0]?.estimated_impressions || 0).toLocaleString()} est. impressions`,
-                    data.filter((p: any) => p.status === 'available').length > 0 
-                      ? `${data.filter((p: any) => p.status === 'available').length} proposals ready for action`
-                      : 'Consider scheduling proposals for content generation'
-                  ]
-                },
-                actionableItems: [
-                  { id: '1', title: 'View Strategy Proposals', actionType: 'navigate', targetUrl: '/ai-proposals', icon: 'FileText' },
-                  { id: '2', title: 'Create New Strategy', actionType: 'navigate', targetUrl: '/ai-proposals', icon: 'Plus' }
-                ],
-                deepDivePrompts: [
-                  'Which proposal has the best potential?',
-                  'Show me proposals by content type',
-                  'What keywords are these proposals targeting?'
-                ]
-              };
-            }
-            
-            if (toolName === 'get_content_items' && Array.isArray(data) && data.length > 0) {
-              return {
-                type: 'chart',
-                title: 'Content Performance Overview',
-                chartConfig: {
-                  type: 'bar',
-                  data: data.slice(0, 10).map((c: any) => ({
-                    name: (c.title || 'Untitled').substring(0, 30),
-                    seoScore: c.seo_score || 0,
-                    wordCount: c.word_count || 0
-                  })),
-                  categories: ['name'],
-                  series: [{ dataKey: 'seoScore', name: 'SEO Score' }]
-                },
-                summaryInsights: {
-                  metricCards: [
-                    { id: '1', title: 'Total Content', value: data.length.toString(), icon: 'FileText', color: 'blue' },
-                    { id: '2', title: 'Avg SEO Score', value: Math.round(data.reduce((s: number, c: any) => s + (c.seo_score || 0), 0) / data.length).toString(), icon: 'Search', color: 'amber' },
-                    { id: '3', title: 'Published', value: data.filter((c: any) => c.status === 'published').length.toString(), icon: 'Globe', color: 'green' }
-                  ]
-                },
-                actionableItems: [
-                  { id: '1', title: 'View All Content', actionType: 'navigate', targetUrl: '/repository', icon: 'FileText' },
-                  { id: '2', title: 'Create New Content', actionType: 'navigate', targetUrl: '/repository', icon: 'Plus' }
-                ]
-              };
-            }
-            
-            if (toolName === 'get_campaign_intelligence' && data) {
-              const campaigns = Array.isArray(data) ? data : [data];
-              if (campaigns.length > 0 && campaigns[0].campaign) {
-                return {
-                  type: 'chart',
-                  title: 'Campaign Intelligence Dashboard',
-                  chartConfig: {
-                    type: 'bar',
-                    data: campaigns.slice(0, 5).map((c: any) => ({
-                      name: (c.campaign?.name || 'Campaign').substring(0, 25),
-                      completed: c.queueStatus?.completed || 0,
-                      pending: c.queueStatus?.pending || 0,
-                      failed: c.queueStatus?.failed || 0
-                    })),
-                    categories: ['name'],
-                    series: [
-                      { dataKey: 'completed', name: 'Completed' },
-                      { dataKey: 'pending', name: 'Pending' }
-                    ]
-                  },
-                  summaryInsights: {
-                    metricCards: [
-                      { id: '1', title: 'Active Campaigns', value: campaigns.length.toString(), icon: 'Zap', color: 'purple' },
-                      { id: '2', title: 'Content Generated', value: campaigns.reduce((s: number, c: any) => s + (c.queueStatus?.completed || 0), 0).toString(), icon: 'CheckCircle', color: 'green' },
-                      { id: '3', title: 'Queue Pending', value: campaigns.reduce((s: number, c: any) => s + (c.queueStatus?.pending || 0), 0).toString(), icon: 'Clock', color: 'amber' }
-                    ]
-                  },
-                  actionableItems: [
-                    { id: '1', title: 'View Campaigns', actionType: 'navigate', targetUrl: '/campaigns', icon: 'Zap' }
-                  ]
-                };
-              }
-            }
-            
-          } catch (e) {
-            console.warn('Failed to parse tool result for chart generation:', e);
-          }
-        }
-        return null;
-      };
-      
-      // Store fallback chart data for later use
-      const fallbackChartData = generateFallbackChartFromToolResults(toolResults, userQuery);
+      // Reuse the same function used by auto-execute path
+      const fallbackChartData = generateFallbackChartFromAutoResults(toolResults, userQuery);
       if (fallbackChartData) {
         console.log('📊 Generated fallback chart from tool results - will use if AI response lacks visualData');
       }
@@ -3773,7 +3656,13 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
         // Email stats (engage_email_campaigns)
         platformFetches.push((async () => {
           try {
-            const { count } = await supabase.from('engage_email_campaigns').select('id', { count: 'exact', head: true });
+            // Get user's workspace for proper filtering
+            const { data: wsData } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
+            const analystWorkspaceId = wsData?.workspace_id;
+            const emailQuery = analystWorkspaceId 
+              ? supabase.from('engage_email_campaigns').select('id', { count: 'exact', head: true }).eq('workspace_id', analystWorkspaceId)
+              : supabase.from('engage_email_campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+            const { count } = await emailQuery;
             if (count !== null && count > 0) { platformStats['totalEmailCampaigns'] = count; analyticsInsights.push(`${count} email campaigns in Engage`); }
           } catch (_) { /* table may not exist */ }
         })());
