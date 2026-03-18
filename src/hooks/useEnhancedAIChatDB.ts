@@ -51,6 +51,9 @@ export const useEnhancedAIChatDB = () => {
   const freshConversationRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesRef = useRef<EnhancedChatMessage[]>([]);
+  const isSendingRef = useRef(false);
+  const isEditingRef = useRef(false);
+  const loadRequestRef = useRef(0);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -105,6 +108,7 @@ export const useEnhancedAIChatDB = () => {
 
   // Load messages for active conversation
   const loadMessages = useCallback(async (conversationId: string) => {
+    const requestId = ++loadRequestRef.current;
     try {
       const { data, error } = await supabase
         .from('ai_messages')
@@ -113,6 +117,9 @@ export const useEnhancedAIChatDB = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      
+      // Ignore stale results if conversation changed during fetch
+      if (loadRequestRef.current !== requestId) return;
       
       const formattedMessages: EnhancedChatMessage[] = (data || []).map(msg => {
         // Safely parse JSON fields
@@ -441,6 +448,16 @@ export const useEnhancedAIChatDB = () => {
       return;
     }
 
+    // Prevent rapid-fire messages — block while AI is still responding
+    if (isSendingRef.current) {
+      toast({
+        title: "Please wait",
+        description: "The AI is still processing your previous message",
+      });
+      return;
+    }
+    isSendingRef.current = true;
+
     // Handle /help command
     const trimmedLower = content.trim().toLowerCase();
     if (trimmedLower === '/help' || trimmedLower === 'what can you do' || trimmedLower === 'what can you do?') {
@@ -686,34 +703,42 @@ export const useEnhancedAIChatDB = () => {
         ? "The request timed out. The AI might be processing a complex query. You can retry or check your API key settings."
         : "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.";
       
+      const errorActions = [
+        {
+          id: 'retry-' + assistantId,
+          type: 'button' as const,
+          label: '🔄 Retry',
+          action: 'send_message',
+          data: { message: content }
+        },
+        {
+          id: 'settings-' + assistantId,
+          type: 'button' as const,
+          label: '⚙️ API Settings',
+          action: 'open_settings',
+          data: { tab: 'api' }
+        }
+      ];
+
       const errorMessage: EnhancedChatMessage = {
         id: assistantId,
         role: 'assistant',
         content: errorContent,
         timestamp: new Date(),
         messageStatus: 'error',
-        actions: [
-          {
-            id: 'retry-' + assistantId,
-            type: 'button' as const,
-            label: '🔄 Retry',
-            action: 'send_message',
-            data: { message: content }
-          },
-          {
-            id: 'settings-' + assistantId,
-            type: 'button' as const,
-            label: '⚙️ API Settings',
-            action: 'open_settings',
-            data: { tab: 'api' }
-          }
-        ]
+        actions: errorActions
       };
       setMessages(prev => [...prev, errorMessage]);
+
+      // Persist error message to DB so it survives reload
+      if (conversationId) {
+        await saveMessage(errorMessage, conversationId);
+      }
     } finally {
       setIsLoading(false);
       setIsTyping(false);
       setProgressText('');
+      isSendingRef.current = false;
     }
   }, [messages, toast, user, activeConversation, createConversation, saveMessage, executeToolAction]);
 
@@ -1019,16 +1044,22 @@ export const useEnhancedAIChatDB = () => {
 
   // Rename conversation
   const renameConversation = useCallback(async (conversationId: string, newTitle: string) => {
+    // Guard against empty string rename
+    if (!newTitle.trim()) {
+      toast({ title: "Invalid name", description: "Conversation name cannot be empty", variant: "destructive" });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('ai_conversations')
-        .update({ title: newTitle })
+        .update({ title: newTitle.trim() })
         .eq('id', conversationId);
 
       if (error) throw error;
 
       setConversations(prev => prev.map(conv =>
-        conv.id === conversationId ? { ...conv, title: newTitle } : conv
+        conv.id === conversationId ? { ...conv, title: newTitle.trim() } : conv
       ));
 
       toast({ title: "Renamed", description: "Conversation renamed successfully" });
@@ -1052,6 +1083,12 @@ export const useEnhancedAIChatDB = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+
+      // Guard against exporting empty conversations
+      if (!messagesData || messagesData.length === 0) {
+        toast({ title: "Nothing to export", description: "This conversation has no messages yet" });
+        return;
+      }
 
       const safeTitle = conversation.title.replace(/[^a-z0-9]/gi, '_');
 
@@ -1186,6 +1223,16 @@ export const useEnhancedAIChatDB = () => {
   // Edit message (within 5-minute window) — regenerates AI response inline (no duplicate)
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
     if (!user) return;
+    
+    // Prevent rapid double-edit race condition
+    if (isEditingRef.current) {
+      toast({
+        title: "Please wait",
+        description: "An edit is already in progress",
+      });
+      return;
+    }
+    isEditingRef.current = true;
     
     // Enforce 5-minute edit window
     const msg = messages.find(m => m.id === messageId);
@@ -1340,6 +1387,7 @@ export const useEnhancedAIChatDB = () => {
       setIsLoading(false);
       setIsTyping(false);
       setProgressText('');
+      isEditingRef.current = false;
     }
   }, [user, toast, messages, activeConversation, saveMessage]);
 
