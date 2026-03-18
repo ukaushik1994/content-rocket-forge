@@ -46,7 +46,7 @@ const charLimits: Record<string, number> = {
 
 const commonHashtags = ['#marketing', '#socialmedia', '#growth', '#brand', '#content', '#digital', '#strategy'];
 
-const statusFilters = ['all', 'draft', 'scheduled', 'posted', 'failed'] as const;
+const statusFilters = ['all', 'draft', 'scheduled', 'posted', 'pending_integration', 'failed'] as const;
 
 import { engageStagger } from '../shared/engageAnimations';
 const stagger = engageStagger;
