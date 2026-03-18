@@ -480,12 +480,38 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
                                 {conversation.pinned && <Pin className="h-3 w-3 text-primary/60 flex-shrink-0" />}
-                                <h3 className={cn(
-                                  "text-[13px] truncate",
-                                  activeConversation === conversation.id ? "text-foreground font-medium" : "text-foreground/90"
-                                )}>
-                                  {conversation.title}
-                                </h3>
+                                {renamingId === conversation.id ? (
+                                  <input
+                                    ref={renameInputRef}
+                                    value={renameValue}
+                                    onChange={(e) => setRenameValue(e.target.value)}
+                                    onBlur={() => {
+                                      if (renameValue.trim() && renameValue.trim() !== conversation.title) {
+                                        onRenameConversation?.(conversation.id, renameValue.trim());
+                                      }
+                                      setRenamingId(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        if (renameValue.trim() && renameValue.trim() !== conversation.title) {
+                                          onRenameConversation?.(conversation.id, renameValue.trim());
+                                        }
+                                        setRenamingId(null);
+                                      }
+                                      if (e.key === 'Escape') setRenamingId(null);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-[13px] bg-accent/50 border border-border/30 rounded px-1.5 py-0.5 outline-none w-full text-foreground"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <h3 className={cn(
+                                    "text-[13px] truncate",
+                                    activeConversation === conversation.id ? "text-foreground font-medium" : "text-foreground/90"
+                                  )}>
+                                    {conversation.title}
+                                  </h3>
+                                )}
                               </div>
                               <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                                 {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
@@ -504,6 +530,19 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="bg-background border-border/20">
+                                {onRenameConversation && (
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setRenameValue(conversation.title);
+                                      setRenamingId(conversation.id);
+                                      setTimeout(() => renameInputRef.current?.focus(), 50);
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4 mr-2" />
+                                    Rename
+                                  </DropdownMenuItem>
+                                )}
                                 {onPinConversation && (
                                   <DropdownMenuItem
                                     onClick={(e) => {
