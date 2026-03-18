@@ -2496,6 +2496,10 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       toolsToUse = [CAMPAIGN_STRATEGY_TOOL]; // Use only this tool for focused generation
       toolChoice = { type: "function", function: { name: "generate_campaign_strategies" } };
       console.log('🎯 Using campaign strategy tool for structured generation');
+    } else if (queryRequiresToolExecution(queryIntent)) {
+      // Fix 1: Force tool_choice for data queries
+      toolChoice = "required";
+      console.log('🔧 Forcing tool_choice=required for data query (categories:', queryIntent.categories.join(', '), ')');
     }
 
     // Call ai-proxy edge function with user's provider (including tools) with retry logic
