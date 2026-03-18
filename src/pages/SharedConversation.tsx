@@ -81,7 +81,7 @@ const SharedConversation: React.FC = () => {
           ...convData,
           messages: (messagesData || []).map(msg => ({
             ...msg,
-            type: msg.type as 'user' | 'assistant' | 'system'
+            role: msg.type as 'user' | 'assistant' | 'system'
           }))
         });
 
