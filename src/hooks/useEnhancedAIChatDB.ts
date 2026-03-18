@@ -871,7 +871,7 @@ export const useEnhancedAIChatDB = () => {
       console.error('❌ Workflow action failed:', error);
       toast({
         title: "Workflow Error",
-        description: `Failed to execute ${workflowAction}: ${error.message}`,
+        description: `Failed to execute ${workflowAction}: ${(error as Error).message || String(error)}`,
         variant: "destructive"
       });
     }
