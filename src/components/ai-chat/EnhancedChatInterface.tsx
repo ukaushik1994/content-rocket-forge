@@ -88,10 +88,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     return messages.filter(m => m.content.toLowerCase().includes(q)).map(m => m.id);
   }, [messages, messageSearchQuery]);
 
-  // Filter messages based on search
-  const filteredMessages = React.useMemo(() => {
-    return messages; // Return all messages, matches tracked via messageSearchResults
-  }, [messages]);
 
   // Handle search navigation
   const handleNavigateMatch = (direction: 'prev' | 'next') => {
