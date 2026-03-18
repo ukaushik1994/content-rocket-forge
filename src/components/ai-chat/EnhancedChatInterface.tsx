@@ -293,12 +293,16 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       let solutions: { id: string; name: string }[] = [];
       
       if (user) {
-        const { data: solutionData } = await supabase
-          .from('solutions' as any)
-          .select('id, name')
-          .eq('user_id', user.id)
-          .limit(50);
-        solutions = (solutionData || []) as any[];
+        try {
+          const { data: solutionData } = await supabase
+            .from('solutions' as any)
+            .select('id, name')
+            .eq('user_id', user.id)
+            .limit(50);
+          solutions = (solutionData || []) as unknown as { id: string; name: string }[];
+        } catch (e) {
+          console.warn('Solutions table query failed, continuing without solutions:', e);
+        }
       }
 
       // Build conversation history from current messages
@@ -444,7 +448,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     <MessageSearchBar
                       searchQuery={messageSearchQuery}
                       onSearchChange={setMessageSearchQuery}
-                      onExportConversation={exportConversation}
+                      onExportConversation={(format) => activeConversation && exportConversation(activeConversation, format as 'json' | 'markdown' | 'txt')}
                       onShowAnalytics={() => setShowAnalyticsModal(true)}
                       messageCount={messages.length}
                       filteredCount={messageSearchResults.length}

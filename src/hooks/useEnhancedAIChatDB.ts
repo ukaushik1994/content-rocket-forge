@@ -208,7 +208,7 @@ export const useEnhancedAIChatDB = () => {
       });
       return null;
     }
-  }, [user, toast, loadConversations]);
+  }, [user, toast]);
 
   // Delete conversation
   const deleteConversation = useCallback(async (conversationId: string) => {
@@ -796,7 +796,7 @@ export const useEnhancedAIChatDB = () => {
       console.error('❌ Error handling action:', error);
       toast({
         title: "Action Failed",
-        description: `Failed to execute action: ${error.message}`,
+        description: `Failed to execute action: ${(error as Error).message || String(error)}`,
         variant: "destructive"
       });
     }
@@ -871,7 +871,7 @@ export const useEnhancedAIChatDB = () => {
       console.error('❌ Workflow action failed:', error);
       toast({
         title: "Workflow Error",
-        description: `Failed to execute ${workflowAction}: ${error.message}`,
+        description: `Failed to execute ${workflowAction}: ${(error as Error).message || String(error)}`,
         variant: "destructive"
       });
     }
@@ -1038,8 +1038,8 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [toast]);
 
-  // Export conversation (supports JSON and TXT)
-  const exportConversation = useCallback(async (conversationId: string, format: 'json' | 'txt' = 'json') => {
+  // Export conversation (supports JSON, TXT, and Markdown)
+  const exportConversation = useCallback(async (conversationId: string, format: 'json' | 'txt' | 'markdown' = 'json') => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
       if (!conversation) return;
@@ -1055,7 +1055,30 @@ export const useEnhancedAIChatDB = () => {
 
       const safeTitle = conversation.title.replace(/[^a-z0-9]/gi, '_');
 
-      if (format === 'txt') {
+      const downloadFile = (blob: Blob, filename: string) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+      if (format === 'markdown') {
+        const lines = [`# ${conversation.title}`, '', `> Exported: ${new Date().toLocaleString()}`, '---', ''];
+        (messagesData || []).forEach(msg => {
+          const role = msg.type === 'user' ? '**You**' : '**AI**';
+          lines.push(`### ${role} — _${new Date(msg.created_at).toLocaleString()}_`);
+          lines.push('');
+          lines.push(msg.content);
+          lines.push('');
+          lines.push('---');
+          lines.push('');
+        });
+        downloadFile(new Blob([lines.join('\n')], { type: 'text/markdown' }), `conversation-${safeTitle}.md`);
+      } else if (format === 'txt') {
         const lines = [`# ${conversation.title}`, `Exported: ${new Date().toLocaleString()}`, ''];
         (messagesData || []).forEach(msg => {
           const role = msg.type === 'user' ? 'You' : 'AI';
@@ -1063,15 +1086,7 @@ export const useEnhancedAIChatDB = () => {
           lines.push(msg.content);
           lines.push('');
         });
-        const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `conversation-${safeTitle}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        downloadFile(new Blob([lines.join('\n')], { type: 'text/plain' }), `conversation-${safeTitle}.txt`);
       } else {
         const exportData = {
           conversation: {
@@ -1090,15 +1105,7 @@ export const useEnhancedAIChatDB = () => {
           exported_at: new Date().toISOString()
         };
 
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `conversation-${safeTitle}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        downloadFile(new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' }), `conversation-${safeTitle}.json`);
       }
 
       toast({
