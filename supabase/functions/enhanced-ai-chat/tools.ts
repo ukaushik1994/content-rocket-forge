@@ -712,6 +712,13 @@ export async function executeToolCall(
           const result = await executeBrandAnalyticsTool(toolName, toolArgs, supabase, userId);
           return { data: result, error: null };
         }
+
+        // Route image generation tools
+        if (IMAGE_GENERATION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to image generation handler`);
+          const result = await executeImageGenerationTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
         
         switch (toolName) {
           case 'get_content_items': {
