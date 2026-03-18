@@ -33,6 +33,9 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
     renameConversation,
     togglePinConversation,
     toggleArchiveConversation,
+    addTagToConversation,
+    removeTagFromConversation,
+    shareConversation,
   } = useSharedAIChatDB();
 
   // Sync AIChatDB state → ChatContextBridge so downstream consumers get live data
