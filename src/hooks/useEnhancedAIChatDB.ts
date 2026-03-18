@@ -1205,6 +1205,16 @@ export const useEnhancedAIChatDB = () => {
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
     if (!user) return;
     
+    // Prevent rapid double-edit race condition
+    if (isEditingRef.current) {
+      toast({
+        title: "Please wait",
+        description: "An edit is already in progress",
+      });
+      return;
+    }
+    isEditingRef.current = true;
+    
     // Enforce 5-minute edit window
     const msg = messages.find(m => m.id === messageId);
     if (!msg) return;
