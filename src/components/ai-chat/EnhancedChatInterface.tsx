@@ -444,7 +444,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     <MessageSearchBar
                       searchQuery={messageSearchQuery}
                       onSearchChange={setMessageSearchQuery}
-                      onExportConversation={exportConversation}
+                      onExportConversation={(format) => activeConversation && exportConversation(activeConversation, format as 'json' | 'markdown' | 'txt')}
                       onShowAnalytics={() => setShowAnalyticsModal(true)}
                       messageCount={messages.length}
                       filteredCount={messageSearchResults.length}
