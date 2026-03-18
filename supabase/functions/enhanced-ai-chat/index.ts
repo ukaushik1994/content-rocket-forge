@@ -1651,9 +1651,9 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
         engageEmailCampaignCount = emailCampaignsR.count || 0;
       }
     } else {
-      // Quick workspace check for engage section display (single query only)
-      const engageWorkspaceResult = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
-      engageWorkspaceId = engageWorkspaceResult.data?.workspace_id || null;
+      // Only query for workspace ID if engage context might be needed downstream
+      // Skip unnecessary query when engage is not relevant
+      engageWorkspaceId = null;
     }
 
     // Conditional: Business identity (only when relevant)
