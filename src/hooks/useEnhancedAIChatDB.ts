@@ -166,8 +166,7 @@ export const useEnhancedAIChatDB = () => {
       setMessages([]);
       freshConversationRef.current = data.id;
       
-      // Reload conversations to ensure they're fresh
-      await loadConversations();
+      // Local state already updated above — no redundant refetch needed
       
       return data.id;
     } catch (error) {
