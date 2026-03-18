@@ -1581,36 +1581,9 @@ ${insights.map(i => `• ${i}`).join('\n')}
 // Enhanced real data fetching function with Smart Context Loading (Phase 3 Enhanced)
 async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, userQuery: string = '') {
   try {
-    // TOOL-BASED APPROACH: Fetch counts + new Phase 3 context data
-    console.log('📊 Fetching data counts with Phase 3 enhancements...');
+    // TOOL-BASED APPROACH: Fetch counts with intent-aware lazy loading
+    console.log('📊 Fetching data counts (optimized - intent-aware)...');
     
-    // Parallel fetch all counts for efficiency
-    const [
-      contentResult,
-      proposalResult,
-      keywordResult,
-      solutionResult,
-      competitorResult,
-      competitorSolutionResult,
-      // Phase 3 additions
-      campaignResult,
-      queueResult,
-      draftContentResult,
-      publishedContentResult,
-      recentContentResult,
-      // Phase 4: Engage module counts
-      engageWorkspaceResult,
-      // Phase 5: Business identity snippet
-      companyInfoResult,
-      topSolutionsResult,
-      topCompetitorsResult
-    ] = await Promise.all([
-      supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-      supabase.from('ai_strategy_proposals').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-      supabase.from('keywords').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-      supabase.from('solutions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-      supabase.from('company_competitors').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-      supabase.from('competitor_solutions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     // Core counts (always needed for prompt context) — 7 queries
     const coreQueries: Promise<any>[] = [
       supabase.from('content_items').select('status', { count: 'exact' }).eq('user_id', userId),
