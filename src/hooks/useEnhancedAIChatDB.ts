@@ -454,14 +454,23 @@ export const useEnhancedAIChatDB = () => {
         console.warn('⚠️ Conversation memory enrichment failed (non-critical):', memoryError);
       }
 
-      // SSE streaming: use fetch() for real-time progress events
+      // SSE streaming: use fetch() with AbortController for timeout
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token || supabaseKey;
 
+      // Cancel any in-flight request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+      const timeoutId = setTimeout(() => abortController.abort(), 90000); // 90s timeout
+
       const resp = await fetch(`${supabaseUrl}/functions/v1/enhanced-ai-chat`, {
         method: 'POST',
+        signal: abortController.signal,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
@@ -476,6 +485,7 @@ export const useEnhancedAIChatDB = () => {
           stream: true
         })
       });
+      clearTimeout(timeoutId);
 
       if (!resp.ok || !resp.body) {
         const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
