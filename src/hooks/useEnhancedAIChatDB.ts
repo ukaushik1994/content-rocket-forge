@@ -518,7 +518,7 @@ export const useEnhancedAIChatDB = () => {
 
     try {
       // Smart context: keep first message (original intent) + last 9 messages
-      const allMessages = [...messages, userMessage];
+      const allMessages = [...messagesRef.current, userMessage];
       let conversationHistory: Array<{ role: string; content: string }>;
       if (allMessages.length <= 10) {
         conversationHistory = allMessages.map(m => ({ role: m.role, content: m.content }));
