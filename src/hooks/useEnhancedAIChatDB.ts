@@ -401,15 +401,15 @@ export const useEnhancedAIChatDB = () => {
     const assistantId = `assistant-${Date.now()}`;
     setProgressText('');
 
-    // Auto-name conversation early (before AI call) so it works even if backend fails
+    // Auto-name conversation early (before AI call) — await to prevent race condition
     if (messages.length === 0 && conversationId) {
       const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
-      Promise.resolve(
-        supabase
+      try {
+        const { error: titleError } = await supabase
           .from('ai_conversations')
           .update({ title })
-          .eq('id', conversationId)
-      ).then(() => {
+          .eq('id', conversationId);
+        if (!titleError) {
           setConversations(prev => 
             prev.map(conv => 
               conv.id === conversationId 
@@ -417,9 +417,10 @@ export const useEnhancedAIChatDB = () => {
                 : conv
             )
           );
-        }).catch((err: unknown) => {
-          console.warn('Failed to update conversation title:', err);
-        });
+        }
+      } catch (titleErr) {
+        console.warn('Failed to update conversation title:', titleErr);
+      }
     }
 
     try {
