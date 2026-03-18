@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Paperclip, PenLine, BookOpen, BarChart3, Lightbulb, Globe, X } from 'lucide-react';
+import { Plus, Paperclip, PenLine, BookOpen, BarChart3, Lightbulb, Globe, Image, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PlusMenuDropdownProps {
@@ -12,6 +12,7 @@ interface PlusMenuDropdownProps {
   onAnalyst?: () => void;
   onAIProposals?: () => void;
   onWebSearch?: () => void;
+  onImageGeneration?: () => void;
   disabled?: boolean;
 }
 
