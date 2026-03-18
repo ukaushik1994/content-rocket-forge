@@ -1,120 +1,173 @@
 
 
-# AI Chat Bug Fix Plan — 10 Issues, 3 Phases
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Phase 1: Critical Functional Bugs (Issues 1, 2, 3)
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-### Fix 1 — Error Retry Button Never Renders
-**File:** `src/components/ai-chat/EnhancedChatInterface.tsx` (lines 510-521)
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-`EnhancedMessageBubble` is rendered without `onRetry`. The component (line 73) only shows `ErrorMessageBubble` when both `messageStatus === 'error'` AND `onRetry` is truthy.
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-**Change:** Add `onRetry` prop to `EnhancedMessageBubble` in the messages map. The callback should find the last user message before the error message and re-send it:
-```
-onRetry={() => {
-  const idx = messages.findIndex(m => m.id === message.id);
-  const lastUserMsg = messages.slice(0, idx).reverse().find(m => m.role === 'user');
-  if (lastUserMsg) sendMessage(lastUserMsg.content);
-}}
-```
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-### Fix 2 — Edit Message Creates Duplicate Messages
-**File:** `src/hooks/useEnhancedAIChatDB.ts` (lines 1042-1097)
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-`editMessage` calls `sendMessage(newContent)` which creates a NEW user message + AI response. The edited message stays, plus a duplicate appears.
-
-**Change:** Instead of calling `sendMessage`, directly invoke the edge function with the existing conversation history (with the edited content substituted in). Build `conversationHistory` from `messages` state (replacing the edited message's content), then run the same fetch+SSE logic that `sendMessage` uses. Extract the SSE fetch into a shared helper `invokeAIStream(conversationHistory, conversationId)` that both `sendMessage` and `editMessage` can call. After the AI responds, insert the assistant message right after the edited message's position (not appended).
-
-### Fix 3 — SSE Timeout Clears Too Early
-**File:** `src/hooks/useEnhancedAIChatDB.ts` (line 488)
-
-`clearTimeout(timeoutId)` fires after `fetch()` resolves headers, not after streaming completes.
-
-**Change:** Move `clearTimeout(timeoutId)` from line 488 to after the `while(true)` reader loop (after line 531), inside a `finally` block wrapping the reader loop.
-
----
-
-## Phase 2: Medium Severity Fixes (Issues 4, 5, 7, 8)
-
-### Fix 4 — `open_settings` Event Detail Malformed
-**File:** `src/hooks/useEnhancedAIChatDB.ts` (line 655)
-
-Currently: `{ detail: action.data?.tab || 'api' }` — detail is a string.
-Listener in `AIChat.tsx` expects: `event.detail?.tab`.
-
-**Change:** `{ detail: { tab: action.data?.tab || 'api' } }`
-
-### Fix 5 — `RateLimitBanner` Retry Is a No-Op
-**File:** `src/components/ai-chat/EnhancedChatInterface.tsx` (line 422)
-
-Currently logs to console.
-
-**Change:** Wire it to retry the last failed message:
-```tsx
-onRetry={() => {
-  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-  if (lastUserMsg) sendMessage(lastUserMsg.content);
-}}
-```
-
-### Fix 6 — `setMessageSearchResults` Inside `useMemo`
-**File:** `src/components/ai-chat/EnhancedChatInterface.tsx` (line 95)
-
-`setState` inside `useMemo` is a React anti-pattern causing potential infinite loops.
-
-**Change:** Split into a `useMemo` for the filtered IDs and a `useEffect` to sync them to state. Or simply compute `messageSearchResults` as a derived `useMemo` value and remove the separate state entirely:
-```tsx
-const messageSearchResults = useMemo(() => {
-  if (!messageSearchQuery.trim()) return [];
-  const q = messageSearchQuery.toLowerCase();
-  return messages.filter(m => m.content.toLowerCase().includes(q)).map(m => m.id);
-}, [messages, messageSearchQuery]);
-```
-Remove the `useState` for `messageSearchResults`.
-
-### Fix 7 — Title Truncation at Word Boundary
-**File:** `src/hooks/useEnhancedAIChatDB.ts` (line 406)
-
-Currently slices at exactly 40 chars, potentially mid-word.
-
-**Change:** Truncate at last space before 40 chars:
-```ts
-const rawTitle = content.slice(0, 50);
-const title = rawTitle.length > 40
-  ? rawTitle.slice(0, rawTitle.lastIndexOf(' ', 40) || 40) + '...'
-  : rawTitle;
-```
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-## Phase 3: Dead Code Cleanup (Issues 6, 9, 10)
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-### Fix 8 — Remove `StreamingMessageBubble` and `InfiniteScrollMessages`
-**Files to delete:**
-- `src/components/ai-chat/StreamingMessageBubble.tsx`
-- `src/components/ai-chat/InfiniteScrollMessages.tsx`
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-Neither is used by `EnhancedChatInterface`. Verify no other active imports exist first.
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-### Fix 9 — Remove Dead `ChatContextBridge` (or Sync It)
-**File:** `src/contexts/ChatContextBridge.tsx`
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
-`ChatContextBridge` maintains `activeConversationId`, `sharedMessages`, `messageStatuses` that are never synced from the real source of truth (`useEnhancedAIChatDB`). Components using it (`ContextSnapshotPanel`, `RealTimeCollaboration`, `EnhancedContextSidebar`, `AdvancedChatFeatures`) get stale/empty data.
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
 
-**Change:** Add a `useEffect` bridge inside `ChatContextBridgeProvider` that reads from `useSharedAIChatDB()` and syncs `activeConversationId` and `sharedMessages` to the bridge state. This requires `ChatContextBridgeProvider` to be rendered inside `AIChatDBProvider` (verify in `App.tsx`).
-
-### Fix 10 — Remove Dead `enhancedAIService.processEnhancedMessage`
-**File:** `src/services/enhancedAIService.ts`
-
-The `processEnhancedMessage` method and related helpers are never called by the active chat. Keep only `getWorkflowState` and `updateWorkflowState`.
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
 ---
 
-## Implementation Order
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-1. **Phase 1** first — these are user-facing broken features (retry, edit, timeout).
-2. **Phase 2** second — medium bugs that degrade UX.
-3. **Phase 3** last — cleanup that reduces confusion and bundle size.
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
 
-No database migrations needed. No edge function changes. All fixes are frontend-only.
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
 
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
+
+---
+
+# AI Chat Awareness Gaps — Implementation Tracker
+
+## ✅ Batch 1: Remove Glossary — COMPLETE
+- Removed `/glossary-builder` route (redirects to /ai-chat)
+- Removed RepositoryHeader "Build Glossary" button
+- Removed `get_glossary_terms` read tool from tools.ts
+- Removed `create_glossary_term` write tool from content-action-tools.ts
+- Removed glossary from query-analyzer.ts intent detection
+- Removed glossary from system prompt capabilities
+- Removed glossary from ContentType union and content type enums
+- Removed glossary from DashboardSummary stats
+- Removed glossary from ContentTypeSelection page
+- DB tables kept (no destructive migration)
+
+## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
+- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
+- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
+- Added `create_campaign` to cross-module-tools.ts
+- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
+- Added `update_email_template` to engage-action-tools.ts
+- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
+- Added cache invalidation for all new write tools
+- Updated query-analyzer.ts with new intent patterns
+- Updated system prompt with new tool capabilities + usage examples
+- Edge function deployed successfully
+
+## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
+- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
+- 3-step flow: content selection → format selection → generated results with copy/download
+- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
+- Imported RepurposePanel alongside other panels
+- Excluded `content_repurpose` from auto-chart-conversion in edge function
+- Updated system prompt to instruct AI to emit `content_repurpose` visualData
+- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
+- Edge function deployed
+
+## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
+- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
+- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
+- Auto-triggers after `create_content_item` — saves seo_score to content_items
+- Auto-triggers after `generate_full_content` — saves seo_score to content_items
+- Content Wizard already saves seo_score on insert (verified)
+- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
+- Edge function deployed
+## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
+- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
+- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
+- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
+- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
+- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
+- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
+- Updated system prompt tool listing (25 read tools) and usage examples
+- Edge function deployed
+
+---
+
+# AI Chat Frontend Bug Fixes — 10 Issues, 3 Phases ✅ COMPLETE
+
+## ✅ Phase 1: Critical Functional Bugs
+- **Fix 1 — Error Retry Button:** Added `onRetry` prop to `EnhancedMessageBubble` in `EnhancedChatInterface.tsx` — finds last user message before error and re-sends
+- **Fix 2 — Edit Message Duplication:** Rewrote `editMessage` in `useEnhancedAIChatDB.ts` to invoke SSE inline (no `sendMessage` call) — inserts new AI response at correct position without duplicating user message
+- **Fix 3 — SSE Timeout:** Moved `clearTimeout(timeoutId)` into `finally` block after reader loop completes (both in `sendMessage` and `editMessage`)
+
+## ✅ Phase 2: Medium Severity Fixes
+- **Fix 4 — open_settings Event:** Changed `{ detail: action.data?.tab }` → `{ detail: { tab: action.data?.tab } }` to match listener expectations
+- **Fix 5 — RateLimitBanner Retry:** Wired to re-send last user message instead of console.log no-op
+- **Fix 6 — setState in useMemo:** Replaced `useState` + `setMessageSearchResults` inside `useMemo` with pure derived `useMemo` value
+- **Fix 7 — Title Truncation:** Smart truncation at last word boundary before 40 chars
+
+## ✅ Phase 3: Dead Code Cleanup & State Sync
+- **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
+- **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
+- **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed

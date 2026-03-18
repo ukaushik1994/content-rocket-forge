@@ -403,7 +403,10 @@ export const useEnhancedAIChatDB = () => {
 
     // Auto-name conversation early (before AI call) — await to prevent race condition
     if (messages.length === 0 && conversationId) {
-      const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
+      const rawTitle = content.slice(0, 50);
+      const title = rawTitle.length > 40
+        ? rawTitle.slice(0, rawTitle.lastIndexOf(' ', 40) || 40) + '...'
+        : rawTitle;
       try {
         const { error: titleError } = await supabase
           .from('ai_conversations')
@@ -485,7 +488,7 @@ export const useEnhancedAIChatDB = () => {
           stream: true
         })
       });
-      clearTimeout(timeoutId);
+      // Don't clear timeout here — wait until stream reading is complete
 
       if (!resp.ok || !resp.body) {
         const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
@@ -498,36 +501,40 @@ export const useEnhancedAIChatDB = () => {
       let textBuffer = '';
       let response: any = null;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          textBuffer += decoder.decode(value, { stream: true });
 
-        const lines = textBuffer.split('\n');
-        textBuffer = lines.pop() || '';
+          const lines = textBuffer.split('\n');
+          textBuffer = lines.pop() || '';
 
-        let currentEvent = '';
-        for (const line of lines) {
-          const trimmed = line.replace(/\r$/, '');
-          if (trimmed.startsWith('event: ')) {
-            currentEvent = trimmed.slice(7).trim();
-          } else if (trimmed.startsWith('data: ') && currentEvent) {
-            try {
-              const payload = JSON.parse(trimmed.slice(6));
-              if (currentEvent === 'progress') {
-                setProgressText(payload.message || 'Processing...');
-              } else if (currentEvent === 'done') {
-                response = payload;
-              } else if (currentEvent === 'error') {
-                throw new Error(payload.error || payload.message || 'AI processing failed');
+          let currentEvent = '';
+          for (const line of lines) {
+            const trimmed = line.replace(/\r$/, '');
+            if (trimmed.startsWith('event: ')) {
+              currentEvent = trimmed.slice(7).trim();
+            } else if (trimmed.startsWith('data: ') && currentEvent) {
+              try {
+                const payload = JSON.parse(trimmed.slice(6));
+                if (currentEvent === 'progress') {
+                  setProgressText(payload.message || 'Processing...');
+                } else if (currentEvent === 'done') {
+                  response = payload;
+                } else if (currentEvent === 'error') {
+                  throw new Error(payload.error || payload.message || 'AI processing failed');
+                }
+              } catch (e) {
+                if (e instanceof SyntaxError) continue;
+                throw e;
               }
-            } catch (e) {
-              if (e instanceof SyntaxError) continue;
-              throw e;
+              currentEvent = '';
             }
-            currentEvent = '';
           }
         }
+      } finally {
+        clearTimeout(timeoutId);
       }
 
       // Safety net: if no SSE 'done' event found, try parsing full buffer as plain JSON
@@ -652,7 +659,7 @@ export const useEnhancedAIChatDB = () => {
         // Handle action types based on patterns
         switch (actionString) {
           case 'open_settings':
-            window.dispatchEvent(new CustomEvent('openSettings', { detail: action.data?.tab || 'api' }));
+            window.dispatchEvent(new CustomEvent('openSettings', { detail: { tab: action.data?.tab || 'api' } }));
             break;
           case 'create-blog-post':
             console.log('📝 Creating blog post');
@@ -1039,7 +1046,7 @@ export const useEnhancedAIChatDB = () => {
     await loadConversations();
   }, [loadConversations]);
 
-  // Edit message (within 5-minute window) — regenerates AI response
+  // Edit message (within 5-minute window) — regenerates AI response inline (no duplicate)
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
     if (!user) return;
     
@@ -1059,32 +1066,139 @@ export const useEnhancedAIChatDB = () => {
     }
     
     try {
+      // 1. Update message in DB
       const { error } = await supabase
         .from('ai_messages')
         .update({ content: newContent })
         .eq('id', messageId);
-
       if (error) throw error;
 
-      // Find and delete the subsequent assistant message
+      // 2. Find and delete the subsequent assistant message
       const msgIndex = messages.findIndex(m => m.id === messageId);
       const nextAssistant = msgIndex >= 0 ? messages[msgIndex + 1] : null;
       
       if (nextAssistant && nextAssistant.role === 'assistant') {
-        // Delete from DB
         await supabase.from('ai_messages').delete().eq('id', nextAssistant.id);
-        // Remove from local state
-        setMessages(prev => prev.filter(m => m.id !== nextAssistant.id).map(m =>
-          m.id === messageId ? { ...m, content: newContent } : m
-        ));
-      } else {
-        setMessages(prev => prev.map(m =>
-          m.id === messageId ? { ...m, content: newContent } : m
-        ));
       }
 
-      // Re-trigger AI response with edited content
-      await sendMessage(newContent);
+      // 3. Build updated messages array with edited content and without the old assistant response
+      const updatedMessages = messages
+        .filter(m => !(nextAssistant && nextAssistant.role === 'assistant' && m.id === nextAssistant.id))
+        .map(m => m.id === messageId ? { ...m, content: newContent } : m);
+      
+      setMessages(updatedMessages);
+
+      // 4. Build conversation history from updated messages up to and including the edited message
+      const historyUpToEdit = updatedMessages
+        .slice(0, updatedMessages.findIndex(m => m.id === messageId) + 1)
+        .map(m => ({ role: m.role, content: m.content }));
+
+      // 5. Re-trigger AI inline — reuse the SSE fetch logic without creating a new user message
+      setIsLoading(true);
+      setIsTyping(true);
+      setProgressText('');
+
+      const conversationId = activeConversation;
+      if (!conversationId) throw new Error('No active conversation');
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token || supabaseKey;
+
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+      const timeoutId = setTimeout(() => abortController.abort(), 90000);
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/enhanced-ai-chat`, {
+        method: 'POST',
+        signal: abortController.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': supabaseKey,
+        },
+        body: JSON.stringify({
+          messages: historyUpToEdit,
+          context: { conversation_id: conversationId, analystActive: analystActiveRef.current },
+          stream: true
+        })
+      });
+
+      if (!resp.ok || !resp.body) {
+        clearTimeout(timeoutId);
+        const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(errData.error || errData.message || `HTTP ${resp.status}`);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let response: any = null;
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          textBuffer += decoder.decode(value, { stream: true });
+          const lines = textBuffer.split('\n');
+          textBuffer = lines.pop() || '';
+          let currentEvent = '';
+          for (const line of lines) {
+            const trimmed = line.replace(/\r$/, '');
+            if (trimmed.startsWith('event: ')) {
+              currentEvent = trimmed.slice(7).trim();
+            } else if (trimmed.startsWith('data: ') && currentEvent) {
+              try {
+                const payload = JSON.parse(trimmed.slice(6));
+                if (currentEvent === 'progress') setProgressText(payload.message || 'Processing...');
+                else if (currentEvent === 'done') response = payload;
+                else if (currentEvent === 'error') throw new Error(payload.error || payload.message || 'AI processing failed');
+              } catch (e) {
+                if (e instanceof SyntaxError) continue;
+                throw e;
+              }
+              currentEvent = '';
+            }
+          }
+        }
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      if (!response && textBuffer.trim()) {
+        try { response = JSON.parse(textBuffer.trim()); } catch (_) {}
+      }
+      if (!response) throw new Error('No response received from AI');
+
+      const responseContent = response?.message || response?.content || 'No response received';
+      const responseActions = response?.actions || [];
+      const responseVisualData = response?.visualData;
+
+      const assistantId = `assistant-edit-${Date.now()}`;
+      const newAssistantMsg: EnhancedChatMessage = {
+        id: assistantId,
+        role: 'assistant',
+        content: responseContent,
+        timestamp: new Date(),
+        actions: responseActions,
+        visualData: responseVisualData,
+      };
+
+      // Insert assistant message right after the edited message
+      setMessages(prev => {
+        const editIdx = prev.findIndex(m => m.id === messageId);
+        if (editIdx === -1) return [...prev, newAssistantMsg];
+        const before = prev.slice(0, editIdx + 1);
+        const after = prev.slice(editIdx + 1);
+        return [...before, newAssistantMsg, ...after];
+      });
+
+      const assistantDbId = await saveMessage(newAssistantMsg, conversationId);
+      if (assistantDbId) {
+        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, id: assistantDbId } : m));
+      }
     } catch (error) {
       console.error('Error editing message:', error);
       toast({
@@ -1092,9 +1206,12 @@ export const useEnhancedAIChatDB = () => {
         description: "Failed to edit message.",
         variant: "destructive"
       });
-      throw error;
+    } finally {
+      setIsLoading(false);
+      setIsTyping(false);
+      setProgressText('');
     }
-  }, [user, toast, messages, sendMessage]);
+  }, [user, toast, messages, activeConversation, saveMessage]);
 
   // Delete message (soft delete - marks as deleted)
   const deleteMessage = useCallback(async (messageId: string) => {

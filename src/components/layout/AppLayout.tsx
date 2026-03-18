@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useDueContentNotifications } from '@/hooks/useDueContentNotifications';
+import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -25,12 +26,24 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
   const {
     conversations,
     activeConversation,
+    messages,
     selectConversation,
     createConversation,
     deleteConversation,
     togglePinConversation,
     toggleArchiveConversation,
   } = useSharedAIChatDB();
+
+  // Sync AIChatDB state → ChatContextBridge so downstream consumers get live data
+  const { updateActiveConversation, syncMessages } = useChatContextBridge();
+
+  useEffect(() => {
+    updateActiveConversation(activeConversation);
+  }, [activeConversation, updateActiveConversation]);
+
+  useEffect(() => {
+    syncMessages(messages);
+  }, [messages, syncMessages]);
 
   const handleNavigation = (path: string) => {
     navigate(path);
