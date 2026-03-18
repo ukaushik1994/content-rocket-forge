@@ -19,7 +19,22 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v14-2026-03-17T00:00:00Z-web-search-fix';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v15-2026-03-18T00:00:00Z-force-tool-execution';
+
+// Data categories that REQUIRE tool execution (not conversational text)
+const DATA_CATEGORIES = [
+  'content', 'keywords', 'proposals', 'solutions', 'seo', 'campaigns',
+  'competitors', 'analytics', 'performance', 'engage', 'approvals',
+  'calendar', 'research', 'social', 'templates', 'topic_clusters',
+  'content_gaps', 'recommendations', 'repurposed', 'email_threads',
+  'activity_log', 'brand_voice', 'content_performance'
+];
+
+function queryRequiresToolExecution(queryIntent: QueryIntent): boolean {
+  if (queryIntent.isConversational) return false;
+  if (queryIntent.categories.includes('action')) return true;
+  return queryIntent.categories.some(c => DATA_CATEGORIES.includes(c));
+}
 
 // Token estimation (inlined from shared to avoid cross-folder import issues)
 function estimateTokens(text: string): number {
