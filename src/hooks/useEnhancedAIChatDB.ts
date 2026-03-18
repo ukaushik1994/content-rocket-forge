@@ -403,7 +403,10 @@ export const useEnhancedAIChatDB = () => {
 
     // Auto-name conversation early (before AI call) — await to prevent race condition
     if (messages.length === 0 && conversationId) {
-      const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
+      const rawTitle = content.slice(0, 50);
+      const title = rawTitle.length > 40
+        ? rawTitle.slice(0, rawTitle.lastIndexOf(' ', 40) || 40) + '...'
+        : rawTitle;
       try {
         const { error: titleError } = await supabase
           .from('ai_conversations')
