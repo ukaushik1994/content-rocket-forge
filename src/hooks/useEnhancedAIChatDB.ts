@@ -557,7 +557,10 @@ export const useEnhancedAIChatDB = () => {
       };
 
       setMessages(prev => [...prev, finalMessage]);
-      await saveMessage(finalMessage, conversationId);
+      const assistantDbId = await saveMessage(finalMessage, conversationId);
+      if (assistantDbId) {
+        setMessages(prev => prev.map(m => m.id === finalMessage.id ? { ...m, id: assistantDbId } : m));
+      }
 
       // Title already set early (line 392-408) — no duplicate update needed
     } catch (error) {
