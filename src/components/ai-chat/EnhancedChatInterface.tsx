@@ -444,7 +444,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       searchQuery={messageSearchQuery}
                       onSearchChange={setMessageSearchQuery}
                       onExportConversation={exportConversation}
-                      onShowAnalytics={() => {}}
+                      onShowAnalytics={() => setShowAnalyticsModal(true)}
                       messageCount={messages.length}
                       filteredCount={messageSearchResults.length}
                       onNavigateMatch={handleNavigateMatch}
