@@ -389,7 +389,10 @@ export const useEnhancedAIChatDB = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    await saveMessage(userMessage, conversationId);
+    const userDbId = await saveMessage(userMessage, conversationId);
+    if (userDbId) {
+      setMessages(prev => prev.map(m => m.id === userMessage.id ? { ...m, id: userDbId } : m));
+    }
 
     // Track assistant message ID for later insertion (no placeholder in messages array)
     const assistantId = `assistant-${Date.now()}`;
