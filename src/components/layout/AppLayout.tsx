@@ -30,6 +30,7 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
     selectConversation,
     createConversation,
     deleteConversation,
+    renameConversation,
     togglePinConversation,
     toggleArchiveConversation,
   } = useSharedAIChatDB();
