@@ -1,8 +1,18 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
-import { ConversationMessage } from '@/hooks/useAIChat';
+import { ContextualAction } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+// Inline legacy type to remove useAIChat dependency
+interface ConversationMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  actions?: ContextualAction[];
+  type?: 'user' | 'assistant' | 'system';
+}
 
 interface ChatContextState {
   // Shared conversation state
