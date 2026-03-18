@@ -82,6 +82,9 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
     onPinConversation: togglePinConversation,
     onArchiveConversation: toggleArchiveConversation,
     onRenameConversation: renameConversation,
+    onAddTag: addTagToConversation,
+    onRemoveTag: removeTagFromConversation,
+    onShareConversation: shareConversation,
     onOpenPanel: (panelType: string) => {
       const panelRouteMap: Record<string, string> = {
         automations: '/engage/automations',
