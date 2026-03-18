@@ -633,12 +633,7 @@ export const useEnhancedAIChatDB = () => {
       const actionString = action.action;
       console.log('🎯 Action string:', actionString);
       
-      // Log action execution for debugging
-      toast({
-        title: "Action Executed",
-        description: `Processing: ${action.label || actionString}`,
-        duration: 1000
-      });
+      // Only show toast for workflow actions, not for navigation/deep-dive
       
       if (actionString.startsWith('workflow:')) {
         const workflowAction = actionString.replace('workflow:', '');
