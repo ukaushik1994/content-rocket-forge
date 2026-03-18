@@ -966,9 +966,10 @@ export const useEnhancedAIChatDB = () => {
   }, [conversations, toast]);
 
   // Share conversation (generate shareable link)
+  // TODO: Implement proper share token system with expiry for secure sharing.
+  // Currently shares the conversation UUID directly which relies on RLS for protection.
   const shareConversation = useCallback(async (conversationId: string) => {
     try {
-      // Fixed: Use /shared-conversation route which now exists
       const shareUrl = `${window.location.origin}/shared-conversation/${conversationId}`;
       
       if (navigator.share) {
