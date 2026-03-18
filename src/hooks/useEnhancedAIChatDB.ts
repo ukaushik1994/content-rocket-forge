@@ -156,6 +156,7 @@ export const useEnhancedAIChatDB = () => {
           role: msg.type as 'user' | 'assistant' | 'system',
           content: msg.content,
           timestamp: new Date(msg.created_at),
+          messageStatus: msg.status === 'error' ? 'error' as const : undefined,
           visualData,
           actions,
           progressIndicator,
