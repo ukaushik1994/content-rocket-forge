@@ -1077,6 +1077,12 @@ export const useEnhancedAIChatDB = () => {
 
       if (error) throw error;
 
+      // Guard against exporting empty conversations
+      if (!messagesData || messagesData.length === 0) {
+        toast({ title: "Nothing to export", description: "This conversation has no messages yet" });
+        return;
+      }
+
       const safeTitle = conversation.title.replace(/[^a-z0-9]/gi, '_');
 
       const downloadFile = (blob: Blob, filename: string) => {
