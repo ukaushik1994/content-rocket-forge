@@ -638,6 +638,7 @@ export const useEnhancedAIChatDB = () => {
       if (actionString.startsWith('workflow:')) {
         const workflowAction = actionString.replace('workflow:', '');
         console.log('⚙️ Executing workflow:', workflowAction);
+        toast({ title: "Workflow Started", description: `Processing: ${action.label || workflowAction}`, duration: 2000 });
         await handleWorkflowAction(workflowAction, action.data);
       } else if (actionString.startsWith('send:')) {
         const message = actionString.replace('send:', '');
