@@ -194,6 +194,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   onArchiveConversation,
   onPinConversation,
   onRenameConversation,
+  onAddTag,
+  onRemoveTag,
+  onShareConversation,
   onOpenPanel,
   isCollapsed = false,
   className = ""
