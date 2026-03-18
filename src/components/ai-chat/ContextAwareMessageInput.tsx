@@ -353,13 +353,11 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             rows={1}
           />
 
-          {/* Voice Input Button - Hidden on mobile */}
-          <div className="hidden sm:flex">
-            <VoiceInputHandler
-              onTranscript={handleVoiceTranscript}
-              disabled={isLoading}
-            />
-          </div>
+          {/* Voice Input Button */}
+          <VoiceInputHandler
+            onTranscript={handleVoiceTranscript}
+            disabled={isLoading}
+          />
 
           {/* Send Button */}
           <Button
