@@ -35,30 +35,32 @@ interface SharedConversationData {
 }
 
 const SharedConversation: React.FC = () => {
-  const { conversationId } = useParams<{ conversationId: string }>();
+  // The param is now a share_token, not a conversation UUID
+  const { conversationId: shareToken } = useParams<{ conversationId: string }>();
   const [conversation, setConversation] = useState<SharedConversationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadConversation = async () => {
-      if (!conversationId) {
-        setError('No conversation ID provided');
+      if (!shareToken) {
+        setError('No share token provided');
         setIsLoading(false);
         return;
       }
 
       try {
-        // Load conversation details
+        // Look up conversation by share_token (RLS allows SELECT when is_shared=true)
         const { data: convData, error: convError } = await supabase
           .from('ai_conversations')
           .select('*')
-          .eq('id', conversationId)
+          .eq('share_token', shareToken)
+          .eq('is_shared', true)
           .single();
 
         if (convError) {
           if (convError.code === 'PGRST116') {
-            setError('Conversation not found or has been deleted');
+            setError('Conversation not found or is no longer shared');
           } else {
             throw convError;
           }
@@ -66,11 +68,11 @@ const SharedConversation: React.FC = () => {
           return;
         }
 
-        // Load messages
+        // Load messages (RLS allows via shared conversation policy)
         const { data: messagesData, error: messagesError } = await supabase
           .from('ai_messages')
           .select('id, type, content, created_at')
-          .eq('conversation_id', conversationId)
+          .eq('conversation_id', convData.id)
           .order('created_at', { ascending: true });
 
         if (messagesError) throw messagesError;
@@ -92,7 +94,7 @@ const SharedConversation: React.FC = () => {
     };
 
     loadConversation();
-  }, [conversationId]);
+  }, [shareToken]);
 
   if (isLoading) {
     return (
@@ -112,7 +114,7 @@ const SharedConversation: React.FC = () => {
           <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
           <h1 className="text-xl font-semibold mb-2">Unable to Load Conversation</h1>
           <p className="text-muted-foreground mb-6">
-            {error || 'This conversation may have been deleted or is not accessible.'}
+            {error || 'This conversation may have been deleted or is no longer shared.'}
           </p>
           <Link to="/ai-chat">
             <Button>
