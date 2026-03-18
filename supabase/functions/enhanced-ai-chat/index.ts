@@ -2979,8 +2979,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
           secondCallError.message?.includes('rate limit') || 
           secondCallError.message?.includes('Rate limit')
         )) {
-          console.warn(`⏰ Rate limit hit on second call, attempt ${attempt}/${maxRetries}`);
-          if (attempt < maxRetries) {
+          console.warn(`⏰ Rate limit hit on second call, attempt ${attempt}/${maxRetriesPhase2}`);
+          if (attempt < maxRetriesPhase2) {
             const waitTime = 5000 * attempt;
             console.log(`⏳ Waiting ${waitTime}ms before retry...`);
             await new Promise(r => setTimeout(r, waitTime));
