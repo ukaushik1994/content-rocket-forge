@@ -558,17 +558,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
       )}>
         <div className="max-w-6xl mx-auto px-4 py-3">
-          {/* Context Indicator */}
-          {showContextIndicator && (
-            <div className="mb-3">
-              <ContextDisplayIndicator
-                sources={contextSources}
-                isActive={showContextIndicator}
-                overallConfidence={88}
-                variant="compact"
-              />
-            </div>
-          )}
+          {/* Context Indicator removed — was showing hardcoded data */}
           
           <ContextAwareMessageInput 
             onSendMessage={handleSendMessage} 
