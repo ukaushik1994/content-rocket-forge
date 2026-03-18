@@ -599,6 +599,10 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 description: 'Charts & insights companion',
               });
             }}
+            onWebSearch={() => {
+              // Web search mode is handled in ContextAwareMessageInput
+              // The [web-search] prefix is detected by the backend
+            }}
           />
         </div>
       </div>
