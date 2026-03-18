@@ -2935,7 +2935,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       
       let secondCallResult = null;
       let secondCallError = null;
-      const maxRetries = 3;
+      const maxRetriesPhase2 = 3;
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         const result = await supabase.functions.invoke('ai-proxy', {
