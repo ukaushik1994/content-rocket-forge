@@ -121,46 +121,65 @@ export class EnhancedFileAnalysisService {
   
   private async extractTextFromPDF(file: File): Promise<string> {
     try {
-      // For now, return placeholder - in production would use PDF.js
-      return `[PDF content - ${file.name}]\nThis is a PDF file that would be processed using PDF.js library.`;
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const textParts: string[] = [];
+      
+      const maxPages = Math.min(pdf.numPages, 50);
+      for (let i = 1; i <= maxPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items
+          .map((item: any) => item.str)
+          .join(' ');
+        if (pageText.trim()) {
+          textParts.push(pageText);
+        }
+      }
+      
+      return textParts.join('\n\n') || `[PDF with ${pdf.numPages} pages - no extractable text found]`;
     } catch (error) {
-      throw new Error('PDF processing not available');
+      console.error('PDF extraction error:', error);
+      return `[PDF file - ${file.name}] Unable to extract text. The file may be image-based or corrupted.`;
     }
   }
   
   private async extractTextFromImage(file: File): Promise<string> {
-    try {
-      // For now, return placeholder - in production would use OCR service
-      return `[Image content - ${file.name}]\nThis is an image file that would be processed using OCR technology.`;
-    } catch (error) {
-      throw new Error('Image OCR not available');
-    }
+    // Images can't be OCR'd client-side without a heavy library.
+    // Return metadata and let the AI analysis handle it via description.
+    const dimensions = await this.getImageDimensions(file);
+    return `[Image: ${file.name}] Type: ${file.type}, Size: ${(file.size / 1024).toFixed(1)}KB${dimensions ? `, Dimensions: ${dimensions.width}x${dimensions.height}` : ''}. Image content requires visual analysis.`;
+  }
+
+  private getImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.width, height: img.height });
+      img.onerror = () => resolve(null);
+      img.src = URL.createObjectURL(file);
+    });
   }
   
   private async extractTextFromSpreadsheet(file: File): Promise<string> {
-    try {
-      // Placeholder for Excel/CSV processing
-      return `[Spreadsheet content - ${file.name}]\nThis is a spreadsheet file with tabular data.`;
-    } catch (error) {
-      throw new Error('Spreadsheet processing not available');
+    // CSV files can be read as text
+    if (file.name.endsWith('.csv') || file.type === 'text/csv') {
+      return await this.extractTextFromFile(file);
     }
+    return `[Spreadsheet: ${file.name}] Size: ${(file.size / 1024).toFixed(1)}KB. Excel file processing available for CSV format.`;
   }
   
   private async extractTextFromPresentation(file: File): Promise<string> {
-    try {
-      // Placeholder for PowerPoint processing
-      return `[Presentation content - ${file.name}]\nThis is a presentation file with slides and content.`;
-    } catch (error) {
-      throw new Error('Presentation processing not available');
-    }
+    return `[Presentation: ${file.name}] Size: ${(file.size / 1024).toFixed(1)}KB. Slide content available after conversion.`;
   }
   
   private async extractTextFromDocument(file: File): Promise<string> {
     try {
-      // For Word documents, would use mammoth.js or similar
-      return `[Document content - ${file.name}]\nThis is a document file with formatted text content.`;
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      return result.value || `[Document: ${file.name}] No extractable text found.`;
     } catch (error) {
-      throw new Error('Document processing not available');
+      console.error('Document extraction error:', error);
+      return `[Document: ${file.name}] Unable to extract text.`;
     }
   }
   
