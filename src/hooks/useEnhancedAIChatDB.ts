@@ -1017,8 +1017,29 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [conversations, toast]);
 
-  // Export conversation
-  const exportConversation = useCallback(async (conversationId: string) => {
+  // Rename conversation
+  const renameConversation = useCallback(async (conversationId: string, newTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from('ai_conversations')
+        .update({ title: newTitle })
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      setConversations(prev => prev.map(conv =>
+        conv.id === conversationId ? { ...conv, title: newTitle } : conv
+      ));
+
+      toast({ title: "Renamed", description: "Conversation renamed successfully" });
+    } catch (error) {
+      console.error('Error renaming conversation:', error);
+      toast({ title: "Error", description: "Failed to rename conversation", variant: "destructive" });
+    }
+  }, [toast]);
+
+  // Export conversation (supports JSON and TXT)
+  const exportConversation = useCallback(async (conversationId: string, format: 'json' | 'txt' = 'json') => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
       if (!conversation) return;
@@ -1032,35 +1053,53 @@ export const useEnhancedAIChatDB = () => {
 
       if (error) throw error;
 
-      const exportData = {
-        conversation: {
-          title: conversation.title,
-          created_at: conversation.created_at,
-          updated_at: conversation.updated_at,
-          tags: conversation.tags || []
-        },
-        messages: (messagesData || []).map(msg => ({
-          role: msg.type,
-          content: msg.content,
-          timestamp: msg.created_at,
-          visual_data: msg.visual_data && typeof msg.visual_data === 'string' ? JSON.parse(msg.visual_data) : msg.visual_data,
-          actions: msg.function_calls && typeof msg.function_calls === 'string' ? JSON.parse(msg.function_calls) : msg.function_calls
-        })),
-        exported_at: new Date().toISOString()
-      };
+      const safeTitle = conversation.title.replace(/[^a-z0-9]/gi, '_');
 
-      // Create and download file
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
-        type: 'application/json' 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `conversation-${conversation.title.replace(/[^a-z0-9]/gi, '_')}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (format === 'txt') {
+        const lines = [`# ${conversation.title}`, `Exported: ${new Date().toLocaleString()}`, ''];
+        (messagesData || []).forEach(msg => {
+          const role = msg.type === 'user' ? 'You' : 'AI';
+          lines.push(`[${role}] ${new Date(msg.created_at).toLocaleString()}`);
+          lines.push(msg.content);
+          lines.push('');
+        });
+        const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `conversation-${safeTitle}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        const exportData = {
+          conversation: {
+            title: conversation.title,
+            created_at: conversation.created_at,
+            updated_at: conversation.updated_at,
+            tags: conversation.tags || []
+          },
+          messages: (messagesData || []).map(msg => ({
+            role: msg.type,
+            content: msg.content,
+            timestamp: msg.created_at,
+            visual_data: msg.visual_data && typeof msg.visual_data === 'string' ? JSON.parse(msg.visual_data) : msg.visual_data,
+            actions: msg.function_calls && typeof msg.function_calls === 'string' ? JSON.parse(msg.function_calls) : msg.function_calls
+          })),
+          exported_at: new Date().toISOString()
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `conversation-${safeTitle}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
 
       toast({
         title: "Export successful",
