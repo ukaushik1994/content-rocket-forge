@@ -293,24 +293,17 @@ export const useEnhancedAIChatDB = () => {
 
     try {
       // Use SSE fetch pattern (same as sendMessage) for progress + timeout protection
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token || supabaseKey;
+      const headers = await getAuthHeaders();
 
       if (abortControllerRef.current) abortControllerRef.current.abort();
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
       const timeoutId = setTimeout(() => abortController.abort(), 90000);
 
-      const resp = await fetch(`${supabaseUrl}/functions/v1/enhanced-ai-chat`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
         method: 'POST',
         signal: abortController.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'apikey': supabaseKey,
-        },
+        headers,
         body: JSON.stringify({
           messages: conversationForTools,
           context: { conversation_id: conversationId },
