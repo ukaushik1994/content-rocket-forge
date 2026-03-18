@@ -27,7 +27,7 @@ const DATA_CATEGORIES = [
   'competitors', 'analytics', 'performance', 'engage', 'approvals',
   'calendar', 'research', 'social', 'templates', 'topic_clusters',
   'content_gaps', 'recommendations', 'repurposed', 'email_threads',
-  'activity_log', 'brand_voice', 'content_performance'
+  'activity_log', 'brand_voice', 'content_performance', 'image_generation'
 ];
 
 function queryRequiresToolExecution(queryIntent: QueryIntent): boolean {
