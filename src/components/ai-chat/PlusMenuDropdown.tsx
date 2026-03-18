@@ -65,6 +65,12 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
       description: 'Search the web for info',
       onClick: onWebSearch,
     }] : []),
+    ...(onImageGeneration ? [{
+      icon: Image,
+      label: 'Generate Image',
+      description: 'Create an AI-generated image',
+      onClick: onImageGeneration,
+    }] : []),
   ];
 
   return (
