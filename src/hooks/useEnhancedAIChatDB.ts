@@ -659,7 +659,7 @@ export const useEnhancedAIChatDB = () => {
         // Handle action types based on patterns
         switch (actionString) {
           case 'open_settings':
-            window.dispatchEvent(new CustomEvent('openSettings', { detail: action.data?.tab || 'api' }));
+            window.dispatchEvent(new CustomEvent('openSettings', { detail: { tab: action.data?.tab || 'api' } }));
             break;
           case 'create-blog-post':
             console.log('📝 Creating blog post');
