@@ -14,6 +14,7 @@ interface FileUploadHandlerProps {
     fileType: string;
     summary: string;
     insights: string[];
+    extractedText?: string;
   }) => void;
   onCancel: () => void;
   isVisible: boolean;
