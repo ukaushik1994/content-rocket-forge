@@ -1038,8 +1038,8 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [toast]);
 
-  // Export conversation (supports JSON and TXT)
-  const exportConversation = useCallback(async (conversationId: string, format: 'json' | 'txt' = 'json') => {
+  // Export conversation (supports JSON, TXT, and Markdown)
+  const exportConversation = useCallback(async (conversationId: string, format: 'json' | 'txt' | 'markdown' = 'json') => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
       if (!conversation) return;
