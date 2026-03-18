@@ -613,6 +613,52 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                                     {conversation.archived ? 'Unarchive' : 'Archive'}
                                   </DropdownMenuItem>
                                 )}
+                                {onShareConversation && (
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onShareConversation(conversation.id);
+                                    }}
+                                  >
+                                    <Share2 className="h-4 w-4 mr-2" />
+                                    Share
+                                  </DropdownMenuItem>
+                                )}
+                                {onAddTag && (
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger onClick={(e) => e.stopPropagation()}>
+                                      <Tag className="h-4 w-4 mr-2" />
+                                      Tags
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent className="bg-background border-border/20">
+                                      {PRESET_TAGS.map(tag => {
+                                        const isApplied = (conversation.tags || []).includes(tag);
+                                        return (
+                                          <DropdownMenuItem
+                                            key={tag}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (isApplied) {
+                                                onRemoveTag?.(conversation.id, tag);
+                                              } else {
+                                                onAddTag(conversation.id, tag);
+                                              }
+                                            }}
+                                            className="capitalize"
+                                          >
+                                            <span className={cn(
+                                              "w-2 h-2 rounded-full mr-2",
+                                              isApplied ? "bg-primary" : "bg-muted-foreground/30"
+                                            )} />
+                                            {tag}
+                                            {isApplied && <X className="h-3 w-3 ml-auto text-muted-foreground" />}
+                                          </DropdownMenuItem>
+                                        );
+                                      })}
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                )}
+                                <DropdownMenuSeparator className="bg-border/20" />
                                 <DropdownMenuItem
                                   onClick={(e) => {
                                     e.stopPropagation();
