@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useDueContentNotifications } from '@/hooks/useDueContentNotifications';
+import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 
 interface AppLayoutProps {
   children: React.ReactNode;
