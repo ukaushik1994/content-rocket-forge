@@ -2574,7 +2574,156 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
 
     const data = aiProxyResult.data;
     let aiMessage = data?.choices?.[0]?.message?.content;
-    const toolCalls = data?.choices?.[0]?.message?.tool_calls;
+    let toolCalls = data?.choices?.[0]?.message?.tool_calls;
+
+    // =========================================================================
+    // Fix 2: RETRY with forced tool_choice if data query got no tool_calls
+    // =========================================================================
+    if ((!toolCalls || toolCalls.length === 0) && queryRequiresToolExecution(queryIntent) && !useCampaignStrategyTool) {
+      console.log('⚠️ Data query returned text-only response without tool_calls. Retrying with tool_choice=required...');
+      
+      const retryResult = await aiRequestQueue.enqueue(() =>
+        supabase.functions.invoke('ai-proxy', {
+          body: {
+            service: provider.provider,
+            endpoint: 'chat',
+            apiKey: provider.api_key,
+            params: {
+              model: provider.preferred_model,
+              messages: [
+                { role: "system", content: systemPrompt },
+                ...messages,
+              ],
+              tools: toolsToUse,
+              tool_choice: "required",
+              temperature: 0.5, // Lower temp for more deterministic tool calls
+              max_tokens: dynamicMaxTokens,
+            }
+          }
+        })
+      );
+      
+      if (!retryResult.error && retryResult.data?.success) {
+        const retryData = retryResult.data.data;
+        const retryToolCalls = retryData?.choices?.[0]?.message?.tool_calls;
+        if (retryToolCalls && retryToolCalls.length > 0) {
+          console.log(`✅ Retry succeeded: got ${retryToolCalls.length} tool calls`);
+          toolCalls = retryToolCalls;
+          // Update the data reference so tool results flow correctly
+          aiProxyResult.data.data = retryData;
+          aiMessage = retryData?.choices?.[0]?.message?.content;
+        } else {
+          console.warn('⚠️ Retry also returned no tool_calls. Falling back to auto-execute...');
+        }
+      } else {
+        console.warn('⚠️ Retry AI call failed:', retryResult.error);
+      }
+    }
+
+    // =========================================================================
+    // Fix 3: AUTO-EXECUTE tools based on intent when LLM completely fails
+    // =========================================================================
+    if ((!toolCalls || toolCalls.length === 0) && queryRequiresToolExecution(queryIntent) && !useCampaignStrategyTool) {
+      console.log('🔧 Auto-executing tools based on intent categories:', queryIntent.categories);
+      
+      const categoryToTool: Record<string, { name: string; args: Record<string, any> }> = {
+        'content': { name: 'get_content_items', args: {} },
+        'keywords': { name: 'get_keywords', args: {} },
+        'proposals': { name: 'get_proposals', args: {} },
+        'solutions': { name: 'get_solutions', args: {} },
+        'seo': { name: 'get_seo_scores', args: {} },
+        'campaigns': { name: 'get_campaign_intelligence', args: {} },
+        'competitors': { name: 'get_competitors', args: {} },
+        'performance': { name: 'get_content_items', args: {} },
+        'approvals': { name: 'get_pending_approvals', args: {} },
+        'calendar': { name: 'get_calendar_items', args: {} },
+        'engage': { name: 'get_engage_contacts', args: {} },
+        'social': { name: 'get_social_posts', args: {} },
+        'templates': { name: 'get_email_templates', args: {} },
+        'topic_clusters': { name: 'get_topic_clusters', args: {} },
+        'content_gaps': { name: 'get_content_gaps', args: {} },
+        'recommendations': { name: 'get_strategy_recommendations', args: {} },
+        'brand_voice': { name: 'get_brand_voice', args: {} },
+        'content_performance': { name: 'get_content_performance', args: {} },
+      };
+      
+      // Execute the most relevant tool(s)
+      const autoToolResults: any[] = [];
+      const executedTools: string[] = [];
+      
+      for (const category of queryIntent.categories) {
+        const toolMapping = categoryToTool[category];
+        if (toolMapping && !executedTools.includes(toolMapping.name)) {
+          try {
+            console.log(`[AUTO-TOOL] Executing ${toolMapping.name} for category: ${category}`);
+            const toolData = await executeToolCall(toolMapping.name, toolMapping.args, supabase, user.id, new Map());
+            autoToolResults.push({
+              tool_call_id: `auto-${category}-${Date.now()}`,
+              role: "tool",
+              name: toolMapping.name,
+              content: JSON.stringify(toolData)
+            });
+            executedTools.push(toolMapping.name);
+            console.log(`[AUTO-TOOL] ${toolMapping.name} returned ${Array.isArray(toolData) ? toolData.length : 'N/A'} items`);
+          } catch (e) {
+            console.warn(`[AUTO-TOOL] ${toolMapping.name} failed:`, e);
+          }
+          // Limit to 2 auto-executed tools to prevent overload
+          if (executedTools.length >= 2) break;
+        }
+      }
+      
+      // If we got auto-tool results, call AI again with them injected
+      if (autoToolResults.length > 0) {
+        console.log(`🔧 Calling AI with ${autoToolResults.length} auto-executed tool results`);
+        emitProgress('tools', 'Fetching your data...');
+        
+        // Build synthetic tool_calls message for the AI
+        const syntheticToolCallMessage = {
+          role: "assistant",
+          content: null,
+          tool_calls: autoToolResults.map((r, i) => ({
+            id: r.tool_call_id,
+            type: "function",
+            function: {
+              name: r.name,
+              arguments: "{}"
+            }
+          }))
+        };
+        
+        const autoResult = await supabase.functions.invoke('ai-proxy', {
+          body: {
+            service: provider.provider,
+            endpoint: 'chat',
+            apiKey: provider.api_key,
+            params: {
+              model: provider.preferred_model,
+              messages: [
+                { role: "system", content: systemPrompt },
+                ...messages,
+                syntheticToolCallMessage,
+                ...autoToolResults
+              ],
+              temperature: 0.7,
+              max_tokens: dynamicMaxTokens,
+            }
+          }
+        });
+        
+        if (!autoResult.error && autoResult.data?.success) {
+          aiMessage = autoResult.data.data?.choices?.[0]?.message?.content;
+          toolCalls = null; // Already handled
+          console.log(`✅ Auto-execute response received (${aiMessage?.length || 0} chars)`);
+          
+          // Generate fallback charts from auto-tool results
+          const autoFallbackChart = generateFallbackChartFromAutoResults(autoToolResults, userQuery);
+          if (autoFallbackChart) {
+            requestFallbackChartData = autoFallbackChart;
+          }
+        }
+      }
+    }
 
     // ✅ Handle tool calls if AI requested them
     // Destructive tools that require user confirmation
