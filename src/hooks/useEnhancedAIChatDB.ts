@@ -1422,6 +1422,7 @@ export const useEnhancedAIChatDB = () => {
     loadConversations,
     createConversation,
     deleteConversation,
+    renameConversation,
     sendMessage,
     handleAction,
     handleLegacyAction,

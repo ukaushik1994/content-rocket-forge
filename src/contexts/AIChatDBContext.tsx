@@ -30,6 +30,7 @@ const fallbackContext: AIChatDBContextType = {
   loadConversations: noopAsync as any,
   createConversation: noopAsync as any,
   deleteConversation: noopAsync as any,
+  renameConversation: noopAsync as any,
   sendMessage: noopAsync as any,
   handleAction: noopAsync as any,
   handleLegacyAction: noopAsync as any,
