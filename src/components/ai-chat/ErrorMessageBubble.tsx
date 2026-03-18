@@ -113,10 +113,13 @@ export const ErrorMessageBubble: React.FC<ErrorMessageBubbleProps> = ({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {message.timestamp.toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          })}
+        {(() => {
+            try {
+              const ts = message.timestamp instanceof Date ? message.timestamp : new Date(message.timestamp as any);
+              const str = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              return str === 'Invalid Date' ? '' : str;
+            } catch { return ''; }
+          })()}
         </motion.div>
       </div>
     </motion.div>

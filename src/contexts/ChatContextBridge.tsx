@@ -1,8 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 // Inline legacy type to remove useAIChat dependency
 interface ConversationMessage {
@@ -21,23 +19,13 @@ interface ChatContextState {
   sharedMessages: EnhancedChatMessage[];
   workflowState: Record<string, any>;
   
-  // Context persistence
-  contextHistory: ChatContextSnapshot[];
+  // Context persistence (in-memory only — no DB round-trips)
   persistentContext: Record<string, any>;
   
   // Real-time collaboration
   collaborators: ChatCollaborator[];
   typingUsers: string[];
   messageStatuses: Record<string, MessageStatus>;
-}
-
-interface ChatContextSnapshot {
-  id: string;
-  timestamp: Date;
-  messages: EnhancedChatMessage[];
-  workflowState: Record<string, any>;
-  conversationType: 'regular' | 'streaming';
-  title: string;
 }
 
 interface ChatCollaborator {
@@ -63,8 +51,6 @@ interface ChatContextBridgeValue extends ChatContextState {
   // Context management
   switchToStreaming: (preserveContext?: boolean) => void;
   switchToRegular: (preserveContext?: boolean) => void;
-  saveContextSnapshot: (title?: string) => Promise<string>;
-  loadContextSnapshot: (snapshotId: string) => Promise<void>;
   
   // Message bridge
   convertToStreamingMessage: (message: ConversationMessage) => EnhancedChatMessage;
@@ -82,7 +68,7 @@ interface ChatContextBridgeValue extends ChatContextState {
   setUserTyping: (userId: string, isTyping: boolean) => void;
   updateMessageStatus: (messageId: string, status: MessageStatus['status'], userId?: string) => void;
   
-  // Smart suggestions
+  // State management
   updateActiveConversation: (conversationId: string | null) => void;
   persistContext: (key: string, value: any) => void;
   retrieveContext: (key: string) => any;
@@ -99,86 +85,16 @@ export const useChatContextBridge = () => {
 };
 
 export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ children }) => {
-  const { user } = useAuth();
   const [state, setState] = useState<ChatContextState>({
     activeConversationId: null,
     conversationType: 'regular',
     sharedMessages: [],
     workflowState: {},
-    contextHistory: [],
     persistentContext: {},
     collaborators: [],
     typingUsers: [],
     messageStatuses: {}
   });
-
-  // Load persistent context on mount
-  useEffect(() => {
-    const loadPersistedContext = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('ai_context_state' as any)
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-          
-        if (!error && data) {
-          const contextData = data as any;
-          setState(prev => ({
-            ...prev,
-            persistentContext: contextData.context || {},
-            workflowState: contextData.workflow_state || {}
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading persistent context:', error);
-      }
-    };
-    
-    loadPersistedContext();
-  }, [user]);
-
-  // Save context periodically
-  useEffect(() => {
-    const saveInterval = setInterval(async () => {
-      if (!user || Object.keys(state.persistentContext).length === 0) return;
-      
-      try {
-        // First try to check if a row exists
-        const { data: existing } = await supabase
-          .from('ai_context_state' as any)
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (existing) {
-          await supabase
-            .from('ai_context_state' as any)
-            .update({
-              context: state.persistentContext,
-              workflow_state: state.workflowState,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id);
-        } else {
-          await supabase
-            .from('ai_context_state' as any)
-            .insert({
-              user_id: user.id,
-              context: state.persistentContext,
-              workflow_state: state.workflowState,
-              updated_at: new Date().toISOString()
-            });
-        }
-      } catch (error) {
-        // Silently handle - context persistence is best-effort
-      }
-    }, 30000); // Save every 30 seconds
-
-    return () => clearInterval(saveInterval);
-  }, [user, state.persistentContext, state.workflowState]);
 
   const switchToStreaming = useCallback((preserveContext = true) => {
     setState(prev => ({
@@ -235,66 +151,6 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
     }));
   }, [convertToStreamingMessage]);
 
-  const saveContextSnapshot = useCallback(async (title?: string): Promise<string> => {
-    if (!user) throw new Error('User not authenticated');
-
-    const snapshot: ChatContextSnapshot = {
-      id: crypto.randomUUID(),
-      timestamp: new Date(),
-      messages: state.sharedMessages,
-      workflowState: state.workflowState,
-      conversationType: state.conversationType,
-      title: title || `Context Snapshot ${new Date().toLocaleString()}`
-    };
-
-    try {
-      const { error } = await supabase
-        .from('ai_context_snapshots' as any)
-        .insert({
-          id: snapshot.id,
-          user_id: user.id,
-          title: snapshot.title,
-          messages: snapshot.messages,
-          workflow_state: snapshot.workflowState,
-          conversation_type: snapshot.conversationType
-        });
-
-      if (error) throw error;
-
-      setState(prev => ({
-        ...prev,
-        contextHistory: [snapshot, ...prev.contextHistory]
-      }));
-
-      return snapshot.id;
-    } catch (error) {
-      console.error('Error saving context snapshot:', error);
-      throw error;
-    }
-  }, [user, state]);
-
-  const loadContextSnapshot = useCallback(async (snapshotId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('ai_context_snapshots' as any)
-        .select('*')
-        .eq('id', snapshotId)
-        .single();
-
-      if (error) throw error;
-
-      setState(prev => ({
-        ...prev,
-        sharedMessages: (data as any)?.messages || [],
-        workflowState: (data as any)?.workflow_state || {},
-        conversationType: (data as any)?.conversation_type || 'regular'
-      }));
-    } catch (error) {
-      console.error('Error loading context snapshot:', error);
-      throw error;
-    }
-  }, []);
-
   const updateWorkflowState = useCallback((key: string, value: any) => {
     setState(prev => ({
       ...prev,
@@ -315,26 +171,6 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
       workflowState: {}
     }));
   }, []);
-
-  const getContextSuggestions = useCallback(async (): Promise<string[]> => {
-    if (!user) return [];
-    
-    try {
-      const response = await supabase.functions.invoke('ai-context-manager', {
-        body: {
-          userId: user.id,
-          contextType: 'suggestions',
-          currentState: state.workflowState,
-          messageHistory: state.sharedMessages.slice(-5) // Last 5 messages for context
-        }
-      });
-
-      return response.data?.suggestions || [];
-    } catch (error) {
-      console.error('Error getting context suggestions:', error);
-      return [];
-    }
-  }, [user, state]);
 
   const persistContext = useCallback((key: string, value: any) => {
     setState(prev => ({
@@ -407,8 +243,6 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
     ...state,
     switchToStreaming,
     switchToRegular,
-    saveContextSnapshot,
-    loadContextSnapshot,
     convertToStreamingMessage,
     convertToRegularMessage,
     syncMessages,
