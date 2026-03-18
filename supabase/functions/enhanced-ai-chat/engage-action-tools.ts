@@ -656,10 +656,24 @@ export async function executeEngageActionTool(
         });
 
         if (!response.ok) {
-          return { success: false, message: 'Failed to send email' };
+          const errData = await response.json().catch(() => ({}));
+          if (errData.error === 'no_resend_key') {
+            return { success: false, message: '🔑 No Resend API key configured. Please go to **Settings → API Keys** and add your Resend key to send emails.' };
+          }
+          return { success: false, message: `Failed to send email: ${errData.message || 'Unknown error'}` };
         }
 
-        return { success: true, message: `Sent email to ${toolArgs.to_emails.length} recipient(s)` };
+        const result = await response.json();
+        if (result.failed > 0 && result.sent === 0) {
+          return { success: false, message: `All emails failed: ${result.errors?.join(', ') || 'Unknown error'}` };
+        }
+
+        return {
+          success: true,
+          message: result.failed > 0
+            ? `Sent ${result.sent} email(s), ${result.failed} failed`
+            : `Sent email to ${toolArgs.to_emails.length} recipient(s)`
+        };
       }
 
       case 'create_social_post': {
