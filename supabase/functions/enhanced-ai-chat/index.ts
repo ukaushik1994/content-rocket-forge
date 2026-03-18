@@ -1701,6 +1701,18 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
     
     const competitorSolutionCount = 0; // Only fetched on-demand via tools now
     
+    // Calculate queue status counts
+    const queueItems = queueResult.data || [];
+    const pendingQueueCount = queueItems.filter((i: any) => i.status === 'pending').length;
+    const processingQueueCount = queueItems.filter((i: any) => i.status === 'processing').length;
+    const completedQueueCount = queueItems.filter((i: any) => i.status === 'completed').length;
+    const failedQueueCount = queueItems.filter((i: any) => i.status === 'failed').length;
+    
+    // Recent activity section
+    const recentActivitySection = recentContent.length > 0
+      ? `\n## Recent Activity:\n${recentContent.map((c: any) => `• "${c.title}" (${new Date(c.created_at).toLocaleDateString()})`).join('\n')}`
+      : '';
+    
     const identitySnippet = companyInfo ? `
 ## 🏢 Business Identity:
 - **Company**: ${companyInfo.name || 'Not set'}${companyInfo.industry ? ` (${companyInfo.industry})` : ''}${companyInfo.website ? ` — ${companyInfo.website}` : ''}
