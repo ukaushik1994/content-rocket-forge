@@ -21,7 +21,7 @@ import { SafeMarkdown } from '@/components/ui/SafeMarkdown';
 
 interface SharedMessage {
   id: string;
-  type: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   created_at: string;
 }
