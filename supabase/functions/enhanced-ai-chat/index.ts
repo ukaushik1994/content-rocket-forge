@@ -2733,8 +2733,6 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       'toggle_automation', 'activate_journey'
     ];
 
-    let requestPromotedActions: any[] = [];
-    let requestFallbackChartData: any = null;
     let requestPromotedVisualData: any = null;
 
     if (toolCalls && toolCalls.length > 0) {
