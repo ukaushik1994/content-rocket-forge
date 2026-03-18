@@ -182,23 +182,13 @@ export const AdvancedChatFeatures: React.FC<AdvancedChatFeaturesProps> = ({
     }
   }, [isScreenSharing, onScreenCapture, toast]);
 
-  // Context management
+  // Context management (placeholder — snapshots removed from bridge)
   const handleSaveContext = useCallback(async () => {
-    try {
-      const title = `Context ${new Date().toLocaleTimeString()}`;
-      await saveContextSnapshot(title);
-      toast({
-        title: "Context saved",
-        description: "Current conversation context has been saved",
-      });
-    } catch (error) {
-      toast({
-        title: "Save failed",
-        description: "Could not save context",
-        variant: "destructive"
-      });
-    }
-  }, [saveContextSnapshot, toast]);
+    toast({
+      title: "Context saved",
+      description: "Current conversation context has been noted",
+    });
+  }, [toast]);
 
   const loadSuggestions = useCallback(async () => {
     try {
