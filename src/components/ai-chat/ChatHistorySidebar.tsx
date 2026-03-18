@@ -192,6 +192,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   const [searchActive, setSearchActive] = useState<boolean>(false);
   const [displayLimit, setDisplayLimit] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const userFullName = user?.user_metadata?.first_name 
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}` 
