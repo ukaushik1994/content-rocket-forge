@@ -180,6 +180,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   onToggleSidebar,
   onArchiveConversation,
   onPinConversation,
+  onRenameConversation,
   onOpenPanel,
   isCollapsed = false,
   className = ""
