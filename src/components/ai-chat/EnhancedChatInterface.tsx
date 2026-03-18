@@ -78,24 +78,20 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
-  const [messageSearchResults, setMessageSearchResults] = useState<string[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showMessageSearch, setShowMessageSearch] = useState(false);
 
+  // Derive search results as a pure memo (no setState inside useMemo)
+  const messageSearchResults = React.useMemo(() => {
+    if (!messageSearchQuery.trim()) return [];
+    const q = messageSearchQuery.toLowerCase();
+    return messages.filter(m => m.content.toLowerCase().includes(q)).map(m => m.id);
+  }, [messages, messageSearchQuery]);
+
   // Filter messages based on search
   const filteredMessages = React.useMemo(() => {
-    if (!messageSearchQuery.trim()) return messages;
-    
-    const query = messageSearchQuery.toLowerCase();
-    const matchingMessages = messages.filter(msg => 
-      msg.content.toLowerCase().includes(query)
-    );
-    
-    // Update search results for navigation
-    setMessageSearchResults(matchingMessages.map(m => m.id));
-    
-    return messages; // Return all messages, but we track matches separately
-  }, [messages, messageSearchQuery]);
+    return messages; // Return all messages, matches tracked via messageSearchResults
+  }, [messages]);
 
   // Handle search navigation
   const handleNavigateMatch = (direction: 'prev' | 'next') => {
