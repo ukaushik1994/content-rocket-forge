@@ -13,7 +13,7 @@ import { SolutionSuggestions } from './SolutionSuggestions';
 import { SolutionContextCard } from './SolutionContextCard';
 import { SolutionRecommendations } from './SolutionRecommendations';
 import { SolutionWorkflowTemplates } from './SolutionWorkflowTemplates';
-import { ContextDisplayIndicator } from './ContextDisplayIndicator';
+import { ConversationAnalyticsModal } from './ConversationAnalyticsModal';
 import { MessageSearchBar } from './MessageSearchBar';
 import { useSharedAIChatDB } from '@/contexts/AIChatDBContext';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
@@ -80,6 +80,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showMessageSearch, setShowMessageSearch] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
 
   // Derive search results as a pure memo (no setState inside useMemo)
   const messageSearchResults = React.useMemo(() => {
@@ -444,7 +445,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       searchQuery={messageSearchQuery}
                       onSearchChange={setMessageSearchQuery}
                       onExportConversation={exportConversation}
-                      onShowAnalytics={() => {}}
+                      onShowAnalytics={() => setShowAnalyticsModal(true)}
                       messageCount={messages.length}
                       filteredCount={messageSearchResults.length}
                       onNavigateMatch={handleNavigateMatch}
@@ -558,17 +559,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
       )}>
         <div className="max-w-6xl mx-auto px-4 py-3">
-          {/* Context Indicator */}
-          {showContextIndicator && (
-            <div className="mb-3">
-              <ContextDisplayIndicator
-                sources={contextSources}
-                isActive={showContextIndicator}
-                overallConfidence={88}
-                variant="compact"
-              />
-            </div>
-          )}
+          {/* Context Indicator removed — was showing hardcoded data */}
           
           <ContextAwareMessageInput 
             onSendMessage={handleSendMessage} 
@@ -599,8 +590,37 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 description: 'Charts & insights companion',
               });
             }}
+            onWebSearch={() => {
+              // Web search mode is handled in ContextAwareMessageInput
+              // The [web-search] prefix is detected by the backend
+            }}
           />
         </div>
       </div>
+
+      {/* Conversation Analytics Modal */}
+      <ConversationAnalyticsModal
+        isOpen={showAnalyticsModal}
+        onClose={() => setShowAnalyticsModal(false)}
+        onGetAnalytics={async () => {
+          const userMsgs = messages.filter(m => m.role === 'user');
+          const assistantMsgs = messages.filter(m => m.role === 'assistant');
+          const allLens = messages.map(m => m.content.length);
+          const avgLen = allLens.length > 0 ? Math.round(allLens.reduce((a, b) => a + b, 0) / allLens.length) : 0;
+          const duration = messages.length >= 2
+            ? Math.round((new Date(messages[messages.length - 1].timestamp).getTime() - new Date(messages[0].timestamp).getTime()) / 60000)
+            : 0;
+          return {
+            totalMessages: messages.length,
+            userMessages: userMsgs.length,
+            assistantMessages: assistantMsgs.length,
+            averageMessageLength: avgLen,
+            conversationDuration: duration,
+            actionsTriggered: messages.filter(m => m.actions && m.actions.length > 0).length,
+            hasVisualData: messages.some(m => !!m.visualData),
+            hasWorkflowData: messages.some(m => !!m.workflowContext),
+          };
+        }}
+      />
     </div>;
 };

@@ -193,7 +193,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                  ? 'bg-primary/15 text-foreground border border-primary/25 ml-4' 
                  : 'bg-transparent border border-border/20 mr-4'
              }`}>
-              <div className="px-6 py-4">
+              <div className="px-6 py-4 overflow-x-auto">
                 <div className={`text-sm leading-relaxed ${
                   isUser ? 'text-foreground' : 'text-foreground'
                 }`}>
@@ -202,10 +202,12 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                       {message.content}
                     </div>
                   ) : (
-                    <FormattedResponseRenderer 
-                      content={message.content} 
-                      hasVisualData={!!message.visualData}
-                    />
+                    <div className="overflow-x-auto">
+                      <FormattedResponseRenderer 
+                        content={message.content} 
+                        hasVisualData={!!message.visualData}
+                      />
+                    </div>
                   )}
                 </div>
               </div>

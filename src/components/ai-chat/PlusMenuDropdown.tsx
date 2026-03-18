@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Paperclip, PenLine, BookOpen, BarChart3, Lightbulb, Globe, X } from 'lucide-react';
+import { Plus, Paperclip, PenLine, BookOpen, BarChart3, Lightbulb, Globe, Image, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PlusMenuDropdownProps {
@@ -12,6 +12,7 @@ interface PlusMenuDropdownProps {
   onAnalyst?: () => void;
   onAIProposals?: () => void;
   onWebSearch?: () => void;
+  onImageGeneration?: () => void;
   disabled?: boolean;
 }
 
@@ -22,6 +23,7 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
   onAnalyst,
   onAIProposals,
   onWebSearch,
+  onImageGeneration,
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,6 +64,12 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
       label: 'Web Search',
       description: 'Search the web for info',
       onClick: onWebSearch,
+    }] : []),
+    ...(onImageGeneration ? [{
+      icon: Image,
+      label: 'Generate Image',
+      description: 'Create an AI-generated image',
+      onClick: onImageGeneration,
     }] : []),
   ];
 

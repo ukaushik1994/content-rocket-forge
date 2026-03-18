@@ -30,6 +30,7 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
     selectConversation,
     createConversation,
     deleteConversation,
+    renameConversation,
     togglePinConversation,
     toggleArchiveConversation,
   } = useSharedAIChatDB();
@@ -77,6 +78,7 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
     onToggleSidebar: toggleSidebar,
     onPinConversation: togglePinConversation,
     onArchiveConversation: toggleArchiveConversation,
+    onRenameConversation: renameConversation,
     onOpenPanel: (panelType: string) => {
       const panelRouteMap: Record<string, string> = {
         automations: '/engage/automations',
