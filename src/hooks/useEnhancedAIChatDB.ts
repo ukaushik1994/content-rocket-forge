@@ -580,15 +580,18 @@ export const useEnhancedAIChatDB = () => {
       }
 
       // Title already set early (line 392-408) — no duplicate update needed
-    } catch (error) {
-      // progressInterval removed — SSE streaming handles progress
+    } catch (error: any) {
       console.error('Error sending enhanced message:', error);
       
-      // Replace placeholder with inline error message containing retry + settings actions
+      const isTimeout = error?.name === 'AbortError';
+      const errorContent = isTimeout
+        ? "The request timed out. The AI might be processing a complex query. You can retry or check your API key settings."
+        : "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.";
+      
       const errorMessage: EnhancedChatMessage = {
         id: assistantId,
         role: 'assistant',
-        content: "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.",
+        content: errorContent,
         timestamp: new Date(),
         messageStatus: 'error',
         actions: [
