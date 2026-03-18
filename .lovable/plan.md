@@ -1,173 +1,129 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# AI Chat — Missing & Incomplete Features Audit
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
-
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+After reviewing the full frontend (components, hooks, context) and backend (edge function, tools), here is everything that is still missing, incomplete, or non-functional — beyond the bugs we already fixed.
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## 1. No Markdown Rendering for AI Responses on Mobile Viewport
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+The current viewport is 411px. The `FormattedResponseRenderer` uses `SafeMarkdown` which works, but the message area uses `max-w-6xl` and `px-6` padding. On 411px screens, long tables, code blocks, and chart visualizations will overflow horizontally. There is no `overflow-x-auto` wrapper around the rendered markdown content or visual data.
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
-
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+**Fix:** Add `overflow-x-auto` to the content wrapper inside `EnhancedMessageBubble` and `FormattedResponseRenderer`.
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## 2. File Upload Has No Backend Processing
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+`FileUploadHandler.tsx` uploads files to Supabase Storage and calls `enhancedFileAnalysisService` for client-side analysis. But the analysis result is just appended to the chat input as text — it's never sent to the AI as part of the conversation context. The user uploads a file, gets a local summary, but the AI has no awareness of the file content.
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
-
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+**Fix:** After file analysis, auto-send the extracted text/summary as a user message to the AI (or inject it into the conversation history as a system message).
 
 ---
 
-# AI Chat Awareness Gaps — Implementation Tracker
+## 3. Web Search Mode Toggle Does Nothing
 
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
+`ContextAwareMessageInput` has a `webSearchMode` state and `onWebSearch` prop, but `EnhancedChatInterface` never passes `onWebSearch`. The `handleWebSearchClick` in `ContextAwareMessageInput` just toggles a local boolean that prepends `[Web Search] ` to the message. The backend SERP intelligence tools are triggered by query analysis, not by this prefix — so the toggle is cosmetic only.
 
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
-
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
-
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+**Fix:** Either wire `onWebSearch` from `EnhancedChatInterface` to explicitly trigger web search mode in the backend payload, or remove the toggle if backend auto-detects search intent.
 
 ---
 
-# AI Chat Frontend Bug Fixes — 10 Issues, 3 Phases ✅ COMPLETE
+## 4. Image Generation Tools Exist but No Frontend Trigger
 
-## ✅ Phase 1: Critical Functional Bugs
-- **Fix 1 — Error Retry Button:** Added `onRetry` prop to `EnhancedMessageBubble` in `EnhancedChatInterface.tsx` — finds last user message before error and re-sends
-- **Fix 2 — Edit Message Duplication:** Rewrote `editMessage` in `useEnhancedAIChatDB.ts` to invoke SSE inline (no `sendMessage` call) — inserts new AI response at correct position without duplicating user message
-- **Fix 3 — SSE Timeout:** Moved `clearTimeout(timeoutId)` into `finally` block after reader loop completes (both in `sendMessage` and `editMessage`)
+The backend has `generate_image` and `edit_image` tools registered. `GeneratedImageCard.tsx` and `VisualDataRenderer.tsx` can render generated images. But there's no explicit UI to trigger image generation — users must type "generate an image of..." and hope the AI picks the right tool. The `PlusMenuDropdown` has no image generation option.
 
-## ✅ Phase 2: Medium Severity Fixes
-- **Fix 4 — open_settings Event:** Changed `{ detail: action.data?.tab }` → `{ detail: { tab: action.data?.tab } }` to match listener expectations
-- **Fix 5 — RateLimitBanner Retry:** Wired to re-send last user message instead of console.log no-op
-- **Fix 6 — setState in useMemo:** Replaced `useState` + `setMessageSearchResults` inside `useMemo` with pure derived `useMemo` value
-- **Fix 7 — Title Truncation:** Smart truncation at last word boundary before 40 chars
+**Fix:** Add an "Image" option to `PlusMenuDropdown` that opens a prompt dialog or prefills the input with an image generation command.
 
-## ✅ Phase 3: Dead Code Cleanup & State Sync
-- **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
-- **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
-- **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed
+---
+
+## 5. Conversation Export Only Supports JSON
+
+`exportConversation` creates a JSON blob. Users likely expect PDF or plain text export options. The `ExportDropdown.tsx` component exists but isn't wired into the conversation export flow.
+
+**Fix:** Wire `ExportDropdown` into the chat header or conversation menu, offering JSON, TXT, and optionally PDF export formats.
+
+---
+
+## 6. No Conversation Rename UI
+
+Conversations auto-title from the first message (truncated to 40 chars). There's no way for users to rename a conversation. The sidebar shows titles but has no edit/rename action in the dropdown menu.
+
+**Fix:** Add a "Rename" option to the conversation dropdown in `ChatHistorySidebar` that opens an inline edit input or dialog.
+
+---
+
+## 7. Error Messages Don't Persist Retry Button on Reload (Partially Fixed)
+
+We added `messageStatus` persistence to the `status` column. But the `loadMessages` function only maps `status: 'error'` → `messageStatus: 'error'`. The error message `content` is preserved, but the `actions` array (containing the Retry and API Settings buttons) is stored in `function_calls` column. Need to verify that `loadMessages` correctly restores the `actions` from `function_calls` for error messages.
+
+**Fix:** Verify and fix `loadMessages` to parse `function_calls` JSON back into `actions` for error messages so the Retry button appears after reload.
+
+---
+
+## 8. `ContextDisplayIndicator` Shows Hardcoded 88% Confidence
+
+In `EnhancedChatInterface.tsx` line 568:
+```tsx
+overallConfidence={88}
+```
+This is never updated. The context indicator is also never shown because `showContextIndicator` starts as `false` and is never set to `true`.
+
+**Fix:** Either wire the context indicator to real data from the AI response (e.g., from `analystContext`), or remove the dead UI.
+
+---
+
+## 9. `ConversationAnalyticsModal` — Empty `onShowAnalytics` Handler
+
+Line 447: `onShowAnalytics={() => {}}` — the analytics button in the search bar does nothing. `ConversationAnalyticsModal.tsx` exists but is never rendered.
+
+**Fix:** Import and render `ConversationAnalyticsModal` when triggered, passing conversation data.
+
+---
+
+## 10. No Loading Skeleton When Switching Conversations
+
+When the user clicks a different conversation in the sidebar, `loadMessages` fetches from DB. During this time, the chat area shows the previous conversation's messages briefly before swapping. There's no loading state between conversations.
+
+**Fix:** Clear messages immediately on conversation switch and show a skeleton loader while `loadMessages` completes.
+
+---
+
+## 11. Analyst Panel Data Is Client-Side Only
+
+The `useAnalystEngine` hook extracts topics from messages and builds cumulative state, but it's entirely derived from message text parsing. The backend sends `analystContext` in the SSE payload with real platform stats, but the frontend `VisualizationSidebar` only receives `analystState` from the client-side hook — it doesn't merge in the backend `analystContext`.
+
+**Fix:** In `EnhancedChatInterface`, extract `analystContext` from the latest assistant message and merge it into the analyst panel data passed to `VisualizationSidebar`.
+
+---
+
+## Summary Table
+
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 1 | Mobile content overflow | UX on mobile | Small |
+| 2 | File upload not sent to AI | Feature broken | Medium |
+| 3 | Web search toggle is cosmetic | Misleading UI | Small |
+| 4 | No image generation UI trigger | Feature hidden | Small |
+| 5 | Export only JSON | Limited utility | Medium |
+| 6 | No conversation rename | Missing basic feature | Small |
+| 7 | Error actions not restored on reload | Partial fix gap | Small |
+| 8 | Hardcoded context indicator | Dead/misleading UI | Small |
+| 9 | Analytics modal never shown | Dead UI | Small |
+| 10 | No loading state on conversation switch | Janky UX | Small |
+| 11 | Analyst panel ignores backend context | Feature incomplete | Medium |
+
+---
+
+## Recommended Implementation Order
+
+**Phase 1 — Functional Gaps (Issues 2, 3, 7)**
+Fix file upload → AI pipeline, remove/wire web search toggle, verify error action restoration.
+
+**Phase 2 — Missing UX (Issues 1, 6, 10)**
+Mobile overflow fix, conversation rename, conversation switch skeleton.
+
+**Phase 3 — Feature Completion (Issues 4, 5, 8, 9, 11)**
+Image gen trigger, export formats, clean up dead UI, wire analyst backend context.
+
