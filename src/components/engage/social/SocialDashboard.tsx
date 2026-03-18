@@ -311,7 +311,7 @@ export const SocialDashboard = () => {
           </div>
         </motion.div>
       )}
-
+      <motion.div variants={engageStagger.item} className="flex items-center justify-end">
 
         <div className="flex items-center gap-2">
           <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40 backdrop-blur-sm">
