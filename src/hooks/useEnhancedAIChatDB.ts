@@ -208,7 +208,7 @@ export const useEnhancedAIChatDB = () => {
       });
       return null;
     }
-  }, [user, toast, loadConversations]);
+  }, [user, toast]);
 
   // Delete conversation
   const deleteConversation = useCallback(async (conversationId: string) => {
