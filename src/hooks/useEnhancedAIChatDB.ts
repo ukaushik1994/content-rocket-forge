@@ -223,13 +223,19 @@ export const useEnhancedAIChatDB = () => {
         status: 'completed'
       };
 
-      const { error } = await supabase
+      const { data: insertedData, error } = await supabase
         .from('ai_messages')
-        .insert(messageData);
+        .insert(messageData)
+        .select('id')
+        .single();
       
       if (error) {
         console.error('Database error saving message:', error);
+        return null;
       }
+      
+      // Return the DB-generated UUID so callers can update local state
+      return insertedData?.id || null;
     } catch (error) {
       console.error('Error saving message:', error);
     }
