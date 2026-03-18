@@ -796,7 +796,7 @@ export const useEnhancedAIChatDB = () => {
       console.error('❌ Error handling action:', error);
       toast({
         title: "Action Failed",
-        description: `Failed to execute action: ${error.message}`,
+        description: `Failed to execute action: ${(error as Error).message || String(error)}`,
         variant: "destructive"
       });
     }
