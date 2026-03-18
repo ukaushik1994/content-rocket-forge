@@ -2576,7 +2576,84 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     let aiMessage = data?.choices?.[0]?.message?.content;
     let toolCalls = data?.choices?.[0]?.message?.tool_calls;
 
-    // =========================================================================
+    // Declare request-scoped variables for promoted actions and fallback charts
+    let requestPromotedActions: any[] = [];
+    let requestFallbackChartData: any = null;
+
+    // Helper: generate fallback chart from auto-executed tool results
+    const generateFallbackChartFromAutoResults = (results: any[], query: string): any => {
+      for (const result of results) {
+        try {
+          const data = JSON.parse(result.content);
+          if (!data || (Array.isArray(data) && data.length === 0)) continue;
+          
+          if (result.name === 'get_content_items' && Array.isArray(data) && data.length > 0) {
+            return {
+              type: 'chart', title: 'Content Overview',
+              chartConfig: {
+                type: 'bar',
+                data: data.slice(0, 10).map((c: any) => ({
+                  name: (c.title || 'Untitled').substring(0, 30),
+                  seoScore: c.seo_score || 0,
+                })),
+                categories: ['name'],
+                series: [{ dataKey: 'seoScore', name: 'SEO Score' }]
+              },
+              summaryInsights: {
+                metricCards: [
+                  { id: '1', title: 'Total Content', value: data.length.toString(), icon: 'FileText', color: 'blue' },
+                  { id: '2', title: 'Published', value: data.filter((c: any) => c.status === 'published').length.toString(), icon: 'Globe', color: 'green' },
+                  { id: '3', title: 'Drafts', value: data.filter((c: any) => c.status === 'draft').length.toString(), icon: 'Edit', color: 'amber' }
+                ]
+              }
+            };
+          }
+          if (result.name === 'get_keywords' && Array.isArray(data) && data.length > 0) {
+            return {
+              type: 'chart', title: 'Keywords Overview',
+              chartConfig: {
+                type: 'bar',
+                data: data.slice(0, 10).map((k: any) => ({
+                  name: (k.keyword || 'Unknown').substring(0, 25),
+                  volume: k.search_volume || 0,
+                  difficulty: k.difficulty || 0
+                })),
+                categories: ['name'],
+                series: [{ dataKey: 'volume', name: 'Search Volume' }]
+              },
+              summaryInsights: {
+                metricCards: [
+                  { id: '1', title: 'Total Keywords', value: data.length.toString(), icon: 'Search', color: 'blue' },
+                  { id: '2', title: 'Avg Volume', value: Math.round(data.reduce((s: number, k: any) => s + (k.search_volume || 0), 0) / data.length).toString(), icon: 'TrendingUp', color: 'green' }
+                ]
+              }
+            };
+          }
+          if (result.name === 'get_proposals' && Array.isArray(data) && data.length > 0) {
+            return {
+              type: 'chart', title: 'AI Proposals Overview',
+              chartConfig: {
+                type: 'bar',
+                data: data.slice(0, 10).map((p: any) => ({
+                  name: (p.title || 'Untitled').substring(0, 30),
+                  impressions: p.estimated_impressions || 0,
+                })),
+                categories: ['name'],
+                series: [{ dataKey: 'impressions', name: 'Est. Impressions' }]
+              },
+              summaryInsights: {
+                metricCards: [
+                  { id: '1', title: 'Total Proposals', value: data.length.toString(), icon: 'FileText', color: 'blue' },
+                  { id: '2', title: 'Available', value: data.filter((p: any) => p.status === 'available').length.toString(), icon: 'CheckCircle', color: 'green' }
+                ]
+              }
+            };
+          }
+        } catch (_) { /* skip */ }
+      }
+      return null;
+    };
+
     // Fix 2: RETRY with forced tool_choice if data query got no tool_calls
     // =========================================================================
     if ((!toolCalls || toolCalls.length === 0) && queryRequiresToolExecution(queryIntent) && !useCampaignStrategyTool) {
