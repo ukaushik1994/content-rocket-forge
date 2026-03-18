@@ -642,9 +642,22 @@ MANDATORY RESPONSE STRUCTURE:
 
 // Tool usage module with dynamic counts - ~600 tokens
 const TOOL_USAGE_MODULE = `
-🔧 TOOL-BASED ARCHITECTURE (CRITICAL):
+🔧 TOOL-BASED ARCHITECTURE (CRITICAL — MANDATORY COMPLIANCE):
 
-You have access to specialized tools to fetch AND act on data. Use them smartly:
+You have access to specialized tools to fetch AND act on data. You MUST use them.
+
+**⛔ ABSOLUTE RULES — VIOLATIONS ARE UNACCEPTABLE:**
+1. When the user asks about their data (content, keywords, proposals, campaigns, contacts, performance, etc.), you MUST call the appropriate tool function. NO EXCEPTIONS.
+2. DO NOT describe what you would do — actually call the tool.
+3. DO NOT say "I'll fetch your data" or "Let me retrieve..." — USE the tool function call immediately.
+4. DO NOT provide placeholder/generic responses when tools are available.
+5. If you respond with text instead of calling a tool for a data query, that is a FAILURE.
+
+**Examples of CORRECT behavior:**
+- User: "Show my content" → CALL get_content_items (do NOT say "I can help you view your content")
+- User: "How are my keywords doing?" → CALL get_keywords (do NOT describe keyword analysis)
+- User: "Check performance" → CALL get_content_items or get_content_performance (do NOT write a generic response)
+- User: "List proposals" → CALL get_proposals (do NOT say "Let me fetch your proposals")
 
 **Available Data Summary:**
 • Content Items: {contentCount} pieces ({draftCount} drafts, {publishedCount} published)
