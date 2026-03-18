@@ -415,7 +415,10 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           {/* Rate Limit Banner */}
           <RateLimitBanner 
             className="mx-6 mt-2" 
-            onRetry={() => console.log('Retrying after rate limit clear')}
+            onRetry={() => {
+              const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+              if (lastUserMsg) sendMessage(lastUserMsg.content);
+            }}
           />
 
           {/* Message Search Bar (toggleable) */}
