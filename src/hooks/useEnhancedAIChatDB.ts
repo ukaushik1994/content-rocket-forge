@@ -108,6 +108,7 @@ export const useEnhancedAIChatDB = () => {
 
   // Load messages for active conversation
   const loadMessages = useCallback(async (conversationId: string) => {
+    const requestId = ++loadRequestRef.current;
     try {
       const { data, error } = await supabase
         .from('ai_messages')
@@ -116,6 +117,9 @@ export const useEnhancedAIChatDB = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      
+      // Ignore stale results if conversation changed during fetch
+      if (loadRequestRef.current !== requestId) return;
       
       const formattedMessages: EnhancedChatMessage[] = (data || []).map(msg => {
         // Safely parse JSON fields
