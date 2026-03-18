@@ -401,11 +401,12 @@ export const useEnhancedAIChatDB = () => {
     // Auto-name conversation early (before AI call) so it works even if backend fails
     if (messages.length === 0 && conversationId) {
       const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
-      supabase
-        .from('ai_conversations')
-        .update({ title })
-        .eq('id', conversationId)
-        .then(() => {
+      Promise.resolve(
+        supabase
+          .from('ai_conversations')
+          .update({ title })
+          .eq('id', conversationId)
+      ).then(() => {
           setConversations(prev => 
             prev.map(conv => 
               conv.id === conversationId 
@@ -413,8 +414,7 @@ export const useEnhancedAIChatDB = () => {
                 : conv
             )
           );
-        })
-        .catch((err) => {
+        }).catch((err: unknown) => {
           console.warn('Failed to update conversation title:', err);
         });
     }
