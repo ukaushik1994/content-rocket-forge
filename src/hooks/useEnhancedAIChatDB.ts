@@ -703,30 +703,37 @@ export const useEnhancedAIChatDB = () => {
         ? "The request timed out. The AI might be processing a complex query. You can retry or check your API key settings."
         : "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.";
       
+      const errorActions = [
+        {
+          id: 'retry-' + assistantId,
+          type: 'button' as const,
+          label: '🔄 Retry',
+          action: 'send_message',
+          data: { message: content }
+        },
+        {
+          id: 'settings-' + assistantId,
+          type: 'button' as const,
+          label: '⚙️ API Settings',
+          action: 'open_settings',
+          data: { tab: 'api' }
+        }
+      ];
+
       const errorMessage: EnhancedChatMessage = {
         id: assistantId,
         role: 'assistant',
         content: errorContent,
         timestamp: new Date(),
         messageStatus: 'error',
-        actions: [
-          {
-            id: 'retry-' + assistantId,
-            type: 'button' as const,
-            label: '🔄 Retry',
-            action: 'send_message',
-            data: { message: content }
-          },
-          {
-            id: 'settings-' + assistantId,
-            type: 'button' as const,
-            label: '⚙️ API Settings',
-            action: 'open_settings',
-            data: { tab: 'api' }
-          }
-        ]
+        actions: errorActions
       };
       setMessages(prev => [...prev, errorMessage]);
+
+      // Persist error message to DB so it survives reload
+      if (conversationId) {
+        await saveMessage(errorMessage, conversationId);
+      }
     } finally {
       setIsLoading(false);
       setIsTyping(false);

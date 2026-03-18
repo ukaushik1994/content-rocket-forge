@@ -87,7 +87,7 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
   };
 
   const canEdit = isUser && isWithinEditWindow() && onEdit;
-  const canDelete = isUser && onDelete;
+  const canDelete = onDelete; // Allow delete for both user and assistant messages
 
   return (
     <>
