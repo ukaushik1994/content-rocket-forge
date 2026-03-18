@@ -69,6 +69,7 @@ interface ChatHistorySidebarProps {
   onToggleSidebar: () => void;
   onArchiveConversation?: (id: string) => void;
   onPinConversation?: (id: string) => void;
+  onRenameConversation?: (id: string, newTitle: string) => void;
   onOpenPanel?: (panelType: string) => void;
   isCollapsed?: boolean;
   className?: string;
