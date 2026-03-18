@@ -18,7 +18,7 @@ interface Solution {
 }
 
 interface ContextAwareMessageInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, displayMessage?: string) => void;
   isLoading: boolean;
   placeholder?: string;
   onTypingChange?: (isTyping: boolean) => void;
