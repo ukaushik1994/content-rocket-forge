@@ -251,7 +251,7 @@ export const useEnhancedAIChatDB = () => {
         progress_indicator: message.progressIndicator ? JSON.stringify(message.progressIndicator) : null,
         workflow_context: message.workflowContext ? JSON.stringify(message.workflowContext) : null,
         function_calls: message.actions ? JSON.stringify(message.actions) : null, // Use function_calls instead of attachments
-        status: 'completed'
+        status: message.messageStatus === 'error' ? 'error' : 'completed'
       };
 
       const { data: insertedData, error } = await supabase
