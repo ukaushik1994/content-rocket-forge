@@ -53,9 +53,6 @@ export const AdvancedChatFeatures: React.FC<AdvancedChatFeaturesProps> = ({
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'processing'>('idle');
   
   const { 
-    contextHistory, 
-    saveContextSnapshot, 
-    loadContextSnapshot,
     conversationType,
     switchToStreaming,
     switchToRegular
