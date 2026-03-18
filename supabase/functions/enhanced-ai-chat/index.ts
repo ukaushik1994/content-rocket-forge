@@ -2986,7 +2986,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
             await new Promise(r => setTimeout(r, waitTime));
             continue;
           }
-        } else if (attempt < maxRetries) {
+        } else if (attempt < maxRetriesPhase2) {
           await new Promise(r => setTimeout(r, 2000 * attempt));
         }
       }
