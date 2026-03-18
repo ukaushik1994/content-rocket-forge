@@ -62,9 +62,16 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     fileType: string;
     summary: string;
     insights: string[];
+    extractedText?: string;
   }) => {
-    const fileMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${analysis.summary}\n\nKey insights:\n${analysis.insights.map(i => `- ${i}`).join('\n')}`;
-    onSendMessage(fileMessage);
+    // Include truncated extracted text as context so AI can answer follow-up questions
+    const contextBlock = analysis.extractedText
+      ? `\n\n[Document content for context]:\n${analysis.extractedText}`
+      : '';
+    const fileMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${analysis.summary}\n\nKey insights:\n${analysis.insights.map(i => `- ${i}`).join('\n')}${contextBlock}`;
+    // Show a cleaner display version without the raw text dump
+    const displayMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${analysis.summary}\n\nKey insights:\n${analysis.insights.map(i => `- ${i}`).join('\n')}`;
+    onSendMessage(fileMessage, displayMessage);
     setShowFileUpload(false);
   }, [onSendMessage]);
 
