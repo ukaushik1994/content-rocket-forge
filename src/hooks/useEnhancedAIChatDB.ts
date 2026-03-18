@@ -34,6 +34,8 @@ export const useEnhancedAIChatDB = () => {
     conversationHistory: Array<{ role: string; content: string }>;
   } | null>(null);
   const analystActiveRef = useRef(false);
+  const freshConversationRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
