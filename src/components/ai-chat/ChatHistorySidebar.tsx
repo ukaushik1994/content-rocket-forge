@@ -39,7 +39,9 @@ import {
   BookOpen,
   Wrench,
   MessageCircle,
-  Sparkles
+  Sparkles,
+  Tag,
+  X
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -47,6 +49,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { AIConversation } from '@/hooks/useEnhancedAIChatDB';
@@ -70,10 +75,23 @@ interface ChatHistorySidebarProps {
   onArchiveConversation?: (id: string) => void;
   onPinConversation?: (id: string) => void;
   onRenameConversation?: (id: string, newTitle: string) => void;
+  onAddTag?: (conversationId: string, tag: string) => void;
+  onRemoveTag?: (conversationId: string, tag: string) => void;
+  onShareConversation?: (conversationId: string) => void;
   onOpenPanel?: (panelType: string) => void;
   isCollapsed?: boolean;
   className?: string;
 }
+
+const PRESET_TAGS = ['important', 'strategy', 'content', 'research', 'follow-up'];
+
+const TAG_COLORS: Record<string, string> = {
+  important: 'bg-destructive/20 text-destructive border-destructive/30',
+  strategy: 'bg-primary/20 text-primary border-primary/30',
+  content: 'bg-accent/60 text-accent-foreground border-accent/30',
+  research: 'bg-secondary/60 text-secondary-foreground border-secondary/30',
+  'follow-up': 'bg-warning/20 text-warning border-warning/30',
+};
 
 // Sidebar nav item — premium style with active indicator
 const SidebarNavItem: React.FC<{
@@ -181,6 +199,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   onArchiveConversation,
   onPinConversation,
   onRenameConversation,
+  onAddTag,
+  onRemoveTag,
+  onShareConversation,
   onOpenPanel,
   isCollapsed = false,
   className = ""
@@ -516,6 +537,33 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                               <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                                 {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
                               </p>
+                              {/* Tag badges */}
+                              {conversation.tags && conversation.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {conversation.tags.map(tag => (
+                                    <span
+                                      key={tag}
+                                      className={cn(
+                                        "inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full border font-medium",
+                                        TAG_COLORS[tag] || 'bg-muted text-muted-foreground border-border/30'
+                                      )}
+                                    >
+                                      {tag}
+                                      {onRemoveTag && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onRemoveTag(conversation.id, tag);
+                                          }}
+                                          className="hover:opacity-70 ml-0.5"
+                                        >
+                                          <X className="h-2 w-2" />
+                                        </button>
+                                      )}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             
                             <DropdownMenu>
@@ -565,6 +613,52 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                                     {conversation.archived ? 'Unarchive' : 'Archive'}
                                   </DropdownMenuItem>
                                 )}
+                                {onShareConversation && (
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onShareConversation(conversation.id);
+                                    }}
+                                  >
+                                    <Share2 className="h-4 w-4 mr-2" />
+                                    Share
+                                  </DropdownMenuItem>
+                                )}
+                                {onAddTag && (
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger onClick={(e) => e.stopPropagation()}>
+                                      <Tag className="h-4 w-4 mr-2" />
+                                      Tags
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent className="bg-background border-border/20">
+                                      {PRESET_TAGS.map(tag => {
+                                        const isApplied = (conversation.tags || []).includes(tag);
+                                        return (
+                                          <DropdownMenuItem
+                                            key={tag}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (isApplied) {
+                                                onRemoveTag?.(conversation.id, tag);
+                                              } else {
+                                                onAddTag(conversation.id, tag);
+                                              }
+                                            }}
+                                            className="capitalize"
+                                          >
+                                            <span className={cn(
+                                              "w-2 h-2 rounded-full mr-2",
+                                              isApplied ? "bg-primary" : "bg-muted-foreground/30"
+                                            )} />
+                                            {tag}
+                                            {isApplied && <X className="h-3 w-3 ml-auto text-muted-foreground" />}
+                                          </DropdownMenuItem>
+                                        );
+                                      })}
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                )}
+                                <DropdownMenuSeparator className="bg-border/20" />
                                 <DropdownMenuItem
                                   onClick={(e) => {
                                     e.stopPropagation();

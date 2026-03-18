@@ -33,6 +33,9 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
     renameConversation,
     togglePinConversation,
     toggleArchiveConversation,
+    addTagToConversation,
+    removeTagFromConversation,
+    shareConversation,
   } = useSharedAIChatDB();
 
   // Sync AIChatDB state → ChatContextBridge so downstream consumers get live data
@@ -79,6 +82,9 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
     onPinConversation: togglePinConversation,
     onArchiveConversation: toggleArchiveConversation,
     onRenameConversation: renameConversation,
+    onAddTag: addTagToConversation,
+    onRemoveTag: removeTagFromConversation,
+    onShareConversation: shareConversation,
     onOpenPanel: (panelType: string) => {
       const panelRouteMap: Record<string, string> = {
         automations: '/engage/automations',
