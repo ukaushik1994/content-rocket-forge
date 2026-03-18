@@ -501,36 +501,40 @@ export const useEnhancedAIChatDB = () => {
       let textBuffer = '';
       let response: any = null;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          textBuffer += decoder.decode(value, { stream: true });
 
-        const lines = textBuffer.split('\n');
-        textBuffer = lines.pop() || '';
+          const lines = textBuffer.split('\n');
+          textBuffer = lines.pop() || '';
 
-        let currentEvent = '';
-        for (const line of lines) {
-          const trimmed = line.replace(/\r$/, '');
-          if (trimmed.startsWith('event: ')) {
-            currentEvent = trimmed.slice(7).trim();
-          } else if (trimmed.startsWith('data: ') && currentEvent) {
-            try {
-              const payload = JSON.parse(trimmed.slice(6));
-              if (currentEvent === 'progress') {
-                setProgressText(payload.message || 'Processing...');
-              } else if (currentEvent === 'done') {
-                response = payload;
-              } else if (currentEvent === 'error') {
-                throw new Error(payload.error || payload.message || 'AI processing failed');
+          let currentEvent = '';
+          for (const line of lines) {
+            const trimmed = line.replace(/\r$/, '');
+            if (trimmed.startsWith('event: ')) {
+              currentEvent = trimmed.slice(7).trim();
+            } else if (trimmed.startsWith('data: ') && currentEvent) {
+              try {
+                const payload = JSON.parse(trimmed.slice(6));
+                if (currentEvent === 'progress') {
+                  setProgressText(payload.message || 'Processing...');
+                } else if (currentEvent === 'done') {
+                  response = payload;
+                } else if (currentEvent === 'error') {
+                  throw new Error(payload.error || payload.message || 'AI processing failed');
+                }
+              } catch (e) {
+                if (e instanceof SyntaxError) continue;
+                throw e;
               }
-            } catch (e) {
-              if (e instanceof SyntaxError) continue;
-              throw e;
+              currentEvent = '';
             }
-            currentEvent = '';
           }
         }
+      } finally {
+        clearTimeout(timeoutId);
       }
 
       // Safety net: if no SSE 'done' event found, try parsing full buffer as plain JSON
