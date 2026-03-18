@@ -36,9 +36,24 @@ export const useEnhancedAIChatDB = () => {
   const analystActiveRef = useRef(false);
   const freshConversationRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const messagesRef = useRef<EnhancedChatMessage[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Keep messagesRef in sync
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // Listen for abort requests from the UI stop button
+  useEffect(() => {
+    const handler = () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+    window.addEventListener('abortAIRequest', handler);
+    return () => window.removeEventListener('abortAIRequest', handler);
+  }, []);
 
   // Load conversations from database with search and filter support
   const loadConversations = useCallback(async (options?: {
