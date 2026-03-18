@@ -1039,23 +1039,23 @@ export const useEnhancedAIChatDB = () => {
     await loadConversations();
   }, [loadConversations]);
 
-  // Edit message (within 5-minute window)
+  // Edit message (within 5-minute window) — regenerates AI response
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
     if (!user) return;
     
     // Enforce 5-minute edit window
     const msg = messages.find(m => m.id === messageId);
-    if (msg) {
-      const msgTime = new Date(msg.timestamp).getTime();
-      const fiveMinutes = 5 * 60 * 1000;
-      if (Date.now() - msgTime > fiveMinutes) {
-        toast({
-          title: "Edit window expired",
-          description: "Messages can only be edited within 5 minutes of sending.",
-          variant: "destructive"
-        });
-        return;
-      }
+    if (!msg) return;
+    
+    const msgTime = new Date(msg.timestamp).getTime();
+    const fiveMinutes = 5 * 60 * 1000;
+    if (Date.now() - msgTime > fiveMinutes) {
+      toast({
+        title: "Edit window expired",
+        description: "Messages can only be edited within 5 minutes of sending.",
+        variant: "destructive"
+      });
+      return;
     }
     
     try {
@@ -1066,15 +1066,25 @@ export const useEnhancedAIChatDB = () => {
 
       if (error) throw error;
 
-      // Update local state
-      setMessages(prev => prev.map(msg => 
-        msg.id === messageId ? { ...msg, content: newContent } : msg
-      ));
+      // Find and delete the subsequent assistant message
+      const msgIndex = messages.findIndex(m => m.id === messageId);
+      const nextAssistant = msgIndex >= 0 ? messages[msgIndex + 1] : null;
+      
+      if (nextAssistant && nextAssistant.role === 'assistant') {
+        // Delete from DB
+        await supabase.from('ai_messages').delete().eq('id', nextAssistant.id);
+        // Remove from local state
+        setMessages(prev => prev.filter(m => m.id !== nextAssistant.id).map(m =>
+          m.id === messageId ? { ...m, content: newContent } : m
+        ));
+      } else {
+        setMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, content: newContent } : m
+        ));
+      }
 
-      toast({
-        title: "Message Updated",
-        description: "Your message has been edited."
-      });
+      // Re-trigger AI response with edited content
+      await sendMessage(newContent);
     } catch (error) {
       console.error('Error editing message:', error);
       toast({
@@ -1084,7 +1094,7 @@ export const useEnhancedAIChatDB = () => {
       });
       throw error;
     }
-  }, [user, toast, messages]);
+  }, [user, toast, messages, sendMessage]);
 
   // Delete message (soft delete - marks as deleted)
   const deleteMessage = useCallback(async (messageId: string) => {
