@@ -1,120 +1,153 @@
 
 
-# AI Chat Audit: Issues & Remaining Problems
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-After a thorough review of the frontend hook (`useEnhancedAIChatDB`), edge function (`enhanced-ai-chat/index.ts`, `tools.ts`, all tool modules), UI components, and data flow, here are the issues found:
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
----
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## 1. Dead Legacy Code Still Referenced
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-**Files:** `src/hooks/useAIChat.ts`, `src/components/ai-chat/MessageList.tsx`, `src/components/ai-chat/MessageBubble.tsx`, `src/components/ai-chat/ChatSidebar.tsx`, `src/contexts/ChatContextBridge.tsx`
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-The old `useAIChat` hook and its `ConversationMessage` / `Conversation` types are still imported by `MessageList.tsx`, `MessageBubble.tsx`, `ChatSidebar.tsx`, and `ChatContextBridge.tsx`. These components appear to be unused orphans (the active chat uses `EnhancedChatInterface` + `EnhancedMessageBubble` + `ChatHistorySidebar`), but they add confusion, increase bundle size, and could cause import errors if the legacy hook is ever removed.
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-**Fix:** Delete `useAIChat.ts`, `MessageList.tsx`, `MessageBubble.tsx`, `ChatSidebar.tsx`, and `ChatContextBridge.tsx` (after confirming no active imports).
-
----
-
-## 2. `sanitizeResponseContent` Strips Valid JSON from AI Responses
-
-**File:** `supabase/functions/enhanced-ai-chat/index.ts` (line ~1173)
-
-```
-.replace(/^\s*\{[\s\S]*?\}\s*$/gm, '')
-```
-
-This regex removes any standalone JSON block in the AI text. If the AI places a JSON `visualData` block on its own line within the conversational text (which it's instructed to do), this sanitizer can strip it **before** the JSON parser runs if the parsing order is wrong. The `sanitizeResponseContent` function is called in `parseResponseWithFallback` and also as a fallback at line 3488. If the AI response contains a JSON block that wasn't extracted by `extractJSONBlocks`, the sanitizer deletes it silently.
-
-**Fix:** Remove the standalone JSON regex or move it to only run **after** JSON extraction is complete.
-
----
-
-## 3. `enhancedAIService` Is a Dead Code Path for Message Sending
-
-**File:** `src/services/enhancedAIService.ts`
-
-The `processEnhancedMessage` method in `enhancedAIService` duplicates much of what `enhanced-ai-chat` does (fetches context, calls AI providers, checks API keys). However, `useEnhancedAIChatDB.sendMessage()` calls the edge function directly via SSE fetch -- it never calls `enhancedAIService.processEnhancedMessage()`. The only active usage of `enhancedAIService` is for workflow state management (`getWorkflowState`, `updateWorkflowState`) in `handleWorkflowAction`.
-
-**Fix:** Remove `processEnhancedMessage` and related dead methods from `enhancedAIService`. Keep only the workflow state helpers.
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-## 4. Message Edit Doesn't Re-trigger AI Response
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-**File:** `src/hooks/useEnhancedAIChatDB.ts` (line 1030)
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-When a user edits a message within the 5-minute window, the edit updates the text in the database and local state but does **not** re-send the edited message to the AI for a new response. The old AI response below the edited message remains stale and potentially incorrect. Users likely expect editing a message to regenerate the AI response (like ChatGPT behavior).
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-**Fix:** After editing a user message, delete the subsequent assistant message and re-invoke `sendMessage` with the new content. Add a confirmation prompt since this is destructive.
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
----
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
 
-## 5. No Error Recovery When SSE Stream Breaks Mid-Response
-
-**File:** `src/hooks/useEnhancedAIChatDB.ts` (lines 487-517)
-
-The SSE stream reader loop has no timeout. If the edge function hangs or the network drops mid-stream, the `while (true)` loop will wait indefinitely until `done` is true. There's no `AbortController` timeout, so users see a perpetual loading state with no way to cancel.
-
-**Fix:** Add an `AbortController` with a 60-second timeout. On abort, display an error message with a retry button.
-
----
-
-## 6. File Upload Analysis Uses Client-Side Only -- No AI Context
-
-**File:** `src/components/ai-chat/FileUploadHandler.tsx`
-
-When a file is uploaded and analyzed, the `onFileAnalyzed` callback sends a summary like "Analyzed file.pdf: [summary]". However, the extracted text is discarded after generating the summary. The full document content is never sent to the AI edge function as context. This means the AI cannot answer follow-up questions about the file contents.
-
-**Fix:** Include the extracted text (truncated to ~4000 chars) in the message sent to the AI, formatted as a system context block.
-
----
-
-## 7. Conversation Title Race Condition
-
-**File:** `src/hooks/useEnhancedAIChatDB.ts` (lines 402-420)
-
-The title is set early (before the AI call) using `Promise.resolve(supabase.update(...)).then(...)`. This fire-and-forget pattern means:
-- If the DB update fails, the conversation title in local state diverges from the database.
-- The `.catch` only logs a warning but doesn't fix the state.
-
-This is minor but can cause confusing behavior when conversations show "New Chat" in the sidebar after reload.
-
-**Fix:** `await` the title update or add a retry on failure.
-
----
-
-## 8. `handleAction` Toast Spam on Every Action
-
-**File:** `src/hooks/useEnhancedAIChatDB.ts` (lines 619-624)
-
-Every action execution shows a toast "Action Executed / Processing: [label]" with a 1-second duration. For deep dive prompts and navigation, this creates unnecessary toast spam that clutters the UI.
-
-**Fix:** Remove the generic toast. Only show toasts for workflow actions and errors.
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
 ---
 
-## 9. Missing `loadMessages` on Conversation Switch (Potential Double Load)
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-**File:** `src/hooks/useEnhancedAIChatDB.ts` (lines 1119-1126)
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
 
-The `useEffect` on `activeConversation` calls `loadMessages(activeConversation)`. But `createConversation` already calls `setMessages([])`. When creating a new conversation and then the effect fires, it makes an unnecessary DB query for a conversation that has no messages yet.
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
 
-**Fix:** Skip the `loadMessages` call for freshly created conversations (check message count or use a ref flag).
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
 
 ---
 
-## Summary of Recommended Fixes (Priority Order)
+# AI Chat Awareness Gaps — Implementation Tracker
 
-| # | Issue | Severity | Effort |
-|---|-------|----------|--------|
-| 5 | No SSE timeout / abort controller | High | Medium |
-| 6 | File upload content not sent to AI | High | Medium |
-| 2 | Sanitizer strips valid JSON | Medium | Small |
-| 4 | Message edit doesn't regenerate AI response | Medium | Medium |
-| 1 | Dead legacy code (`useAIChat`, old components) | Low | Small |
-| 3 | Dead `enhancedAIService.processEnhancedMessage` | Low | Small |
-| 8 | Toast spam on every action | Low | Small |
-| 7 | Title update race condition | Low | Small |
-| 9 | Unnecessary loadMessages on new conversation | Low | Small |
+## ✅ Batch 1: Remove Glossary — COMPLETE
+- Removed `/glossary-builder` route (redirects to /ai-chat)
+- Removed RepositoryHeader "Build Glossary" button
+- Removed `get_glossary_terms` read tool from tools.ts
+- Removed `create_glossary_term` write tool from content-action-tools.ts
+- Removed glossary from query-analyzer.ts intent detection
+- Removed glossary from system prompt capabilities
+- Removed glossary from ContentType union and content type enums
+- Removed glossary from DashboardSummary stats
+- Removed glossary from ContentTypeSelection page
+- DB tables kept (no destructive migration)
 
+## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
+- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
+- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
+- Added `create_campaign` to cross-module-tools.ts
+- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
+- Added `update_email_template` to engage-action-tools.ts
+- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
+- Added cache invalidation for all new write tools
+- Updated query-analyzer.ts with new intent patterns
+- Updated system prompt with new tool capabilities + usage examples
+- Edge function deployed successfully
+
+## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
+- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
+- 3-step flow: content selection → format selection → generated results with copy/download
+- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
+- Imported RepurposePanel alongside other panels
+- Excluded `content_repurpose` from auto-chart-conversion in edge function
+- Updated system prompt to instruct AI to emit `content_repurpose` visualData
+- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
+- Edge function deployed
+
+## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
+- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
+- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
+- Auto-triggers after `create_content_item` — saves seo_score to content_items
+- Auto-triggers after `generate_full_content` — saves seo_score to content_items
+- Content Wizard already saves seo_score on insert (verified)
+- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
+- Edge function deployed
+## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
+- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
+- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
+- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
+- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
+- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
+- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
+- Updated system prompt tool listing (25 read tools) and usage examples
+- Edge function deployed

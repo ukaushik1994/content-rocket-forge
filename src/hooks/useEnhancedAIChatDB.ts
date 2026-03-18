@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { enhancedAIService } from '@/services/enhancedAIService';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +34,8 @@ export const useEnhancedAIChatDB = () => {
     conversationHistory: Array<{ role: string; content: string }>;
   } | null>(null);
   const analystActiveRef = useRef(false);
+  const freshConversationRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -162,6 +164,7 @@ export const useEnhancedAIChatDB = () => {
       setConversations(prev => [data, ...prev]);
       setActiveConversation(data.id);
       setMessages([]);
+      freshConversationRef.current = data.id;
       
       // Reload conversations to ensure they're fresh
       await loadConversations();
@@ -398,15 +401,15 @@ export const useEnhancedAIChatDB = () => {
     const assistantId = `assistant-${Date.now()}`;
     setProgressText('');
 
-    // Auto-name conversation early (before AI call) so it works even if backend fails
+    // Auto-name conversation early (before AI call) — await to prevent race condition
     if (messages.length === 0 && conversationId) {
       const title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
-      Promise.resolve(
-        supabase
+      try {
+        const { error: titleError } = await supabase
           .from('ai_conversations')
           .update({ title })
-          .eq('id', conversationId)
-      ).then(() => {
+          .eq('id', conversationId);
+        if (!titleError) {
           setConversations(prev => 
             prev.map(conv => 
               conv.id === conversationId 
@@ -414,9 +417,10 @@ export const useEnhancedAIChatDB = () => {
                 : conv
             )
           );
-        }).catch((err: unknown) => {
-          console.warn('Failed to update conversation title:', err);
-        });
+        }
+      } catch (titleErr) {
+        console.warn('Failed to update conversation title:', titleErr);
+      }
     }
 
     try {
@@ -450,14 +454,23 @@ export const useEnhancedAIChatDB = () => {
         console.warn('⚠️ Conversation memory enrichment failed (non-critical):', memoryError);
       }
 
-      // SSE streaming: use fetch() for real-time progress events
+      // SSE streaming: use fetch() with AbortController for timeout
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token || supabaseKey;
 
+      // Cancel any in-flight request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+      const timeoutId = setTimeout(() => abortController.abort(), 90000); // 90s timeout
+
       const resp = await fetch(`${supabaseUrl}/functions/v1/enhanced-ai-chat`, {
         method: 'POST',
+        signal: abortController.signal,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
@@ -472,6 +485,7 @@ export const useEnhancedAIChatDB = () => {
           stream: true
         })
       });
+      clearTimeout(timeoutId);
 
       if (!resp.ok || !resp.body) {
         const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
@@ -566,15 +580,18 @@ export const useEnhancedAIChatDB = () => {
       }
 
       // Title already set early (line 392-408) — no duplicate update needed
-    } catch (error) {
-      // progressInterval removed — SSE streaming handles progress
+    } catch (error: any) {
       console.error('Error sending enhanced message:', error);
       
-      // Replace placeholder with inline error message containing retry + settings actions
+      const isTimeout = error?.name === 'AbortError';
+      const errorContent = isTimeout
+        ? "The request timed out. The AI might be processing a complex query. You can retry or check your API key settings."
+        : "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.";
+      
       const errorMessage: EnhancedChatMessage = {
         id: assistantId,
         role: 'assistant',
-        content: "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.",
+        content: errorContent,
         timestamp: new Date(),
         messageStatus: 'error',
         actions: [
@@ -616,16 +633,12 @@ export const useEnhancedAIChatDB = () => {
       const actionString = action.action;
       console.log('🎯 Action string:', actionString);
       
-      // Log action execution for debugging
-      toast({
-        title: "Action Executed",
-        description: `Processing: ${action.label || actionString}`,
-        duration: 1000
-      });
+      // Only show toast for workflow actions, not for navigation/deep-dive
       
       if (actionString.startsWith('workflow:')) {
         const workflowAction = actionString.replace('workflow:', '');
         console.log('⚙️ Executing workflow:', workflowAction);
+        toast({ title: "Workflow Started", description: `Processing: ${action.label || workflowAction}`, duration: 2000 });
         await handleWorkflowAction(workflowAction, action.data);
       } else if (actionString.startsWith('send:')) {
         const message = actionString.replace('send:', '');
@@ -1026,23 +1039,23 @@ export const useEnhancedAIChatDB = () => {
     await loadConversations();
   }, [loadConversations]);
 
-  // Edit message (within 5-minute window)
+  // Edit message (within 5-minute window) — regenerates AI response
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
     if (!user) return;
     
     // Enforce 5-minute edit window
     const msg = messages.find(m => m.id === messageId);
-    if (msg) {
-      const msgTime = new Date(msg.timestamp).getTime();
-      const fiveMinutes = 5 * 60 * 1000;
-      if (Date.now() - msgTime > fiveMinutes) {
-        toast({
-          title: "Edit window expired",
-          description: "Messages can only be edited within 5 minutes of sending.",
-          variant: "destructive"
-        });
-        return;
-      }
+    if (!msg) return;
+    
+    const msgTime = new Date(msg.timestamp).getTime();
+    const fiveMinutes = 5 * 60 * 1000;
+    if (Date.now() - msgTime > fiveMinutes) {
+      toast({
+        title: "Edit window expired",
+        description: "Messages can only be edited within 5 minutes of sending.",
+        variant: "destructive"
+      });
+      return;
     }
     
     try {
@@ -1053,15 +1066,25 @@ export const useEnhancedAIChatDB = () => {
 
       if (error) throw error;
 
-      // Update local state
-      setMessages(prev => prev.map(msg => 
-        msg.id === messageId ? { ...msg, content: newContent } : msg
-      ));
+      // Find and delete the subsequent assistant message
+      const msgIndex = messages.findIndex(m => m.id === messageId);
+      const nextAssistant = msgIndex >= 0 ? messages[msgIndex + 1] : null;
+      
+      if (nextAssistant && nextAssistant.role === 'assistant') {
+        // Delete from DB
+        await supabase.from('ai_messages').delete().eq('id', nextAssistant.id);
+        // Remove from local state
+        setMessages(prev => prev.filter(m => m.id !== nextAssistant.id).map(m =>
+          m.id === messageId ? { ...m, content: newContent } : m
+        ));
+      } else {
+        setMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, content: newContent } : m
+        ));
+      }
 
-      toast({
-        title: "Message Updated",
-        description: "Your message has been edited."
-      });
+      // Re-trigger AI response with edited content
+      await sendMessage(newContent);
     } catch (error) {
       console.error('Error editing message:', error);
       toast({
@@ -1071,7 +1094,7 @@ export const useEnhancedAIChatDB = () => {
       });
       throw error;
     }
-  }, [user, toast, messages]);
+  }, [user, toast, messages, sendMessage]);
 
   // Delete message (soft delete - marks as deleted)
   const deleteMessage = useCallback(async (messageId: string) => {
@@ -1116,10 +1139,14 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [user, loadConversations]);
 
-  // Load messages when active conversation changes
+  // Load messages when active conversation changes (skip freshly created)
   useEffect(() => {
     if (activeConversation) {
-      loadMessages(activeConversation);
+      if (freshConversationRef.current === activeConversation) {
+        freshConversationRef.current = null; // Clear flag, skip the load
+      } else {
+        loadMessages(activeConversation);
+      }
     } else {
       setMessages([]);
     }
