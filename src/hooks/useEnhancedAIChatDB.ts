@@ -164,6 +164,7 @@ export const useEnhancedAIChatDB = () => {
       setConversations(prev => [data, ...prev]);
       setActiveConversation(data.id);
       setMessages([]);
+      freshConversationRef.current = data.id;
       
       // Reload conversations to ensure they're fresh
       await loadConversations();
