@@ -6,6 +6,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ContextualAction } from '@/services/aiService';
 import { useNavigate } from 'react-router-dom';
+
+// Module-level constants — single source of truth for Supabase connection
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
+
+async function getAuthHeaders() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const accessToken = session?.access_token || SUPABASE_KEY;
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${accessToken}`,
+    'apikey': SUPABASE_KEY,
+  };
+}
 import { detectActionIntent, detectAIResponseIntent, detectContextualContentIntent } from '@/utils/actionIntentDetector';
 import { getUserPreferences } from '@/services/conversationMemory';
 
@@ -142,6 +156,7 @@ export const useEnhancedAIChatDB = () => {
           role: msg.type as 'user' | 'assistant' | 'system',
           content: msg.content,
           timestamp: new Date(msg.created_at),
+          messageStatus: msg.status === 'error' ? 'error' as const : undefined,
           visualData,
           actions,
           progressIndicator,
@@ -237,7 +252,7 @@ export const useEnhancedAIChatDB = () => {
         progress_indicator: message.progressIndicator ? JSON.stringify(message.progressIndicator) : null,
         workflow_context: message.workflowContext ? JSON.stringify(message.workflowContext) : null,
         function_calls: message.actions ? JSON.stringify(message.actions) : null, // Use function_calls instead of attachments
-        status: 'completed'
+        status: message.messageStatus === 'error' ? 'error' : 'completed'
       };
 
       const { data: insertedData, error } = await supabase
@@ -278,24 +293,17 @@ export const useEnhancedAIChatDB = () => {
 
     try {
       // Use SSE fetch pattern (same as sendMessage) for progress + timeout protection
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token || supabaseKey;
+      const headers = await getAuthHeaders();
 
       if (abortControllerRef.current) abortControllerRef.current.abort();
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
       const timeoutId = setTimeout(() => abortController.abort(), 90000);
 
-      const resp = await fetch(`${supabaseUrl}/functions/v1/enhanced-ai-chat`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
         method: 'POST',
         signal: abortController.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'apikey': supabaseKey,
-        },
+        headers,
         body: JSON.stringify({
           messages: conversationForTools,
           context: { conversation_id: conversationId },
@@ -548,10 +556,7 @@ export const useEnhancedAIChatDB = () => {
       }
 
       // SSE streaming: use fetch() with AbortController for timeout
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token || supabaseKey;
+      const headers = await getAuthHeaders();
 
       // Cancel any in-flight request
       if (abortControllerRef.current) {
@@ -561,14 +566,10 @@ export const useEnhancedAIChatDB = () => {
       abortControllerRef.current = abortController;
       const timeoutId = setTimeout(() => abortController.abort(), 90000); // 90s timeout
 
-      const resp = await fetch(`${supabaseUrl}/functions/v1/enhanced-ai-chat`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
         method: 'POST',
         signal: abortController.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'apikey': supabaseKey,
-        },
+        headers,
         body: JSON.stringify({
           messages: conversationHistory,
           context: { 
@@ -1191,24 +1192,17 @@ export const useEnhancedAIChatDB = () => {
       const conversationId = activeConversation;
       if (!conversationId) throw new Error('No active conversation');
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token || supabaseKey;
+      const headers = await getAuthHeaders();
 
       if (abortControllerRef.current) abortControllerRef.current.abort();
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
       const timeoutId = setTimeout(() => abortController.abort(), 90000);
 
-      const resp = await fetch(`${supabaseUrl}/functions/v1/enhanced-ai-chat`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
         method: 'POST',
         signal: abortController.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'apikey': supabaseKey,
-        },
+        headers,
         body: JSON.stringify({
           messages: historyUpToEdit,
           context: { conversation_id: conversationId, analystActive: analystActiveRef.current },
@@ -1303,25 +1297,39 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [user, toast, messages, activeConversation, saveMessage]);
 
-  // Delete message (soft delete - marks as deleted)
+  // Delete message — also removes orphaned assistant response if deleting a user message
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!user) return;
     
     try {
-      // Hard delete from database
+      // Check if we need to also delete an orphaned assistant reply
+      const currentMessages = messagesRef.current;
+      const idx = currentMessages.findIndex(m => m.id === messageId);
+      const targetMsg = idx >= 0 ? currentMessages[idx] : null;
+      const nextMsg = idx >= 0 && idx < currentMessages.length - 1 ? currentMessages[idx + 1] : null;
+
+      const idsToDelete = [messageId];
+      if (targetMsg?.role === 'user' && nextMsg?.role === 'assistant') {
+        idsToDelete.push(nextMsg.id);
+      }
+
+      // Single DB call to delete one or both messages
       const { error } = await supabase
         .from('ai_messages')
         .delete()
-        .eq('id', messageId);
+        .in('id', idsToDelete);
 
       if (error) throw error;
 
       // Update local state
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      const deleteSet = new Set(idsToDelete);
+      setMessages(prev => prev.filter(msg => !deleteSet.has(msg.id)));
 
       toast({
         title: "Message Deleted",
-        description: "Your message has been removed."
+        description: idsToDelete.length > 1
+          ? "Your message and its AI response have been removed."
+          : "Your message has been removed."
       });
     } catch (error) {
       console.error('Error deleting message:', error);

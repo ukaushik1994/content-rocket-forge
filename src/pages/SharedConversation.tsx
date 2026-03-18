@@ -21,7 +21,7 @@ import { SafeMarkdown } from '@/components/ui/SafeMarkdown';
 
 interface SharedMessage {
   id: string;
-  type: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   created_at: string;
 }
@@ -81,7 +81,7 @@ const SharedConversation: React.FC = () => {
           ...convData,
           messages: (messagesData || []).map(msg => ({
             ...msg,
-            type: msg.type as 'user' | 'assistant' | 'system'
+            role: msg.type as 'user' | 'assistant' | 'system'
           }))
         });
 
@@ -181,26 +181,26 @@ const SharedConversation: React.FC = () => {
                   transition={{ delay: index * 0.05 }}
                   className={cn(
                     "flex",
-                    message.type === 'user' ? 'justify-end' : 'justify-start'
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
                   )}
                 >
                   <div
                     className={cn(
                       "max-w-[85%] rounded-2xl px-4 py-3",
-                      message.type === 'user'
+                      message.role === 'user'
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
                     )}
                   >
                     <div className={cn(
                       "prose prose-sm max-w-none",
-                      message.type === 'user' && 'prose-invert'
+                      message.role === 'user' && 'prose-invert'
                     )}>
                       <SafeMarkdown>{message.content}</SafeMarkdown>
                     </div>
                     <div className={cn(
                       "text-xs mt-2 opacity-60",
-                      message.type === 'user' ? 'text-right' : 'text-left'
+                      message.role === 'user' ? 'text-right' : 'text-left'
                     )}>
                       {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                     </div>
