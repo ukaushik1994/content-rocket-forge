@@ -70,10 +70,23 @@ interface ChatHistorySidebarProps {
   onArchiveConversation?: (id: string) => void;
   onPinConversation?: (id: string) => void;
   onRenameConversation?: (id: string, newTitle: string) => void;
+  onAddTag?: (conversationId: string, tag: string) => void;
+  onRemoveTag?: (conversationId: string, tag: string) => void;
+  onShareConversation?: (conversationId: string) => void;
   onOpenPanel?: (panelType: string) => void;
   isCollapsed?: boolean;
   className?: string;
 }
+
+const PRESET_TAGS = ['important', 'strategy', 'content', 'research', 'follow-up'];
+
+const TAG_COLORS: Record<string, string> = {
+  important: 'bg-destructive/20 text-destructive border-destructive/30',
+  strategy: 'bg-primary/20 text-primary border-primary/30',
+  content: 'bg-accent/60 text-accent-foreground border-accent/30',
+  research: 'bg-secondary/60 text-secondary-foreground border-secondary/30',
+  'follow-up': 'bg-warning/20 text-warning border-warning/30',
+};
 
 // Sidebar nav item — premium style with active indicator
 const SidebarNavItem: React.FC<{
