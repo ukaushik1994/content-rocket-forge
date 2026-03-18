@@ -1139,10 +1139,14 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [user, loadConversations]);
 
-  // Load messages when active conversation changes
+  // Load messages when active conversation changes (skip freshly created)
   useEffect(() => {
     if (activeConversation) {
-      loadMessages(activeConversation);
+      if (freshConversationRef.current === activeConversation) {
+        freshConversationRef.current = null; // Clear flag, skip the load
+      } else {
+        loadMessages(activeConversation);
+      }
     } else {
       setMessages([]);
     }

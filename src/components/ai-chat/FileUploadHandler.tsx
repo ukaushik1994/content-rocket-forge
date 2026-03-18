@@ -116,17 +116,22 @@ export const FileUploadHandler: React.FC<FileUploadHandlerProps> = ({
       // Complete
       setUploadState({ status: 'complete', progress: 100, fileName: file.name });
 
-      // Prepare summary for chat
+      // Prepare summary for chat + truncated extracted text for AI context
       const summary = analysis.contentPreview 
         ? analysis.contentPreview.substring(0, 200) + '...'
         : `Analyzed ${file.name}`;
+
+      const extractedText = analysis.contentPreview
+        ? analysis.contentPreview.substring(0, 4000)
+        : undefined;
 
       setTimeout(() => {
         onFileAnalyzed({
           fileName: file.name,
           fileType: file.type,
           summary,
-          insights: analysis.insights
+          insights: analysis.insights,
+          extractedText
         });
         setUploadState({ status: 'idle', progress: 0 });
       }, 500);

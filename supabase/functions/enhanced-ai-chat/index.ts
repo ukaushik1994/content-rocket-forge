@@ -1169,8 +1169,7 @@ function sanitizeResponseContent(content: string): string {
     .replace(/^[A-Za-z\s,]+(?:,\s*[A-Za-z\s]+)*\n(?:[^,\n]*,\s*)*[^,\n]*$/gm, '')
     // Remove quoted CSV data patterns
     .replace(/^"[^"]*"(?:,\s*"[^"]*")*$/gm, '')
-    // Remove standalone JSON objects that shouldn't be in text
-    .replace(/^\s*\{[\s\S]*?\}\s*$/gm, '')
+    // NOTE: Removed standalone JSON regex that was stripping valid visualData blocks
     // Clean up extra whitespace
     .replace(/\n\s*\n\s*\n/g, '\n\n')
     .trim();
