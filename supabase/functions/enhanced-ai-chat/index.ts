@@ -19,7 +19,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v15-2026-03-18T00:00:00Z-force-tool-execution';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v16-2026-03-18T12:00:00Z-image-generation-tools';
 
 // Data categories that REQUIRE tool execution (not conversational text)
 const DATA_CATEGORIES = [
@@ -27,7 +27,7 @@ const DATA_CATEGORIES = [
   'competitors', 'analytics', 'performance', 'engage', 'approvals',
   'calendar', 'research', 'social', 'templates', 'topic_clusters',
   'content_gaps', 'recommendations', 'repurposed', 'email_threads',
-  'activity_log', 'brand_voice', 'content_performance'
+  'activity_log', 'brand_voice', 'content_performance', 'image_generation'
 ];
 
 function queryRequiresToolExecution(queryIntent: QueryIntent): boolean {
@@ -172,6 +172,7 @@ function analyzeQueryIntent(query: string): QueryIntent {
   const needsActivityLog = /activity|what happened|audit|event log|workspace history|recent event/i.test(q);
   const needsBrandVoice = /brand voice|brand guideline|tone of voice|writing style|brand personality|how should i write|do.*don't.*phrase/i.test(q);
   const needsContentPerformance = /page view|traffic|impression|click through|bounce rate|session duration|ctr|content performance|real analytics/i.test(q);
+  const needsImageGeneration = /generate.*image|create.*image|make.*image|draw|make.*picture|create.*picture|generate.*picture|create.*illustration|generate.*visual|edit.*image|modify.*image|design.*image|ai.*image|image.*generat/i.test(q);
   
   if (needsTemplates) categories.push('templates');
   if (needsTopicClusters) categories.push('topic_clusters');
@@ -182,6 +183,7 @@ function analyzeQueryIntent(query: string): QueryIntent {
   if (needsActivityLog) categories.push('activity_log');
   if (needsBrandVoice) categories.push('brand_voice');
   if (needsContentPerformance) categories.push('content_performance');
+  if (needsImageGeneration) categories.push('image_generation');
   
   if (categories.length === 0) {
     categories.push('content', 'solutions', 'proposals');

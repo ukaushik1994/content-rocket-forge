@@ -62,6 +62,12 @@ import {
   executeBrandAnalyticsTool
 } from './brand-analytics-tools.ts';
 
+import {
+  IMAGE_GENERATION_TOOL_DEFINITIONS,
+  IMAGE_GENERATION_TOOL_NAMES,
+  executeImageGenerationTool
+} from './image-generation-tools.ts';
+
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Core data tools
@@ -469,7 +475,8 @@ export const TOOL_DEFINITIONS = [
   ...CROSS_MODULE_TOOL_DEFINITIONS,
   ...PROPOSAL_ACTION_TOOL_DEFINITIONS,
   ...STRATEGY_ACTION_TOOL_DEFINITIONS,
-  ...BRAND_ANALYTICS_TOOL_DEFINITIONS
+  ...BRAND_ANALYTICS_TOOL_DEFINITIONS,
+  ...IMAGE_GENERATION_TOOL_DEFINITIONS
 ];
 
 // List of campaign tool names for routing
@@ -567,6 +574,9 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   dismiss_recommendation: ['get_strategy_recommendations'],
   // Brand voice
   update_brand_voice: [],
+  // Image generation
+  generate_image: [],
+  edit_image: [],
 };
 
 /**
@@ -700,6 +710,13 @@ export async function executeToolCall(
         if (BRAND_ANALYTICS_TOOL_NAMES.includes(toolName)) {
           console.log(`[TOOL] ${toolName} | Routing to brand/analytics handler`);
           const result = await executeBrandAnalyticsTool(toolName, toolArgs, supabase, userId);
+          return { data: result, error: null };
+        }
+
+        // Route image generation tools
+        if (IMAGE_GENERATION_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to image generation handler`);
+          const result = await executeImageGenerationTool(toolName, toolArgs, supabase, userId);
           return { data: result, error: null };
         }
         
