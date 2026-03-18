@@ -2669,6 +2669,7 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     // =========================================================================
     if ((!toolCalls || toolCalls.length === 0) && queryRequiresToolExecution(queryIntent) && !useCampaignStrategyTool) {
       console.log('⚠️ Data query returned text-only response without tool_calls. Retrying with tool_choice=required...');
+      emitProgress('retry', 'Refining response...');
       
       const retryResult = await aiRequestQueue.enqueue(() =>
         supabase.functions.invoke('ai-proxy', {
