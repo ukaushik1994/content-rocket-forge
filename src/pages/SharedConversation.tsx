@@ -200,7 +200,7 @@ const SharedConversation: React.FC = () => {
                     </div>
                     <div className={cn(
                       "text-xs mt-2 opacity-60",
-                      message.type === 'user' ? 'text-right' : 'text-left'
+                      message.role === 'user' ? 'text-right' : 'text-left'
                     )}>
                       {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                     </div>

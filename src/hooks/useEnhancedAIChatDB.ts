@@ -1297,25 +1297,39 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [user, toast, messages, activeConversation, saveMessage]);
 
-  // Delete message (soft delete - marks as deleted)
+  // Delete message — also removes orphaned assistant response if deleting a user message
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!user) return;
     
     try {
-      // Hard delete from database
+      // Check if we need to also delete an orphaned assistant reply
+      const currentMessages = messagesRef.current;
+      const idx = currentMessages.findIndex(m => m.id === messageId);
+      const targetMsg = idx >= 0 ? currentMessages[idx] : null;
+      const nextMsg = idx >= 0 && idx < currentMessages.length - 1 ? currentMessages[idx + 1] : null;
+
+      const idsToDelete = [messageId];
+      if (targetMsg?.role === 'user' && nextMsg?.role === 'assistant') {
+        idsToDelete.push(nextMsg.id);
+      }
+
+      // Single DB call to delete one or both messages
       const { error } = await supabase
         .from('ai_messages')
         .delete()
-        .eq('id', messageId);
+        .in('id', idsToDelete);
 
       if (error) throw error;
 
       // Update local state
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      const deleteSet = new Set(idsToDelete);
+      setMessages(prev => prev.filter(msg => !deleteSet.has(msg.id)));
 
       toast({
         title: "Message Deleted",
-        description: "Your message has been removed."
+        description: idsToDelete.length > 1
+          ? "Your message and its AI response have been removed."
+          : "Your message has been removed."
       });
     } catch (error) {
       console.error('Error deleting message:', error);
