@@ -88,10 +88,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     return messages.filter(m => m.content.toLowerCase().includes(q)).map(m => m.id);
   }, [messages, messageSearchQuery]);
 
-  // Filter messages based on search
-  const filteredMessages = React.useMemo(() => {
-    return messages; // Return all messages, matches tracked via messageSearchResults
-  }, [messages]);
 
   // Handle search navigation
   const handleNavigateMatch = (direction: 'prev' | 'next') => {
@@ -528,9 +524,24 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                   })}
                 </div>}
 
-              {/* Typing Indicator - Rotating Thinking Text */}
+              {/* Typing Indicator - Rotating Thinking Text with Stop button */}
               <AnimatePresence>
-                {isTyping && <ThinkingTextRotator progressText={progressText} />}
+                {isTyping && (
+                  <div className="flex items-center gap-2">
+                    <ThinkingTextRotator progressText={progressText} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        // Access abort controller from the hook via a stop mechanism
+                        window.dispatchEvent(new CustomEvent('abortAIRequest'));
+                      }}
+                      className="text-xs text-muted-foreground hover:text-destructive shrink-0"
+                    >
+                      Stop
+                    </Button>
+                  </div>
+                )}
               </AnimatePresence>
 
               <div ref={messagesEndRef} />

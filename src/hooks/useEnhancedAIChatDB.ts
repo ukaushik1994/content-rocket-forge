@@ -36,9 +36,24 @@ export const useEnhancedAIChatDB = () => {
   const analystActiveRef = useRef(false);
   const freshConversationRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const messagesRef = useRef<EnhancedChatMessage[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Keep messagesRef in sync
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // Listen for abort requests from the UI stop button
+  useEffect(() => {
+    const handler = () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+    window.addEventListener('abortAIRequest', handler);
+    return () => window.removeEventListener('abortAIRequest', handler);
+  }, []);
 
   // Load conversations from database with search and filter support
   const loadConversations = useCallback(async (options?: {
@@ -166,8 +181,7 @@ export const useEnhancedAIChatDB = () => {
       setMessages([]);
       freshConversationRef.current = data.id;
       
-      // Reload conversations to ensure they're fresh
-      await loadConversations();
+      // Local state already updated above — no redundant refetch needed
       
       return data.id;
     } catch (error) {
@@ -260,20 +274,91 @@ export const useEnhancedAIChatDB = () => {
 
     setMessages(prev => [...prev, executingMessage]);
     setIsTyping(true);
+    setProgressText('Executing action...');
 
     try {
-      const { data: toolResult, error: toolError } = await supabase.functions.invoke('enhanced-ai-chat', {
-        body: {
+      // Use SSE fetch pattern (same as sendMessage) for progress + timeout protection
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token || supabaseKey;
+
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+      const timeoutId = setTimeout(() => abortController.abort(), 90000);
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/enhanced-ai-chat`, {
+        method: 'POST',
+        signal: abortController.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': supabaseKey,
+        },
+        body: JSON.stringify({
           messages: conversationForTools,
-          context: { conversation_id: conversationId }
-        }
+          context: { conversation_id: conversationId },
+          stream: true
+        })
       });
 
-      if (toolError) throw toolError;
+      if (!resp.ok || !resp.body) {
+        const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(errData.error || errData.message || `HTTP ${resp.status}`);
+      }
 
-      const toolContent = toolResult?.content || toolResult?.message || 'Action completed.';
-      const toolActions = toolResult?.actions || [];
-      const toolVisualData = toolResult?.visualData;
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let toolResponse: any = null;
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          textBuffer += decoder.decode(value, { stream: true });
+
+          const lines = textBuffer.split('\n');
+          textBuffer = lines.pop() || '';
+
+          let currentEvent = '';
+          for (const line of lines) {
+            const trimmed = line.replace(/\r$/, '');
+            if (trimmed.startsWith('event: ')) {
+              currentEvent = trimmed.slice(7).trim();
+            } else if (trimmed.startsWith('data: ') && currentEvent) {
+              try {
+                const payload = JSON.parse(trimmed.slice(6));
+                if (currentEvent === 'progress') {
+                  setProgressText(payload.message || 'Processing...');
+                } else if (currentEvent === 'done') {
+                  toolResponse = payload;
+                } else if (currentEvent === 'error') {
+                  throw new Error(payload.error || payload.message || 'Tool execution failed');
+                }
+              } catch (e) {
+                if (e instanceof SyntaxError) continue;
+                throw e;
+              }
+              currentEvent = '';
+            }
+          }
+        }
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      // Fallback: try plain JSON
+      if (!toolResponse && textBuffer.trim()) {
+        try { toolResponse = JSON.parse(textBuffer.trim()); } catch (_) {}
+      }
+
+      if (!toolResponse) throw new Error('No response received from tool execution');
+
+      const toolContent = toolResponse?.content || toolResponse?.message || 'Action completed.';
+      const toolActions = toolResponse?.actions || [];
+      const toolVisualData = toolResponse?.visualData;
 
       const actionResultMessage: EnhancedChatMessage = {
         id: executingId,
@@ -288,13 +373,17 @@ export const useEnhancedAIChatDB = () => {
         prev.map(m => m.id === executingId ? actionResultMessage : m)
       );
       setIsTyping(false);
+      setProgressText('');
       await saveMessage(actionResultMessage, conversationId);
     } catch (toolExecError: any) {
       console.error('❌ Tool execution failed:', toolExecError);
+      const isTimeout = toolExecError?.name === 'AbortError';
       const errorMessage: EnhancedChatMessage = {
         id: executingId,
         role: 'assistant',
-        content: `❌ Action failed: ${toolExecError.message || 'Could not execute the requested action.'}`,
+        content: isTimeout
+          ? '⏱️ Action timed out. Please try again.'
+          : `❌ Action failed: ${toolExecError.message || 'Could not execute the requested action.'}`,
         timestamp: new Date(),
         messageStatus: 'error',
       };
@@ -302,6 +391,7 @@ export const useEnhancedAIChatDB = () => {
         prev.map(m => m.id === executingId ? errorMessage : m)
       );
       setIsTyping(false);
+      setProgressText('');
     }
   }, [saveMessage]);
 
@@ -428,7 +518,7 @@ export const useEnhancedAIChatDB = () => {
 
     try {
       // Smart context: keep first message (original intent) + last 9 messages
-      const allMessages = [...messages, userMessage];
+      const allMessages = [...messagesRef.current, userMessage];
       let conversationHistory: Array<{ role: string; content: string }>;
       if (allMessages.length <= 10) {
         conversationHistory = allMessages.map(m => ({ role: m.role, content: m.content }));

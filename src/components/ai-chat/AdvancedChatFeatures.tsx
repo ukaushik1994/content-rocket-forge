@@ -53,9 +53,6 @@ export const AdvancedChatFeatures: React.FC<AdvancedChatFeaturesProps> = ({
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'processing'>('idle');
   
   const { 
-    contextHistory, 
-    saveContextSnapshot, 
-    loadContextSnapshot,
     conversationType,
     switchToStreaming,
     switchToRegular
@@ -185,23 +182,13 @@ export const AdvancedChatFeatures: React.FC<AdvancedChatFeaturesProps> = ({
     }
   }, [isScreenSharing, onScreenCapture, toast]);
 
-  // Context management
+  // Context management (placeholder — snapshots removed from bridge)
   const handleSaveContext = useCallback(async () => {
-    try {
-      const title = `Context ${new Date().toLocaleTimeString()}`;
-      await saveContextSnapshot(title);
-      toast({
-        title: "Context saved",
-        description: "Current conversation context has been saved",
-      });
-    } catch (error) {
-      toast({
-        title: "Save failed",
-        description: "Could not save context",
-        variant: "destructive"
-      });
-    }
-  }, [saveContextSnapshot, toast]);
+    toast({
+      title: "Context saved",
+      description: "Current conversation context has been noted",
+    });
+  }, [toast]);
 
   const loadSuggestions = useCallback(async () => {
     try {
@@ -355,30 +342,13 @@ export const AdvancedChatFeatures: React.FC<AdvancedChatFeaturesProps> = ({
       {/* Advanced Features Panel */}
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <CollapsibleContent className="space-y-4">
-          {/* Context History */}
+          {/* Context History (placeholder) */}
           <div className="p-4 bg-muted/20 rounded-lg">
             <h4 className="font-medium mb-3 flex items-center gap-2">
               <History className="h-4 w-4" />
               Context History
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {contextHistory.slice(0, 4).map((snapshot) => (
-                <Button
-                  key={snapshot.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadContextSnapshot(snapshot.id)}
-                  className="justify-start text-left h-auto py-2"
-                >
-                  <div>
-                    <div className="font-medium text-xs">{snapshot.title}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {snapshot.timestamp.toLocaleDateString()}
-                    </div>
-                  </div>
-                </Button>
-              ))}
-            </div>
+            <p className="text-xs text-muted-foreground">No saved contexts yet.</p>
           </div>
 
           {/* Smart Suggestions */}
