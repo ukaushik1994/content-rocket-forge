@@ -448,6 +448,16 @@ export const useEnhancedAIChatDB = () => {
       return;
     }
 
+    // Prevent rapid-fire messages — block while AI is still responding
+    if (isSendingRef.current) {
+      toast({
+        title: "Please wait",
+        description: "The AI is still processing your previous message",
+      });
+      return;
+    }
+    isSendingRef.current = true;
+
     // Handle /help command
     const trimmedLower = content.trim().toLowerCase();
     if (trimmedLower === '/help' || trimmedLower === 'what can you do' || trimmedLower === 'what can you do?') {
