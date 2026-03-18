@@ -488,7 +488,7 @@ export const useEnhancedAIChatDB = () => {
           stream: true
         })
       });
-      clearTimeout(timeoutId);
+      // Don't clear timeout here — wait until stream reading is complete
 
       if (!resp.ok || !resp.body) {
         const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
