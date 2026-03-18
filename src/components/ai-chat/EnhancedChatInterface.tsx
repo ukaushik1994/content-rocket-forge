@@ -597,5 +597,30 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           />
         </div>
       </div>
+
+      {/* Conversation Analytics Modal */}
+      <ConversationAnalyticsModal
+        isOpen={showAnalyticsModal}
+        onClose={() => setShowAnalyticsModal(false)}
+        onGetAnalytics={async () => {
+          // Compute analytics from current messages
+          const userMsgs = messages.filter(m => m.role === 'user');
+          const assistantMsgs = messages.filter(m => m.role === 'assistant');
+          const avgLen = assistantMsgs.length > 0
+            ? assistantMsgs.reduce((sum, m) => sum + m.content.length, 0) / assistantMsgs.length
+            : 0;
+          return {
+            totalMessages: messages.length,
+            userMessages: userMsgs.length,
+            assistantMessages: assistantMsgs.length,
+            averageResponseLength: Math.round(avgLen),
+            topTopics: [],
+            timeDistribution: [],
+            actionsTaken: messages.filter(m => m.actions && m.actions.length > 0).length,
+            hasVisualData: messages.some(m => !!m.visualData),
+            hasWorkflowData: messages.some(m => !!m.workflowContext),
+          };
+        }}
+      />
     </div>;
 };
