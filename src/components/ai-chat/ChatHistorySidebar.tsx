@@ -537,6 +537,33 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                               <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                                 {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
                               </p>
+                              {/* Tag badges */}
+                              {conversation.tags && conversation.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {conversation.tags.map(tag => (
+                                    <span
+                                      key={tag}
+                                      className={cn(
+                                        "inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full border font-medium",
+                                        TAG_COLORS[tag] || 'bg-muted text-muted-foreground border-border/30'
+                                      )}
+                                    >
+                                      {tag}
+                                      {onRemoveTag && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onRemoveTag(conversation.id, tag);
+                                          }}
+                                          className="hover:opacity-70 ml-0.5"
+                                        >
+                                          <X className="h-2 w-2" />
+                                        </button>
+                                      )}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             
                             <DropdownMenu>
