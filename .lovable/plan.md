@@ -1,153 +1,81 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Plan: Fix AI Chat Tool Execution Failures
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## Problem Summary
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+When users ask data-retrieval questions like "List my content items" or "Research keywords," the AI returns text-only promises instead of actual data. The root cause is **not** the intent classifier (it correctly routes these to the full processing path) but rather the **LLM failing to generate `tool_calls`** in its Phase 1 response.
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
+## Root Causes Identified
 
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
+1. **LLM not generating tool_calls**: The system prompt tells the AI about tools and how to use them, but the AI sometimes responds with conversational text instead of invoking tools. The prompt says "USE TOOLS to fetch it" but doesn't enforce it strongly enough.
 
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
+2. **No fallback when tool_calls are missing**: When the LLM returns text without tool_calls for a query that clearly needs data (e.g., "list my content"), there's no retry or forced tool execution — the text-only response is returned as-is.
 
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+3. **Excessive parallel queries on load**: `fetchRealDataContext` runs ~15 parallel queries plus ~5 more for Engage module, contributing to latency.
 
----
+## Fixes
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+### Fix 1: Force tool_choice for data queries (Edge Function)
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+In `index.ts`, after intent analysis determines categories like `content`, `keywords`, `proposals`, etc., set `tool_choice: "required"` (or `"auto"` with a stronger prompt) to force the LLM to call tools rather than respond with text.
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+```
+If queryIntent.categories includes data categories AND is NOT conversational:
+  → Set tool_choice = "required" (OpenAI) or equivalent
+```
 
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
+This ensures the LLM **must** produce a tool call for data-retrieval queries.
 
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
+### Fix 2: Retry with forced tool_choice on empty tool_calls (Edge Function)
 
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+After the Phase 1 AI call, if:
+- The query has data categories (content, keywords, proposals, etc.)
+- The LLM returned text content but **no** `tool_calls`
 
----
+Then retry the call once with `tool_choice: "required"` to force tool execution. This acts as a safety net.
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+### Fix 3: Auto-execute tools based on intent (Edge Function)
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+As an additional fallback, if the LLM still fails to produce tool_calls after retry, directly execute the most relevant tool based on `queryIntent.categories`:
+- `content` → execute `get_content_items` 
+- `keywords` → execute `get_keywords`
+- `proposals` → execute `get_proposals`
+- `performance` → execute `get_content_performance`
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+Then inject the results into a second LLM call as tool results, forcing a data-rich response.
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+### Fix 4: Optimize context loading (Edge Function)
 
----
+Reduce the number of parallel queries in `fetchRealDataContext`:
+- Combine the two `content_items` count queries (total + draft) into a single query that returns status counts.
+- Lazy-load Engage module counts only when `queryIntent.categories` includes `engage`.
+- Lazy-load company info / top solutions / top competitors only when relevant categories are detected.
 
-# AI Chat Awareness Gaps — Implementation Tracker
+This reduces initial queries from ~20 to ~8 for most requests.
 
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
+### Fix 5: Strengthen system prompt tool instructions (Edge Function)
 
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
+Add explicit enforcement language to the `TOOL_USAGE_MODULE`:
+```
+MANDATORY: When the user asks about their data (content, keywords, proposals, 
+campaigns, contacts, etc.), you MUST call the appropriate tool. 
+DO NOT describe what you would do — actually call the tool.
+DO NOT say "I'll fetch your data" — USE the tool function call.
+```
 
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
+## Files Modified
 
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+1. **`supabase/functions/enhanced-ai-chat/index.ts`**
+   - Add `tool_choice` logic based on intent categories (~line 2490)
+   - Add retry-with-forced-tools after Phase 1 if no tool_calls (~line 2545)
+   - Add direct tool execution fallback (~line 2545)
+   - Optimize `fetchRealDataContext` to conditionally load data (~line 1554)
+   - Strengthen tool instruction text in `TOOL_USAGE_MODULE` (~line 630)
+
+## Impact
+
+- Data queries ("list content", "show keywords", "check performance") will reliably return actual data with charts
+- Response latency reduced by ~30% for non-Engage queries
+- No breaking changes to frontend — response format stays the same
+
