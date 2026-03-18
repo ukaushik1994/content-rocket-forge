@@ -13,7 +13,7 @@ import { SolutionSuggestions } from './SolutionSuggestions';
 import { SolutionContextCard } from './SolutionContextCard';
 import { SolutionRecommendations } from './SolutionRecommendations';
 import { SolutionWorkflowTemplates } from './SolutionWorkflowTemplates';
-import { ContextDisplayIndicator } from './ContextDisplayIndicator';
+import { ConversationAnalyticsModal } from './ConversationAnalyticsModal';
 import { MessageSearchBar } from './MessageSearchBar';
 import { useSharedAIChatDB } from '@/contexts/AIChatDBContext';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
