@@ -340,6 +340,10 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onAnalyst={onOpenAnalyst}
             onAIProposals={handleAIProposalsClick}
             onWebSearch={onWebSearch || handleWebSearchClick}
+            onImageGeneration={() => {
+              setMessage('Generate an image of: ');
+              setTimeout(() => textareaRef.current?.focus(), 50);
+            }}
             disabled={isLoading}
           />
 
