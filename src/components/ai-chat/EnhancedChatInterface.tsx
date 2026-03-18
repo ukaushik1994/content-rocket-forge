@@ -80,6 +80,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showMessageSearch, setShowMessageSearch] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
 
   // Derive search results as a pure memo (no setState inside useMemo)
   const messageSearchResults = React.useMemo(() => {
