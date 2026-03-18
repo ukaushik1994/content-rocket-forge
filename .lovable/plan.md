@@ -151,3 +151,23 @@ Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterfa
 - Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
 - Updated system prompt tool listing (25 read tools) and usage examples
 - Edge function deployed
+
+---
+
+# AI Chat Frontend Bug Fixes — 10 Issues, 3 Phases ✅ COMPLETE
+
+## ✅ Phase 1: Critical Functional Bugs
+- **Fix 1 — Error Retry Button:** Added `onRetry` prop to `EnhancedMessageBubble` in `EnhancedChatInterface.tsx` — finds last user message before error and re-sends
+- **Fix 2 — Edit Message Duplication:** Rewrote `editMessage` in `useEnhancedAIChatDB.ts` to invoke SSE inline (no `sendMessage` call) — inserts new AI response at correct position without duplicating user message
+- **Fix 3 — SSE Timeout:** Moved `clearTimeout(timeoutId)` into `finally` block after reader loop completes (both in `sendMessage` and `editMessage`)
+
+## ✅ Phase 2: Medium Severity Fixes
+- **Fix 4 — open_settings Event:** Changed `{ detail: action.data?.tab }` → `{ detail: { tab: action.data?.tab } }` to match listener expectations
+- **Fix 5 — RateLimitBanner Retry:** Wired to re-send last user message instead of console.log no-op
+- **Fix 6 — setState in useMemo:** Replaced `useState` + `setMessageSearchResults` inside `useMemo` with pure derived `useMemo` value
+- **Fix 7 — Title Truncation:** Smart truncation at last word boundary before 40 chars
+
+## ✅ Phase 3: Dead Code Cleanup & State Sync
+- **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
+- **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
+- **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed
