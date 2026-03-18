@@ -965,12 +965,31 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [conversations, toast]);
 
-  // Share conversation (generate shareable link)
-  // TODO: Implement proper share token system with expiry for secure sharing.
-  // Currently shares the conversation UUID directly which relies on RLS for protection.
+  // Share conversation with secure token-based sharing
   const shareConversation = useCallback(async (conversationId: string) => {
     try {
-      const shareUrl = `${window.location.origin}/shared-conversation/${conversationId}`;
+      // Check if conversation already has a share token
+      const { data: conv } = await supabase
+        .from('ai_conversations')
+        .select('share_token, is_shared')
+        .eq('id', conversationId)
+        .single();
+
+      let shareToken = conv?.share_token;
+
+      if (!shareToken || !conv?.is_shared) {
+        // Generate a new share token
+        shareToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+        
+        const { error: updateError } = await supabase
+          .from('ai_conversations')
+          .update({ is_shared: true, share_token: shareToken })
+          .eq('id', conversationId);
+
+        if (updateError) throw updateError;
+      }
+
+      const shareUrl = `${window.location.origin}/shared-conversation/${shareToken}`;
       
       if (navigator.share) {
         await navigator.share({
@@ -982,7 +1001,7 @@ export const useEnhancedAIChatDB = () => {
         await navigator.clipboard.writeText(shareUrl);
         toast({
           title: "Link copied",
-          description: "Conversation link copied to clipboard",
+          description: "Conversation share link copied to clipboard",
         });
       }
     } catch (error) {

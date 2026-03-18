@@ -2,7 +2,7 @@
  * Action Intent Detector
  * 
  * Lightweight utility to detect write-action intent from user messages.
- * Used by useUnifiedChatDB to decide whether to make a secondary
+ * Used by chat hooks to decide whether to make a secondary
  * call to enhanced-ai-chat for tool execution after streaming completes.
  */
 

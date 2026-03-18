@@ -220,7 +220,9 @@ export type Database = {
           archived: boolean | null
           created_at: string
           id: string
+          is_shared: boolean | null
           pinned: boolean | null
+          share_token: string | null
           tags: string[] | null
           title: string | null
           updated_at: string
@@ -230,7 +232,9 @@ export type Database = {
           archived?: boolean | null
           created_at?: string
           id?: string
+          is_shared?: boolean | null
           pinned?: boolean | null
+          share_token?: string | null
           tags?: string[] | null
           title?: string | null
           updated_at?: string
@@ -240,7 +244,9 @@ export type Database = {
           archived?: boolean | null
           created_at?: string
           id?: string
+          is_shared?: boolean | null
           pinned?: boolean | null
+          share_token?: string | null
           tags?: string[] | null
           title?: string | null
           updated_at?: string
