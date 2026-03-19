@@ -99,8 +99,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [proactiveInsights, setProactiveInsights] = useState<Array<{type: string; label: string; count: number; icon: React.ReactNode}>>([]);
   // 4e: Conversation templates from patterns
   const [workflowTemplates, setWorkflowTemplates] = useState<string[]>([]);
-  // E6: Brand voice detection eligibility
-  const [canDetectBrandVoice, setCanDetectBrandVoice] = useState(false);
+  // E6: Brand voice detection moved to offerings page
 
   useEffect(() => {
     if (!user || messages.length > 0) return;
