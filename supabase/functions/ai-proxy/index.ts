@@ -118,7 +118,7 @@ serve(async (req) => {
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
         await supabase.from('llm_usage_logs').insert({
           user_id: userId,
-          provider: service,
+          provider: resolvedService,
           model: params?.model || 'unknown',
           input_tokens: result.data?.usage?.prompt_tokens || 0,
           output_tokens: result.data?.usage?.completion_tokens || 0,
