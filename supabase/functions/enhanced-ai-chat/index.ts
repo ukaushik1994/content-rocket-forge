@@ -2657,14 +2657,22 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     let brandVoiceContext = '';
     let userIntelligenceContext = '';
 
-    const [brandResult, profileResult] = await Promise.allSettled([
+    const [brandResult, profileResult, apiKeysResult, websiteConnsResult] = await Promise.allSettled([
       supabase.from('brand_guidelines')
         .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use')
         .eq('user_id', userId).maybeSingle(),
       supabase.from('user_intelligence_profile')
         .select('*')
         .eq('user_id', userId)
-        .maybeSingle()
+        .maybeSingle(),
+      // Phase 4 Fix 10: Service status check
+      supabase.from('api_keys')
+        .select('service, is_active')
+        .eq('user_id', userId)
+        .eq('is_active', true),
+      supabase.from('website_connections')
+        .select('platform, status')
+        .eq('user_id', userId)
     ]);
 
     // Process brand voice result
