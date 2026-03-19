@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 const typeIcon: Record<string, React.ElementType> = {
   blog: BookOpen,
@@ -131,7 +132,20 @@ const RepositoryPanelInner: React.FC<{ isOpen: boolean; onClose: () => void }> =
               return (
                 <button
                   key={item.id}
-                  onClick={() => setSelectedItem(item)}
+                  onClick={() => {
+                    setSelectedItem(item);
+                    // Track view signal (non-blocking)
+                    supabase.auth.getUser().then(({ data: { user } }) => {
+                      if (user) {
+                        (supabase as any).from('content_performance_signals').insert({
+                          content_id: item.id,
+                          user_id: user.id,
+                          signal_type: 'view',
+                          metadata: { source: 'chat_repository_panel' }
+                        }).then(() => {});
+                      }
+                    });
+                  }}
                   className={cn(
                     "w-full text-left px-3 py-3 rounded-lg",
                     "hover:bg-muted/40 transition-colors",

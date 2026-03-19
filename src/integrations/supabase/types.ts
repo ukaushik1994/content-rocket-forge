@@ -3027,6 +3027,41 @@ export type Database = {
         }
         Relationships: []
       }
+      content_performance_signals: {
+        Row: {
+          content_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          signal_type: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          signal_type: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          signal_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_performance_signals_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_pipeline: {
         Row: {
           assigned_to: string | null

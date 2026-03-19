@@ -507,16 +507,18 @@ export async function executeContentActionTool(
         let competitorContext = '';
         let structureGuidance = '';
         let editPatternHint = '';
+        let performanceContext = '';
+        let businessOutcomeContext = '';
 
         try {
-          const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult] = await Promise.allSettled([
+          const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult, perfSignalsResult] = await Promise.allSettled([
             // Brand voice
             supabase.from('brand_guidelines')
               .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use, mission_statement')
               .eq('user_id', userId).maybeSingle(),
             // Solutions
             supabase.from('solutions')
-              .select('name, description, key_features, results')
+              .select('name, description, key_features, results, pain_points, use_cases, target_audience')
               .eq('user_id', userId).limit(5),
             // Content freshness — check for existing articles on same keyword
             supabase.from('content_items')
@@ -536,7 +538,12 @@ export async function executeContentActionTool(
             supabase.from('content_generation_feedback')
               .select('feedback_data')
               .eq('user_id', userId).eq('feedback_type', 'edit_pattern')
-              .order('created_at', { ascending: false }).limit(10)
+              .order('created_at', { ascending: false }).limit(10),
+            // Performance signals — most reused content (Sprint 2)
+            supabase.from('content_performance_signals')
+              .select('content_id, signal_type')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false }).limit(50)
           ]);
 
           // Brand voice context
@@ -603,12 +610,70 @@ export async function executeContentActionTool(
             }
           }
 
-          // Edit pattern feedback — learned preferences (Fix 9)
+          // Edit pattern feedback — learned preferences (Fix 9 + Sprint 1 enhanced patterns)
           if (feedbackResult.status === 'fulfilled' && feedbackResult.value.data?.length >= 3) {
-            const ratios = feedbackResult.value.data.map((d: any) => d.feedback_data?.lengthRatio || 1);
+            const feedbackData = feedbackResult.value.data;
+            const ratios = feedbackData.map((d: any) => d.feedback_data?.lengthRatio || 1);
             const avgRatio = ratios.reduce((a: number, b: number) => a + b, 0) / ratios.length;
-            if (avgRatio < 0.75) editPatternHint = '\n\n## Learned Preference\nThis user consistently shortens AI-generated content. Write MORE CONCISELY — target 20% fewer words than the stated target.';
-            else if (avgRatio > 1.25) editPatternHint = '\n\n## Learned Preference\nThis user consistently expands AI-generated content. Write with MORE DEPTH and DETAIL — target 20% more words than the stated target.';
+            const hints: string[] = [];
+            if (avgRatio < 0.75) hints.push('User consistently shortens AI content — write MORE CONCISELY, target 20% fewer words.');
+            else if (avgRatio > 1.25) hints.push('User consistently expands AI content — write with MORE DEPTH and DETAIL, target 20% more words.');
+            
+            // Aggregate detected patterns from Sprint 1 enhanced tracking
+            const allPatterns: string[] = feedbackData.flatMap((d: any) => d.feedback_data?.patterns || []);
+            const patternCounts: Record<string, number> = {};
+            for (const p of allPatterns) { patternCounts[p] = (patternCounts[p] || 0) + 1; }
+            const threshold = Math.ceil(feedbackData.length * 0.3);
+            const patternMessages: Record<string, string> = {
+              splits_long_paragraphs: 'Keep paragraphs to 2-3 sentences max.',
+              adds_examples: 'Include concrete examples and real-world scenarios.',
+              removes_generic_filler: 'Avoid filler language like "in today\'s digital world".',
+              adds_data_statistics: 'Include relevant numbers, percentages, and data.',
+              consolidates_headings: 'Use fewer, more meaningful section headers.',
+              adds_more_structure: 'Use more subheadings and clear section breaks.',
+              converts_to_lists: 'Use bullet points and numbered lists where appropriate.'
+            };
+            for (const [pattern, count] of Object.entries(patternCounts)) {
+              if (count >= threshold && patternMessages[pattern]) hints.push(patternMessages[pattern]);
+            }
+            if (hints.length > 0) editPatternHint = `\n\n## Learned Preferences\n${hints.join('\n')}`;
+          }
+
+          // Performance signals — content that gets reused most (Sprint 2)
+          let performanceContext = '';
+          if (perfSignalsResult.status === 'fulfilled' && perfSignalsResult.value.data?.length > 0) {
+            const signals = perfSignalsResult.value.data;
+            const contentSignalCounts: Record<string, number> = {};
+            for (const s of signals) {
+              contentSignalCounts[s.content_id] = (contentSignalCounts[s.content_id] || 0) + 1;
+            }
+            const topContentIds = Object.entries(contentSignalCounts)
+              .sort(([, a], [, b]) => b - a).slice(0, 3).map(([id]) => id);
+            if (topContentIds.length > 0) {
+              const { data: topItems } = await supabase.from('content_items')
+                .select('title, content_type, main_keyword').in('id', topContentIds).limit(3);
+              if (topItems?.length) {
+                performanceContext = `\n\n## Content That Gets Reused Most\nThese content pieces get the most actions (email, social, views):\n${topItems.map((t: any) => `- "${t.title}" (${t.content_type}, keyword: ${t.main_keyword || 'N/A'})`).join('\n')}\nMirror the style, depth, and angle of these high-performing pieces.`;
+              }
+            }
+          }
+
+          // Business Outcome Connection (Sprint 2, Enhancement 7)
+          let businessOutcomeContext = '';
+          if (solutionsResult.status === 'fulfilled' && solutionsResult.value.data?.length > 0) {
+            const keyword = (toolArgs.keyword || '').toLowerCase();
+            const matchedSolutions = solutionsResult.value.data.filter((s: any) => {
+              const searchFields = [
+                s.name, s.description,
+                ...(Array.isArray(s.pain_points) ? s.pain_points : []),
+                ...(Array.isArray(s.use_cases) ? s.use_cases : []),
+                s.target_audience
+              ].filter(Boolean).join(' ').toLowerCase();
+              return searchFields.includes(keyword) || keyword.split(' ').some((w: string) => w.length > 3 && searchFields.includes(w));
+            });
+            if (matchedSolutions.length > 0) {
+              businessOutcomeContext = `\n\n## Business Outcome Connection\nThis topic directly relates to the user's solution: ${matchedSolutions.map((s: any) => s.name).join(', ')}.\nWrite the content EDUCATIONALLY — help readers discover the problem and understand it deeply. Let them naturally conclude they need a solution. Do NOT hard-sell. Weave in the pain points the solution addresses: ${matchedSolutions.flatMap((s: any) => Array.isArray(s.pain_points) ? s.pain_points.slice(0, 3) : []).join(', ') || 'N/A'}.`;
+            }
           }
         } catch (enrichErr) {
           console.error('[CONTENT-ACTION] Enrichment fetch failed (non-blocking):', enrichErr);
@@ -638,7 +703,7 @@ export async function executeContentActionTool(
 - Target length: ~${targetWords} words
 - Output clean HTML with proper headings (h2, h3), paragraphs, lists, and occasional <strong> for emphasis
 - Do NOT include meta information or JSON — just the article content
-${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorContext}${structureGuidance}${editPatternHint}`;
+${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorContext}${structureGuidance}${editPatternHint}${performanceContext}${businessOutcomeContext}`;
 
         // Generate content via ai-proxy with retry
         const proxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
