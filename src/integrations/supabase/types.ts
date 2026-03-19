@@ -223,6 +223,8 @@ export type Database = {
           is_shared: boolean | null
           pinned: boolean | null
           share_token: string | null
+          summary: string | null
+          summary_message_count: number | null
           tags: string[] | null
           title: string | null
           updated_at: string
@@ -235,6 +237,8 @@ export type Database = {
           is_shared?: boolean | null
           pinned?: boolean | null
           share_token?: string | null
+          summary?: string | null
+          summary_message_count?: number | null
           tags?: string[] | null
           title?: string | null
           updated_at?: string
@@ -247,6 +251,8 @@ export type Database = {
           is_shared?: boolean | null
           pinned?: boolean | null
           share_token?: string | null
+          summary?: string | null
+          summary_message_count?: number | null
           tags?: string[] | null
           title?: string | null
           updated_at?: string
