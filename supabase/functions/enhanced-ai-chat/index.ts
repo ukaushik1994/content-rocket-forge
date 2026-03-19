@@ -1735,7 +1735,23 @@ ${engageWorkspaceId ? `
 - **Email Campaigns**: ${engageEmailCampaignCount} email campaigns
 ` : ''}
 ${recentActivitySection}
+`;
 
+    // 4d: Performance-driven topic prioritization
+    let topicPrioritization = '';
+    try {
+      const { data: topicPerf } = await supabase.from('content_items')
+        .select('main_keyword, seo_score')
+        .eq('user_id', userId).not('main_keyword', 'is', null).not('seo_score', 'is', null)
+        .order('seo_score', { ascending: false }).limit(50);
+      if (topicPerf?.length > 3) {
+        const topTopics = topicPerf.slice(0, 3).map((t: any) => `${t.main_keyword} (SEO: ${t.seo_score})`);
+        const weakTopics = topicPerf.filter((t: any) => t.seo_score < 40).slice(0, 3).map((t: any) => `${t.main_keyword} (SEO: ${t.seo_score})`);
+        topicPrioritization = `\n## Topic Performance:\n- **Top performing**: ${topTopics.join(', ')}${weakTopics.length > 0 ? `\n- **Needs improvement**: ${weakTopics.join(', ')}` : ''}`;
+      }
+    } catch (_) { /* non-blocking */ }
+
+    const contextString2 = `${topicPrioritization}
 ## How to Access Detailed Data:
 
 You have access to powerful tools to fetch exactly the data you need:
