@@ -428,7 +428,8 @@ function computeCrossSignals(
       if (contentKeywords && contentKeywords.length >= 4) {
         const prefixMap = new Map<string, number>();
         for (const item of contentKeywords) {
-          const kw = (item.main_keyword as string).toLowerCase().trim();
+          const kwArr = Array.isArray(item.keywords) ? item.keywords : [];
+          const kw = (kwArr[0] as string || item.meta_title || '').toLowerCase().trim();
           const words = kw.split(/\s+/);
           if (words.length >= 2) {
             const prefix = words.slice(0, 2).join(' ');
