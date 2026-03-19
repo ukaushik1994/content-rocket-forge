@@ -648,7 +648,15 @@ async function triggerContentGeneration(supabase: any, userId: string, args: any
   if (!strategy || !strategy.assets) {
     return {
       success: false,
-      message: "Campaign has no strategy or assets defined. Please select a strategy first."
+      message: "This campaign doesn't have a strategy with content assets yet. To fix this:\n\n1. **Generate a strategy** — say: *\"Generate a strategy for this campaign\"*\n2. **Or select one** — go to the Campaign page and pick a strategy\n\nOnce a strategy with content assets is set, I can generate all the content for you.",
+      actions: [
+        {
+          id: 'generate_strategy',
+          label: '🎯 Generate Strategy Now',
+          type: 'send_message',
+          message: `Generate a content strategy for campaign ${campaign.name || campaign.id}`
+        }
+      ]
     };
   }
 

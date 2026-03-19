@@ -1983,16 +1983,86 @@ serve(async (req) => {
       }
     }
 
+    // ── PINNED MESSAGES + FEEDBACK + GOAL CONTEXT (Phase 2-4) ──
+    if (conversationId) {
+      try {
+        // Fetch pinned messages — always include in context regardless of message limit
+        const { data: pinnedMsgs } = await supabase.from('ai_messages')
+          .select('content, type')
+          .eq('conversation_id', conversationId)
+          .eq('is_pinned', true)
+          .order('message_sequence', { ascending: true })
+          .limit(5);
+        
+        if (pinnedMsgs && pinnedMsgs.length > 0) {
+          const pinnedContext = pinnedMsgs.map((m: any) => `[PINNED ${m.type}]: ${(m.content || '').substring(0, 300)}`).join('\n');
+          messages.unshift({ role: 'system', content: `[Important pinned messages from this conversation]:\n${pinnedContext}` });
+          console.log(`📌 Injected ${pinnedMsgs.length} pinned messages into context`);
+        }
+
+        // Check recent negative feedback — inject hint to try different approach
+        const { data: recentFeedback } = await supabase.from('ai_messages')
+          .select('feedback_helpful')
+          .eq('conversation_id', conversationId)
+          .not('feedback_helpful', 'is', null)
+          .order('message_sequence', { ascending: false })
+          .limit(10);
+        
+        if (recentFeedback) {
+          const negCount = recentFeedback.filter((m: any) => m.feedback_helpful === false).length;
+          if (negCount >= 3) {
+            messages.unshift({ role: 'system', content: '[Context]: The user has indicated multiple recent responses were not helpful. Try a DIFFERENT approach — be more specific, use concrete examples, provide actionable steps, and ask clarifying questions when unsure.' });
+            console.log(`⚠️ ${negCount} negative feedback signals — injecting improvement hint`);
+          }
+        }
+
+        // Fetch conversation goal
+        const { data: convoGoal } = await supabase.from('ai_conversations')
+          .select('goal')
+          .eq('id', conversationId)
+          .single();
+        
+        if (convoGoal?.goal) {
+          messages.unshift({ role: 'system', content: `[Conversation goal]: ${convoGoal.goal}. Keep responses focused on this objective.` });
+          console.log(`🎯 Conversation goal: ${convoGoal.goal}`);
+        }
+      } catch (ctxErr) {
+        console.warn('⚠️ Failed to load pinned/feedback/goal context (non-blocking):', ctxErr);
+      }
+    }
+
     // ✅ NEW: Analyze query intent BEFORE fetching context (with runtime-safe fallback)
     let userQuery = messages[messages.length - 1]?.content || '';
     
     // ── DETECT & STRIP [web-search] PREFIX ──
     let forceWebSearch = false;
+    let forceVariation = false;
     if (userQuery.startsWith('[web-search]')) {
       forceWebSearch = true;
       userQuery = userQuery.replace(/^\[web-search\]\s*/, '').trim();
       console.log('🌐 [web-search] prefix detected — forcing web search for:', userQuery);
     }
+    // Smart retry with variation (Phase 4b)
+    if (userQuery.startsWith('[Regenerate with different approach]')) {
+      forceVariation = true;
+      userQuery = userQuery.replace(/^\[Regenerate with different approach\]\s*/, '').trim();
+      console.log('🔄 Regeneration with variation requested');
+    }
+
+    // Response format preference detection (Phase 3b)
+    let formatPreference = '';
+    if (/shorter|concise|brief|bullet|summary/i.test(userQuery)) {
+      formatPreference = '\n[User format preference]: The user prefers SHORT, concise responses. Use bullet points and keep responses under 200 words when possible.';
+    } else if (/elaborate|detail|explain|in.?depth|comprehensive/i.test(userQuery)) {
+      formatPreference = '\n[User format preference]: The user wants DETAILED, comprehensive responses. Provide thorough explanations with examples.';
+    }
+    if (formatPreference) {
+      messages.unshift({ role: 'system', content: formatPreference });
+    }
+    if (forceVariation) {
+      messages.unshift({ role: 'system', content: '[REGENERATION REQUEST]: The user wants a GENUINELY DIFFERENT response to the same query. Use a different structure, angle, examples, and writing style. Do NOT repeat the previous response pattern.' });
+    }
+
     console.log('🎯 Analyzing query intent...');
 
     let queryIntent;

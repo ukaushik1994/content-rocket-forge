@@ -570,6 +570,27 @@ export const useEnhancedAIChatDB = () => {
       } catch (titleErr) {
         console.warn('Failed to update conversation title:', titleErr);
       }
+
+      // Auto-detect conversation goal from first message
+      try {
+        let goal: string | null = null;
+        const cl = content.toLowerCase();
+        if (/write|create|generate|draft/i.test(cl) && /blog|article|post|content/i.test(cl)) goal = 'Content Creation';
+        else if (/keyword|seo|rank|serp/i.test(cl)) goal = 'SEO Research';
+        else if (/email|campaign|send|newsletter/i.test(cl)) goal = 'Email Campaign';
+        else if (/strategy|plan|roadmap/i.test(cl)) goal = 'Strategy Planning';
+        else if (/analyz|metric|performance|report/i.test(cl)) goal = 'Performance Analysis';
+        else if (/competitor|market|benchmark/i.test(cl)) goal = 'Competitive Analysis';
+        
+        if (goal) {
+          await supabase
+            .from('ai_conversations')
+            .update({ goal } as any)
+            .eq('id', conversationId);
+        }
+      } catch (goalErr) {
+        console.warn('Failed to set conversation goal:', goalErr);
+      }
     }
 
     try {
@@ -1467,6 +1488,50 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [user, toast]);
 
+  // Feedback on AI messages (thumbs up/down)
+  const handleFeedback = useCallback(async (messageId: string, helpful: boolean) => {
+    if (!user) return;
+    try {
+      // Toggle: if same value, clear it
+      const msg = messages.find(m => m.id === messageId);
+      const currentVal = (msg as any)?.feedbackHelpful;
+      const newVal = currentVal === helpful ? null : helpful;
+
+      await supabase
+        .from('ai_messages')
+        .update({ feedback_helpful: newVal } as any)
+        .eq('id', messageId);
+
+      setMessages(prev => prev.map(m => 
+        m.id === messageId ? { ...m, feedbackHelpful: newVal } : m
+      ));
+    } catch (error) {
+      console.error('Error setting feedback:', error);
+    }
+  }, [user, messages]);
+
+  // Pin/Unpin message
+  const handlePinMessage = useCallback(async (messageId: string) => {
+    if (!user) return;
+    try {
+      const msg = messages.find(m => m.id === messageId);
+      const newPinned = !((msg as any)?.isPinned);
+
+      await supabase
+        .from('ai_messages')
+        .update({ is_pinned: newPinned } as any)
+        .eq('id', messageId);
+
+      setMessages(prev => prev.map(m =>
+        m.id === messageId ? { ...m, isPinned: newPinned } : m
+      ));
+
+      toast({ title: newPinned ? 'Message pinned' : 'Message unpinned' });
+    } catch (error) {
+      console.error('Error pinning message:', error);
+    }
+  }, [user, messages, toast]);
+
   // Load conversations on user change
   useEffect(() => {
     if (user) {
@@ -1576,6 +1641,8 @@ export const useEnhancedAIChatDB = () => {
     deleteMessage,
     handleConfirmAction,
     handleCancelAction,
-    setAnalystActive
+    setAnalystActive,
+    handleFeedback,
+    handlePinMessage
   };
 };

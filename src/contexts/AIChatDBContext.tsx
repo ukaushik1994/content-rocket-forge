@@ -48,6 +48,8 @@ const fallbackContext: AIChatDBContextType = {
   handleConfirmAction: noopAsync as any,
   handleCancelAction: noop as any,
   setAnalystActive: noop as any,
+  handleFeedback: noop as any,
+  handlePinMessage: noopAsync as any,
 };
 
 export const useSharedAIChatDB = (): AIChatDBContextType => {

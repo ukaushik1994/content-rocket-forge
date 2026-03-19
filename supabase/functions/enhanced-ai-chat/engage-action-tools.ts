@@ -556,14 +556,40 @@ export async function executeEngageActionTool(
           const supabaseUrl = Deno.env.get('SUPABASE_URL');
           const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
           if (supabaseUrl && supabaseKey) {
-            fetch(`${supabaseUrl}/functions/v1/engage-email-send`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${supabaseKey}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ campaign_id: toolArgs.campaign_id, workspace_id: workspaceId })
-            }).catch(err => console.error('[ENGAGE-ACTION] Email send trigger error:', err));
+            try {
+              const sendResponse = await fetch(`${supabaseUrl}/functions/v1/engage-email-send`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ campaign_id: toolArgs.campaign_id, workspace_id: workspaceId })
+              });
+              if (!sendResponse.ok) {
+                const errText = await sendResponse.text().catch(() => 'Unknown error');
+                console.error('[ENGAGE-ACTION] Email send failed:', sendResponse.status, errText);
+                // Reset campaign status to draft so user can retry
+                await supabase.from('engage_email_campaigns')
+                  .update({ status: 'draft', updated_at: new Date().toISOString() })
+                  .eq('id', toolArgs.campaign_id)
+                  .eq('workspace_id', workspaceId);
+                return {
+                  success: false,
+                  message: `Failed to send "${data.name}". The campaign has been reset to draft so you can retry. Error: ${errText}`
+                };
+              }
+            } catch (err) {
+              console.error('[ENGAGE-ACTION] Email send trigger error:', err);
+              // Reset campaign status to draft
+              await supabase.from('engage_email_campaigns')
+                .update({ status: 'draft', updated_at: new Date().toISOString() })
+                .eq('id', toolArgs.campaign_id)
+                .eq('workspace_id', workspaceId);
+              return {
+                success: false,
+                message: `Failed to trigger email send for "${data.name}". Campaign reset to draft. Please check your email provider settings and try again.`
+              };
+            }
           }
         }
 

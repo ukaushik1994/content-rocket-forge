@@ -688,7 +688,13 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
           success: true,
           message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100) as draft${factCheckWarning}${linkSuggestions}`,
           item: { ...saved, seo_score: seoScore, meta_title: autoMetaTitle, meta_description: autoMetaDesc },
-          wordCount
+          wordCount,
+          actions: [
+            { id: 'view_content', label: '📄 View in Repository', type: 'navigate', route: '/content/repository' },
+            { id: 'publish_content', label: '🚀 Publish Now', type: 'send_message', message: `Publish content "${saved.title}" (ID: ${saved.id})` },
+            { id: 'email_content', label: '📧 Send as Email', type: 'send_message', message: `Create an email campaign from content "${saved.title}" (ID: ${saved.id})` },
+            { id: 'social_content', label: '📱 Share on Social', type: 'send_message', message: `Repurpose "${saved.title}" (ID: ${saved.id}) for social media` }
+          ]
         };
       }
 

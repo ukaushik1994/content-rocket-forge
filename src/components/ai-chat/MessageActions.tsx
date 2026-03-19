@@ -15,7 +15,10 @@ import {
   Copy, 
   Check,
   X,
-  RefreshCw
+  RefreshCw,
+  ThumbsUp,
+  ThumbsDown,
+  Pin
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { MessageEditDialog } from './MessageEditDialog';
@@ -28,6 +31,10 @@ interface MessageActionsProps {
   onEdit?: (messageId: string, newContent: string) => Promise<void>;
   onDelete?: (messageId: string) => Promise<void>;
   onRegenerate?: () => void;
+  onFeedback?: (messageId: string, helpful: boolean) => void;
+  onPin?: (messageId: string) => void;
+  feedbackValue?: boolean | null;
+  isPinned?: boolean;
 }
 
 const EDIT_WINDOW_MINUTES = 5;
@@ -39,7 +46,11 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
   timestamp,
   onEdit,
   onDelete,
-  onRegenerate
+  onRegenerate,
+  onFeedback,
+  onPin,
+  feedbackValue,
+  isPinned = false
 }) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -95,6 +106,38 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
     <>
       {/* Always-visible quick actions for mobile + desktop */}
       <div className="flex items-center gap-1">
+        {/* Thumbs Up/Down — AI messages only */}
+        {!isUser && onFeedback && (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onFeedback(messageId, true)}
+              className={`h-6 w-6 p-0 transition-colors ${
+                feedbackValue === true 
+                  ? 'text-green-500 hover:text-green-600' 
+                  : 'text-muted-foreground hover:text-green-500'
+              }`}
+              aria-label="Helpful"
+            >
+              <ThumbsUp className={`h-3.5 w-3.5 ${feedbackValue === true ? 'fill-current' : ''}`} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onFeedback(messageId, false)}
+              className={`h-6 w-6 p-0 transition-colors ${
+                feedbackValue === false 
+                  ? 'text-red-500 hover:text-red-600' 
+                  : 'text-muted-foreground hover:text-red-500'
+              }`}
+              aria-label="Not helpful"
+            >
+              <ThumbsDown className={`h-3.5 w-3.5 ${feedbackValue === false ? 'fill-current' : ''}`} />
+            </Button>
+          </>
+        )}
+
         {/* Copy */}
         <Button
           variant="ghost"
@@ -116,6 +159,23 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
             aria-label="Regenerate response"
           >
             <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
+        )}
+
+        {/* Pin — AI messages only */}
+        {!isUser && onPin && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPin(messageId)}
+            className={`h-6 w-6 p-0 transition-colors ${
+              isPinned 
+                ? 'text-primary hover:text-primary/80' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            aria-label={isPinned ? "Unpin message" : "Pin message"}
+          >
+            <Pin className={`h-3.5 w-3.5 ${isPinned ? 'fill-current' : ''}`} />
           </Button>
         )}
 

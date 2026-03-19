@@ -69,7 +69,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     handleConfirmAction,
     handleCancelAction,
     setAnalystActive,
-    progressText
+    progressText,
+    handleFeedback,
+    handlePinMessage
   } = useSharedAIChatDB();
   const { user } = useAuth();
 
@@ -534,7 +536,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       isCurrentMatch && "ring-2 ring-primary/50 rounded-lg"
                     )}>
                     
-                        <EnhancedMessageBubble
+                    <EnhancedMessageBubble
                       message={message}
                       isLatest={index === messages.length - 1}
                       onAction={handleAction}
@@ -545,10 +547,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       onConfirmAction={handleConfirmAction}
                       onCancelAction={handleCancelAction}
                       onSetVisualization={handleSetVisualization}
+                      onFeedback={handleFeedback}
+                      onPinMessage={handlePinMessage}
                       onRetry={() => {
                         const idx = messages.findIndex((m) => m.id === message.id);
                         const lastUserMsg = messages.slice(0, idx).reverse().find((m) => m.role === 'user');
-                        if (lastUserMsg) sendMessage(lastUserMsg.content);
+                        if (lastUserMsg) sendMessage(`[Regenerate with different approach] ${lastUserMsg.content}`);
                       }} />
                     
                       </div>);
@@ -575,7 +579,17 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
     )}>
         <div className="max-w-6xl mx-auto px-4 py-3">
-          {/* Context Indicator removed — was showing hardcoded data */}
+          {/* Context Indicator */}
+          {messages.length > 0 && (
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <div className={`text-xs ${messages.length > 10 ? 'text-amber-500' : 'text-muted-foreground/60'}`}>
+                {messages.length <= 10 
+                  ? `AI remembers all ${messages.length} messages`
+                  : `AI remembers last 10 of ${messages.length} messages (older context summarized)`
+                }
+              </div>
+            </div>
+          )}
           
           <ContextAwareMessageInput
           onSendMessage={handleSendMessage}

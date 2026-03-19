@@ -36,6 +36,8 @@ interface EnhancedMessageBubbleProps {
   onConfirmAction?: (confirmationMsgId: string) => void;
   onCancelAction?: (confirmationMsgId: string) => void;
   onSetVisualization?: (visualData: any) => void;
+  onFeedback?: (messageId: string, helpful: boolean) => void;
+  onPinMessage?: (messageId: string) => void;
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
@@ -52,10 +54,42 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   onDeleteMessage,
   onConfirmAction,
   onCancelAction,
-  onSetVisualization
+  onSetVisualization,
+  onFeedback,
+  onPinMessage
 }) => {
   const [showTimestamp, setShowTimestamp] = useState(false);
   const navigate = useNavigate();
+
+  // Smart follow-up suggestions (client-side, no AI call)
+  const smartFollowUps = useMemo(() => {
+    if (message.role !== 'assistant') return [];
+    if (message.visualData?.deepDivePrompts?.length) return []; // already has deep-dives
+    
+    const content = message.content.toLowerCase();
+    const suggestions: string[] = [];
+    
+    if (/blog|article|post|content/i.test(content)) {
+      suggestions.push('Create a blog post about this topic');
+    }
+    if (/keyword|seo|rank|search volume/i.test(content)) {
+      suggestions.push('Run a SERP analysis on this');
+    }
+    if (/strategy|campaign|plan/i.test(content)) {
+      suggestions.push('Turn this into actionable tasks');
+    }
+    if (/competitor|competition|market/i.test(content)) {
+      suggestions.push('Analyze competitor strategies');
+    }
+    if (/email|newsletter|outreach/i.test(content)) {
+      suggestions.push('Draft an email campaign');
+    }
+    if (/data|metric|performance|analytics/i.test(content)) {
+      suggestions.push('Show me charts for this data');
+    }
+    
+    return suggestions.slice(0, 3);
+  }, [message.role, message.content, message.visualData]);
 
   // Detect action results in assistant messages
   const actionResults = useMemo(() => {
@@ -225,6 +259,10 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                     onEdit={onEditMessage}
                     onDelete={onDeleteMessage}
                     onRegenerate={onRetry}
+                    onFeedback={onFeedback}
+                    onPin={onPinMessage}
+                    feedbackValue={(message as any).feedbackHelpful ?? null}
+                    isPinned={(message as any).isPinned ?? false}
                   />
                 </div>
               )}
@@ -343,6 +381,25 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             </motion.div>
           )}
 
+          {/* Smart Follow-Up Suggestions (when no deep-dive prompts exist) */}
+          {!isUser && smartFollowUps.length > 0 && (
+            <motion.div
+              className="mt-3 flex flex-wrap gap-2"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              {smartFollowUps.map((prompt, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onSendMessage?.(prompt)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-border/30 bg-muted/20 text-muted-foreground hover:text-foreground hover:border-border/50 hover:bg-muted/40 transition-all duration-200"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </motion.div>
+          )}
           {/* SERP Data Visualization */}
           {message.serpData && typeof message.serpData === 'object' && 'structured' in message.serpData && message.serpData.structured && (
             <motion.div

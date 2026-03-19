@@ -291,7 +291,7 @@ export async function executeKeywordActionTool(
         }
 
         const aiResult = await proxyResponse.json();
-        const rawContent = aiResult.content || aiResult.choices?.[0]?.message?.content || '';
+        const rawContent = aiResult.data?.choices?.[0]?.message?.content || aiResult.choices?.[0]?.message?.content || aiResult.content || '';
 
         // Parse JSON from response
         let cluster;
