@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X, PenLine, Globe } from 'lucide-react';
+import { Send, X, PenLine, Globe, Square } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { PlusMenuDropdown } from './PlusMenuDropdown';
 import { FileUploadHandler } from './FileUploadHandler';
@@ -380,25 +380,30 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             disabled={isLoading}
           />
 
-          {/* Send Button */}
-          <Button
-            type="submit"
-            size="sm"
-            variant="ghost"
-            disabled={!message.trim() || isLoading}
-            aria-label="Send message"
-            className="text-muted-foreground hover:text-foreground hover:bg-transparent p-2 h-9 w-9 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-[color,opacity] duration-200"
-          >
-            {isLoading ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-4 h-4 border-2 border-muted-foreground/20 border-t-muted-foreground rounded-full"
-              />
-            ) : (
+          {/* Send / Stop Button */}
+          {isLoading ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label="Stop generating"
+              onClick={() => window.dispatchEvent(new CustomEvent('abortAIRequest'))}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 p-2 h-9 w-9 rounded-xl transition-colors duration-200"
+            >
+              <Square className="h-4 w-4 fill-destructive" />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              size="sm"
+              variant="ghost"
+              disabled={!message.trim()}
+              aria-label="Send message"
+              className="text-muted-foreground hover:text-foreground hover:bg-transparent p-2 h-9 w-9 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-[color,opacity] duration-200"
+            >
               <Send className="h-4 w-4" />
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
       </form>
     </motion.div>

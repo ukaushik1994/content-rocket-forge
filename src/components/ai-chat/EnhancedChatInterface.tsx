@@ -556,23 +556,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               })}
                 </div>}
 
-              {/* Typing Indicator - Rotating Thinking Text with Stop button */}
+              {/* Typing Indicator */}
               <AnimatePresence>
-                {isTyping &&
-              <div className="flex items-center gap-3">
-                    <ThinkingTextRotator progressText={progressText} />
-                    <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    window.dispatchEvent(new CustomEvent('abortAIRequest'));
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 h-7 text-xs font-medium rounded-full shadow-sm shrink-0">
-                      <span className="w-2.5 h-2.5 bg-destructive-foreground rounded-sm" />
-                      Stop generating
-                    </Button>
-                  </div>
-              }
+                {isTyping && <ThinkingTextRotator progressText={progressText} />}
               </AnimatePresence>
 
               <div ref={messagesEndRef} />
