@@ -505,7 +505,6 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                               </div>
                             )}
                             <div
-                          key={conversation.id}
                           role="listitem"
                           aria-selected={activeConversation === conversation.id}
                           className={cn(
