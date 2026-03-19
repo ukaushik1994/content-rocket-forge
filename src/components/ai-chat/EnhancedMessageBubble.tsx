@@ -54,7 +54,9 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   onDeleteMessage,
   onConfirmAction,
   onCancelAction,
-  onSetVisualization
+  onSetVisualization,
+  onFeedback,
+  onPinMessage
 }) => {
   const [showTimestamp, setShowTimestamp] = useState(false);
   const navigate = useNavigate();
