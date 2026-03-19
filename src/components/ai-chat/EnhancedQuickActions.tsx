@@ -30,22 +30,21 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
 
   return (
     <motion.div
-      className="grid grid-cols-1 gap-2 w-full"
+      className="grid grid-cols-2 gap-1 w-full max-w-md"
       role="group"
       aria-label="Quick actions"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 0.1, duration: 0.4 }}
+      transition={{ delay: 0.3, duration: 0.4 }}
     >
       {suggestions.map((item, index) => (
         <motion.button
           key={item.text}
-          className="flex items-center gap-2.5 px-4 py-3.5 rounded-xl border border-border/20 bg-card/30 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/60 hover:border-border/40 transition-all duration-200 cursor-pointer active:scale-[0.98]"
+          className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors cursor-pointer"
           onClick={() => handleClick(item)}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          whileHover={{ y: -1 }}
-          transition={{ delay: 0.15 + index * 0.04, duration: 0.3 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 + index * 0.04, duration: 0.3 }}
         >
           <item.icon className={`h-4 w-4 ${item.iconColor} shrink-0`} />
           {item.text}
