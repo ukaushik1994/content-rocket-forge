@@ -703,7 +703,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                         <EnhancedQuickActions 
                           onAction={handleLegacyAction} 
                           onSetVisualization={handleSetVisualization}
-                          recommendations={aiRecommendations}
+                          
                         />
                       </div>
 
