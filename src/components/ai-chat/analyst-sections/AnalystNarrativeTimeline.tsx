@@ -84,6 +84,11 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
         <PreviousSessionSection onSendMessage={onSendMessage} />
       )}
 
+      {/* 00. Strategic Stance — opinionated recommendation */}
+      {analystState?.strategicRecommendation && (
+        <StrategicStanceSection analystState={analystState} onSendMessage={onSendMessage} />
+      )}
+
       {/* 01. Health Assessment */}
       {analystState && <HealthAssessmentSection analystState={analystState} onSendMessage={onSendMessage} />}
 

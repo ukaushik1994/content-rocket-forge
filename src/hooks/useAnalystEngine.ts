@@ -1105,9 +1105,32 @@ export function useAnalystEngine(
     return results;
   }, [messages, isActive]);
 
-  // ─── Merge all insights (anomaly + cross-signal + memory + base) ────────
+  // ─── Merge all insights with urgency scoring + sorting ────────────────
   const enrichedInsightsFeed = useMemo(() => {
-    return [...previousSessionInsights, ...crossSignalInsights, ...anomalyInsights, ...insightsFeed];
+    const allInsights = [...previousSessionInsights, ...crossSignalInsights, ...anomalyInsights, ...insightsFeed];
+    
+    // Assign urgency based on content patterns
+    for (const insight of allInsights) {
+      if (insight.urgency) continue; // already assigned
+      const lower = insight.content.toLowerCase();
+      if (/seo.*declin|scores.*trending.*down|critical/.test(lower)) {
+        insight.urgency = 'critical';
+      } else if (/no.*scheduled|empty.*calendar|0 days|haven't.*updated/.test(lower)) {
+        insight.urgency = 'high';
+      } else if (/stale.*draft|draft.*waiting|backlog/.test(lower)) {
+        insight.urgency = 'medium';
+      } else if (/concentration|diversif|consider/.test(lower)) {
+        insight.urgency = 'low';
+      }
+    }
+
+    // Sort: critical → high → medium → low → undefined
+    const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+    return allInsights.sort((a, b) => {
+      const aOrder = a.urgency ? urgencyOrder[a.urgency] : 4;
+      const bOrder = b.urgency ? urgencyOrder[b.urgency] : 4;
+      return aOrder - bOrder;
+    });
   }, [previousSessionInsights, crossSignalInsights, anomalyInsights, insightsFeed]);
 
   // ─── Enhancement A: Health score ────────────────────────────────────────
@@ -1121,6 +1144,66 @@ export function useAnalystEngine(
     if (!isActive) return null;
     return assessGoalProgress(conversationGoal, messages);
   }, [isActive, conversationGoal, messages]);
+
+  // ─── Strategic Recommendation ──────────────────────────────────────────
+  const strategicRecommendation = useMemo<StrategicRecommendation | null>(() => {
+    if (!isActive || platformData.length === 0) return null;
+
+    const totalContent = platformData.find(d => d.label === 'Total Content')?.value || 0;
+    const published = platformData.find(d => d.label === 'Published')?.value || 0;
+    const drafts = platformData.find(d => d.label === 'Drafts')?.value || 0;
+    const avgSeo = platformData.find(d => d.label === 'Avg SEO Score')?.value || 0;
+
+    // Rule 1: Too many drafts piling up
+    if (drafts > 5 && drafts > published) {
+      return {
+        stance: 'stop-creating',
+        reasoning: `You have ${drafts} drafts sitting unpublished vs ${published} live articles. Creating more content without publishing dilutes your effort. Focus on editing and shipping what you already have.`,
+        promptQuestion: `${drafts} drafts are gathering dust. Should I help you triage and publish the best ones?`,
+        actions: [
+          { label: 'Triage My Drafts', prompt: `I have ${drafts} unpublished drafts. Help me prioritize which to publish first based on SEO potential and topic relevance.`, effort: 'low', impact: 'high' },
+          { label: 'Create Publish Plan', prompt: `Create a 2-week publishing plan to clear my ${drafts} draft backlog, prioritized by impact.`, effort: 'medium', impact: 'high' },
+        ],
+      };
+    }
+
+    // Rule 2: Bad SEO quality
+    if (avgSeo > 0 && avgSeo < 45 && published >= 3) {
+      return {
+        stance: 'fix-quality',
+        reasoning: `Your average SEO score is ${avgSeo}/100 across ${published} articles. Publishing more low-quality content won't help — each article needs to compete. Fix what you have before creating more.`,
+        promptQuestion: `Average SEO is ${avgSeo}. Want me to identify the quickest wins to boost your scores?`,
+        actions: [
+          { label: 'Find Quick Wins', prompt: `My average SEO score is ${avgSeo}. Identify the 3 published articles with the most SEO improvement potential and tell me exactly what to fix.`, effort: 'low', impact: 'high' },
+          { label: 'SEO Audit All Content', prompt: `Run a full SEO audit across all my published content and create a prioritized optimization plan.`, effort: 'high', impact: 'high' },
+        ],
+      };
+    }
+
+    // Rule 3: Everything is working well
+    if (published >= 5 && avgSeo >= 60 && drafts <= 3) {
+      return {
+        stance: 'accelerate',
+        reasoning: `${published} articles live with ${avgSeo} avg SEO and a clean pipeline (${drafts} drafts). Your foundation is solid — this is the time to scale output and capture more keywords.`,
+        promptQuestion: 'Your content engine is running well. Ready to scale up?',
+        actions: [
+          { label: 'Find New Keywords', prompt: 'My content pipeline is healthy. Find untapped keyword opportunities I should target next to expand my reach.', effort: 'medium', impact: 'high' },
+          { label: 'Scale Content Plan', prompt: `I have ${published} articles performing well. Create an aggressive content scaling plan for the next month.`, effort: 'medium', impact: 'high' },
+        ],
+      };
+    }
+
+    // Rule 4: Just starting out
+    return {
+      stance: 'build-foundation',
+      reasoning: `You're early in your content journey with ${totalContent} total pieces. Focus on creating your first ${Math.max(0, 5 - published)} articles with strong SEO fundamentals before worrying about strategy.`,
+      promptQuestion: totalContent === 0 ? 'Ready to create your first piece of content?' : `You have ${totalContent} pieces started. Want help getting to 5 published articles?`,
+      actions: [
+        { label: 'Create First Article', prompt: 'Help me create my first high-quality SEO-optimized article. Guide me through topic selection and outline.', effort: 'medium', impact: 'high' },
+        { label: 'Content Strategy 101', prompt: 'I\'m just starting out. Give me a simple content strategy to build my first 5 articles with maximum impact.', effort: 'low', impact: 'medium' },
+      ],
+    };
+  }, [isActive, platformData]);
 
   return {
     topics,
@@ -1136,5 +1219,6 @@ export function useAnalystEngine(
     healthScore,
     crossSignalInsights,
     goalProgress,
+    strategicRecommendation,
   };
 }
