@@ -307,8 +307,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   };
 
   // Handle wizard launch with AI context extraction
-  const [isExtractingContext, setIsExtractingContext] = useState(false);
-
   const handleLaunchWizard = useCallback(async (userPrompt: string) => {
     setIsExtractingContext(true);
     try {
