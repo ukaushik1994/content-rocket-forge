@@ -159,7 +159,10 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
       {/* Content Type Picker */}
       {selectedSolution && (
         <div>
-          <h3 className="text-sm font-medium text-foreground">Content Format</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">3. Format</span>
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">What type of content are you creating?</p>
           <div className="grid grid-cols-3 gap-2 mt-2">
             {wizardFormats.map(format => {
@@ -169,13 +172,13 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
                   key={format.id}
                   onClick={() => onContentTypeChange(format.id)}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all cursor-pointer text-center",
+                    "flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition-all cursor-pointer text-center backdrop-blur-md",
                     contentType === format.id
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border/30 hover:border-border/50 bg-muted/20"
+                      ? "bg-white/[0.08] border-amber-300/30"
+                      : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
                   )}
                 >
-                  <Icon className={cn("w-4 h-4", contentType === format.id ? "text-primary" : "text-muted-foreground")} />
+                  <Icon className={cn("w-4 h-4", contentType === format.id ? "text-amber-300" : "text-muted-foreground")} />
                   <p className="text-[10px] font-medium text-foreground leading-tight">{format.name}</p>
                 </button>
               );

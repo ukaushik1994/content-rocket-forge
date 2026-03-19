@@ -221,7 +221,7 @@ Make every item specific and actionable, not templated. Return ONLY valid JSON.`
                 {allSelected ? 'Deselect All' : 'Select All'}
               </Button>
               {items.map((item, idx) => (
-                <label key={idx} className="flex items-start gap-2.5 px-3 py-1.5 rounded-md hover:bg-muted/30 cursor-pointer transition-colors">
+                <label key={idx} className="flex items-start gap-2.5 px-3 py-1.5 rounded-md hover:bg-white/[0.04] cursor-pointer transition-colors">
                   <Checkbox
                     checked={selections[key].includes(item.text)}
                     onCheckedChange={() => toggleItem(key, item.text)}

@@ -223,11 +223,11 @@ Return ONLY the JSON array.`;
           <Reorder.Item key={section.id} value={section}>
             <motion.div
               layout
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border/20 hover:border-border/40 group transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.12] group transition-colors backdrop-blur-md"
             >
               <GripVertical className="w-3.5 h-3.5 text-muted-foreground/50 cursor-grab flex-shrink-0" />
-              <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-[10px] font-medium text-primary">H{section.level + 1}</span>
+              <div className="w-5 h-5 rounded bg-amber-300/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-[10px] font-medium text-amber-300/70">H{section.level + 1}</span>
               </div>
               {editingId === section.id ? (
                 <Input

@@ -473,13 +473,13 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
 
             {/* Footer Navigation */}
             {currentStep < maxStep && (
-              <div className="flex-shrink-0 px-5 py-3 border-t border-border/10 flex items-center justify-between">
+              <div className="flex-shrink-0 px-5 py-3 border-t border-white/[0.06] flex items-center justify-between">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={goBack}
                   disabled={currentStep === 0}
-                  className="text-muted-foreground"
+                  className="text-muted-foreground border border-white/[0.06] hover:bg-white/[0.04]"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" /> Back
                 </Button>
@@ -487,7 +487,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                   size="sm"
                   onClick={goNext}
                   disabled={!canProceed()}
-                  className="gap-1"
+                  className="gap-1 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30"
                 >
                   Next <ChevronRight className="w-4 h-4" />
                 </Button>
