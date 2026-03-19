@@ -39,7 +39,7 @@ export const WebIntelligenceSection: React.FC<Props> = ({ webSearchResults, onSe
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="mt-2 ml-4 space-y-2">
-                {ws.results.slice(0, 3).map((result, rIdx) => (
+                {(ws.results || []).slice(0, 3).map((result, rIdx) => (
                   <a
                     key={rIdx}
                     href={result.url}

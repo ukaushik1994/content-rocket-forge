@@ -62,13 +62,25 @@ export const PerformanceTrajectorySection: React.FC<Props> = ({ analystState, ch
                   <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.2} />
                   <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
                 </linearGradient>
+                <linearGradient id="perfGradPurple" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#a855f7" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="perfGradGreen" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                </linearGradient>
               </defs>
               <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} opacity={0.4} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} width={28} opacity={0.4} />
               <RechartsTooltip contentStyle={tooltipStyle} />
-              {dataKeys.slice(0, 1).map((key) => (
-                <Area key={key} type="natural" dataKey={key} stroke="#06b6d4" strokeWidth={2} fill="url(#perfGradCyan)" dot={false} />
-              ))}
+              {dataKeys.slice(0, 3).map((key, idx) => {
+                const colors = ['#06b6d4', '#a855f7', '#22c55e'];
+                const gradients = ['url(#perfGradCyan)', 'url(#perfGradPurple)', 'url(#perfGradGreen)'];
+                return (
+                  <Area key={key} type="natural" dataKey={key} stroke={colors[idx]} strokeWidth={2} fill={gradients[idx]} dot={false} />
+                );
+              })}
             </AreaChart>
           </ResponsiveContainer>
         </div>
