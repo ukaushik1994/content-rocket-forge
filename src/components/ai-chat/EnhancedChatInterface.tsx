@@ -242,6 +242,37 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Phase 1 Fix: Loading state for conversation transitions
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
 
+  // ─── Per-Conversation Analyst State Persistence ─────────────────────────
+  const ANALYST_STATE_KEY = 'analyst_sidebar_state';
+  const MAX_STORED_STATES = 30;
+
+  const saveAnalystOpenState = useCallback((convId: string, isOpen: boolean) => {
+    try {
+      const raw = localStorage.getItem(ANALYST_STATE_KEY);
+      const states: Record<string, boolean> = raw ? JSON.parse(raw) : {};
+      states[convId] = isOpen;
+      // Cap at MAX entries
+      const keys = Object.keys(states);
+      if (keys.length > MAX_STORED_STATES) {
+        for (const k of keys.slice(0, keys.length - MAX_STORED_STATES)) delete states[k];
+      }
+      localStorage.setItem(ANALYST_STATE_KEY, JSON.stringify(states));
+    } catch { /* quota */ }
+  }, []);
+
+  const getAnalystOpenState = useCallback((convId: string): boolean | null => {
+    try {
+      const raw = localStorage.getItem(ANALYST_STATE_KEY);
+      if (!raw) return null;
+      const states: Record<string, boolean> = JSON.parse(raw);
+      return states[convId] ?? null;
+    } catch { return null; }
+  }, []);
+
+  // Analyst engine: per-conversation, uses sidebar visibility
+  const isAnalystVisible = showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst';
+  const analystState = useAnalystEngine(messages, user?.id || null, isAnalystVisible || messages.length > 0, activeConvObj?.title || null, activeConversation);
+
   // Handle manual expand visualization (kept for backwards compatibility)
   const handleExpandVisualization = (visualData: any, chartConfig: ChartConfiguration) => {
     setVisualizationData({
