@@ -19,7 +19,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v17-2026-03-19T04:00:00Z-user-intelligence-profile';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v18-2026-03-19T06:00:00Z-ai-chat-overhaul';
 
 // Data categories that REQUIRE tool execution (not conversational text)
 const DATA_CATEGORIES = [
