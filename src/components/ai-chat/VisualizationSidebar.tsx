@@ -739,7 +739,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                 {/* Goal Progress */}
                 {analystState?.goalProgress && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 p-2.5 rounded-lg bg-muted/15 border border-border/15 space-y-1.5">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 glass-card p-2.5 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{analystState.goalProgress.goalName}</span>
                       <span className="text-[10px] font-semibold text-primary">{analystState.goalProgress.percentage}%</span>
