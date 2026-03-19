@@ -1,10 +1,8 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
-  Zap, ChevronDown, 
   FileText, Send, BarChart3, Users, Target, 
   PlusCircle, RefreshCw, Megaphone, Mail, 
   Route, ToggleRight, UserPlus
@@ -63,8 +61,6 @@ export const SidebarActionPanel: React.FC<SidebarActionPanelProps> = ({
   onSendMessage,
   onClose
 }) => {
-  const [isExpanded, setIsExpanded] = React.useState(false);
-
   const actions = useMemo(() => {
     const key = Object.keys(ACTION_CONFIGS).find(k => 
       dataSource.toLowerCase().includes(k.toLowerCase()) ||
@@ -79,54 +75,41 @@ export const SidebarActionPanel: React.FC<SidebarActionPanelProps> = ({
   };
 
   return (
-    <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <CollapsibleTrigger asChild>
-        <div className="flex items-center justify-between cursor-pointer group py-1">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-muted-foreground" />
-            <h3 className="text-sm font-medium text-foreground">Quick Actions</h3>
-            <Badge variant="outline" className="text-xs text-muted-foreground">{actions.length}</Badge>
-          </div>
-          <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-            <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
-          </motion.div>
-        </div>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <motion.div 
-          className="mt-3 glass-card p-4 grid grid-cols-2 gap-2.5"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          {actions.map((action, idx) => {
-            const Icon = action.icon;
-            return (
-              <motion.div
-                key={action.id}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-              >
-                <Button
-                  variant={action.variant === 'destructive' ? 'destructive' : 'ghost'}
-                  size="sm"
-                  onClick={() => handleAction(action)}
-                  className={cn(
-                    "w-full h-10 text-xs gap-2 justify-start",
-                    action.variant !== 'destructive' && "text-muted-foreground hover:text-foreground hover:bg-[rgba(255,255,255,0.06)]"
-                  )}
-                >
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                  </div>
-                  <span className="truncate">{action.label}</span>
-                </Button>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-      </CollapsibleContent>
-    </Collapsible>
+    <TooltipProvider delayDuration={200}>
+      <div className="flex items-center gap-1.5">
+        {actions.map((action, idx) => {
+          const Icon = action.icon;
+          return (
+            <motion.div
+              key={action.id}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.04 }}
+            >
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleAction(action)}
+                    className={cn(
+                      "w-9 h-9 rounded-xl transition-all duration-200",
+                      action.variant === 'destructive'
+                        ? "text-red-400/70 hover:text-red-400 hover:bg-red-500/10"
+                        : "text-muted-foreground/60 hover:text-foreground hover:bg-[rgba(255,255,255,0.06)]"
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs font-medium">
+                  {action.label}
+                </TooltipContent>
+              </Tooltip>
+            </motion.div>
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 };
