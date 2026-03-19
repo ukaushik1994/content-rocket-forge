@@ -402,6 +402,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   return <div className={cn("h-full flex flex-col", className)}>
 
+      {/* API Key Onboarding Modal */}
+      <APIKeyOnboarding
+        open={showKeyOnboarding}
+        onComplete={() => setShowKeyOnboarding(false)}
+      />
+
       {/* Visualization Sidebar (Right) - positioned within chat area */}
       <VisualizationSidebar
       isOpen={showVisualizationSidebar}
