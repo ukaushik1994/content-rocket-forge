@@ -90,7 +90,7 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
         return a.title.localeCompare(b.title);
       } else if (effectiveSortBy === 'score') {
         return (b.seo_score || 0) - (a.seo_score || 0);
-      } else if (sortBy === 'wordCount') {
+      } else if (effectiveSortBy === 'wordCount') {
         const aWordCount = a.content ? a.content.split(/\s+/).length : 0;
         const bWordCount = b.content ? b.content.split(/\s+/).length : 0;
         return bWordCount - aWordCount;
