@@ -173,9 +173,10 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     
   }, [user, messages.length]);
 
-  // Analyst engine: always-on — lightweight memo scanning of messages
+  // Analyst engine: per-conversation, only active when analyst sidebar is visible
   const activeConvObj = conversations.find(c => c.id === activeConversation);
-  const analystState = useAnalystEngine(messages, user?.id || null, true, activeConvObj?.title || null);
+  const isAnalystVisible = showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst';
+  const analystState = useAnalystEngine(messages, user?.id || null, isAnalystVisible || messages.length > 0, activeConvObj?.title || null, activeConversation);
 
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
