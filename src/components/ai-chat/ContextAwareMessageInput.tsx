@@ -370,7 +370,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             }}
             placeholder={activePlaceholder}
             disabled={isLoading}
-            className="flex-1 min-h-[24px] max-h-[160px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-[15px] leading-relaxed"
+            className="flex-1 min-h-[24px] max-h-[160px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-[15px] leading-relaxed scrollbar-thin-dark"
             rows={1}
           />
 
