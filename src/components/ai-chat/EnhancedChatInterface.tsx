@@ -152,7 +152,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
     fetchInsights();
     fetchTemplates();
-    checkBrandVoiceEligibility();
+    
   }, [user, messages.length]);
 
   // Analyst engine: track if analyst is active and provide cumulative state
