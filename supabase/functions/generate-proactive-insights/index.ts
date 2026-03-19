@@ -51,7 +51,8 @@ Deno.serve(async (req) => {
           title: `"${best.title}" is ready to publish`,
           description: `This draft has ${best.seo_score ? `an SEO score of ${best.seo_score} and` : ''} been sitting for 14+ days. ${staleDrafts.length > 1 ? `Plus ${staleDrafts.length - 1} more stale draft(s).` : ''}`,
           action: `Review and help me finalize my draft "${best.title}" for publishing`,
-          priority: 1
+          priority: 1,
+          priority_score: 80
         });
       }
 
