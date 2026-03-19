@@ -302,9 +302,10 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         <div
          className={cn(
             "fixed left-0 top-0 bottom-0 z-50",
-            "w-14 bg-background backdrop-blur-xl border-r border-border/15",
+            "w-14 glass-sidebar border-r border-border/15",
             "flex flex-col items-center py-3",
             "shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.05)]",
+            "transition-[width] duration-[250ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
             className
           )}
         >
