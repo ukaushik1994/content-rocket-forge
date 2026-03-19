@@ -592,6 +592,35 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
 
+                    {/* AI Proactive Recommendations (Sprint 3) */}
+                    {aiRecommendations.length > 0 && (
+                      <motion.div
+                        className="flex flex-col gap-2 w-full max-w-lg"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                      >
+                        <span className="text-xs text-muted-foreground text-center">Recommended for you</span>
+                        {aiRecommendations.map((rec) => (
+                          <button
+                            key={rec.id}
+                            onClick={() => {
+                              sendMessage(rec.action);
+                              // Mark as acted_on (non-blocking)
+                              (supabase as any).from('proactive_recommendations')
+                                .update({ acted_on: true })
+                                .eq('id', rec.id).then(() => {});
+                              setAiRecommendations(prev => prev.filter(r => r.id !== rec.id));
+                            }}
+                            className="text-left px-4 py-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors group"
+                          >
+                            <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{rec.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.description}</p>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+
                     {/* Proactive Insights */}
                     {proactiveInsights.length > 0 && (
                       <motion.div 
