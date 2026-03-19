@@ -421,30 +421,6 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             </motion.div>
           )}
 
-          {/* Retry Button for AI messages */}
-          {!isUser && onRetry && (
-            <div className="mt-3 flex justify-end">
-              <TooltipProvider delayDuration={300}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onRetry}
-                      disabled={isRetrying}
-                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                    >
-                      <RefreshCw className={`h-3.5 w-3.5 ${isRetrying ? 'animate-spin' : ''}`} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{isRetrying ? 'Retrying…' : 'Retry'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          )}
-
           {/* User message status */}
           {isUser && (
             <MessageStatus 
