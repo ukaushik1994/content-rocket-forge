@@ -717,6 +717,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* Dynamic Rotating Greeting */}
                     <DynamicGreeting firstName={user?.user_metadata?.first_name || user?.user_metadata?.name?.split(' ')[0] || ''} />
 
+                    {/* SB-10: Getting Started Milestones */}
+                    <GettingStartedChecklist />
+
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
 
