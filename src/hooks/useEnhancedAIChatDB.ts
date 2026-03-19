@@ -1620,6 +1620,8 @@ export const useEnhancedAIChatDB = () => {
     deleteMessage,
     handleConfirmAction,
     handleCancelAction,
-    setAnalystActive
+    setAnalystActive,
+    handleFeedback,
+    handlePinMessage
   };
 };

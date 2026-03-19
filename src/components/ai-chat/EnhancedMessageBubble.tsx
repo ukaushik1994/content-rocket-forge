@@ -381,6 +381,25 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             </motion.div>
           )}
 
+          {/* Smart Follow-Up Suggestions (when no deep-dive prompts exist) */}
+          {!isUser && smartFollowUps.length > 0 && (
+            <motion.div
+              className="mt-3 flex flex-wrap gap-2"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              {smartFollowUps.map((prompt, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onSendMessage?.(prompt)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-border/30 bg-muted/20 text-muted-foreground hover:text-foreground hover:border-border/50 hover:bg-muted/40 transition-all duration-200"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </motion.div>
+
           {/* SERP Data Visualization */}
           {message.serpData && typeof message.serpData === 'object' && 'structured' in message.serpData && message.serpData.structured && (
             <motion.div
