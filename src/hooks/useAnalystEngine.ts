@@ -1289,6 +1289,34 @@ export function useAnalystEngine(
         })());
       }
 
+      // Fix 12: Traffic proxy — most engaged content from performance signals
+      fetches.push((async () => {
+        try {
+          const { data: perfSignals } = await supabase
+            .from('content_performance_signals' as any)
+            .select('content_id, signal_type')
+            .limit(100);
+          if (perfSignals && perfSignals.length > 0) {
+            const countMap = new Map<string, number>();
+            for (const s of perfSignals) {
+              countMap.set(s.content_id, (countMap.get(s.content_id) || 0) + 1);
+            }
+            const sorted = [...countMap.entries()].sort((a, b) => b[1] - a[1]);
+            if (sorted.length > 0) {
+              const [topId, topCount] = sorted[0];
+              const { data: topArticle } = await supabase
+                .from('content_items')
+                .select('title')
+                .eq('id', topId)
+                .single();
+              if (topArticle) {
+                newData.push({ label: 'Most Engaged', value: topCount, category: 'content_detail', fetchedAt: now });
+              }
+            }
+          }
+        } catch { /* table may not exist */ }
+      })());
+
       await Promise.all(fetches);
       if (newData.length > 0) {
         setPlatformData(prev => {
