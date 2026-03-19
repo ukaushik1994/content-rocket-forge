@@ -150,8 +150,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       } catch (_) { /* non-blocking */ }
     };
 
+    const checkBrandVoiceEligibility = async () => {
+      try {
+        const { count } = await supabase.from('content_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id).eq('status', 'published');
+        setCanDetectBrandVoice((count ?? 0) >= 2);
+      } catch (_) { /* non-blocking */ }
+    };
+
     fetchInsights();
     fetchTemplates();
+    checkBrandVoiceEligibility();
   }, [user, messages.length]);
 
   // Analyst engine: track if analyst is active and provide cumulative state
