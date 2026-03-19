@@ -74,6 +74,23 @@ serve(async (req) => {
 
     console.log(`✅ [Queue Processor] Complete: ${successful} succeeded, ${failed} failed`);
 
+    // Phase 3: Notify the user who owns the queue items
+    if (queueItems.length > 0) {
+      const userId = queueItems[0].user_id;
+      if (userId) {
+        const severity = failed > 0 ? (successful > 0 ? 'warning' : 'error') : 'success';
+        notifyUser(supabase, {
+          userId,
+          title: 'Content Queue Processed',
+          message: `${successful} item(s) completed, ${failed} failed.`,
+          module: 'content',
+          severity,
+          linkUrl: '/content',
+          metadata: { successful, failed, total: queueItems.length },
+        });
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         message: 'Processing complete',
