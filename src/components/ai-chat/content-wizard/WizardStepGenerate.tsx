@@ -1432,7 +1432,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               value={refinementInstruction}
               onChange={(e) => setRefinementInstruction(e.target.value)}
               placeholder="How should this be improved?"
-              className="text-xs h-8 flex-1"
+              className="text-xs h-8 flex-1 bg-white/[0.04] border-white/[0.06]"
               onKeyDown={(e) => e.key === 'Enter' && !isRefining && refineContent()}
             />
             <Button 
