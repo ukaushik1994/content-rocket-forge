@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X, PenLine, Globe, Paperclip } from 'lucide-react';
+import { Send, X, PenLine, Globe } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { PlusMenuDropdown } from './PlusMenuDropdown';
 import { FileUploadHandler } from './FileUploadHandler';
@@ -315,7 +315,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
 
       <form onSubmit={handleSubmit} className="relative">
         <div 
-          className={`relative flex items-end gap-2 p-2.5 glass-input rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
+          className={`relative flex items-end gap-2 p-2.5 bg-background/60 backdrop-blur-xl border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
             webSearchMode
               ? 'border-accent/30 ring-1 ring-accent/10'
               : wizardMode
@@ -346,19 +346,6 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             }}
             disabled={isLoading}
           />
-
-          {/* Inline Attach shortcut — desktop only */}
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={handleAttachmentClick}
-            disabled={isLoading}
-            aria-label="Attach file"
-            className="hidden sm:flex text-muted-foreground/50 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8 transition-colors"
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
 
           {/* Message Input */}
           <Textarea

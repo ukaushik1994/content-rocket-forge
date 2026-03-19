@@ -40,7 +40,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
       {suggestions.map((item, index) => (
         <motion.button
           key={item.text}
-          className="flex items-center gap-2.5 px-4 py-3.5 rounded-xl border border-border/20 bg-card/30 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/60 hover:border-border/40 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-all duration-200 cursor-pointer active:scale-[0.98]"
+          className="flex items-center gap-2.5 px-4 py-3.5 rounded-xl border border-border/20 bg-card/30 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/60 hover:border-border/40 transition-all duration-200 cursor-pointer active:scale-[0.98]"
           onClick={() => handleClick(item)}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}

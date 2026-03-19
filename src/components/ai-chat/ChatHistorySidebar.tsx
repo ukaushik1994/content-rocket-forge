@@ -56,7 +56,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AIConversation } from '@/hooks/useEnhancedAIChatDB';
 import { GlobalSearchResults } from './GlobalSearchResults';
-import { formatDistanceToNow, isToday, isYesterday, differenceInDays } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
@@ -92,14 +92,6 @@ const TAG_COLORS: Record<string, string> = {
   research: 'bg-secondary/60 text-secondary-foreground border-secondary/30',
   'follow-up': 'bg-warning/20 text-warning border-warning/30',
 };
-
-function getDateGroup(dateStr: string): string {
-  const date = new Date(dateStr);
-  if (isToday(date)) return 'Today';
-  if (isYesterday(date)) return 'Yesterday';
-  if (differenceInDays(new Date(), date) <= 7) return 'Previous 7 Days';
-  return 'Older';
-}
 
 // Sidebar nav item — premium style with active indicator
 const SidebarNavItem: React.FC<{
@@ -310,10 +302,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         <div
          className={cn(
             "fixed left-0 top-0 bottom-0 z-50",
-            "w-14 glass-sidebar border-r border-border/15",
+            "w-14 bg-background backdrop-blur-xl border-r border-border/15",
             "flex flex-col items-center py-3",
             "shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.05)]",
-            "transition-[width] duration-[250ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
             className
           )}
         >
@@ -398,10 +389,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         className={cn(
           "fixed left-0 top-0 bottom-0 z-50",
           "w-full sm:w-72 lg:w-80",
-          "glass-sidebar",
+          "bg-background backdrop-blur-xl",
           "border-r border-border/15 flex flex-col",
           "shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.05)]",
-          "transition-[width] duration-[250ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
           className
         )}
         initial={isMobile ? { x: -320, opacity: 0 } : false}
@@ -491,20 +481,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                   filteredConversations.length > 0 ? (
                     <>
               <div role="list">
-                      {displayedConversations.map((conversation, index) => {
-                        const group = getDateGroup(conversation.updated_at);
-                        const prevGroup = index > 0 ? getDateGroup(displayedConversations[index - 1].updated_at) : null;
-                        const showHeader = !conversation.pinned && group !== prevGroup;
-                        return (
-                          <React.Fragment key={conversation.id}>
-                            {showHeader && (
-                              <div className="sticky top-0 z-10 px-4 pt-3 pb-1">
-                                <span className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground/50">
-                                  {group}
-                                </span>
-                              </div>
-                            )}
-                            <div
+                      {displayedConversations.map((conversation) => (
+                        <div
+                          key={conversation.id}
                           role="listitem"
                           aria-selected={activeConversation === conversation.id}
                           className={cn(
@@ -694,9 +673,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                             </DropdownMenu>
                           </div>
                         </div>
-                          </React.Fragment>
-                        );
-                      })}
+                      ))}
                       </div>
                       
                       {/* Load More */}

@@ -96,7 +96,7 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 opacity-40 group-hover:opacity-100 transition-opacity"
+            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
