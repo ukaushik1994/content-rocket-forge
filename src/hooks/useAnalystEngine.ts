@@ -954,14 +954,14 @@ export function useAnalystEngine(
 
   // ─── Enhancement D: Load session memory on activation ───────────────────
   useEffect(() => {
-    if (isActive && !prevActiveRef.current && messages.length === 0) {
+    if (isActive && !prevActiveRef.current && insightsFeed.length === 0) {
       const memoryInsights = loadSessionMemory();
       if (memoryInsights.length > 0) {
         setPreviousSessionInsights(memoryInsights);
       }
     }
     prevActiveRef.current = isActive;
-  }, [isActive, messages.length]);
+  }, [isActive, insightsFeed.length]);
 
   // ─── Enhancement D: Save session memory on deactivation ─────────────────
   useEffect(() => {
