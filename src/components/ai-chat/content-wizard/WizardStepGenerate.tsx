@@ -1046,7 +1046,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         {/* Phase 5d: Post-generation quality report */}
         {!quick && seoScore !== null && (
           <Collapsible>
-            <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors bg-white/[0.04] border border-white/[0.06] rounded-2xl px-3 py-2">
               <GraduationCap className="w-3.5 h-3.5" />
               <span>Quality Report</span>
               <ChevronDown className="w-3 h-3" />
@@ -1061,7 +1061,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                   { label: `SEO Score: ${seoScore}`, passed: seoScore >= 60 },
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-[10px]">
-                    {item.passed ? <Check className="w-3 h-3 text-primary flex-shrink-0" /> : <X className="w-3 h-3 text-destructive flex-shrink-0" />}
+                    {item.passed ? <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" /> : <X className="w-3 h-3 text-destructive flex-shrink-0" />}
                     <span className={item.passed ? 'text-foreground' : 'text-destructive'}>{item.label}</span>
                   </div>
                 ))}
@@ -1074,19 +1074,19 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         <div className="w-full max-w-[280px] mt-1">
           <p className="text-[10px] text-muted-foreground mb-2 font-medium uppercase tracking-wider">What's next?</p>
           <div className="flex flex-col gap-1.5 w-full">
-            <Button size="sm" variant="outline" onClick={() => { navigate('/repository'); onClose(); }} className="text-xs gap-1.5 w-full justify-start h-8">
+            <Button size="sm" variant="outline" onClick={() => { navigate('/repository'); onClose(); }} className="text-xs gap-1.5 w-full justify-start h-8 border-white/[0.06] hover:bg-white/[0.04]">
               <ExternalLink className="w-3 h-3" /> View in Repository
             </Button>
-            <Button size="sm" variant="default" onClick={handleContinueEditing} className="text-xs gap-1.5 w-full justify-start h-8">
+            <Button size="sm" variant="default" onClick={handleContinueEditing} className="text-xs gap-1.5 w-full justify-start h-8 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30">
               <PenLine className="w-3 h-3" /> Continue Editing
             </Button>
             {savedStatus === 'draft' && (
-              <Button size="sm" variant="outline" onClick={() => { if (savedId) { saveContent('published'); } }} disabled={isSaving} className="text-xs gap-1.5 w-full justify-start h-8">
+              <Button size="sm" variant="outline" onClick={() => { if (savedId) { saveContent('published'); } }} disabled={isSaving} className="text-xs gap-1.5 w-full justify-start h-8 border-white/[0.06] hover:bg-white/[0.04]">
                 <Send className="w-3 h-3" /> Publish Now
               </Button>
             )}
             {activeConnectionProvider && (
-              <Button size="sm" variant="outline" onClick={publishExternal} disabled={isPublishingExternal} className="text-xs gap-1.5 w-full justify-start h-8">
+              <Button size="sm" variant="outline" onClick={publishExternal} disabled={isPublishingExternal} className="text-xs gap-1.5 w-full justify-start h-8 border-white/[0.06] hover:bg-white/[0.04]">
                 {isPublishingExternal ? <Loader2 className="w-3 h-3 animate-spin" /> : <Globe className="w-3 h-3" />}
                 Publish to {activeConnectionProvider === 'wordpress' ? 'WordPress' : 'Wix'}
               </Button>
@@ -1108,7 +1108,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                 <button
                   key={item.type}
                   onClick={() => onRepurpose(item.type, contentToSave, wizardState.keyword)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-border/30 bg-muted/30 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-primary/5 transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-white/[0.06] bg-white/[0.04] text-[10px] text-muted-foreground hover:text-foreground hover:border-amber-300/30 hover:bg-white/[0.08] transition-all"
                 >
                   <item.icon className="w-3 h-3" />
                   {item.label}
@@ -1140,7 +1140,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           value={wizardState.title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="Enter content title..."
-          className="text-sm"
+          className="text-sm bg-white/[0.04] border-white/[0.06]"
         />
       </div>
 
@@ -1156,7 +1156,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               value={wizardState.metaTitle}
               onChange={(e) => onMetaChange(e.target.value, wizardState.metaDescription)}
               placeholder="SEO title..."
-              className="text-xs h-8"
+              className="text-xs h-8 bg-white/[0.04] border-white/[0.06]"
             />
             <p className={cn("text-[10px]", wizardState.metaTitle.length < 50 ? "text-destructive" : "text-muted-foreground")}>{wizardState.metaTitle.length}/60 characters{wizardState.metaTitle.length < 50 ? ' (min 50)' : ''}</p>
           </div>
@@ -1166,7 +1166,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               value={wizardState.metaDescription}
               onChange={(e) => onMetaChange(wizardState.metaTitle, e.target.value)}
               placeholder="SEO description..."
-              className="text-xs min-h-[60px] resize-none"
+              className="text-xs min-h-[60px] resize-none bg-white/[0.04] border-white/[0.06]"
             />
             <p className="text-[10px] text-muted-foreground">{wizardState.metaDescription.length}/160 characters</p>
           </div>
@@ -1176,7 +1176,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       {/* Generate Button */}
       {!wizardState.generatedContent ? (
         <div className="space-y-3">
-          <Button onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-2">
+          <Button onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-2 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30">
             {isGeneratingContent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {isGeneratingContent ? 'Generating...' : 'Generate Content'}
           </Button>
@@ -1215,19 +1215,19 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             <div className="flex items-center justify-between">
               <Tabs value={editorTab} onValueChange={setEditorTab} className="w-full">
                 <div className="flex items-center justify-between mb-2">
-                  <TabsList className="h-7">
-                    <TabsTrigger value="preview" className="text-[10px] px-2 py-1 h-6 gap-1">
+                  <TabsList className="h-7 bg-white/[0.04] border border-white/[0.06]">
+                    <TabsTrigger value="preview" className="text-[10px] px-2 py-1 h-6 gap-1 data-[state=active]:bg-white/[0.08] data-[state=active]:text-amber-300">
                       <FileText className="w-3 h-3" /> Preview
                     </TabsTrigger>
-                    <TabsTrigger value="write" className="text-[10px] px-2 py-1 h-6 gap-1">
+                    <TabsTrigger value="write" className="text-[10px] px-2 py-1 h-6 gap-1 data-[state=active]:bg-white/[0.08] data-[state=active]:text-amber-300">
                       <PenLine className="w-3 h-3" /> Edit
                     </TabsTrigger>
                   </TabsList>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <Badge variant="secondary" className="text-[10px] gap-1">
+                    <Badge variant="secondary" className="text-[10px] gap-1 bg-white/[0.04] border border-white/[0.06] text-muted-foreground/70">
                       {wordCountNum.toLocaleString()} words
                     </Badge>
-                    <Badge variant="outline" className="text-[10px] gap-1">
+                    <Badge variant="outline" className="text-[10px] gap-1 bg-white/[0.04] border-white/[0.06] text-muted-foreground/70">
                       <Clock className="w-2.5 h-2.5" /> {readingTime} min
                     </Badge>
                     {!quick && seoScore !== null && (
@@ -1318,7 +1318,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                       setEditableContent(e.target.value);
                       onContentGenerated(e.target.value);
                     }}
-                    className="text-xs min-h-[300px] font-mono resize-none"
+                    className="text-xs min-h-[300px] font-mono resize-none bg-white/[0.04] border-white/[0.06]"
                     placeholder="Edit your content here..."
                   />
                 </TabsContent>
@@ -1335,9 +1335,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               >
                 <div className={cn(
                   "flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold border",
-                  isAnalyzingQuality ? "border-border animate-pulse bg-muted" :
-                  aiQualityResult?.overall.grade === 'A' ? "bg-primary/15 text-primary border-primary/30" :
-                  aiQualityResult?.overall.grade === 'B' ? "bg-primary/10 text-primary border-primary/20" :
+                  isAnalyzingQuality ? "border-white/[0.06] animate-pulse bg-white/[0.04]" :
+                  aiQualityResult?.overall.grade === 'A' ? "bg-emerald-400/15 text-emerald-400 border-emerald-400/30" :
+                  aiQualityResult?.overall.grade === 'B' ? "bg-amber-300/15 text-amber-300 border-amber-300/30" :
                   aiQualityResult?.overall.grade === 'C' ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" :
                   "bg-destructive/15 text-destructive border-destructive/30"
                 )}>
@@ -1363,7 +1363,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                   ].map(dim => (
                     <div key={dim.label} className="flex items-center gap-2 text-[10px]">
                       <span className="text-muted-foreground w-28 flex-shrink-0">{dim.label}</span>
-                      <Progress value={dim.score} className="h-1.5 flex-1" />
+                      <Progress value={dim.score} className="h-1.5 flex-1 bg-white/[0.06]" />
                       <span className="text-foreground font-medium w-7 text-right">{dim.score}</span>
                     </div>
                   ))}
@@ -1375,7 +1375,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           {/* Phase 1B: Compliance Analysis */}
           {!quick && complianceResult && (
             <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5">
+              <CollapsibleTrigger className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-2 px-3 bg-white/[0.04] border border-white/[0.06] rounded-2xl">
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Compliance ({complianceResult.overall.score}/100)
@@ -1395,10 +1395,10 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                         <span className="text-muted-foreground">{dim.label} <span className="opacity-60">({dim.weight})</span></span>
                         <span className={cn(
                           "font-medium",
-                          dim.score >= 70 ? "text-primary" : dim.score >= 40 ? "text-yellow-400" : "text-destructive"
+                          dim.score >= 70 ? "text-emerald-400" : dim.score >= 40 ? "text-yellow-400" : "text-destructive"
                         )}>{dim.score}</span>
                       </div>
-                      <Progress value={dim.score} className="h-1" />
+                      <Progress value={dim.score} className="h-1 bg-white/[0.06]" />
                       {dim.topViolation && (
                         <p className="text-[9px] text-muted-foreground flex items-start gap-1">
                           <AlertTriangle className="w-2.5 h-2.5 text-yellow-400 mt-0.5 flex-shrink-0" />
@@ -1432,7 +1432,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               value={refinementInstruction}
               onChange={(e) => setRefinementInstruction(e.target.value)}
               placeholder="How should this be improved?"
-              className="text-xs h-8 flex-1"
+              className="text-xs h-8 flex-1 bg-white/[0.04] border-white/[0.06]"
               onKeyDown={(e) => e.key === 'Enter' && !isRefining && refineContent()}
             />
             <Button 
@@ -1440,7 +1440,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               size="sm" 
               onClick={refineContent} 
               disabled={isRefining || !refinementInstruction.trim()} 
-              className="text-xs h-8 gap-1 flex-shrink-0"
+              className="text-xs h-8 gap-1 flex-shrink-0 border-white/[0.06] hover:bg-white/[0.04]"
             >
               {isRefining ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
               Refine
@@ -1450,7 +1450,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           {/* SEO Checklist (blog formats only) */}
           {!quick && seoScore !== null && (
             <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5">
+              <CollapsibleTrigger className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-2 px-3 bg-white/[0.04] border border-white/[0.06] rounded-2xl">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   SEO Checklist ({getSeoChecklist(editableContent, wizardState.keyword, wizardState.metaTitle, wizardState.metaDescription).filter(i => i.passed).length}/{getSeoChecklist(editableContent, wizardState.keyword, wizardState.metaTitle, wizardState.metaDescription).length} passed)
@@ -1462,7 +1462,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                   {getSeoChecklist(editableContent, wizardState.keyword, wizardState.metaTitle, wizardState.metaDescription).map((item, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-[10px]">
                       {item.passed ? (
-                        <Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
+                        <Check className="w-3 h-3 text-emerald-400 mt-0.5 flex-shrink-0" />
                       ) : (
                         <X className="w-3 h-3 text-destructive mt-0.5 flex-shrink-0" />
                       )}
@@ -1507,13 +1507,13 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
           {/* Save as Draft + Publish dropdown */}
           <div className="flex gap-2">
-            <Button onClick={() => saveContent('draft')} disabled={isSaving || !wizardState.title.trim()} className="flex-1 gap-2">
+            <Button onClick={() => saveContent('draft')} disabled={isSaving || !wizardState.title.trim()} className="flex-1 gap-2 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save as Draft
             </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="secondary" disabled={isSaving || !wizardState.title.trim()} className="gap-1 text-xs">
+                <Button variant="secondary" disabled={isSaving || !wizardState.title.trim()} className="gap-1 text-xs bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08]">
                   <Send className="w-3 h-3" /> Publish <ChevronDown className="w-3 h-3 ml-0.5" />
                 </Button>
               </PopoverTrigger>
@@ -1564,7 +1564,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               href={publishedUrl} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[10px] text-primary hover:underline"
+              className="flex items-center gap-1.5 text-[10px] text-amber-300 hover:underline"
             >
               <ExternalLink className="w-3 h-3" />
               Published: {publishedUrl}
@@ -1582,7 +1582,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             </p>
           )}
 
-          <Button variant="outline" onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-1 text-xs">
+          <Button variant="outline" onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-1 text-xs border-white/[0.06] hover:bg-white/[0.04]">
             <Sparkles className="w-3 h-3" /> Regenerate
           </Button>
         </>
