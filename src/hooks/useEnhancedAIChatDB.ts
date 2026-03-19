@@ -772,13 +772,11 @@ export const useEnhancedAIChatDB = () => {
       
       // Auto-retry on rate limit
       if (isRateLimit) {
-        const retryId = 'rate-limit-retry-' + assistantId;
         const retryMsg: EnhancedChatMessage = {
           id: assistantId,
           role: 'assistant',
           content: '⏳ Rate limited by AI provider. Automatically retrying in 30 seconds...',
           timestamp: new Date(),
-          status: 'delivered',
           actions: [
             {
               id: 'retry-now-' + assistantId,
@@ -801,7 +799,7 @@ export const useEnhancedAIChatDB = () => {
         // Auto-retry after 30s
         const retryTimer = setTimeout(() => {
           setMessages(prev => prev.filter(m => m.id !== assistantId));
-          sendMessage(content, currentConversation?.id);
+          sendMessage(content, activeConversation || undefined);
         }, 30000);
         
         // Store timer for cleanup

@@ -112,6 +112,7 @@ export interface AnalystState {
   strategicRecommendation: StrategicRecommendation | null;
   userStage: UserStage | null;
   benchmarks: StageBenchmarks | null;
+  triggerRefresh: () => void;
 }
 
 // ─── Topic Detection ────────────────────────────────────────────────────────
