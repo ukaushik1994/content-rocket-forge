@@ -633,90 +633,90 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
 
-                    {/* AI Proactive Recommendations (Sprint 3) */}
-                    {aiRecommendations.length > 0 && (
-                      <motion.div
-                        className="flex flex-col gap-2 w-full max-w-lg"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                      >
-                        <span className="text-xs text-muted-foreground text-center">Recommended for you</span>
-                        {aiRecommendations.map((rec) => (
-                          <button
-                            key={rec.id}
-                            onClick={() => {
-                              sendMessage(rec.action);
-                              // Mark as acted_on (non-blocking)
-                              (supabase as any).from('proactive_recommendations')
-                                .update({ acted_on: true })
-                                .eq('id', rec.id).then(() => {});
-                              setAiRecommendations(prev => prev.filter(r => r.id !== rec.id));
-                            }}
-                            className="text-left px-4 py-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors group"
-                          >
-                            <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{rec.title}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.description}</p>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-
-                    {/* Proactive Insights */}
-                    {proactiveInsights.length > 0 && (
-                      <motion.div 
-                        className="flex flex-wrap gap-2 justify-center max-w-md"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                      >
-                        {proactiveInsights.map((insight) => (
-                          <button
-                            key={insight.type}
-                            onClick={() => {
-                              const prompts: Record<string, string> = {
-                                stale: 'Show me my stale drafts that need attention',
-                                failed: 'What content generation tasks failed?',
-                                empty_cal: 'Help me plan content for this week',
-                                approvals: 'Show me content pending my review'
-                              };
-                              sendMessage(prompts[insight.type] || '');
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors"
-                          >
-                            {insight.icon}
-                            {insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-
-                    {/* Workflow Templates */}
-                    {workflowTemplates.length > 0 && (
-                      <motion.div
-                        className="flex flex-col items-center gap-2"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6 }}
-                      >
-                        <span className="text-xs text-muted-foreground">Your workflows</span>
-                        <div className="flex flex-wrap gap-2 justify-center max-w-lg">
-                          {workflowTemplates.map((tpl, i) => (
+                    {/* 3-Column Content Grid */}
+                    <motion.div
+                      className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full max-w-5xl"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35, duration: 0.5 }}
+                    >
+                      {/* Column 1: Recommended for you */}
+                      <div className="flex flex-col gap-2.5 p-4 rounded-xl border border-border/15 bg-card/20">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Recommended</span>
+                        {aiRecommendations.length > 0 ? (
+                          aiRecommendations.map((rec) => (
                             <button
-                              key={i}
-                              onClick={() => sendMessage(tpl)}
-                              className="px-3 py-1.5 rounded-full text-xs bg-muted/50 hover:bg-muted border border-border/30 hover:border-border/60 transition-colors text-foreground/80"
+                              key={rec.id}
+                              onClick={() => {
+                                sendMessage(rec.action);
+                                (supabase as any).from('proactive_recommendations')
+                                  .update({ acted_on: true })
+                                  .eq('id', rec.id).then(() => {});
+                                setAiRecommendations(prev => prev.filter(r => r.id !== rec.id));
+                              }}
+                              className="text-left px-3 py-2.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors group"
                             >
-                              {tpl}
+                              <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{rec.title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.description}</p>
                             </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
+                          ))
+                        ) : (
+                          <p className="text-xs text-muted-foreground/60 italic">No recommendations yet</p>
+                        )}
+                      </div>
 
+                      {/* Column 2: Insights & Workflows */}
+                      <div className="flex flex-col gap-3 p-4 rounded-xl border border-border/15 bg-card/20">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Insights & Workflows</span>
+                        {proactiveInsights.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {proactiveInsights.map((insight) => (
+                              <button
+                                key={insight.type}
+                                onClick={() => {
+                                  const prompts: Record<string, string> = {
+                                    stale: 'Show me my stale drafts that need attention',
+                                    failed: 'What content generation tasks failed?',
+                                    empty_cal: 'Help me plan content for this week',
+                                    approvals: 'Show me content pending my review'
+                                  };
+                                  sendMessage(prompts[insight.type] || '');
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors"
+                              >
+                                {insight.icon}
+                                {insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {workflowTemplates.length > 0 && (
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-xs text-muted-foreground/70">Your workflows</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {workflowTemplates.map((tpl, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => sendMessage(tpl)}
+                                  className="px-2.5 py-1.5 rounded-full text-xs bg-muted/50 hover:bg-muted border border-border/30 hover:border-border/60 transition-colors text-foreground/80"
+                                >
+                                  {tpl}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {proactiveInsights.length === 0 && workflowTemplates.length === 0 && (
+                          <p className="text-xs text-muted-foreground/60 italic">No insights available</p>
+                        )}
+                      </div>
 
-                    {/* Pill suggestions */}
-                    <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
+                      {/* Column 3: Quick Actions */}
+                      <div className="flex flex-col gap-2.5 p-4 rounded-xl border border-border/15 bg-card/20">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Quick Actions</span>
+                        <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
+                      </div>
+                    </motion.div>
                   </motion.div>}
               </AnimatePresence>
 
