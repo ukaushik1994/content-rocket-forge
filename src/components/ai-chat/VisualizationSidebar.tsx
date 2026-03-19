@@ -1028,7 +1028,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                     <ChevronRight className="w-3 h-3 text-muted-foreground/40" />
                                   </div>
                                 </div>
-                              </Card>
+                              </div>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                               <div className="mt-1.5 ml-4 space-y-1.5">
