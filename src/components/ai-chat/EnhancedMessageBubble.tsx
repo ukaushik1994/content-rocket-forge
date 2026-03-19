@@ -36,6 +36,8 @@ interface EnhancedMessageBubbleProps {
   onConfirmAction?: (confirmationMsgId: string) => void;
   onCancelAction?: (confirmationMsgId: string) => void;
   onSetVisualization?: (visualData: any) => void;
+  onFeedback?: (messageId: string, helpful: boolean) => void;
+  onPinMessage?: (messageId: string) => void;
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
