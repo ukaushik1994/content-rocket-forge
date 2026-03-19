@@ -3525,7 +3525,7 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
         }
         
         try {
-          const toolData = await executeToolCall(toolName, toolArgs, supabase, user.id, toolCache);
+          const toolData = await executeToolCall(toolName, toolArgs, supabase, user.id, toolCache, conversationId);
           const toolDuration = Date.now() - toolStart;
           
           console.log(`[TOOL] ${toolName} | SUCCESS | time: ${toolDuration}ms | results: ${Array.isArray(toolData) ? toolData.length : 'N/A'} items`);
