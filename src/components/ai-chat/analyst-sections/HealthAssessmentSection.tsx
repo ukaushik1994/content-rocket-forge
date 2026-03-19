@@ -63,9 +63,9 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
 
       {health.total < 50 && (
         <NarrativePromptCard
-          question="Your health score suggests significant gaps. Want me to create a recovery plan?"
-          primaryLabel="Build Recovery Plan"
-          primaryAction="Create a step-by-step plan to improve my workspace health score"
+          question={`Your health score is ${health.total}/100${health.topCritical ? ` — "${health.topCritical}" is the most critical factor` : ''}. Want me to create a recovery plan?`}
+          primaryLabel={health.topCritical ? `Fix ${health.topCritical}` : 'Build Recovery Plan'}
+          primaryAction={health.topCritical ? `Create a step-by-step plan to fix my ${health.topCritical.toLowerCase()} and improve my health score from ${health.total}` : 'Create a step-by-step plan to improve my workspace health score'}
           secondaryLabel="Show Details"
           secondaryAction="Break down each health factor and explain what's wrong"
           onSendMessage={onSendMessage}

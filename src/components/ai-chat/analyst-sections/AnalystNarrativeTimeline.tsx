@@ -78,8 +78,10 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
 
   return (
     <div className="space-y-12">
-      {/* 10. Previous Session — placeholder, shows when session context exists */}
-      {/* Future: check for persisted session context */}
+      {/* 10. Previous Session — shows when memory insights exist */}
+      {analystState && analystState.insightsFeed.some(i => i.source === 'memory') && (
+        <PreviousSessionSection onSendMessage={onSendMessage} />
+      )}
 
       {/* 01. Health Assessment */}
       {analystState && <HealthAssessmentSection analystState={analystState} onSendMessage={onSendMessage} />}

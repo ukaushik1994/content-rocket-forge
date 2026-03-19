@@ -497,7 +497,8 @@ export function useAnalystEngine(
   messages: EnhancedChatMessage[],
   userId: string | null,
   isActive: boolean,
-  conversationGoal?: string | null
+  conversationGoal?: string | null,
+  activeConversationId?: string | null
 ): AnalystState {
   const [platformData, setPlatformData] = useState<PlatformDataPoint[]>([]);
   const [isEnriching, setIsEnriching] = useState(false);
@@ -510,6 +511,29 @@ export function useAnalystEngine(
   // Enhancement D: Session memory state
   const [previousSessionInsights, setPreviousSessionInsights] = useState<InsightItem[]>([]);
   const prevActiveRef = useRef(false);
+
+  // Anomaly state (declared early so reset effect can reference it)
+  const [anomalyInsights, setAnomalyInsights] = useState<InsightItem[]>([]);
+
+  // Refs for fetch tracking (declared early so reset effect can reference them)
+  const hasInitialFetchedRef = useRef(false);
+  const prevMessageCountRef = useRef(0);
+
+  // ─── Reset state when conversation changes ──────────────────────────────
+  const prevConversationIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (activeConversationId && activeConversationId !== prevConversationIdRef.current) {
+      prevConversationIdRef.current = activeConversationId;
+      setCrossSignalInsights([]);
+      setPreviousSessionInsights([]);
+      setPlatformData([]);
+      setAnomalyInsights([]);
+      lastFetchedTopicsRef.current = '';
+      processedMessageIdsRef.current = new Set();
+      hasInitialFetchedRef.current = false;
+      prevMessageCountRef.current = 0;
+    }
+  }, [activeConversationId]);
 
   // ─── Cumulative topic extraction ────────────────────────────────────────
   const topics = useMemo(() => {
@@ -810,6 +834,32 @@ export function useAnalystEngine(
         })());
       }
 
+      if (coveredCategories.has('content') || coveredCategories.has('analytics')) {
+        // Avg SEO Score
+        fetches.push((async () => {
+          const { data: seoArticles } = await supabase
+            .from('content_items')
+            .select('seo_score')
+            .eq('user_id', userId)
+            .eq('status', 'published')
+            .not('seo_score', 'is', null)
+            .limit(50);
+          if (seoArticles && seoArticles.length > 0) {
+            const avg = Math.round(seoArticles.reduce((sum, a) => sum + (a.seo_score as number), 0) / seoArticles.length);
+            newData.push({ label: 'Avg SEO Score', value: avg, category: 'content', fetchedAt: now });
+          }
+        })());
+        // Drafts count
+        fetches.push((async () => {
+          const { count } = await supabase
+            .from('content_items')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('status', 'draft');
+          if (count !== null) newData.push({ label: 'Drafts', value: count, category: 'content', fetchedAt: now });
+        })());
+      }
+
       if (coveredCategories.has('campaigns')) {
         fetches.push((async () => {
           const { count } = await supabase
@@ -817,6 +867,15 @@ export function useAnalystEngine(
             .select('id', { count: 'exact', head: true })
             .eq('user_id', userId);
           if (count !== null) newData.push({ label: 'Active Campaigns', value: count, category: 'campaigns', fetchedAt: now });
+        })());
+        // Queue failed/pending
+        fetches.push((async () => {
+          const { count: failedCount } = await supabase
+            .from('content_generation_queue')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('status', 'failed');
+          if (failedCount !== null && failedCount > 0) newData.push({ label: 'Queue Failed', value: failedCount, category: 'campaigns', fetchedAt: now });
         })());
       }
 
@@ -840,6 +899,25 @@ export function useAnalystEngine(
         })());
       }
 
+      if (coveredCategories.has('email') || coveredCategories.has('engage')) {
+        fetches.push((async () => {
+          try {
+            const { count } = await supabase
+              .from('engage_contacts' as any)
+              .select('id', { count: 'exact', head: true });
+            if (count !== null) newData.push({ label: 'Contacts', value: count, category: 'engage', fetchedAt: now });
+          } catch { /* table may not exist */ }
+        })());
+        fetches.push((async () => {
+          try {
+            const { count } = await supabase
+              .from('email_campaigns' as any)
+              .select('id', { count: 'exact', head: true });
+            if (count !== null) newData.push({ label: 'Email Campaigns', value: count, category: 'email', fetchedAt: now });
+          } catch { /* table may not exist */ }
+        })());
+      }
+
       await Promise.all(fetches);
       if (newData.length > 0) {
         setPlatformData(prev => {
@@ -856,8 +934,6 @@ export function useAnalystEngine(
   }, [userId, isActive, topics]);
 
   // Auto-fetch ALL platform data on activation
-  const hasInitialFetchedRef = useRef(false);
-  const prevMessageCountRef = useRef(0);
   useEffect(() => {
     if (isActive && !hasInitialFetchedRef.current) {
       hasInitialFetchedRef.current = true;
@@ -881,7 +957,6 @@ export function useAnalystEngine(
   }, [messages.length, isActive, fetchPlatformData]);
 
   // ─── Proactive anomaly detection ────────────────────────────────────────
-  const [anomalyInsights, setAnomalyInsights] = useState<InsightItem[]>([]);
   useEffect(() => {
     if (!isActive || !userId || platformData.length === 0) return;
 

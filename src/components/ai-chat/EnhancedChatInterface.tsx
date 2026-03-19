@@ -71,7 +71,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setAnalystActive,
     progressText,
     handleFeedback,
-    handlePinMessage
+    handlePinMessage,
+    justCreatedConversation
   } = useSharedAIChatDB();
   const { user } = useAuth();
 
@@ -172,9 +173,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     
   }, [user, messages.length]);
 
-  // Analyst engine: always-on — lightweight memo scanning of messages
+  // Analyst engine: per-conversation — isActive is deferred to after sidebar state declared
   const activeConvObj = conversations.find(c => c.id === activeConversation);
-  const analystState = useAnalystEngine(messages, user?.id || null, true, activeConvObj?.title || null);
 
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
@@ -242,6 +242,37 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Phase 1 Fix: Loading state for conversation transitions
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
 
+  // ─── Per-Conversation Analyst State Persistence ─────────────────────────
+  const ANALYST_STATE_KEY = 'analyst_sidebar_state';
+  const MAX_STORED_STATES = 30;
+
+  const saveAnalystOpenState = useCallback((convId: string, isOpen: boolean) => {
+    try {
+      const raw = localStorage.getItem(ANALYST_STATE_KEY);
+      const states: Record<string, boolean> = raw ? JSON.parse(raw) : {};
+      states[convId] = isOpen;
+      // Cap at MAX entries
+      const keys = Object.keys(states);
+      if (keys.length > MAX_STORED_STATES) {
+        for (const k of keys.slice(0, keys.length - MAX_STORED_STATES)) delete states[k];
+      }
+      localStorage.setItem(ANALYST_STATE_KEY, JSON.stringify(states));
+    } catch { /* quota */ }
+  }, []);
+
+  const getAnalystOpenState = useCallback((convId: string): boolean | null => {
+    try {
+      const raw = localStorage.getItem(ANALYST_STATE_KEY);
+      if (!raw) return null;
+      const states: Record<string, boolean> = JSON.parse(raw);
+      return states[convId] ?? null;
+    } catch { return null; }
+  }, []);
+
+  // Analyst engine: per-conversation, uses sidebar visibility
+  const isAnalystVisible = showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst';
+  const analystState = useAnalystEngine(messages, user?.id || null, isAnalystVisible || messages.length > 0, activeConvObj?.title || null, activeConversation);
+
   // Handle manual expand visualization (kept for backwards compatibility)
   const handleExpandVisualization = (visualData: any, chartConfig: ChartConfiguration) => {
     setVisualizationData({
@@ -302,8 +333,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     const wasEmpty = prevMessageCountRef.current === 0;
     prevMessageCountRef.current = messages.length;
 
-    // Auto-open analyst panel on first message (0 → 1+)
-    if (wasEmpty && messages.length > 0) {
+    // Auto-open analyst panel on first message ONLY for brand-new conversations
+    if (wasEmpty && messages.length > 0 && justCreatedConversation.current) {
+      justCreatedConversation.current = false;
       setVisualizationData({
         visualData: { type: 'analyst' },
         chartConfig: null,
@@ -313,6 +345,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       setShowVisualizationSidebar(true);
       setSidebarInteracted(true);
       setAnalystActive(true);
+      // Save open state for this conversation
+      if (activeConversation) saveAnalystOpenState(activeConversation, true);
       return;
     }
 
@@ -348,17 +382,38 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
   }, [messages, sidebarInteracted, userClosedSidebar]);
 
-  // Phase 1 Fix: Reset ALL sidebar state when switching conversations
+  // Phase 1 Fix: Reset sidebar state when switching conversations — restore from localStorage
   useEffect(() => {
     setUserClosedSidebar(false);
-    setShowVisualizationSidebar(false);
     setSidebarInteracted(false);
-    setVisualizationData(null);
     prevMessageCountRef.current = 0;
     setIsLoadingConversation(true);
+
+    if (activeConversation) {
+      const savedState = getAnalystOpenState(activeConversation);
+      if (savedState === true) {
+        // Restore analyst sidebar for this conversation
+        setVisualizationData({
+          visualData: { type: 'analyst' },
+          chartConfig: null,
+          title: 'Intelligence Panel',
+          description: 'Charts & insights companion'
+        });
+        setShowVisualizationSidebar(true);
+        setSidebarInteracted(true);
+        setAnalystActive(true);
+      } else {
+        setShowVisualizationSidebar(false);
+        setVisualizationData(null);
+      }
+    } else {
+      setShowVisualizationSidebar(false);
+      setVisualizationData(null);
+    }
+
     const timeout = setTimeout(() => setIsLoadingConversation(false), 300);
     return () => clearTimeout(timeout);
-  }, [activeConversation]);
+  }, [activeConversation, getAnalystOpenState, setAnalystActive]);
 
   // Track user interaction with sidebar (for smart persistence)
   const handleSidebarInteraction = () => {
@@ -371,13 +426,15 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setSidebarInteracted(false);
     setUserClosedSidebar(true);
     setAnalystActive(false);
+    if (activeConversation) saveAnalystOpenState(activeConversation, false);
   };
 
   // Handle manual open (resets close intent)
   const handleOpenSidebar = () => {
     setShowVisualizationSidebar(true);
     setSidebarInteracted(true);
-    setUserClosedSidebar(false); // User manually reopened, reset close intent
+    setUserClosedSidebar(false);
+    if (activeConversation) saveAnalystOpenState(activeConversation, true);
   };
 
   // Issue #1 Fix: Enhanced scroll using double-RAF to ensure DOM is fully rendered

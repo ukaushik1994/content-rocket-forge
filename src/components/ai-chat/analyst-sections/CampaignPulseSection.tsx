@@ -13,11 +13,20 @@ export const CampaignPulseSection: React.FC<Props> = ({ platformData, onSendMess
   const campaignMetrics = platformData.filter(d => d.category === 'campaigns');
   if (campaignMetrics.length === 0) return null;
 
+  const campaignCount = platformData.find(d => d.label === 'Active Campaigns')?.value || 0;
+  const queueFailed = platformData.find(d => d.label === 'Queue Failed')?.value || 0;
+
+  const getHeadline = () => {
+    if (campaignCount === 0) return <>Campaigns are <span className="text-muted-foreground/60">idle</span></>;
+    if (queueFailed > 0) return <><span className="text-rose-300">{queueFailed} failure{queueFailed > 1 ? 's' : ''}</span> in queue</>;
+    return <>Campaigns are <span className="text-emerald-400/80">operational</span></>;
+  };
+
   return (
     <AnalystSectionWrapper
       number="06"
       label="Campaign Pulse"
-      headline={<>Campaigns are <span className="text-emerald-400/80">in motion</span></>}
+      headline={getHeadline()}
       delay={0.22}
     >
       <div className="grid grid-cols-2 gap-3">
@@ -30,12 +39,23 @@ export const CampaignPulseSection: React.FC<Props> = ({ platformData, onSendMess
           />
         ))}
       </div>
-      <NarrativePromptCard
-        question="Want a full campaign health report?"
-        primaryLabel="Full Report"
-        primaryAction="Give me a comprehensive campaign health overview with metrics and recommendations"
-        onSendMessage={onSendMessage}
-      />
+      {queueFailed > 0 ? (
+        <NarrativePromptCard
+          question={`${queueFailed} item${queueFailed > 1 ? 's' : ''} failed in the generation queue. Want to retry or investigate?`}
+          primaryLabel="Retry Failed Items"
+          primaryAction={`Retry the ${queueFailed} failed items in my content generation queue`}
+          secondaryLabel="Show Details"
+          secondaryAction="Show me details about the failed queue items and why they failed"
+          onSendMessage={onSendMessage}
+        />
+      ) : (
+        <NarrativePromptCard
+          question="Want a full campaign health report?"
+          primaryLabel="Full Report"
+          primaryAction="Give me a comprehensive campaign health overview with metrics and recommendations"
+          onSendMessage={onSendMessage}
+        />
+      )}
     </AnalystSectionWrapper>
   );
 };

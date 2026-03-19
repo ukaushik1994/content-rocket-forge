@@ -27,9 +27,14 @@ export const NarrativePromptCard: React.FC<NarrativePromptCardProps> = ({
         >
           {primaryLabel}
         </button>
-        {secondaryLabel && secondaryAction && (
+        {secondaryLabel && (
           <button
-            onClick={() => onSendMessage(secondaryAction)}
+            onClick={() => {
+              if (secondaryAction && secondaryAction.trim()) {
+                onSendMessage(secondaryAction);
+              }
+              // Empty/whitespace secondaryAction = dismiss (no-op)
+            }}
             className="w-full px-4 py-2.5 rounded-full text-xs font-medium border border-white/15 text-foreground/60 hover:text-foreground hover:border-white/25 transition-colors"
           >
             {secondaryLabel}

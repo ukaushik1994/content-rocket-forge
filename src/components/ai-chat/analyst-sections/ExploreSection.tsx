@@ -31,6 +31,15 @@ export const ExploreSection: React.FC<Props> = ({ analystState, deepDivePrompts,
     for (const action of analystState.suggestedActions.slice(0, 2)) {
       prompts.push({ label: action.title, action: action.action || action.title });
     }
+
+    // Cross-signal warning prompts
+    const crossWarnings = analystState.crossSignalInsights.filter(i => i.type === 'warning');
+    for (const warning of crossWarnings.slice(0, 2)) {
+      const shortLabel = warning.content.replace(/^[^\w]*/, '').substring(0, 50);
+      if (!prompts.some(p => p.label.includes(shortLabel.substring(0, 20)))) {
+        prompts.push({ label: `Investigate: ${shortLabel}`, action: `Tell me more about: ${warning.content}` });
+      }
+    }
   }
 
   const finalPrompts = prompts.length > 0 ? prompts.slice(0, 6) : defaultPrompts.map(p => ({ label: p, action: p }));
