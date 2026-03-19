@@ -694,8 +694,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                        </div>
-                      ))}
+                          </React.Fragment>
+                        );
+                      })}
                       </div>
                       
                       {/* Load More */}
