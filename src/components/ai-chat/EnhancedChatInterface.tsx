@@ -154,6 +154,21 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
     fetchInsights();
     fetchTemplates();
+
+    // Sprint 3: Fetch AI-generated proactive recommendations
+    const fetchAiRecs = async () => {
+      try {
+        const { data } = await supabase.from('proactive_recommendations')
+          .select('id, type, title, description, action, priority')
+          .eq('user_id', user.id)
+          .eq('dismissed', false)
+          .eq('acted_on', false)
+          .order('priority', { ascending: true })
+          .limit(3);
+        if (data?.length) setAiRecommendations(data);
+      } catch (_) { /* non-blocking */ }
+    };
+    fetchAiRecs();
     
   }, [user, messages.length]);
 
