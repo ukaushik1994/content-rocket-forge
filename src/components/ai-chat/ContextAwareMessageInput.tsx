@@ -64,13 +64,18 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     insights: string[];
     extractedText?: string;
   }) => {
-    // Include truncated extracted text as context so AI can answer follow-up questions
-    const contextBlock = analysis.extractedText
-      ? `\n\n[Document content for context]:\n${analysis.extractedText}`
+    // Truncate summary and extracted text to prevent oversized messages
+    const truncatedSummary = (analysis.summary || '').substring(0, 4000);
+    const truncatedText = analysis.extractedText
+      ? analysis.extractedText.substring(0, 8000)
       : '';
-    const fileMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${analysis.summary}\n\nKey insights:\n${analysis.insights.map(i => `- ${i}`).join('\n')}${contextBlock}`;
+    const contextBlock = truncatedText
+      ? `\n\n[Document content for context]:\n${truncatedText}`
+      : '';
+    const truncatedInsights = analysis.insights.slice(0, 20).map(i => `- ${i}`).join('\n');
+    const fileMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${truncatedSummary}\n\nKey insights:\n${truncatedInsights}${contextBlock}`;
     // Show a cleaner display version without the raw text dump
-    const displayMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${analysis.summary}\n\nKey insights:\n${analysis.insights.map(i => `- ${i}`).join('\n')}`;
+    const displayMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${truncatedSummary}\n\nKey insights:\n${truncatedInsights}`;
     onSendMessage(fileMessage, displayMessage);
     setShowFileUpload(false);
   }, [onSendMessage]);
