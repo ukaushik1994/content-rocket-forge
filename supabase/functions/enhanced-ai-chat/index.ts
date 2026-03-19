@@ -4130,6 +4130,24 @@ Never try to do everything in one response. Quality over speed.`;
       }
     };
 
+    // 5% chance: non-blocking rebuild of user intelligence profile
+    if (Math.random() < 0.05) {
+      console.log('🧠 Triggering 5% profile rebuild...');
+      try {
+        const rebuildUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/aggregate-user-intelligence`;
+        fetch(rebuildUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+          },
+          body: JSON.stringify({ user_id: userId })
+        }).catch(e => console.error('Profile rebuild fire-and-forget error:', e));
+      } catch (e) {
+        console.error('Profile rebuild trigger error (non-critical):', e);
+      }
+    }
+
     return { data: responseData, status: 200 };
 
     }; // end doProcessing
