@@ -29,6 +29,7 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
   onDelete
 }) => {
   const { isPredicting, prediction, predictPerformance } = useContentPerformancePrediction();
+  const navigate = useNavigate();
 
   if (!item) {
     return (
