@@ -2444,8 +2444,8 @@ serve(async (req) => {
         systemPrompt += webSearchContext;
       }
     } else {
-      // NORMAL: Full prompt with all modules
-      console.log('✅ Normal token usage (<25k) - using full dynamic prompt');
+      // NORMAL: Full prompt with intent-gated modules (Phase 4: Prompt Efficiency)
+      console.log('✅ Normal token usage (<25k) - using intent-gated dynamic prompt');
       
       // START WITH TOOL USAGE MODULE (most critical for tool-based architecture)
       systemPrompt = BASE_PROMPT;
@@ -2466,26 +2466,48 @@ serve(async (req) => {
       systemPrompt += '\n\n' + toolUsageWithCounts;
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       
+      // === INTENT-GATED MODULE LOADING (PE Fix 1) ===
+      const categories = queryIntent.categories || [];
+      const queryLower = userQuery.toLowerCase();
+      
+      // Chart modules: only for data-heavy categories
+      const needsCharts = categories.some((c: string) => ['content', 'keywords', 'campaigns', 'analytics', 'performance', 'competitors'].includes(c)) ||
+        /chart|graph|trend|analyz|metric|dashboard|report|compare/i.test(queryLower);
+      
+      // Table module: only when explicitly requested
+      const needsTable = /table|spreadsheet|list all|export|raw data|csv|show me all/i.test(queryLower);
+      
+      // Action module: for non-summary queries involving action-oriented categories
+      const needsActions = queryIntent.scope !== 'summary' && (
+        categories.some((c: string) => ['campaigns', 'engage', 'content', 'calendar', 'approvals'].includes(c)) ||
+        /create|generate|write|schedule|send|update|delete|remove|submit|approve/i.test(queryLower)
+      );
+      
+      // Platform knowledge: only for navigation/general queries
+      const needsPlatformKnowledge = categories.some((c: string) => ['navigation', 'general', 'help'].includes(c)) ||
+        /where|how do i|find|navigate|what is|help|tutorial|guide me/i.test(queryLower);
+      
       // PHASE 3: Check if multi-chart mode should be activated
       const needsMultiChart = shouldGenerateMultipleCharts(userQuery);
       
       if (needsMultiChart) {
         console.log('📊📊📊 MULTI-CHART MODE ACTIVATED - Enhanced analysis with multiple perspectives');
-        systemPrompt += '\n\n' + MULTI_CHART_MODULE; // Use multi-chart module instead of regular CHART_MODULE
-        systemPrompt += '\n\n' + TABLE_MODULE;
-        systemPrompt += '\n\n' + ACTION_MODULE;
+        systemPrompt += '\n\n' + MULTI_CHART_MODULE;
+        if (needsTable) systemPrompt += '\n\n' + TABLE_MODULE;
+        if (needsActions) systemPrompt += '\n\n' + ACTION_MODULE;
       } else {
-        const shouldPrioritizeVisualPrompt =
-          queryIntent.scope === 'detailed' ||
-          queryIntent.scope === 'full' ||
-          isVisualPromptRequired === true;
+        if (needsCharts) {
+          const shouldPrioritizeVisualPrompt =
+            queryIntent.scope === 'detailed' ||
+            queryIntent.scope === 'full' ||
+            isVisualPromptRequired === true;
 
-        if (shouldPrioritizeVisualPrompt) {
-          console.log('📊 Using standard chart analysis prompt');
+          if (shouldPrioritizeVisualPrompt) {
+            console.log('📊 Using standard chart analysis prompt');
+          }
+          systemPrompt += '\n\n' + CHART_MODULE;
         }
-
-        systemPrompt += '\n\n' + CHART_MODULE;
-        systemPrompt += '\n\n' + TABLE_MODULE;
+        if (needsTable) systemPrompt += '\n\n' + TABLE_MODULE;
       }
       
       // Add SERP module if SERP data present
@@ -2498,13 +2520,17 @@ serve(async (req) => {
         systemPrompt += webSearchContext;
       }
       
-      // Add action module for complex queries
-      if (queryIntent.scope !== 'summary') {
+      // Add action module for actionable queries
+      if (needsActions) {
         systemPrompt += '\n\n' + ACTION_MODULE;
       }
       
-      // Add platform knowledge for comprehensive understanding
-      systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
+      // Add platform knowledge only when relevant (PE Fix 3)
+      if (needsPlatformKnowledge) {
+        systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
+      }
+      
+      console.log(`🎯 Intent-gated modules: charts=${needsCharts}, table=${needsTable}, actions=${needsActions}, platform=${needsPlatformKnowledge}, multiChart=${needsMultiChart}`);
     }
 
     // Inject Analyst context if active (user has Analyst panel open)
