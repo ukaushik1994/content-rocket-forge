@@ -69,7 +69,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     handleConfirmAction,
     handleCancelAction,
     setAnalystActive,
-    progressText
+    progressText,
+    handleFeedback,
+    handlePinMessage
   } = useSharedAIChatDB();
   const { user } = useAuth();
 
