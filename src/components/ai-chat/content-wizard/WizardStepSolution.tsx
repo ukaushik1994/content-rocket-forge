@@ -134,7 +134,7 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
                         )}
                       </Avatar>
                       {selectedSolution?.id === solution.id && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 bg-primary rounded-full flex items-center justify-center border-2 border-background">
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 bg-amber-300/80 rounded-full flex items-center justify-center border-2 border-background">
                           <Check className="h-2.5 w-2.5 text-primary-foreground" />
                         </motion.div>
                       )}
