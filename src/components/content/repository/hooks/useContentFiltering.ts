@@ -84,7 +84,7 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
     // Apply sorting (SB-2: force SEO score sort for ready_to_publish)
     const effectiveSortBy = filterStatus === 'ready_to_publish' ? 'score' : sortBy;
     filtered.sort((a, b) => {
-      if (sortBy === 'date') {
+      if (effectiveSortBy === 'date') {
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       } else if (sortBy === 'title') {
         return a.title.localeCompare(b.title);
