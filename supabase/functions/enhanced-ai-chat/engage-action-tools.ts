@@ -790,7 +790,7 @@ export async function executeEngageActionTool(
       }
 
       case 'delete_email_campaign': {
-        const { error } = await supabase.from('engage_email_campaigns')
+        const { error } = await supabase.from('email_campaigns')
           .delete()
           .eq('id', toolArgs.campaign_id)
           .eq('workspace_id', workspaceId);
