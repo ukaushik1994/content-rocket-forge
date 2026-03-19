@@ -279,7 +279,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
   }, [pendingPanel, setPendingPanel]);
 
-  // AUTO-OPEN sidebar when AI response contains visual data
+  // AUTO-OPEN sidebar when AI response contains visual data OR first message sent
   // Respects user's explicit close intent (Issue #4 fix)
   useEffect(() => {
     // If user explicitly closed sidebar, don't auto-open
@@ -298,9 +298,23 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
 
     // Phase 1 Fix: Only auto-open when a genuinely NEW message arrives
-    // (not when loading conversation history)
-    const isNewMessage = messages.length > prevMessageCountRef.current && prevMessageCountRef.current > 0;
+    const isNewMessage = messages.length > prevMessageCountRef.current;
+    const wasEmpty = prevMessageCountRef.current === 0;
     prevMessageCountRef.current = messages.length;
+
+    // Auto-open analyst panel on first message (0 → 1+)
+    if (wasEmpty && messages.length > 0) {
+      setVisualizationData({
+        visualData: { type: 'analyst' },
+        chartConfig: null,
+        title: 'Intelligence Panel',
+        description: 'Charts & insights companion'
+      });
+      setShowVisualizationSidebar(true);
+      setSidebarInteracted(true);
+      setAnalystActive(true);
+      return;
+    }
 
     if (!isNewMessage) {
       // Loading history - don't auto-open unless user interacted
@@ -330,7 +344,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       });
       setShowVisualizationSidebar(true);
     } else if (!sidebarInteracted) {
-      setShowVisualizationSidebar(false);
+      // Keep sidebar open with analyst view if already showing
     }
   }, [messages, sidebarInteracted, userClosedSidebar]);
 
