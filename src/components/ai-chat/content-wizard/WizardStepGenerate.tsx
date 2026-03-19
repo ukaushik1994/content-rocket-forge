@@ -999,6 +999,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       setSaved(true);
       setSavedId(contentId);
       setSavedStatus(status);
+      // Clear localStorage backup after successful save
+      try { localStorage.removeItem(WIZARD_BACKUP_KEY); } catch { /* ignore */ }
       toast.success(`${status === 'published' ? 'Published' : 'Saved'} "${sanitizedTitle}" successfully!`);
     } catch (err) {
       console.error('Save failed:', err);
