@@ -336,7 +336,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             />
           )}
 
-          {/* Inline visualization for tool results (charts, metrics, dashboards) */}
+          {/* View data chip — opens sidebar instead of inline chart duplication */}
           {!isUser && message.visualData && message.visualData.type !== 'serp_analysis' && message.visualData.type !== 'content_creation_choice' && (
             <motion.div 
               className="mt-3"
@@ -344,20 +344,21 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.3 }}
             >
-              <VisualDataRenderer 
-                data={message.visualData} 
-                onAction={(action, data) => {
-                  if (action.startsWith('navigate:')) {
-                    navigate(action.replace('navigate:', ''));
-                  } else if (action.startsWith('send:')) {
-                    onSendMessage?.(action.replace('send:', ''));
-                  } else {
-                    // Convert visual data actions to chat messages instead of unknown action errors
-                    onSendMessage?.(`Tell me more about: ${action}`);
-                  }
+              <button
+                onClick={() => {
+                  const chartCfg = message.visualData?.chartConfig || null;
+                  onExpandVisualization?.(message.visualData!, chartCfg);
                 }}
-                onExpandVisualization={onExpandVisualization}
-              />
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border/30 bg-muted/20 text-muted-foreground hover:text-foreground hover:border-border/50 hover:bg-muted/40 transition-all duration-200 text-xs font-medium"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                View data
+                {message.visualData?.chartConfig?.data?.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground/60">
+                    · {message.visualData.chartConfig.data.length} pts
+                  </span>
+                )}
+              </button>
             </motion.div>
           )}
 
