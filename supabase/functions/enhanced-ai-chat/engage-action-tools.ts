@@ -564,7 +564,7 @@ export async function executeEngageActionTool(
         }).select('id, name, status, trigger_type, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created journey "${data.name}" (draft)`, item: data };
+        return { success: true, message: `Created journey "${data.name}" (draft)${workspaceNotice}`, item: data };
       }
 
       case 'activate_journey': {
