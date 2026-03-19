@@ -321,7 +321,8 @@ export async function executeContentActionTool(
           await saveAutoSeoScore(supabase, userId, data.id, seoScore, toolArgs.main_keyword || '');
         }
 
-        return { success: true, message: `Created "${data.title}" as ${data.status} (SEO: ${seoScore}/100)`, item: { ...data, seo_score: seoScore } };
+        const seoContext = seoScore < 40 ? ' (basic check — full SEO analysis available in the Content Wizard)' : '';
+        return { success: true, message: `Created "${data.title}" as ${data.status} (SEO: ${seoScore}/100${seoContext})`, item: { ...data, seo_score: seoScore } };
       }
 
       case 'update_content_item': {
