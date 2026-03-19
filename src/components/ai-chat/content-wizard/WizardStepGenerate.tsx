@@ -251,6 +251,43 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   // Abort controller for generation cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // localStorage backup key
+  const WIZARD_BACKUP_KEY = 'wizard_content_backup';
+
+  // Recover from localStorage on mount
+  useEffect(() => {
+    try {
+      const backup = localStorage.getItem(WIZARD_BACKUP_KEY);
+      if (backup) {
+        const parsed = JSON.parse(backup);
+        const age = Date.now() - (parsed.timestamp || 0);
+        if (age < 30 * 60 * 1000 && parsed.content && !editableContent) {
+          // Show recovery option
+          const restore = window.confirm('Found unsaved content from a previous session. Restore it?');
+          if (restore) {
+            setEditableContent(parsed.content);
+          }
+          localStorage.removeItem(WIZARD_BACKUP_KEY);
+        } else {
+          localStorage.removeItem(WIZARD_BACKUP_KEY);
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Auto-backup to localStorage when content changes
+  useEffect(() => {
+    if (editableContent && editableContent.length > 50) {
+      try {
+        localStorage.setItem(WIZARD_BACKUP_KEY, JSON.stringify({
+          content: editableContent,
+          timestamp: Date.now(),
+          keyword: wizardState.keyword,
+        }));
+      } catch { /* quota exceeded — ignore */ }
+    }
+  }, [editableContent, wizardState.keyword]);
+
   // Load company & brand context on mount
   useEffect(() => {
     if (!user) return;
