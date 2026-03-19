@@ -34,6 +34,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
       role="group"
       aria-label="Quick actions"
     >
+      {suggestions.map((item) => (
         <button
           key={item.text}
           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors cursor-pointer text-left"
