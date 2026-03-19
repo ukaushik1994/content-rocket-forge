@@ -228,6 +228,186 @@ export async function executeBrandAnalyticsTool(
       };
     }
 
+    case 'auto_detect_brand_voice': {
+      const articleLimit = Math.min(toolArgs.limit || 5, 10);
+      
+      // Fetch published articles
+      const { data: articles, error: articlesError } = await supabase
+        .from('content_items')
+        .select('id, title, content')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .not('content', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(articleLimit);
+
+      if (articlesError) throw articlesError;
+
+      if (!articles || articles.length < 2) {
+        return {
+          success: false,
+          message: `Need at least 2 published articles to detect brand voice (found ${articles?.length || 0}). Publish more content first.`
+        };
+      }
+
+      // Extract text samples (first 500 words from each)
+      const samples = articles.map((a: any) => {
+        const words = (a.content || '').split(/\s+/).slice(0, 500).join(' ');
+        return `[${a.title}]: ${words}`;
+      }).join('\n\n---\n\n');
+
+      // Use AI to analyze writing patterns
+      const { getApiKey } = await import('../shared/apiKeyService.ts');
+      const apiKey = await getApiKey('openai', userId);
+      if (!apiKey) {
+        return {
+          success: false,
+          message: '🔑 No OpenAI API key configured. Please go to **Settings → API Keys** and add your OpenAI key.'
+        };
+      }
+
+      const { callAiProxyWithRetry } = await import('../shared/aiProxyRetry.ts');
+      const analysisResponse = await callAiProxyWithRetry({
+        service: 'openai',
+        endpoint: '/v1/chat/completions',
+        apiKey,
+        params: {
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'Analyze these content samples and extract the brand voice. Return JSON with: tone (array of 3-5 descriptors), brand_personality (string), target_audience (string), do_use (array of 3-5 phrases/patterns the author uses), dont_use (array of 3-5 things the author avoids). Be specific based on actual patterns, not generic.' },
+            { role: 'user', content: `Analyze this content for brand voice patterns:\n\n${samples}` }
+          ],
+          max_tokens: 800,
+          temperature: 0.3,
+          response_format: { type: 'json_object' }
+        }
+      });
+
+      const voiceAnalysis = JSON.parse(analysisResponse.choices?.[0]?.message?.content || '{}');
+
+      if (!voiceAnalysis.tone) {
+        return { success: false, message: 'Could not detect brand voice patterns. Try with more diverse content.' };
+      }
+
+      // Save to brand_guidelines
+      const { data: existing } = await supabase
+        .from('brand_guidelines')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const updateFields: Record<string, any> = {
+        tone: voiceAnalysis.tone,
+        brand_personality: voiceAnalysis.brand_personality,
+        target_audience: voiceAnalysis.target_audience,
+        do_use: voiceAnalysis.do_use,
+        dont_use: voiceAnalysis.dont_use,
+        updated_at: new Date().toISOString()
+      };
+
+      if (existing) {
+        await supabase.from('brand_guidelines').update(updateFields).eq('id', existing.id);
+      } else {
+        await supabase.from('brand_guidelines').insert({
+          user_id: userId,
+          primary_color: '#000000',
+          secondary_color: '#666666',
+          font_family: 'Inter',
+          logo_usage_notes: '',
+          ...updateFields
+        });
+      }
+
+      return {
+        success: true,
+        message: `Detected brand voice from ${articles.length} articles and saved to your brand guidelines.`,
+        detectedVoice: voiceAnalysis,
+        articlesAnalyzed: articles.length,
+        actions: [
+          { id: 'view_brand', label: '⚙️ View Brand Settings', type: 'navigate', route: '/settings/prompts' },
+          { id: 'refine_voice', label: '✏️ Refine Voice', type: 'send_message', message: 'Show me my brand voice settings so I can refine them' }
+        ]
+      };
+    }
+
+    case 'get_performance_comparison': {
+      const period = toolArgs.period || 'week';
+      const now = new Date();
+      let currentStart: Date, previousStart: Date, previousEnd: Date;
+
+      if (period === 'week') {
+        currentStart = new Date(now.getTime() - 7 * 86400000);
+        previousEnd = new Date(currentStart.getTime() - 1);
+        previousStart = new Date(previousEnd.getTime() - 7 * 86400000);
+      } else if (period === 'month') {
+        currentStart = new Date(now.getTime() - 30 * 86400000);
+        previousEnd = new Date(currentStart.getTime() - 1);
+        previousStart = new Date(previousEnd.getTime() - 30 * 86400000);
+      } else {
+        currentStart = new Date(now.getTime() - 90 * 86400000);
+        previousEnd = new Date(currentStart.getTime() - 1);
+        previousStart = new Date(previousEnd.getTime() - 90 * 86400000);
+      }
+
+      const [currentContent, previousContent, currentKeywords, previousKeywords] = await Promise.all([
+        supabase.from('content_items')
+          .select('id, status, seo_score', { count: 'exact' })
+          .eq('user_id', userId)
+          .gte('created_at', currentStart.toISOString()),
+        supabase.from('content_items')
+          .select('id, status, seo_score', { count: 'exact' })
+          .eq('user_id', userId)
+          .gte('created_at', previousStart.toISOString())
+          .lt('created_at', currentStart.toISOString()),
+        supabase.from('keywords')
+          .select('id', { count: 'exact' })
+          .eq('user_id', userId)
+          .gte('created_at', currentStart.toISOString()),
+        supabase.from('keywords')
+          .select('id', { count: 'exact' })
+          .eq('user_id', userId)
+          .gte('created_at', previousStart.toISOString())
+          .lt('created_at', currentStart.toISOString())
+      ]);
+
+      const curItems = currentContent.data || [];
+      const prevItems = previousContent.data || [];
+      const curPublished = curItems.filter((i: any) => i.status === 'published').length;
+      const prevPublished = prevItems.filter((i: any) => i.status === 'published').length;
+      const curAvgSeo = curItems.length > 0 ? Math.round(curItems.reduce((s: number, i: any) => s + (i.seo_score || 0), 0) / curItems.length) : 0;
+      const prevAvgSeo = prevItems.length > 0 ? Math.round(prevItems.reduce((s: number, i: any) => s + (i.seo_score || 0), 0) / prevItems.length) : 0;
+
+      return {
+        success: true,
+        period,
+        comparison: {
+          current: {
+            label: `This ${period}`,
+            contentCreated: currentContent.count || 0,
+            published: curPublished,
+            avgSeoScore: curAvgSeo,
+            keywordsAdded: currentKeywords.count || 0
+          },
+          previous: {
+            label: `Last ${period}`,
+            contentCreated: previousContent.count || 0,
+            published: prevPublished,
+            avgSeoScore: prevAvgSeo,
+            keywordsAdded: previousKeywords.count || 0
+          }
+        },
+        visualData: {
+          type: 'comparison_chart',
+          chartType: 'bar',
+          metrics: ['Content Created', 'Published', 'Avg SEO', 'Keywords'],
+          current: [currentContent.count || 0, curPublished, curAvgSeo, currentKeywords.count || 0],
+          previous: [previousContent.count || 0, prevPublished, prevAvgSeo, previousKeywords.count || 0],
+          labels: [`This ${period}`, `Last ${period}`]
+        },
+        message: `${period.charAt(0).toUpperCase() + period.slice(1)}-over-${period} comparison: Content ${(currentContent.count || 0) > (previousContent.count || 0) ? '📈 up' : '📉 down'} (${currentContent.count || 0} vs ${previousContent.count || 0}), SEO avg ${curAvgSeo > prevAvgSeo ? '📈 improved' : curAvgSeo === prevAvgSeo ? '➡️ same' : '📉 declined'} (${curAvgSeo} vs ${prevAvgSeo}).`
+      };
+    }
+
     default:
       throw new Error(`Unknown brand/analytics tool: ${toolName}`);
   }
