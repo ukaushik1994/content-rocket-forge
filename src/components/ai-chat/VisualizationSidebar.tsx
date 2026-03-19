@@ -993,7 +993,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                   );
                                 })()}
                               </div>
-                            </Card>
+                            </div>
                           ))}
                         </div>
                       )}
