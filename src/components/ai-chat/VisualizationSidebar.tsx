@@ -810,8 +810,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   {analystState?.healthScore && (
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-3">
                       <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Workspace Health</span>
-                      <div className="flex items-center gap-4">
-                        <div className="relative w-16 h-16 flex-shrink-0">
+                      <div className="glass-card p-6 flex items-center gap-6">
+                        <div className="relative w-24 h-24 flex-shrink-0">
                           <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                             <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" opacity={0.2} />
                             <circle cx="18" cy="18" r="15.5" fill="none"
@@ -822,7 +822,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             />
                           </svg>
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-sm font-bold text-foreground">{analystState.healthScore.total}</span>
+                            <span className="text-xl font-bold text-foreground">{analystState.healthScore.total}</span>
                           </div>
                         </div>
                         <div className="flex-1 min-w-0 space-y-1">
