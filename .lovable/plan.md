@@ -1,198 +1,93 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Fix Plan: 6 Bugs from Antigravity Walkthrough
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
-
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+**Test Results:** 83 PASS, 5 FAIL, 4 PARTIAL, 16 BLOCKED (91.2% pass rate)
+**Target:** 98%+ pass rate after fixes
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## Phase 1: User Message Actions (BUG 1 + BUG 6) — Frontend
+**Files:** `EnhancedMessageBubble.tsx`
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+**Problem:** `MessageActions` is wrapped in `{!isUser && (...)}` at line 262, so user messages never get Edit/Delete/three-dot menu. Bug 6 (paired deletion) auto-resolves once users can delete their own messages.
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
-
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+**Fix:**
+- Remove the `!isUser` gate on lines 262/278
+- Render `MessageActions` for ALL messages, passing conditional handlers:
+  - `onEdit` → only for user messages
+  - `onRegenerate`, `onFeedback`, `onPin` → only for AI messages
+  - `onDelete` → both
+- Position the actions container with `justify-end mr-1` for user bubbles (right-aligned) vs `ml-1` for AI bubbles
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## Phase 2: Performance — Reduce TTFT (BUG 2) — Edge Function
+**File:** `enhanced-ai-chat/index.ts`
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+**Problem:** Brand voice fetch (line 2656), user intelligence fetch (line 2677), and SERP detection run sequentially before the AI call. Total pre-call overhead: 2-5s unnecessary.
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+**Fix A — Parallelize pre-AI operations:**
+- Wrap brand voice fetch, user intelligence fetch, and SERP check in `Promise.allSettled()` so they run concurrently instead of sequentially. Saves ~1-3s.
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+**Fix B — Minimal base prompt for simple queries:**
+- For `conversational` and `summary` scope queries, use a ~50-token minimal system prompt instead of the full ~1000-token BASE_PROMPT. Saves ~3-5s on model processing.
 
----
+**Fix C — Skip heavy context for single-category summary queries:**
+- When `queryIntent.scope === 'summary'` and only 1 category is detected, skip the full `realDataContext` fetch — the AI will use tools to get specific data. Already partially done at line 2772 but can be more aggressive.
 
-# AI Chat Awareness Gaps — Implementation Tracker
-
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
-
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
-
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
-
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+Requires edge function redeployment.
 
 ---
 
-# AI Chat Frontend Bug Fixes — 10 Issues, 3 Phases ✅ COMPLETE
+## Phase 3: Error Handling for Follow-ups (BUG 3) — Frontend + Edge Function
+**Files:** `useEnhancedAIChatDB.ts`, `enhanced-ai-chat/index.ts`
 
-## ✅ Phase 1: Critical Functional Bugs
-- **Fix 1 — Error Retry Button:** Added `onRetry` prop to `EnhancedMessageBubble` in `EnhancedChatInterface.tsx` — finds last user message before error and re-sends
-- **Fix 2 — Edit Message Duplication:** Rewrote `editMessage` in `useEnhancedAIChatDB.ts` to invoke SSE inline (no `sendMessage` call) — inserts new AI response at correct position without duplicating user message
-- **Fix 3 — SSE Timeout:** Moved `clearTimeout(timeoutId)` into `finally` block after reader loop completes (both in `sendMessage` and `editMessage`)
+**Problem:** Follow-up messages sometimes get service errors or API timeouts. Error messages are generic.
 
-## ✅ Phase 2: Medium Severity Fixes
-- **Fix 4 — open_settings Event:** Changed `{ detail: action.data?.tab }` → `{ detail: { tab: action.data?.tab } }` to match listener expectations
-- **Fix 5 — RateLimitBanner Retry:** Wired to re-send last user message instead of console.log no-op
-- **Fix 6 — setState in useMemo:** Replaced `useState` + `setMessageSearchResults` inside `useMemo` with pure derived `useMemo` value
-- **Fix 7 — Title Truncation:** Smart truncation at last word boundary before 40 chars
+**Fix A — Specific error messages (frontend, line 750-756):**
+- Detect `429`/rate limit → "Provider rate-limited. Wait 30s or switch provider."
+- Detect `token`/`context length` → "Conversation too long. Start a new chat."
+- Keep existing timeout and generic fallback messages.
 
-## ✅ Phase 3: Dead Code Cleanup & State Sync
-- **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
-- **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
-- **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed
+**Fix B — Token budget guard (edge function):**
+- Before sending to AI provider, check if total estimated tokens exceed 90% of model max. If so, trim conversation history from 10 to 5 messages and strip optional system prompt modules.
 
 ---
 
-# Strategic Intelligence Layer — Sprint Tracker
+## Phase 4: Analyst Session Memory (BUG 4) — Frontend
+**File:** `useAnalystEngine.ts`
 
-## ✅ Sprint 1: System Prompt Intelligence — COMPLETE
-- Enhancement 4: AI Negotiation Before Generation (content creation protocol)
-- Enhancement 8: Multi-Step Workflows (progressive execution with confirmation)
-- Enhancement 6: Enhanced Edit Pattern Learning (7 pattern detectors in contentFeedbackService)
+**Problem:** Line 957 checks `messages.length === 0` to gate loading previous session insights. But by the time the Analyst activates, messages are already loaded, so the condition is never true.
 
-## ✅ Sprint 2: Performance Signals + Business Context — COMPLETE
-- content_performance_signals table + tracking in cross-module-tools and RepositoryPanel
-- Enhancement 3: Performance feedback injection in content generation prompts
-- Enhancement 7: Business outcome connection (solution pain points → content alignment)
+**Fix:** Change condition from `messages.length === 0` to `insightsFeed.length === 0` (no analyst-specific insights yet). Remove `messages.length` from the dependency array — only depend on `isActive`.
 
-## ✅ Sprint 3: Weekly Briefing + Proactive Recommendations — COMPLETE
-- generate_weekly_briefing tool in brand-analytics-tools
-- proactive_recommendations table + generate-proactive-insights edge function (daily 6AM cron)
-- UI integration: recommendation cards on chat welcome screen
+---
 
-## ✅ Sprint 4: User Intelligence Profile — COMPLETE
-- user_intelligence_profile table (persistent per-user preferences)
-- aggregate-user-intelligence edge function (daily 5:30AM cron)
-- Profile injection into AI system prompt (preferred length, tone, formats, editing patterns, topics, solutions, negotiation preference, response detail level)
-- Verified: profiles aggregated for 2 users with real data
+## Phase 5: Export Reliability (BUG 5) — Frontend
+**File:** `useEnhancedAIChatDB.ts`
+
+**Problem:** Line 1127-1128 — `conversations.find()` silently returns if conversation isn't in local state (e.g., just created, list not refreshed).
+
+**Fix:** Add a Supabase fallback query when `conversations.find()` returns undefined:
+```
+if (!conversation) {
+  fetch from ai_conversations by ID
+  if still not found → show error toast
+}
+```
+
+---
+
+## Implementation Order
+
+| Phase | Bug | Effort | Impact |
+|-------|-----|--------|--------|
+| 1 | User message actions + paired delete | 15 min | Fixes 4 test cases (3.1, 3.4, 3.5, 3.7) |
+| 2 | TTFT performance | 30 min | Fixes test 12.3, improves all responses |
+| 3 | Error handling | 20 min | Fixes test 13.5 |
+| 4 | Analyst session memory | 10 min | Fixes test 5.10 |
+| 5 | Export reliability | 10 min | Fixes tests 7.8, 7.9 |
+
+**Total: ~1.5 hours. Projected pass rate: 98%+ (90/91 executed)**
+
