@@ -5893,6 +5893,45 @@ export type Database = {
           },
         ]
       }
+      proactive_recommendations: {
+        Row: {
+          acted_on: boolean
+          action: string
+          created_at: string
+          description: string
+          dismissed: boolean
+          id: string
+          priority: number
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          acted_on?: boolean
+          action: string
+          created_at?: string
+          description: string
+          dismissed?: boolean
+          id?: string
+          priority?: number
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          acted_on?: boolean
+          action?: string
+          created_at?: string
+          description?: string
+          dismissed?: boolean
+          id?: string
+          priority?: number
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

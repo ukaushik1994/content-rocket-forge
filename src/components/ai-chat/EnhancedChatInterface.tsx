@@ -97,6 +97,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   // 4b: Proactive insights on welcome screen
   const [proactiveInsights, setProactiveInsights] = useState<Array<{type: string; label: string; count: number; icon: React.ReactNode}>>([]);
+  // Sprint 3: AI-generated proactive recommendations
+  const [aiRecommendations, setAiRecommendations] = useState<Array<{id: string; type: string; title: string; description: string; action: string; priority: number}>>([]);
   // 4e: Conversation templates from patterns
   const [workflowTemplates, setWorkflowTemplates] = useState<string[]>([]);
   // E6: Brand voice detection moved to offerings page
@@ -152,6 +154,21 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
     fetchInsights();
     fetchTemplates();
+
+    // Sprint 3: Fetch AI-generated proactive recommendations
+    const fetchAiRecs = async () => {
+      try {
+        const { data } = await supabase.from('proactive_recommendations')
+          .select('id, type, title, description, action, priority')
+          .eq('user_id', user.id)
+          .eq('dismissed', false)
+          .eq('acted_on', false)
+          .order('priority', { ascending: true })
+          .limit(3);
+        if (data?.length) setAiRecommendations(data);
+      } catch (_) { /* non-blocking */ }
+    };
+    fetchAiRecs();
     
   }, [user, messages.length]);
 
@@ -574,6 +591,35 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
+
+                    {/* AI Proactive Recommendations (Sprint 3) */}
+                    {aiRecommendations.length > 0 && (
+                      <motion.div
+                        className="flex flex-col gap-2 w-full max-w-lg"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                      >
+                        <span className="text-xs text-muted-foreground text-center">Recommended for you</span>
+                        {aiRecommendations.map((rec) => (
+                          <button
+                            key={rec.id}
+                            onClick={() => {
+                              sendMessage(rec.action);
+                              // Mark as acted_on (non-blocking)
+                              (supabase as any).from('proactive_recommendations')
+                                .update({ acted_on: true })
+                                .eq('id', rec.id).then(() => {});
+                              setAiRecommendations(prev => prev.filter(r => r.id !== rec.id));
+                            }}
+                            className="text-left px-4 py-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors group"
+                          >
+                            <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{rec.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.description}</p>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
 
                     {/* Proactive Insights */}
                     {proactiveInsights.length > 0 && (
