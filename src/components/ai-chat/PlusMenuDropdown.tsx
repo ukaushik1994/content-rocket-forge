@@ -99,7 +99,7 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
         side="top"
         align="start"
         sideOffset={8}
-        className="w-56 p-1.5 bg-card border-border/50 rounded-xl shadow-lg"
+        className="w-56 p-1.5 glass-panel rounded-xl shadow-lg animate-scale-in origin-bottom-left"
       >
         <div className="space-y-0.5">
           {menuItems.map((item, index) => (
