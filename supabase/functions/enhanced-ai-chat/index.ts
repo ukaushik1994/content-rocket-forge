@@ -2603,9 +2603,11 @@ serve(async (req) => {
         systemPrompt += '\n\n' + ACTION_MODULE;
       }
       
-      // Add platform knowledge only when relevant (PE Fix 3)
+      // Add platform knowledge: full when relevant, basics always (PE Fix 3)
       if (needsPlatformKnowledge) {
         systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
+      } else {
+        systemPrompt += '\n\n' + PLATFORM_BASICS;
       }
       
       console.log(`🎯 Intent-gated modules: charts=${needsCharts}, table=${needsTable}, actions=${needsActions}, platform=${needsPlatformKnowledge}, multiChart=${needsMultiChart}`);
