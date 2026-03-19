@@ -74,6 +74,15 @@ export const EmailDashboard = () => {
     { icon: Target, label: 'Campaigns', value: activeCampaigns },
   ];
 
+  // SB-7: Check if Resend/email service is configured
+  const { data: hasEmailKey } = useQuery({
+    queryKey: ['email-service-configured'],
+    queryFn: async () => {
+      const { data } = await supabase.from('api_keys').select('id').eq('service', 'resend').eq('is_active', true).maybeSingle();
+      return !!data;
+    },
+  });
+
   return (
     <div className="w-full relative">
       <Helmet>

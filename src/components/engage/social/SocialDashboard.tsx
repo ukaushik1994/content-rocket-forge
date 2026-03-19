@@ -300,13 +300,24 @@ export const SocialDashboard = () => {
 
       {mainTab === 'publish' && <React.Fragment>
 
+      {/* SB-6: Honesty banner — always visible */}
+      <motion.div variants={engageStagger.item} className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex items-start gap-3">
+        <Share2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+        <div className="text-sm">
+          <p className="font-medium text-foreground">Posts are saved as drafts</p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            Direct publishing to social platforms is coming soon. For now, all posts are saved locally for you to copy and publish manually.
+          </p>
+        </div>
+      </motion.div>
+
       {accounts.length === 0 && (
         <motion.div variants={engageStagger.item} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-3">
           <Zap className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
             <p className="font-medium text-foreground">Social accounts not connected</p>
             <p className="text-muted-foreground text-xs mt-0.5">
-              Posts are saved locally. To publish directly to Twitter, LinkedIn, Instagram, or Facebook, connect your accounts in <strong>Settings → Engage</strong>. External API integrations are coming soon.
+              To publish directly to Twitter, LinkedIn, Instagram, or Facebook, connect your accounts in <strong>Settings → Engage</strong>. External API integrations are coming soon.
             </p>
           </div>
         </motion.div>

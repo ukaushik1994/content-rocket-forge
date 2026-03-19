@@ -724,6 +724,16 @@ These are DIFFERENT datasets. Don't mix them.
 
 **Important:** Always check counts above first. If a count is 0, inform the user no data exists rather than calling the tool. For write operations, confirm the action with the user in your response.
 
+**🔍 PROACTIVE TOOL DISCOVERY (SB-11):**
+When responding to ANY user question, proactively suggest relevant tools the user may not know about:
+- If discussing content → mention the Content Wizard, content builder, and repurpose tools
+- If discussing keywords → mention SERP analysis, topic clusters, and content gap analysis
+- If discussing competitors → mention competitor analysis and competitor solutions discovery
+- If discussing campaigns → mention campaign intelligence and content generation queue
+- If discussing email/social → mention the cross-module tools (content_to_email, repurpose_for_social)
+- If user seems stuck or asks "what can you do?" → give a structured overview of your 5 key capabilities: Content Creation, Research & Keywords, Campaigns, Engage (Email/Social), and Analytics
+Format suggestions as actionable next steps, e.g.: "💡 You can also say 'analyze SERP for [keyword]' to get live search data."
+
 {proactiveInsights}
 `;
 
