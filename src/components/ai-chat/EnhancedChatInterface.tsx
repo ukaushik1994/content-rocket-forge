@@ -237,6 +237,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Issue #4 Fix: Track explicit user close intent
   const [userClosedSidebar, setUserClosedSidebar] = useState(false);
 
+  // Phase 1 Fix: Track previous message count for smart auto-open
+  const prevMessageCountRef = useRef(0);
+
+  // Phase 1 Fix: Loading state for conversation transitions
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
+
   // Handle manual expand visualization (kept for backwards compatibility)
   const handleExpandVisualization = (visualData: any, chartConfig: ChartConfiguration) => {
     setVisualizationData({
@@ -279,6 +285,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   useEffect(() => {
     // If user explicitly closed sidebar, don't auto-open
     if (userClosedSidebar) {
+      prevMessageCountRef.current = messages.length;
       return;
     }
 
@@ -287,24 +294,35 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       if (!sidebarInteracted) {
         setShowVisualizationSidebar(false);
       }
+      prevMessageCountRef.current = 0;
+      return;
+    }
+
+    // Phase 1 Fix: Only auto-open when a genuinely NEW message arrives
+    // (not when loading conversation history)
+    const isNewMessage = messages.length > prevMessageCountRef.current && prevMessageCountRef.current > 0;
+    prevMessageCountRef.current = messages.length;
+
+    if (!isNewMessage) {
+      // Loading history - don't auto-open unless user interacted
+      if (!sidebarInteracted) {
+        setShowVisualizationSidebar(false);
+      }
       return;
     }
 
     // Find the most recent assistant message with visual data
-    // (excluding SERP analysis which renders inline)
     const messagesWithVisualData = messages.filter((msg) =>
     msg.role === 'assistant' &&
     msg.visualData &&
     msg.visualData.type !== 'serp_analysis' &&
-    msg.visualData.type !== 'content_creation_choice' // Choice card renders inline, not in sidebar
+    msg.visualData.type !== 'content_creation_choice'
     );
 
     const latestVisualization = messagesWithVisualData[messagesWithVisualData.length - 1];
 
     if (latestVisualization?.visualData) {
-      // Has visual data - open sidebar with the most recent visualization
       const chartConfig = latestVisualization.visualData?.chartConfig || null;
-
       setVisualizationData({
         visualData: latestVisualization.visualData,
         chartConfig,
@@ -312,18 +330,23 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         description: latestVisualization.visualData?.description
       });
       setShowVisualizationSidebar(true);
-    } else {
-      // No visualization data in entire conversation
-      // Close sidebar if user hasn't interacted with it
-      if (!sidebarInteracted) {
-        setShowVisualizationSidebar(false);
-      }
+    } else if (!sidebarInteracted) {
+      setShowVisualizationSidebar(false);
     }
   }, [messages, sidebarInteracted, userClosedSidebar]);
 
-  // Reset close intent when starting a new conversation
+  // Phase 1 Fix: Reset ALL sidebar state when switching conversations
   useEffect(() => {
     setUserClosedSidebar(false);
+    setIsAnalystPanelActive(false);
+    setShowVisualizationSidebar(false);
+    setSidebarInteracted(false);
+    setVisualizationData(null);
+    prevMessageCountRef.current = 0;
+    setIsLoadingConversation(true);
+    // Clear loading after messages arrive (with fallback timeout)
+    const timeout = setTimeout(() => setIsLoadingConversation(false), 300);
+    return () => clearTimeout(timeout);
   }, [activeConversation]);
 
   // Track user interaction with sidebar (for smart persistence)
@@ -364,18 +387,17 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   }, []);
 
   // Auto-scroll to bottom when new messages arrive (Issue #1 enhanced fix)
-  // Uses a small delay to ensure content rendering is complete
   useEffect(() => {
-    // Immediate scroll attempt
     scrollToBottom();
-
-    // Delayed scroll to catch late-rendering content (charts, markdown, etc.)
+    // Phase 1 Fix: Clear loading state when messages arrive
+    if (isLoadingConversation && messages.length > 0) {
+      setIsLoadingConversation(false);
+    }
     const timeoutId = setTimeout(() => {
       scrollToBottom();
     }, 100);
-
     return () => clearTimeout(timeoutId);
-  }, [messages, isTyping, scrollToBottom]);
+  }, [messages, isTyping, scrollToBottom, isLoadingConversation]);
 
 
 
@@ -571,9 +593,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           {/* Messages Area - with ref for proper scrolling (Issue #1 fix) */}
           <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
             <div className="max-w-6xl mx-auto py-6 space-y-8">
+              {/* Phase 1 Fix: Loading skeleton during conversation transitions */}
+              {isLoadingConversation && messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center min-h-[60vh] py-12 space-y-4">
+                  <Skeleton className="h-4 w-3/4 max-w-md" />
+                  <Skeleton className="h-4 w-1/2 max-w-sm" />
+                  <Skeleton className="h-4 w-2/3 max-w-md" />
+                </div>
+              )}
+
               {/* Welcome State - Premium Minimal */}
               <AnimatePresence>
-              {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[60vh] py-12 sm:py-16 lg:py-24 space-y-8">
+              {messages.length === 0 && !isLoadingConversation && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[60vh] py-12 sm:py-16 lg:py-24 space-y-8">
                     {/* Hero Badge Pill */}
                     <motion.div
                   className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-background/60 backdrop-blur-xl rounded-full border border-border/50"

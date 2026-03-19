@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { notifyUser } from "../shared/notifyUser.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -72,6 +73,23 @@ serve(async (req) => {
     const failed = results.filter(r => r.status === 'rejected').length;
 
     console.log(`✅ [Queue Processor] Complete: ${successful} succeeded, ${failed} failed`);
+
+    // Phase 3: Notify the user who owns the queue items
+    if (queueItems.length > 0) {
+      const userId = queueItems[0].user_id;
+      if (userId) {
+        const severity = failed > 0 ? (successful > 0 ? 'warning' : 'error') : 'success';
+        notifyUser(supabase, {
+          userId,
+          title: 'Content Queue Processed',
+          message: `${successful} item(s) completed, ${failed} failed.`,
+          module: 'content',
+          severity,
+          linkUrl: '/content',
+          metadata: { successful, failed, total: queueItems.length },
+        });
+      }
+    }
 
     return new Response(
       JSON.stringify({ 

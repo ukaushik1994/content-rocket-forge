@@ -249,28 +249,7 @@ function analyzeQueryIntent(query: string): QueryIntent {
 // Base prompt (always included) - ~1,000 tokens
 const BASE_PROMPT = `You are an enterprise AI assistant for content strategy with comprehensive expertise in data analysis, workflow automation, and business intelligence.
 
-🧠 THINKING PROCESS (CRITICAL FORMAT):
-• You MUST wrap your reasoning in <think></think> tags
-• <think> tags are INTERNAL ONLY - they will be processed separately by the system
-• NEVER include <think> tags in your conversational response text
-• Structure: <think>your reasoning</think> THEN your user-facing response
-• Show your step-by-step analysis process inside <think> tags only
-• Users will see thinking in a special UI indicator, not in the main chat
-• Example CORRECT format:
-  <think>
-  Let me analyze the user's request...
-  1. They're asking about keyword performance
-  2. I need to check the REAL DATA CONTEXT for keyword data
-  3. I'll create a bar chart to visualize the comparison
-  </think>
-  
-  ## Keyword Performance Analysis
-  Based on your keyword data, here's what I found...
-  
-• Example WRONG format (DO NOT DO THIS):
-  Here's my analysis <think>reasoning</think> of your data...
-  ^^ NEVER mix <think> tags with conversational text!
-
+{THINKING_INSTRUCTION}
 🚨 CRITICAL TEXT FORMATTING RULES:
 • **NEVER** use pipe characters (|) in conversational text or regular responses
 • **ONLY** use pipes for properly formatted markdown tables with headers AND data rows (minimum 2 rows)
@@ -294,22 +273,25 @@ Before ANY response, check dataAvailability in REAL DATA CONTEXT:
 • Never generate charts requiring unavailable data
 • Provide actionable steps to fix missing data
 
-🎯 VISUAL-FIRST MANDATE (CHART-ELIGIBLE MODULES ONLY):
-This applies ONLY to: Keywords, Analytics, Campaigns, Content performance, Proposals, SEO scores.
-For these modules: ALWAYS include visualData with charts, metric cards, actionable items, insights, deepDivePrompts.
+🎯 SMART VISUALIZATION GUIDANCE (CHART-ELIGIBLE MODULES ONLY):
+Chart-eligible modules: Keywords, Analytics, Campaigns, Content performance, Proposals, SEO scores.
+
+**WHEN to include visualData charts:**
+- 3+ data points that benefit from comparison (e.g., keyword rankings, proposal statuses, content metrics over time)
+- Trend data, distributions, or category breakdowns
+
+**WHEN NOT to include visualData charts:**
+- Simple counts or single values (e.g., "You have 7 proposals" → use bold text, no chart)
+- Yes/no answers or single lookups
+- Conversational responses, greetings, or explanations
+- When fewer than 3 data points exist
+
+For chart-eligible data WITH 3+ comparable points: Include visualData with charts, metric cards, actionable items, insights, deepDivePrompts.
+For simple data queries: Use bold inline formatting ("You have **7 proposals**: **4 available**, **2 scheduled**, **1 completed**") + action suggestions.
 
 TEXT-ONLY MODULES (NO charts, NO visualData):
 Offerings, Contacts, Email, Social, Journeys, Automations — respond with formatted text + markdown link to the full page.
 Format: Include a line like "👉 [Open Offerings →](/offerings)" in your text response so users can navigate.
-
-Example for chart-eligible: User asks "How many proposals do I have?"
-❌ WRONG: "You have 7 proposals."
-✅ CORRECT: Chart showing proposals by status + metric cards + actions + insights + follow-ups
-
-Example for text-only: User asks "What products do I have?"
-✅ CORRECT: Text list of products + "👉 [Open Offerings →](/offerings)" link in text. NO visualData.
-
-Make chart-eligible responses a mini-dashboard. Make text-only responses clean and actionable.
 
 📊 VISUALIZATION PRIORITY:
 
@@ -2795,9 +2777,35 @@ Never try to do everything in one response. Quality over speed.`;
     } else {
       systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;
     }
+
+    // ===== Phase 2 Fix 3a: Conditional thinking instruction based on provider =====
+    const isAnthropicProvider = provider.provider === 'anthropic' || (provider.preferred_model || '').toLowerCase().includes('claude');
+    const thinkingInstruction = isAnthropicProvider
+      ? `🧠 THINKING PROCESS (CRITICAL FORMAT):
+• You MUST wrap your reasoning in <think></think> tags
+• <think> tags are INTERNAL ONLY - they will be processed separately by the system
+• NEVER include <think> tags in your conversational response text
+• Structure: <think>your reasoning</think> THEN your user-facing response
+• Show your step-by-step analysis process inside <think> tags only
+• Users will see thinking in a special UI indicator, not in the main chat
+• Example: <think>Let me analyze...</think> then your response.
+• NEVER mix <think> tags with conversational text!`
+      : `Go straight to your response. Do not use any special thinking tags.`;
     
+    systemPrompt = systemPrompt.replace('{THINKING_INSTRUCTION}', thinkingInstruction);
+
+    // ===== Phase 2 Fix 3c: Response length guidance based on query scope =====
+    const lengthGuidance: Record<string, string> = {
+      conversational: '\n\n📏 RESPONSE LENGTH: Keep under 100 words. Be concise and friendly.',
+      summary: '\n\n📏 RESPONSE LENGTH: Keep under 200 words. Provide a clear, compact summary.',
+      detailed: '\n\n📏 RESPONSE LENGTH: Target 200-500 words. Be thorough but focused.',
+      full: '' // No constraint for full-depth responses
+    };
+    systemPrompt += lengthGuidance[queryIntent.scope] || '';
+
     console.log(`✅ Dynamic system prompt built:
   - Scope: ${queryIntent.scope}
+  - Provider: ${provider.provider} (thinking: ${isAnthropicProvider ? 'enabled' : 'disabled'})
   - Modules: ${preliminaryTotal > 20000 ? 'MINIMAL' : 'BASE + conditional modules'}
   - Estimated prompt tokens: ${estimateTokens(systemPrompt)}`);
 

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { notifyUser, getWorkspaceOwnerId } from "../shared/notifyUser.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -79,6 +80,22 @@ Deno.serve(async (req) => {
       });
 
       processed++;
+    }
+
+    // Phase 3: Notify workspace owner
+    if (processed > 0 && posts.length > 0) {
+      const workspaceId = posts[0].workspace_id;
+      const ownerId = workspaceId ? await getWorkspaceOwnerId(supabase, workspaceId) : null;
+      if (ownerId) {
+        notifyUser(supabase, {
+          userId: ownerId,
+          title: 'Social Posts Processed',
+          message: `${processed} social post(s) processed.`,
+          module: 'engage',
+          severity: 'success',
+          linkUrl: '/engage/social',
+        });
+      }
     }
 
     return new Response(JSON.stringify({ processed }), {

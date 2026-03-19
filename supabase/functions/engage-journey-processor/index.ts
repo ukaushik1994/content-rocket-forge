@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { notifyUser, getWorkspaceOwnerId } from "../shared/notifyUser.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -327,6 +328,22 @@ Deno.serve(async (req) => {
         await supabase.from("journey_steps").update({
           status: "failed", error: e.message, executed_at: new Date().toISOString(),
         }).eq("id", step.id);
+      }
+    }
+
+    // Phase 3: Notify workspace owner
+    if (processed > 0 && steps.length > 0) {
+      const workspaceId = steps[0].journey_enrollments?.workspace_id || steps[0].workspace_id;
+      const ownerId = workspaceId ? await getWorkspaceOwnerId(supabase, workspaceId) : null;
+      if (ownerId) {
+        notifyUser(supabase, {
+          userId: ownerId,
+          title: 'Journey Steps Executed',
+          message: `${processed} journey step(s) executed, ${skipped} skipped.`,
+          module: 'engage',
+          severity: 'success',
+          linkUrl: '/engage/journeys',
+        });
       }
     }
 
