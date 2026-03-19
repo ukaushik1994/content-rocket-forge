@@ -1166,7 +1166,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               value={wizardState.metaDescription}
               onChange={(e) => onMetaChange(wizardState.metaTitle, e.target.value)}
               placeholder="SEO description..."
-              className="text-xs min-h-[60px] resize-none"
+              className="text-xs min-h-[60px] resize-none bg-white/[0.04] border-white/[0.06]"
             />
             <p className="text-[10px] text-muted-foreground">{wizardState.metaDescription.length}/160 characters</p>
           </div>
