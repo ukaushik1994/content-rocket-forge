@@ -276,13 +276,44 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
     }
   },
   // Glossary write tool removed — feature deprecated
+  {
+    type: "function",
+    function: {
+      name: "get_content_versions",
+      description: "Fetch version history for a content item. Shows all saved versions with timestamps, change sources, and SEO scores. Use when user asks 'show history', 'version history', or 'previous versions'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "UUID of the content item" },
+          limit: { type: "number", default: 10, description: "Number of versions to return" }
+        },
+        required: ["content_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "restore_content_version",
+      description: "Restore a content item to a previous version. Saves current state as a new version first. Use when user says 'restore version', 'revert to', or 'go back to version'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "UUID of the content item" },
+          version_number: { type: "number", description: "Version number to restore" }
+        },
+        required: ["content_id", "version_number"]
+      }
+    }
+  }
 ];
 
 export const CONTENT_ACTION_TOOL_NAMES = [
   'create_content_item', 'update_content_item', 'delete_content_item',
   'submit_for_review', 'approve_content', 'reject_content',
   'generate_full_content', 'start_content_builder', 'launch_content_wizard',
-  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item'
+  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item',
+  'get_content_versions', 'restore_content_version'
 ];
 
 export async function executeContentActionTool(
