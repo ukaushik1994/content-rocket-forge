@@ -1202,12 +1202,31 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           Platform Stats
                         </span>
                         <div className="grid grid-cols-2 gap-2">
-                          {analystState.platformData.map((dp, idx) => (
-                            <Card key={dp.label} className="p-3 bg-muted/10 border-border/20">
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
-                              <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
-                            </Card>
-                          ))}
+                          {analystState.platformData.map((dp, idx) => {
+                            const context = getMetricContext(dp.label, dp.value, analystState.platformData);
+                            return (
+                              <Card key={dp.label} className="p-3 bg-muted/10 border-border/20">
+                                <div className="flex items-start justify-between">
+                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
+                                  {dp.trendData && dp.trendData.some(v => v > 0) && (
+                                    <MiniSparkline
+                                      data={dp.trendData}
+                                      height={16}
+                                      width={40}
+                                      trend={
+                                        dp.trendData[dp.trendData.length - 1] > dp.trendData[0] ? 'up' :
+                                        dp.trendData[dp.trendData.length - 1] < dp.trendData[0] ? 'down' : 'neutral'
+                                      }
+                                    />
+                                  )}
+                                </div>
+                                <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
+                                {context && (
+                                  <p className="text-[9px] text-muted-foreground/60 mt-1 leading-relaxed">{context}</p>
+                                )}
+                              </Card>
+                            );
+                          })}
                         </div>
                       </motion.div>
                     )}

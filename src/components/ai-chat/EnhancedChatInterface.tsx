@@ -157,7 +157,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   // Analyst engine: track if analyst is active and provide cumulative state
   const [isAnalystPanelActive, setIsAnalystPanelActive] = useState(false);
-  const analystState = useAnalystEngine(messages, user?.id || null, isAnalystPanelActive);
+  const analystState = useAnalystEngine(messages, user?.id || null, isAnalystPanelActive, activeConversation?.goal);
 
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
