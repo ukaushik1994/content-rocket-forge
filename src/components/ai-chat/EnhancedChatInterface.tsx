@@ -645,8 +645,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             if (lastUserMsg) sendMessage(lastUserMsg.content);
           }} />
 
-                    {/* SB-10: Getting Started Milestones */}
-                    <GettingStartedChecklist />
+
 
           {/* Message Search Bar (toggleable) */}
           {messages.length > 0 &&
