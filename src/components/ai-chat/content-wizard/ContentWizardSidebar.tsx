@@ -85,35 +85,70 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   contentType = 'blog',
   extractedContext,
 }) => {
+  // Phase 5c: Check for saved wizard progress on mount
+  const WIZARD_DRAFT_KEY = 'wizard_draft_state';
+  const WIZARD_PRESET_KEY = 'wizard_last_preset';
+  const DRAFT_EXPIRY_MS = 60 * 60 * 1000; // 60 minutes
+
+  const loadSavedDraft = (): WizardState | null => {
+    try {
+      const raw = localStorage.getItem(WIZARD_DRAFT_KEY);
+      if (!raw) return null;
+      const { state, savedAt } = JSON.parse(raw);
+      if (Date.now() - savedAt > DRAFT_EXPIRY_MS) {
+        localStorage.removeItem(WIZARD_DRAFT_KEY);
+        return null;
+      }
+      return state as WizardState;
+    } catch { return null; }
+  };
+
+  // Phase 5a: Load last-used preset (writing style, expertise, word count, etc.)
+  const loadPreset = (): Partial<WizardState> => {
+    try {
+      const raw = localStorage.getItem(WIZARD_PRESET_KEY);
+      if (!raw) return {};
+      return JSON.parse(raw);
+    } catch { return {}; }
+  };
+
+  const savedDraft = loadSavedDraft();
+  const savedPreset = loadPreset();
+
+  const [showResumePrompt, setShowResumePrompt] = useState(!!savedDraft);
   const [currentStep, setCurrentStep] = useState(0);
-  const [wizardState, setWizardState] = useState<WizardState>({
-    keyword,
-    contentType: extractedContext?.content_type || contentType,
-    title: '',
-    selectedSolution: null,
-    researchSelections: { faqs: [], contentGaps: [], relatedKeywords: [], serpHeadings: [] },
-    serpData: null,
-    outline: [],
-    wordCount: null,
-    wordCountMode: 'ai',
-    writingStyle: (extractedContext?.writing_style as WizardState['writingStyle']) || 'conversational',
-    expertiseLevel: 'intermediate',
-    contentArticleType: 'comprehensive',
-    includeStats: false,
-    includeCaseStudies: false,
-    includeFAQs: true,
-    metaTitle: '',
-    metaDescription: '',
-    generatedContent: '',
-    contentBrief: {
-      targetAudience: extractedContext?.target_audience || '',
-      contentGoal: extractedContext?.content_goal || '',
-      tone: extractedContext?.tone || '',
-      specificPoints: Array.isArray(extractedContext?.specific_points) 
-        ? extractedContext.specific_points.join(', ') 
-        : '',
-    },
-    additionalInstructions: extractedContext?.additional_instructions || '',
+  const [wizardState, setWizardState] = useState<WizardState>(() => {
+    // If extractedContext is provided, build from that + preset defaults
+    const preset = savedPreset;
+    return {
+      keyword,
+      contentType: extractedContext?.content_type || contentType,
+      title: '',
+      selectedSolution: null,
+      researchSelections: { faqs: [], contentGaps: [], relatedKeywords: [], serpHeadings: [] },
+      serpData: null,
+      outline: [],
+      wordCount: (preset.wordCount as number) || null,
+      wordCountMode: (preset.wordCountMode as WizardState['wordCountMode']) || 'ai',
+      writingStyle: (extractedContext?.writing_style as WizardState['writingStyle']) || (preset.writingStyle as WizardState['writingStyle']) || 'conversational',
+      expertiseLevel: (preset.expertiseLevel as WizardState['expertiseLevel']) || 'intermediate',
+      contentArticleType: (preset.contentArticleType as WizardState['contentArticleType']) || 'comprehensive',
+      includeStats: preset.includeStats ?? false,
+      includeCaseStudies: preset.includeCaseStudies ?? false,
+      includeFAQs: preset.includeFAQs ?? true,
+      metaTitle: '',
+      metaDescription: '',
+      generatedContent: '',
+      contentBrief: {
+        targetAudience: extractedContext?.target_audience || '',
+        contentGoal: extractedContext?.content_goal || '',
+        tone: extractedContext?.tone || '',
+        specificPoints: Array.isArray(extractedContext?.specific_points) 
+          ? extractedContext.specific_points.join(', ') 
+          : '',
+      },
+      additionalInstructions: extractedContext?.additional_instructions || '',
+    };
   });
 
   // Apply extracted context on mount if provided (handles late prop updates)
