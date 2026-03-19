@@ -2,3 +2,6 @@ project_id = "iqiundzzcepmuykcnfbc"
 
 [functions.generate-proactive-insights]
 verify_jwt = false
+
+[functions.aggregate-user-intelligence]
+verify_jwt = false
