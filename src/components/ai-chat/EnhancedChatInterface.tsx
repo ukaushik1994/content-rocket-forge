@@ -140,6 +140,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const { pendingPanel, setPendingPanel, isSidebarOpen } = useSidebarContext();
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
+  const [isExtractingContext, setIsExtractingContext] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -306,8 +307,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   };
 
   // Handle wizard launch with AI context extraction
-  const [isExtractingContext, setIsExtractingContext] = useState(false);
-
   const handleLaunchWizard = useCallback(async (userPrompt: string) => {
     setIsExtractingContext(true);
     try {
