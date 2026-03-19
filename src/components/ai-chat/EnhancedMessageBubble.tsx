@@ -215,9 +215,9 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
 
           {/* Capabilities Card */}
           {!isUser && message.content === '__CAPABILITIES_CARD__' && (
-            <Card className="bg-transparent border border-border/20 mr-4 p-4">
+            <div className="mr-4">
               <CapabilitiesCard onTryExample={(ex) => onSendMessage?.(ex)} />
-            </Card>
+            </div>
           )}
 
           {/* Normal Message Content - Premium Minimal Styling */}
