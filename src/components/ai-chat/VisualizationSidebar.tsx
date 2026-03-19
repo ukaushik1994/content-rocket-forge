@@ -1203,7 +1203,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         )}
                         <div className="flex flex-wrap justify-center gap-2">
                           {['Show content performance', 'Campaign health overview', 'Keyword rankings analysis', 'Content pipeline status'].map((prompt, idx) => (
-                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
                               {prompt}
                             </button>
                           ))}
