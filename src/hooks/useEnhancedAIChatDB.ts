@@ -82,7 +82,7 @@ export const useEnhancedAIChatDB = () => {
     try {
       // Auto-cleanup empty conversations on full load (no search active)
       if (!options?.search) {
-        const activeId = activeConversationRef.current;
+        const activeId = activeConversation;
         let cleanupQuery = supabase
           .from('ai_conversations')
           .delete()
