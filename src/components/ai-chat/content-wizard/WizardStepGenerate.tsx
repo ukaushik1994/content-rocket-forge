@@ -1224,10 +1224,10 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                     </TabsTrigger>
                   </TabsList>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <Badge variant="secondary" className="text-[10px] gap-1">
+                    <Badge variant="secondary" className="text-[10px] gap-1 bg-white/[0.04] border border-white/[0.06] text-muted-foreground/70">
                       {wordCountNum.toLocaleString()} words
                     </Badge>
-                    <Badge variant="outline" className="text-[10px] gap-1">
+                    <Badge variant="outline" className="text-[10px] gap-1 bg-white/[0.04] border-white/[0.06] text-muted-foreground/70">
                       <Clock className="w-2.5 h-2.5" /> {readingTime} min
                     </Badge>
                     {!quick && seoScore !== null && (
