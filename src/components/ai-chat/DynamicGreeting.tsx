@@ -67,25 +67,30 @@ export const DynamicGreeting: React.FC<DynamicGreetingProps> = ({ firstName }) =
   return (
     <motion.div
       className="text-center space-y-3"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1, duration: 0.5 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
     >
       <AnimatePresence mode="wait">
         <motion.h1
           key={phrase}
           className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground"
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
         >
           {displayText}
         </motion.h1>
       </AnimatePresence>
-      <p className="text-sm text-muted-foreground">
+      <motion.p
+        className="text-sm text-muted-foreground"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+      >
         What would you like to work on today?
-      </p>
+      </motion.p>
     </motion.div>
   );
 };

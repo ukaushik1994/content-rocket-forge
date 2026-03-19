@@ -64,7 +64,9 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
           }}
           className="mb-3"
         >
-          <div className="relative overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent backdrop-blur-sm">
+           <div className="relative overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent backdrop-blur-sm">
+            {/* AI Shimmer overlay */}
+            <div className="absolute inset-0 ai-shimmer pointer-events-none" />
             {/* Animated gradient background */}
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10"

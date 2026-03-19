@@ -347,6 +347,19 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             disabled={isLoading}
           />
 
+          {/* Inline Attach shortcut — desktop only */}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleAttachmentClick}
+            disabled={isLoading}
+            aria-label="Attach file"
+            className="hidden sm:flex text-muted-foreground/50 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8 transition-colors"
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
+
           {/* Message Input */}
           <Textarea
             ref={textareaRef}
