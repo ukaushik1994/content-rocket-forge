@@ -90,7 +90,8 @@ Deno.serve(async (req) => {
           title: `${unusedProposals.length} proposal(s) waiting for action`,
           description: `"${unusedProposals[0].title}" and ${unusedProposals.length > 1 ? `${unusedProposals.length - 1} more` : 'others'} have been available for 7+ days.`,
           action: `Show me my available proposals and help me schedule the best ones`,
-          priority: 3
+          priority: 3,
+          priority_score: 65
         });
       }
 
