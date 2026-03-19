@@ -1,27 +1,35 @@
 
 
-# Redesign CapabilitiesCard — Minimal, Drillable, Glassmorphism Theme
+# Major 80 — Phased Implementation Plan
 
-## Design
+## Phase 1: Backend Safety Nets ✅ COMPLETE
 
-Replace the dense 2-column grid with a single-column accordion list matching the AI chat's glassmorphism aesthetic.
+| Item | Status | What was done |
+|------|--------|---------------|
+| SB-18 | ✅ | Quality gate in `process-content-queue` — content with SEO < 30 flagged as `needs_review` |
+| SB-19 | ✅ | Keyword difficulty warning in `keyword-action-tools.ts` — warns when difficulty > 60 and user has < 20 published articles |
+| SB-20 | ✅ | Cannibalization prevention in `content-action-tools.ts` — pre-generation check for duplicate keyword targeting |
 
-**Collapsed row**: `bg-white/[0.04] border border-white/[0.06] backdrop-blur-md rounded-2xl` — icon in `bg-white/[0.06]` rounded square, title in `text-sm font-medium`, right-aligned chevron, subtle count label (`text-muted-foreground/50`). Hover: `bg-white/[0.08]`.
+## Phase 2: Honest Messaging + Discovery (NEXT)
 
-**Expanded content**: Actions as a vertical list with `hover:bg-white/[0.06]` highlight rows (clickable, sends action text). Example prompts as horizontal amber-accent pills (`border-amber-300/20 text-amber-300/70 hover:bg-amber-300/10`).
+| Item | What | Where |
+|------|------|-------|
+| SB-6 | Social posting stub banner | Social dashboard + tool response |
+| SB-7 | Email Resend onboarding guidance | Engage email first-visit |
+| SB-11 | Proactive tool suggestion in system prompt | `enhanced-ai-chat` system prompt |
 
-**Header**: `"I can help with"` in `text-xs uppercase tracking-widest text-amber-300/70` with dot prefix (matching analyst label style).
+## Phase 3: Content Lifecycle Fixes
 
-**Animation**: `AnimatePresence` + `motion.div` for expand/collapse. Staggered row entrance (0.04s delay). One-at-a-time accordion via `expandedIndex` state.
+| Item | What | Where |
+|------|------|-------|
+| SB-4 | Rescore all existing content | New edge function + Settings UI |
+| SB-2 | Draft→Publish nudge filter | `EnhancedContentFilters.tsx` |
+| SB-21 | Content←→Conversation link | `content-action-tools.ts` + detail view |
+| SB-22 | Internal links injected into HTML | `content-action-tools.ts` |
 
-## Changes
+## Phase 4: Proposal→Action Flow + Onboarding
 
-### 1. `src/components/ai-chat/CapabilitiesCard.tsx` — Full rewrite
-- `useState<number | null>` for expanded index
-- Vertical accordion list with glassmorphism card rows
-- Clickable actions + amber example pills calling `onTryExample`
-- Framer Motion stagger + expand animations
-
-### 2. `src/components/ai-chat/EnhancedMessageBubble.tsx` (~line 218)
-- Remove any wrapping `<Card>` around `CapabilitiesCard` since the new design handles its own styling
-
+| Item | What | Where |
+|------|------|-------|
+| SB-1 | "Write This" on proposals | `AIProposalsHero.tsx` + wizard pre-fill |
+| SB-10 | Getting Started milestones | Post-onboarding guidance component |
