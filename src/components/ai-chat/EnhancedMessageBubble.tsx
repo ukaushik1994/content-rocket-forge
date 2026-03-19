@@ -229,6 +229,10 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                     onEdit={onEditMessage}
                     onDelete={onDeleteMessage}
                     onRegenerate={onRetry}
+                    onFeedback={onFeedback}
+                    onPin={onPinMessage}
+                    feedbackValue={(message as any).feedbackHelpful ?? null}
+                    isPinned={(message as any).isPinned ?? false}
                   />
                 </div>
               )}
