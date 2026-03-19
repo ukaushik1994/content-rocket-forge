@@ -83,17 +83,32 @@ export const useEnhancedAIChatDB = () => {
       // Auto-cleanup empty conversations on full load (no search active)
       if (!options?.search) {
         const activeId = activeConversation;
-        let cleanupQuery = supabase
+        
+        // Get all conversation IDs for this user
+        const { data: allConvs } = await supabase
           .from('ai_conversations')
-          .delete()
-          .eq('user_id', user.id)
-          .not('id', 'in', `(SELECT DISTINCT conversation_id FROM ai_messages)`);
+          .select('id')
+          .eq('user_id', user.id);
         
-        if (activeId) {
-          cleanupQuery = cleanupQuery.neq('id', activeId);
+        if (allConvs && allConvs.length > 0) {
+          // Get conversation IDs that have at least one message
+          const { data: withMessages } = await supabase
+            .from('ai_messages')
+            .select('conversation_id')
+            .in('conversation_id', allConvs.map(c => c.id));
+          
+          const idsWithMessages = new Set((withMessages || []).map(m => m.conversation_id));
+          const emptyIds = allConvs
+            .map(c => c.id)
+            .filter(id => !idsWithMessages.has(id) && id !== activeId);
+          
+          if (emptyIds.length > 0) {
+            await supabase
+              .from('ai_conversations')
+              .delete()
+              .in('id', emptyIds);
+          }
         }
-        
-        await cleanupQuery;
       }
 
       let query = supabase
