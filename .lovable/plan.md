@@ -1,173 +1,129 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Tool Improvements — Full Implementation Plan
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
-
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+## Already Done (from previous phases)
+IMP-9 (error persist), IMP-10 (empty rename), IMP-11 (logout state), IMP-12 (rapid-edit), IMP-13 (stale messages), IMP-14 (empty export), IMP-26 original (accept_proposal) — all verified complete.
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## Phase 1: CRITICAL — Users Can't Function Without These
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+### 1A: API Key Onboarding Modal (IMP-1)
+- **New file:** `src/components/onboarding/APIKeyOnboarding.tsx` — blocking modal on first login
+- Query `api_keys` table for active keys; if 0, show modal instead of chat
+- 3 provider options (OpenRouter recommended, OpenAI, Anthropic) with "Get Key" links + input + "Test & Save"
+- Reuse existing Settings API Keys tab UI patterns
+- **Modify:** `src/components/ai-chat/EnhancedChatInterface.tsx` — gate chat behind key check
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+### 1B: Social Posting Honesty (IMP-2)
+- **Modify:** `supabase/functions/enhanced-ai-chat/engage-action-tools.ts` — `create_social_post` response: "I've drafted your post. Direct publishing coming soon — copy and post manually."
+- **Modify:** `supabase/functions/enhanced-ai-chat/cross-module-tools.ts` — same for `repurpose_for_social`, `schedule_social_from_repurpose`
+- **Modify:** Social dashboard — add "Publishing coming soon" banner
 
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+### 1C: Content Wizard as Default (IMP-3)
+- **Modify:** `supabase/functions/enhanced-ai-chat/index.ts` system prompt (~line 699) — "When user asks to write content, ALWAYS use `launch_content_wizard` unless they say 'quick generate'."
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## Phase 2: HIGH — Experience Degraders
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+### 2A: Missing API Key Guidance (IMP-4)
+- **Modify:** `keyword-action-tools.ts` — `trigger_serp_analysis`: when no key, return rich help text with link to get key + link to Settings
+- **Modify:** `engage-action-tools.ts` — `send_email_campaign`/`send_quick_email`: same pattern for Resend key
+- **Modify:** `brand-analytics-tools.ts` — `get_content_performance`: guide to GA/Search Console setup
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+### 2B: Conversation Summarization (IMP-5)
+- **Migration:** Add `summary` + `summary_message_count` columns to `ai_conversations`
+- **Modify:** `supabase/functions/enhanced-ai-chat/index.ts` — after loading messages, if >10, generate/load summary and prepend as system message
+- Summary regenerated every 10 new messages
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+### 2C: Retry Wrapper for Tool AI Calls (IMP-6)
+- **New:** shared `callAiProxyWithRetry()` utility in `supabase/functions/enhanced-ai-chat/` or `shared/`
+- **Modify:** `content-action-tools.ts`, `keyword-action-tools.ts`, `cross-module-tools.ts` — replace raw `fetch` to `ai-proxy` with retry wrapper (3 attempts, exponential backoff on 429)
 
----
+### 2D: Tool Timeout Tiers (IMP-23)
+- **Modify:** `supabase/functions/enhanced-ai-chat/tools.ts` (~line 637) — replace flat 10s timeout:
+  - AI-calling tools (`generate_full_content`, `create_topic_cluster`, `repurpose_for_social`, `trigger_competitor_analysis`, `generate_image`): 60s
+  - SERP tools: 30s
+  - Everything else: 10s
 
-# AI Chat Awareness Gaps — Implementation Tracker
-
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
-
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
-
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
-
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+### 2E: Publish Error UX (IMP-8)
+- **Modify:** `cross-module-tools.ts` `publish_to_website` handler — when no website connected, save as `ready_to_publish`, return helpful message with action buttons
 
 ---
 
-# AI Chat Frontend Bug Fixes — 10 Issues, 3 Phases ✅ COMPLETE
+## Phase 3: SECURITY + INTEGRITY
 
-## ✅ Phase 1: Critical Functional Bugs
-- **Fix 1 — Error Retry Button:** Added `onRetry` prop to `EnhancedMessageBubble` in `EnhancedChatInterface.tsx` — finds last user message before error and re-sends
-- **Fix 2 — Edit Message Duplication:** Rewrote `editMessage` in `useEnhancedAIChatDB.ts` to invoke SSE inline (no `sendMessage` call) — inserts new AI response at correct position without duplicating user message
-- **Fix 3 — SSE Timeout:** Moved `clearTimeout(timeoutId)` into `finally` block after reader loop completes (both in `sendMessage` and `editMessage`)
+### 3A: Destructive Tools Guard (IMP-26 replaced / IMP-32)
+- **Modify:** `index.ts` line 2820 — expand `DESTRUCTIVE_TOOLS` array to include:
+  `delete_contact`, `delete_segment`, `delete_email_campaign`, `delete_journey`, `delete_automation`, `delete_social_post`, `delete_calendar_item`, `publish_to_website`
 
-## ✅ Phase 2: Medium Severity Fixes
-- **Fix 4 — open_settings Event:** Changed `{ detail: action.data?.tab }` → `{ detail: { tab: action.data?.tab } }` to match listener expectations
-- **Fix 5 — RateLimitBanner Retry:** Wired to re-send last user message instead of console.log no-op
-- **Fix 6 — setState in useMemo:** Replaced `useState` + `setMessageSearchResults` inside `useMemo` with pure derived `useMemo` value
-- **Fix 7 — Title Truncation:** Smart truncation at last word boundary before 40 chars
+### 3B: Shared Conversation RLS Fix (IMP-24)
+- **Migration:** Replace overly broad `is_shared = true` RLS policy with a function-based policy that requires the query to filter by `share_token`
 
-## ✅ Phase 3: Dead Code Cleanup & State Sync
-- **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
-- **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
-- **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed
+### 3C: File Upload Size Guard (IMP-25)
+- **Modify:** `src/components/ai-chat/ContextAwareMessageInput.tsx` — truncate `analysis.summary` to 4000 chars before building the message
+
+### 3D: .gitignore (IMP-15)
+- **Modify:** `.gitignore` — add `.env`, `.env.*`, `.env.local`, `.env.production`
+
+---
+
+## Phase 4: MEDIUM — Polish & Consistency
+
+### 4A: Empty Data Rule in System Prompt (IMP-21)
+- **Modify:** `index.ts` system prompt — add: "If a read tool returns 0 items, do NOT generate a chart. Tell the user what's missing and suggest the creation action."
+
+### 4B: Silent Web Search Fallback (IMP-29)
+- **Modify:** `index.ts` ~line 2228 — when auto-detected web search has no SERP key, add note about adding key (currently only shows for `forceWebSearch`)
+
+### 4C: Competitor Analysis Honest Messaging (IMP-30)
+- **Modify:** `offerings-action-tools.ts` line 295 — replace `competitor-analyzer` (doesn't exist) with `competitor-intel` (does exist), or return "coming soon" message
+
+### 4D: Fire-and-Forget Verification (IMP-31)
+- **Modify:** `content-action-tools.ts` (`trigger_content_generation`, `retry_failed_content`) — after triggering, verify the edge function responded, else return honest error
+
+### 4E: Email HTML from Markdown (IMP-34)
+- **Modify:** `cross-module-tools.ts` `content_to_email` handler — wrap `content.content` in basic email-safe HTML template instead of raw markdown
+
+### 4F: Engage Workspace Notification (IMP-28)
+- **Modify:** Engage tool handlers — after `ensure_engage_workspace` auto-creates, append message: "I've set up your Engage workspace."
+
+---
+
+## Phase 5: LOW — Nice to Have
+
+### 5A: Image Generation Key Guidance (IMP-16)
+- When no image provider key found, show help text in wizard
+
+### 5B: Journey Cron Documentation (IMP-17)
+- Add note in Engage settings about cron requirement for journey processing
+
+### 5C: Activity Log Sidebar Link (IMP-18)
+- Add "Activity" link to Engage section in sidebar
+
+### 5D: Image Generation Provider Fallback (IMP-33)
+- Check `api_keys` table as fallback when `ai_service_providers` has no image entry
+
+### 5E: AI Provider Auto-Fallback (IMP-7)
+- **Modify:** `ai-proxy` to support `service: 'auto'` — pick first available provider
+- Tool handlers pass `service: 'auto'` instead of hardcoded provider
+
+### 5F: Campaign Queue Monitoring (IMP-22)
+- Add follow-up status check after content generation trigger; show "delayed" message if stuck
+
+---
+
+## Execution Order
+
+```text
+Phase 1 (Critical)     → 3 items, ~4 files + 1 new component
+Phase 2 (High)         → 5 items, ~6 edge function files + 1 migration
+Phase 3 (Security)     → 4 items, ~3 files + 1 migration
+Phase 4 (Polish)       → 6 items, ~4 edge function files
+Phase 5 (Nice-to-have) → 6 items, ~5 files
+```
+
+Total: 24 remaining items across 5 phases. Each phase is independently deployable and testable.
+
