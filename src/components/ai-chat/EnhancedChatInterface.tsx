@@ -95,6 +95,63 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     checkKeys();
   }, [user, hasCheckedKeys]);
 
+  // 4b: Proactive insights on welcome screen
+  const [proactiveInsights, setProactiveInsights] = useState<Array<{type: string; label: string; count: number; icon: React.ReactNode}>>([]);
+  // 4e: Conversation templates from patterns
+  const [workflowTemplates, setWorkflowTemplates] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user || messages.length > 0) return;
+    const fetchInsights = async () => {
+      try {
+        const fourteenDaysAgo = new Date(Date.now() - 14 * 86400000).toISOString();
+        const sevenDaysFromNow = new Date(Date.now() + 7 * 86400000).toISOString();
+        const today = new Date().toISOString().split('T')[0];
+
+        const [staleDrafts, failedQueue, calendarItems, pendingApprovals] = await Promise.all([
+          supabase.from('content_items').select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id).eq('status', 'draft').lt('updated_at', fourteenDaysAgo),
+          supabase.from('content_generation_queue').select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id).eq('status', 'failed'),
+          supabase.from('content_calendar').select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id).gte('scheduled_date', today).lte('scheduled_date', sevenDaysFromNow),
+          supabase.from('content_approvals').select('id', { count: 'exact', head: true })
+            .eq('reviewer_id', user.id).eq('status', 'pending_review'),
+        ]);
+
+        const insights: typeof proactiveInsights = [];
+        if ((staleDrafts.count ?? 0) > 0) insights.push({ type: 'stale', label: 'Stale drafts (>14d)', count: staleDrafts.count!, icon: <Clock className="h-3.5 w-3.5" /> });
+        if ((failedQueue.count ?? 0) > 0) insights.push({ type: 'failed', label: 'Failed queue items', count: failedQueue.count!, icon: <AlertTriangle className="h-3.5 w-3.5" /> });
+        if ((calendarItems.count ?? 0) === 0) insights.push({ type: 'empty_cal', label: 'Empty calendar this week', count: 0, icon: <CalendarX className="h-3.5 w-3.5" /> });
+        if ((pendingApprovals.count ?? 0) > 0) insights.push({ type: 'approvals', label: 'Pending approvals', count: pendingApprovals.count!, icon: <CheckCircle2 className="h-3.5 w-3.5" /> });
+        setProactiveInsights(insights);
+      } catch (_) { /* non-blocking */ }
+    };
+
+    const fetchTemplates = async () => {
+      try {
+        const { data: convos } = await supabase.from('ai_conversations')
+          .select('title').eq('user_id', user.id)
+          .order('updated_at', { ascending: false }).limit(20);
+        if (!convos?.length) return;
+        const patterns: Record<string, number> = {};
+        for (const c of convos) {
+          if (!c.title) continue;
+          const match = c.title.match(/^(Write|Create|Analyze|Generate|Draft|Plan|Research|Compare|Optimize|Review)\s+.{3,}/i);
+          if (match) {
+            const key = c.title.substring(0, 40).trim();
+            patterns[key] = (patterns[key] || 0) + 1;
+          }
+        }
+        const sorted = Object.entries(patterns).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k]) => k);
+        setWorkflowTemplates(sorted);
+      } catch (_) { /* non-blocking */ }
+    };
+
+    fetchInsights();
+    fetchTemplates();
+  }, [user, messages.length]);
+
   // Analyst engine: track if analyst is active and provide cumulative state
   const [isAnalystPanelActive, setIsAnalystPanelActive] = useState(false);
   const analystState = useAnalystEngine(messages, user?.id || null, isAnalystPanelActive);
