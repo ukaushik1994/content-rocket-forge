@@ -904,7 +904,14 @@ export async function executeEngageActionTool(
           .update({ status: 'pending' })
           .eq('post_id', toolArgs.post_id);
 
-        return { success: true, message: `Scheduled social post for ${toolArgs.scheduled_at}`, item: data };
+        return {
+          success: true,
+          message: `Scheduled social post for ${toolArgs.scheduled_at}. Direct publishing to platforms is coming soon — for now, copy the text and post manually.`,
+          item: data,
+          actions: [
+            { id: 'copy_post', label: '📋 Copy Post Text', type: 'copy', content: data.content }
+          ]
+        };
       }
 
       default:
