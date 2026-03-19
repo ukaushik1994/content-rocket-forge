@@ -2416,6 +2416,41 @@ export type Database = {
           },
         ]
       }
+      content_generation_feedback: {
+        Row: {
+          content_id: string
+          created_at: string
+          feedback_data: Json
+          feedback_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          feedback_data?: Json
+          feedback_type?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          feedback_data?: Json
+          feedback_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_generation_feedback_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_generation_queue: {
         Row: {
           brief: Json

@@ -437,6 +437,28 @@ Always start with the title as an H1 heading and follow the provided outline str
       console.warn('⚠️ Could not load user prompt templates:', e);
     }
 
+    // Inject brand voice into Content Wizard (Fix 6)
+    try {
+      const { data: brandGuidelines } = await supabase.from('brand_guidelines')
+        .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use')
+        .maybeSingle();
+      if (brandGuidelines) {
+        const bvParts: string[] = [];
+        if (brandGuidelines.tone && Array.isArray(brandGuidelines.tone) && brandGuidelines.tone.length > 0) bvParts.push(`Write in this tone: ${brandGuidelines.tone.join(', ')}`);
+        if (brandGuidelines.brand_personality) bvParts.push(`Brand personality: ${brandGuidelines.brand_personality}`);
+        if (brandGuidelines.brand_values) bvParts.push(`Core values to reflect: ${brandGuidelines.brand_values}`);
+        if (brandGuidelines.target_audience) bvParts.push(`Writing for: ${brandGuidelines.target_audience}`);
+        if (brandGuidelines.do_use && Array.isArray(brandGuidelines.do_use) && brandGuidelines.do_use.length > 0) bvParts.push(`DO use phrases like: ${brandGuidelines.do_use.join(', ')}`);
+        if (brandGuidelines.dont_use && Array.isArray(brandGuidelines.dont_use) && brandGuidelines.dont_use.length > 0) bvParts.push(`DON'T use: ${brandGuidelines.dont_use.join(', ')}`);
+        if (bvParts.length > 0) {
+          systemPrompt += `\n\nBRAND VOICE GUIDELINES (MANDATORY — apply to all content):\n${bvParts.join('\n')}`;
+          console.log('🎨 Brand voice injected into Content Wizard');
+        }
+      }
+    } catch (bvErr) {
+      console.warn('⚠️ Could not load brand guidelines:', bvErr);
+    }
+
     // Get user's active AI provider directly
     console.log(`🚀 Advanced content generation via direct ai-proxy`);
     const { data: { user } } = await supabase.auth.getUser();

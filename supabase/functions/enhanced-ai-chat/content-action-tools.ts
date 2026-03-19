@@ -442,6 +442,146 @@ export async function executeContentActionTool(
           return { success: false, message: 'API key not found. Please re-enter your API key in Settings.' };
         }
 
+        // === ENRICHMENT: Fetch brand voice, solutions, competitors, existing content in parallel ===
+        let brandContext = '';
+        let solutionContext = '';
+        let freshnessContext = '';
+        let competitorContext = '';
+        let structureGuidance = '';
+        let editPatternHint = '';
+
+        try {
+          const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult] = await Promise.allSettled([
+            // Brand voice
+            supabase.from('brand_guidelines')
+              .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use, mission_statement')
+              .eq('user_id', userId).maybeSingle(),
+            // Solutions
+            supabase.from('solutions')
+              .select('name, description, key_features, results')
+              .eq('user_id', userId).limit(5),
+            // Content freshness — check for existing articles on same keyword
+            supabase.from('content_items')
+              .select('id, title, main_keyword, seo_score, created_at')
+              .eq('user_id', userId).neq('status', 'archived')
+              .ilike('main_keyword', `%${toolArgs.keyword}%`).limit(5),
+            // Competitor intelligence
+            supabase.from('company_competitors')
+              .select('name, intelligence_data, strengths, weaknesses')
+              .eq('user_id', userId).limit(3),
+            // Top performing content for structure reuse
+            supabase.from('content_items')
+              .select('content, seo_score')
+              .eq('user_id', userId).eq('status', 'published')
+              .order('seo_score', { ascending: false }).limit(3),
+            // Edit pattern feedback (Fix 9)
+            supabase.from('content_generation_feedback')
+              .select('feedback_data')
+              .eq('user_id', userId).eq('feedback_type', 'edit_pattern')
+              .order('created_at', { ascending: false }).limit(10)
+          ]);
+
+          // Brand voice context
+          if (brandResult.status === 'fulfilled' && brandResult.value.data) {
+            const b = brandResult.value.data;
+            const parts: string[] = [];
+            if (b.tone && Array.isArray(b.tone) && b.tone.length > 0) parts.push(`Tone: ${b.tone.join(', ')}`);
+            if (b.brand_personality) parts.push(`Personality: ${b.brand_personality}`);
+            if (b.brand_values) parts.push(`Values: ${b.brand_values}`);
+            if (b.do_use && Array.isArray(b.do_use) && b.do_use.length > 0) parts.push(`DO use phrases like: ${b.do_use.join(', ')}`);
+            if (b.dont_use && Array.isArray(b.dont_use) && b.dont_use.length > 0) parts.push(`DON'T use phrases like: ${b.dont_use.join(', ')}`);
+            if (parts.length > 0) brandContext = `\n\n## Brand Voice\n${parts.join('\n')}`;
+
+            // Reading level from target audience (Fix 17)
+            if (b.target_audience) {
+              const ta = b.target_audience.toLowerCase();
+              if (/technical|developer|engineer/i.test(ta)) readingLevel = '\nReading level: Technical — use industry jargon freely, assume domain expertise.';
+              else if (/executive|c-suite|decision.?maker|director/i.test(ta)) readingLevel = '\nReading level: Executive — concise, results-focused, minimal fluff, lead with outcomes.';
+              else if (/beginner|consumer|general|everyday/i.test(ta)) readingLevel = '\nReading level: Accessible — simple language, explain concepts, avoid jargon, use analogies.';
+              else readingLevel = `\nReading level: Write for ${b.target_audience} — adapt vocabulary and depth accordingly.`;
+            }
+          }
+
+          // Solution context with mention density (Fix 16)
+          if (solutionsResult.status === 'fulfilled' && solutionsResult.value.data?.length > 0) {
+            const sols = solutionsResult.value.data;
+            const solNames = sols.map((s: any) => s.name).filter(Boolean);
+            const mentionFreq = targetWords >= 1500 ? '3-4 times' : targetWords >= 800 ? '2-3 times' : '1-2 times';
+            solutionContext = `\n\n## Solutions to Reference\nNaturally mention these offerings ${mentionFreq} throughout the content:\n${sols.map((s: any) => `- ${s.name}: ${s.description || ''}`.trim()).join('\n')}`;
+            if (sols[0]?.key_features) {
+              const features = Array.isArray(sols[0].key_features) ? sols[0].key_features : [];
+              if (features.length > 0) solutionContext += `\nKey features to weave in: ${features.slice(0, 5).join(', ')}`;
+            }
+          }
+
+          // Content freshness detection (Fix 19)
+          if (existingResult.status === 'fulfilled' && existingResult.value.data?.length > 0) {
+            const existing = existingResult.value.data;
+            freshnessContext = `\n\n## Content Freshness Note\nUser already has ${existing.length} article(s) on similar topics:\n${existing.map((e: any) => `- "${e.title}" (SEO: ${e.seo_score || 'N/A'})`).join('\n')}\nTake a DIFFERENT ANGLE — don't repeat the same points. Find a unique perspective, updated data, or unexplored subtopic.`;
+          }
+
+          // Competitor gap as input (Fix 11)
+          if (competitorResult.status === 'fulfilled' && competitorResult.value.data?.length > 0) {
+            const comps = competitorResult.value.data;
+            const relevantComps = comps.filter((c: any) => {
+              const intel = JSON.stringify(c.intelligence_data || {}).toLowerCase();
+              return intel.includes(toolArgs.keyword.toLowerCase());
+            });
+            if (relevantComps.length > 0) {
+              competitorContext = `\n\n## Competitive Context\nCompetitors covering this topic: ${relevantComps.map((c: any) => c.name).join(', ')}.\nWeaknesses to exploit: ${relevantComps.map((c: any) => Array.isArray(c.weaknesses) ? c.weaknesses.slice(0, 2).join(', ') : '').filter(Boolean).join('; ') || 'N/A'}.\nDifferentiate by providing more depth, better data, and unique insights they miss.`;
+            }
+          }
+
+          // Top content structure reuse (Fix 10)
+          if (topContentResult.status === 'fulfilled' && topContentResult.value.data?.length > 0) {
+            const topArticles = topContentResult.value.data;
+            const headingCounts = topArticles.map((a: any) => {
+              const h2s = (a.content?.match(/<h2/gi) || a.content?.match(/^##\s/gm) || []).length;
+              return h2s;
+            });
+            const avgHeadings = Math.round(headingCounts.reduce((a: number, b: number) => a + b, 0) / headingCounts.length);
+            if (avgHeadings > 0) {
+              structureGuidance = `\n\n## Structure Guidance (from top-performing content)\nUse approximately ${avgHeadings} H2 sections. Your best content averages ${avgHeadings} main sections — replicate this winning structure.`;
+            }
+          }
+
+          // Edit pattern feedback — learned preferences (Fix 9)
+          if (feedbackResult.status === 'fulfilled' && feedbackResult.value.data?.length >= 3) {
+            const ratios = feedbackResult.value.data.map((d: any) => d.feedback_data?.lengthRatio || 1);
+            const avgRatio = ratios.reduce((a: number, b: number) => a + b, 0) / ratios.length;
+            if (avgRatio < 0.75) editPatternHint = '\n\n## Learned Preference\nThis user consistently shortens AI-generated content. Write MORE CONCISELY — target 20% fewer words than the stated target.';
+            else if (avgRatio > 1.25) editPatternHint = '\n\n## Learned Preference\nThis user consistently expands AI-generated content. Write with MORE DEPTH and DETAIL — target 20% more words than the stated target.';
+          }
+        } catch (enrichErr) {
+          console.error('[CONTENT-ACTION] Enrichment fetch failed (non-blocking):', enrichErr);
+        }
+
+        // === BUILD ENRICHED SYSTEM PROMPT ===
+        const systemPrompt = `You are an expert content writer who writes like a real human — not an AI.
+
+## Core Rules
+1. NEVER use these AI-slop words/phrases: "In today's digital landscape", "game-changer", "dive into", "unlock", "unleash", "elevate", "leverage", "navigate", "supercharge", "empower", "cutting-edge", "groundbreaking", "revolutionize", "seamlessly", "harness", "landscape", "paradigm", "robust", "streamline", "synergy", "holistic", "delve", "foster", "spearhead", "pivotal", "beacon", "realm", "vibrant", "meticulous", "tapestry", "comprehensive guide", "in conclusion"
+2. Write in first person plural ("we") or address the reader as "you" — never generic third person
+3. Vary sentence length dramatically: mix 5-word punches with 25-word flowing sentences
+4. Start some paragraphs with a bold opinion, question, or surprising fact — never "This article will..."
+5. Include at least one real-world example, case study, or specific data point per major section
+6. Use contractions naturally (don't, we're, it's) — stiff writing kills engagement
+
+## Content Structure
+- Open with a hook that creates curiosity or states a bold claim (2-3 sentences max, no preamble)
+- Use H2 headings as section dividers — each should be specific and benefit-driven, not generic
+- Include a "## Key Takeaways" section near the top (3-5 bullet points summarizing the article)
+- End with a "## FAQ" section (3-5 real questions people would ask, with concise answers)
+- Close with a clear next step or call-to-action paragraph (not labeled "Conclusion")
+
+## Format
+- Content type: ${toolArgs.content_type || 'blog'}
+- Tone: ${toolArgs.tone || 'professional'}
+- Target length: ~${targetWords} words
+- Output clean HTML with proper headings (h2, h3), paragraphs, lists, and occasional <strong> for emphasis
+- Do NOT include meta information or JSON — just the article content
+${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorContext}${structureGuidance}${editPatternHint}`;
+
         // Generate content via ai-proxy with retry
         const proxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
           method: 'POST',
@@ -456,10 +596,7 @@ export async function executeContentActionTool(
             params: {
               model: provider.preferred_model || 'gpt-4',
               messages: [
-                {
-                  role: 'system',
-                  content: `You are an expert content writer. Write a ${toolArgs.content_type || 'blog'} article. Tone: ${toolArgs.tone || 'professional'}. Target length: ~${targetWords} words. Output clean HTML content with proper headings (h2, h3), paragraphs, and lists. Do NOT include meta information or JSON - just the article content.`
-                },
+                { role: 'system', content: systemPrompt },
                 {
                   role: 'user',
                   content: `Write a comprehensive ${toolArgs.content_type || 'blog post'} about "${toolArgs.keyword}".${toolArgs.additional_instructions ? ` Additional instructions: ${toolArgs.additional_instructions}` : ''}`
@@ -475,7 +612,7 @@ export async function executeContentActionTool(
         }
 
         const aiResult = await proxyResponse.json();
-        const generatedContent = aiResult.content || aiResult.choices?.[0]?.message?.content || '';
+        const generatedContent = aiResult.data?.choices?.[0]?.message?.content || aiResult.content || aiResult.choices?.[0]?.message?.content || '';
 
         if (!generatedContent) {
           return { success: false, message: 'AI returned empty content. Try again or adjust your request.' };
@@ -484,6 +621,11 @@ export async function executeContentActionTool(
         // Extract title from first H1/H2 or use keyword
         const titleMatch = generatedContent.match(/<h[12][^>]*>(.*?)<\/h[12]>/i);
         const autoTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '') : `${toolArgs.keyword} - ${toolArgs.content_type || 'Blog Post'}`;
+
+        // Auto meta title/description (Fix 3)
+        const plainText = generatedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        const autoMetaTitle = autoTitle.length > 60 ? autoTitle.substring(0, 57) + '...' : autoTitle;
+        const autoMetaDesc = plainText.length > 155 ? plainText.substring(0, 152) + '...' : plainText;
 
         // Save to content_items
         const { data: saved, error: saveError } = await supabase.from('content_items').insert({
@@ -494,6 +636,8 @@ export async function executeContentActionTool(
           main_keyword: toolArgs.keyword,
           secondary_keywords: [],
           status: 'draft',
+          meta_title: autoMetaTitle,
+          meta_description: autoMetaDesc,
           metadata: { generated_via: 'ai_chat', keyword: toolArgs.keyword, tone: toolArgs.tone, length: toolArgs.length },
           solution_id: toolArgs.solution_id || null
         }).select('id, title, status, content_type, created_at').single();
@@ -501,16 +645,49 @@ export async function executeContentActionTool(
         if (saveError) throw saveError;
 
         // Auto-calculate SEO score for generated content
-        const seoScore = calculateBasicSeoScore(generatedContent, toolArgs.keyword, autoTitle, '');
+        const seoScore = calculateBasicSeoScore(generatedContent, toolArgs.keyword, autoMetaTitle, autoMetaDesc);
         if (seoScore > 0 && saved.id) {
           await saveAutoSeoScore(supabase, userId, saved.id, seoScore, toolArgs.keyword);
         }
 
+        // Fact-checking flags (Fix 18)
+        let factCheckWarning = '';
+        try {
+          const statsPattern = /(\d{1,3}(?:,\d{3})*(?:\.\d+)?%|\$\d+(?:\.\d+)?(?:\s*(?:billion|million|trillion))?|\d+%)/gi;
+          const statsFound = generatedContent.match(statsPattern) || [];
+          if (statsFound.length > 0) {
+            factCheckWarning = `\n⚠️ **Fact-check advisory**: This article contains ${statsFound.length} statistic(s)/figure(s) that should be verified before publishing.`;
+          }
+        } catch (_) { /* non-blocking */ }
+
+        // Internal linking suggestions (Fix 12)
+        let linkSuggestions = '';
+        try {
+          const { data: published } = await supabase.from('content_items')
+            .select('id, title, main_keyword')
+            .eq('user_id', userId).eq('status', 'published')
+            .neq('id', saved.id).limit(20);
+
+          if (published?.length > 0) {
+            const keywordLower = toolArgs.keyword.toLowerCase();
+            const keywordWords = keywordLower.split(/\s+/);
+            const relatedArticles = published.filter((p: any) => {
+              const pKeyword = (p.main_keyword || '').toLowerCase();
+              const pTitle = (p.title || '').toLowerCase();
+              return keywordWords.some((w: string) => w.length > 3 && (pKeyword.includes(w) || pTitle.includes(w)));
+            }).slice(0, 3);
+
+            if (relatedArticles.length > 0) {
+              linkSuggestions = `\n🔗 **Internal linking suggestions**: Consider linking to: ${relatedArticles.map((a: any) => `"${a.title}"`).join(', ')}`;
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
         const wordCount = generatedContent.split(/\s+/).length;
         return {
           success: true,
-          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100) as draft`,
-          item: { ...saved, seo_score: seoScore },
+          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100) as draft${factCheckWarning}${linkSuggestions}`,
+          item: { ...saved, seo_score: seoScore, meta_title: autoMetaTitle, meta_description: autoMetaDesc },
           wordCount
         };
       }
@@ -559,7 +736,30 @@ export async function executeContentActionTool(
         }).select('id, title, scheduled_date, status, priority, content_type, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Scheduled "${data.title}" for ${data.scheduled_date}`, item: data };
+
+        // Calendar topic diversity check (Fix 15)
+        let diversityNote = '';
+        try {
+          const scheduledMonth = toolArgs.scheduled_date?.substring(0, 7); // YYYY-MM
+          if (scheduledMonth) {
+            const { data: monthItems } = await supabase.from('content_calendar')
+              .select('content_type')
+              .eq('user_id', userId)
+              .gte('scheduled_date', `${scheduledMonth}-01`)
+              .lt('scheduled_date', `${scheduledMonth}-32`);
+
+            if (monthItems && monthItems.length >= 3) {
+              const typeCounts: Record<string, number> = {};
+              monthItems.forEach((item: any) => { typeCounts[item.content_type] = (typeCounts[item.content_type] || 0) + 1; });
+              const maxType = Object.entries(typeCounts).sort(([,a]: any, [,b]: any) => b - a)[0];
+              if (maxType && (maxType[1] as number) / monthItems.length > 0.7) {
+                diversityNote = ` 💡 Tip: ${Math.round((maxType[1] as number) / monthItems.length * 100)}% of your ${scheduledMonth} content is "${maxType[0]}" — consider mixing in different formats for better engagement.`;
+              }
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
+        return { success: true, message: `Scheduled "${data.title}" for ${data.scheduled_date}${diversityNote}`, item: data };
       }
 
       case 'update_calendar_item': {

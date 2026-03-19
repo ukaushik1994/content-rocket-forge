@@ -85,13 +85,30 @@ serve(async (req) => {
 
     console.log('[Campaign Content Generator] Using provider:', provider.provider);
 
+    // Fetch brand voice for prompt enrichment (Fix 7)
+    let brandVoicePrompt = '';
+    try {
+      const { data: brandData } = await supabase.from('brand_guidelines')
+        .select('tone, brand_personality, do_use, dont_use, target_audience')
+        .eq('user_id', userId).maybeSingle();
+      if (brandData) {
+        const parts: string[] = [];
+        if (brandData.tone && Array.isArray(brandData.tone) && brandData.tone.length > 0) parts.push(`Tone: ${brandData.tone.join(', ')}`);
+        if (brandData.brand_personality) parts.push(`Personality: ${brandData.brand_personality}`);
+        if (brandData.target_audience) parts.push(`Audience: ${brandData.target_audience}`);
+        if (brandData.do_use && Array.isArray(brandData.do_use)) parts.push(`Use phrases like: ${brandData.do_use.slice(0, 5).join(', ')}`);
+        if (brandData.dont_use && Array.isArray(brandData.dont_use)) parts.push(`Avoid: ${brandData.dont_use.slice(0, 5).join(', ')}`);
+        if (parts.length > 0) brandVoicePrompt = `\n\nBRAND VOICE:\n${parts.join('\n')}`;
+      }
+    } catch (_) { console.warn('[Campaign Content Generator] Brand voice fetch failed (non-blocking)'); }
+
     // Build generation prompt
     const systemPrompt = buildContentPrompt(
       brief,
       formatId,
       campaignContext,
       solutionData
-    );
+    ) + brandVoicePrompt;
 
     // Call user's configured AI provider through enhanced-ai-chat
     const { data: aiResponse, error: aiError } = await supabase.functions.invoke('enhanced-ai-chat', {

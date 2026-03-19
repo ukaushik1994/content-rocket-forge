@@ -1,104 +1,173 @@
 
 
-# Phase-by-Phase Implementation Plan: Value Logic + Prompt Efficiency
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-Two documents, 23 total fixes across 8 files + 1 new service + 1 migration. Organized into 5 phases for safe, incremental delivery.
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
----
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## Phase 1: Content Generation Quality (Value Logic Fixes 1, 3, 16, 17, 18, 19)
-**File: `supabase/functions/enhanced-ai-chat/content-action-tools.ts`**
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-All changes are in the `generate_full_content` case (lines 419-516). These are additive — no existing logic is removed.
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-1. **Enrich system prompt** (Fix 1): Replace the generic one-liner system message (line 460-461) with the full humanization + SEO structure prompt (banned words, Key Takeaways, FAQ, varied sentence length, first-person voice)
-2. **Brand voice + solution context** (Fix 1): Before `callAiProxyWithRetry` (line 446), fetch `brand_guidelines` and optionally `solutions` table. Append to system message. All try/catch, non-blocking.
-3. **Fix response parsing** (Fix 1): Update line 478 to check `aiResult.data?.choices?.[0]?.message?.content` first
-4. **Auto meta title/description** (Fix 3): After `saveAutoSeoScore` (line 506), extract plain text and update `content_items` with `meta_title` (60 chars) and `meta_description` (155 chars)
-5. **Solution mention density** (Fix 16): In the solution context string, add rules for mention frequency based on `targetWords`
-6. **Reading level from audience** (Fix 17): Fetch `target_audience` from `brand_guidelines`, match against patterns (technical/executive/beginner), append reading level instruction
-7. **Fact-checking flags** (Fix 18): After generation, regex-match statistics/citations, append warning to return message
-8. **Content freshness detection** (Fix 19): At top of case, check if user has existing content with same keyword via `ilike`. Append freshness note (refresh vs different angle) to system message
-9. **Top content structure reuse** (Fix 10): Fetch top 3 published articles by SEO score, analyze avg headings and words-per-section, append structure guidance
-10. **Competitor gap as input** (Fix 11): Fetch `company_competitors`, check if intelligence mentions keyword, append competitive context
-11. **Internal linking suggestions** (Fix 12): After save, scan published articles for keyword overlap, include link suggestions in return message
-12. **Calendar topic diversity** (Fix 15): In `create_calendar_item` case, check month's content mix after insert, append diversity note if >70% is one type
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-**Risk**: Zero — all additions are wrapped in try/catch, non-blocking. Existing flow untouched.
-
----
-
-## Phase 2: Brand Voice Everywhere (Value Logic Fixes 2, 4, 5, 6, 7, 13)
-**Files: `index.ts`, `cross-module-tools.ts`, `advancedContentGeneration.ts`, `campaign-content-generator/index.ts`, `engage-action-tools.ts`**
-
-1. **Brand voice in main chat** (Fix 2): In `index.ts` before `realDataContext` injection (line 2552), fetch `brand_guidelines` and append to system prompt. Non-blocking try/catch.
-2. **Platform-specific social** (Fix 4): In `cross-module-tools.ts` (line 342), replace generic social prompt with platform-specific rules (Twitter 270 chars, LinkedIn 300-600 words thought-leadership, Facebook storytelling, Instagram caption + hashtags). Also inject brand tone before the AI call.
-3. **Existing content in proposals** (Fix 5): In `index.ts` near the campaign strategy fast path, fetch top 20 `content_items` with scores, inject as context so AI avoids duplicate topics.
-4. **Brand voice in Content Wizard** (Fix 6): In `src/services/advancedContentGeneration.ts` after the system prompt is built (~line 399), fetch brand guidelines and append.
-5. **Brand voice in campaign generator** (Fix 7): In `campaign-content-generator/index.ts` `buildContentPrompt` function, add brand voice fetch via supabase query and append to prompt.
-6. **Audience-aware email tone** (Fix 13): In `engage-action-tools.ts` `create_email_campaign` case (line 481), when `segment_id` is provided, fetch segment name and detect VIP/new lead/inactive patterns to set tone hint.
-
-**Risk**: Low — all non-blocking fetches. Campaign generator needs supabase client which already exists (line 63).
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
 ---
 
-## Phase 3: Content Feedback Loop (Value Logic Fixes 8, 9, 14)
-**New files + modifications**
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-1. **Create migration** `content_generation_feedback` table: `id`, `user_id`, `content_id`, `feedback_type`, `feedback_data` (JSONB), `created_at`. RLS policy for own rows.
-2. **Create service** `src/services/contentFeedbackService.ts`: `trackContentEdit()` function that compares original vs edited content (word count change, headings change, length ratio).
-3. **Hook into Repository editor**: Where content is saved after user edits, if `metadata.generated_via` exists, call `trackContentEdit`.
-4. **Feed edit patterns into generation** (Fix 9): In `content-action-tools.ts` `generate_full_content`, after brand voice fetch, query last 10 feedback rows. If user consistently shortens/expands, append learned preference to system message.
-5. **Performance-driven topic prioritization** (Fix 14): In `index.ts` where `realDataContext` is built, analyze content scores grouped by keyword theme, append ranked topic performance to system prompt.
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-**Risk**: Medium — requires migration. The feedback table is isolated, so no impact on existing tables. The editor hook needs careful placement.
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
+
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
+
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
 ---
 
-## Phase 4: Prompt Efficiency (Prompt Efficiency Fixes 1-4)
-**File: `supabase/functions/enhanced-ai-chat/index.ts`**
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-This phase reduces token usage by ~50% on average requests. Changes are in the NORMAL path (lines 2447-2508).
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
 
-1. **Intent-gated module loading** (PE Fix 1): Replace unconditional module appending with conditional logic:
-   - `CHART_MODULE` / `MULTI_CHART_MODULE`: only when categories include content/keywords/campaigns/analytics/performance
-   - `TABLE_MODULE`: only when query matches `/table|spreadsheet|list all|export|raw data|csv/i`
-   - `ACTION_MODULE`: only for non-summary scope with campaigns/engage/content categories
-   - `PLATFORM_KNOWLEDGE_MODULE`: only when categories include navigation/general or query matches `/where|how do i|find|navigate/i`
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
 
-2. **Intent-gated tool definitions** (PE Fix 2): Create `getToolsForIntent()` function with category-to-tools mapping. Filter `TOOL_DEFINITIONS` to only include tools relevant to `queryIntent.categories`. Always include a minimum set for general queries. Pass `filteredTools` instead of full `TOOL_DEFINITIONS` to AI call (line 2598).
-
-3. **Split PLATFORM_KNOWLEDGE_MODULE** (PE Fix 3): Extract a lightweight `PLATFORM_BASICS` (~200 tokens) with just page routes and navigation links. Load full `PLATFORM_DEEP` only when `needsPlatformKnowledge` is true.
-
-4. **Compress data context for simple queries** (PE Fix 4): When `queryIntent.scope === 'summary'`, append only a one-line data snapshot instead of full `realDataContext`.
-
-**Risk**: Medium — this changes the AI's behavior by giving it less context. Mitigated by keeping always-on modules (BASE_PROMPT, TOOL_USAGE, RESPONSE_STRUCTURE) and generous category matching. The fallback ensures general queries still get a useful tool set.
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
 
 ---
 
-## Phase 5: Verification & Deploy
+# AI Chat Awareness Gaps — Implementation Tracker
 
-1. Deploy all edge functions (`enhanced-ai-chat`, `campaign-content-generator`)
-2. Run migration for `content_generation_feedback` table
-3. Test matrix:
-   - "Write a blog post about remote work tools" → verify humanized output, brand voice, Key Takeaways, FAQ, no AI slop words, internal link suggestions, fact-check flags
-   - "Repurpose my latest article for Twitter and LinkedIn" → Twitter <280 chars, LinkedIn 300-600 words with line breaks
-   - "Show my content" → verify reduced token count in logs (~8k vs ~20k)
-   - "What should I write next" → verify performance-weighted suggestions, no duplicate topics
-   - Content Wizard generation → verify brand voice applied
-   - Edit generated content, then generate again → verify learned preferences
+## ✅ Batch 1: Remove Glossary — COMPLETE
+- Removed `/glossary-builder` route (redirects to /ai-chat)
+- Removed RepositoryHeader "Build Glossary" button
+- Removed `get_glossary_terms` read tool from tools.ts
+- Removed `create_glossary_term` write tool from content-action-tools.ts
+- Removed glossary from query-analyzer.ts intent detection
+- Removed glossary from system prompt capabilities
+- Removed glossary from ContentType union and content type enums
+- Removed glossary from DashboardSummary stats
+- Removed glossary from ContentTypeSelection page
+- DB tables kept (no destructive migration)
+
+## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
+- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
+- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
+- Added `create_campaign` to cross-module-tools.ts
+- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
+- Added `update_email_template` to engage-action-tools.ts
+- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
+- Added cache invalidation for all new write tools
+- Updated query-analyzer.ts with new intent patterns
+- Updated system prompt with new tool capabilities + usage examples
+- Edge function deployed successfully
+
+## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
+- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
+- 3-step flow: content selection → format selection → generated results with copy/download
+- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
+- Imported RepurposePanel alongside other panels
+- Excluded `content_repurpose` from auto-chart-conversion in edge function
+- Updated system prompt to instruct AI to emit `content_repurpose` visualData
+- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
+- Edge function deployed
+
+## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
+- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
+- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
+- Auto-triggers after `create_content_item` — saves seo_score to content_items
+- Auto-triggers after `generate_full_content` — saves seo_score to content_items
+- Content Wizard already saves seo_score on insert (verified)
+- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
+- Edge function deployed
+## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
+- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
+- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
+- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
+- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
+- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
+- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
+- Updated system prompt tool listing (25 read tools) and usage examples
+- Edge function deployed
 
 ---
 
-## Summary
+# AI Chat Frontend Bug Fixes — 10 Issues, 3 Phases ✅ COMPLETE
 
-| Phase | Fixes | Files Modified | Risk |
-|-------|-------|---------------|------|
-| 1 | Value 1,3,10-12,15-19 | `content-action-tools.ts` | Zero |
-| 2 | Value 2,4-7,13 | `index.ts`, `cross-module-tools.ts`, `advancedContentGeneration.ts`, `campaign-content-generator/index.ts`, `engage-action-tools.ts` | Low |
-| 3 | Value 8,9,14 | New migration, new service, `content-action-tools.ts`, `index.ts` | Medium |
-| 4 | Efficiency 1-4 | `index.ts` | Medium |
-| 5 | Verification | None | None |
+## ✅ Phase 1: Critical Functional Bugs
+- **Fix 1 — Error Retry Button:** Added `onRetry` prop to `EnhancedMessageBubble` in `EnhancedChatInterface.tsx` — finds last user message before error and re-sends
+- **Fix 2 — Edit Message Duplication:** Rewrote `editMessage` in `useEnhancedAIChatDB.ts` to invoke SSE inline (no `sendMessage` call) — inserts new AI response at correct position without duplicating user message
+- **Fix 3 — SSE Timeout:** Moved `clearTimeout(timeoutId)` into `finally` block after reader loop completes (both in `sendMessage` and `editMessage`)
 
-All fixes are non-blocking (try/catch). No existing functionality is removed — only enriched. Token efficiency changes gate existing modules behind intent checks that already exist in the codebase.
+## ✅ Phase 2: Medium Severity Fixes
+- **Fix 4 — open_settings Event:** Changed `{ detail: action.data?.tab }` → `{ detail: { tab: action.data?.tab } }` to match listener expectations
+- **Fix 5 — RateLimitBanner Retry:** Wired to re-send last user message instead of console.log no-op
+- **Fix 6 — setState in useMemo:** Replaced `useState` + `setMessageSearchResults` inside `useMemo` with pure derived `useMemo` value
+- **Fix 7 — Title Truncation:** Smart truncation at last word boundary before 40 chars
 
+## ✅ Phase 3: Dead Code Cleanup & State Sync
+- **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
+- **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
+- **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed

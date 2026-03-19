@@ -2444,8 +2444,8 @@ serve(async (req) => {
         systemPrompt += webSearchContext;
       }
     } else {
-      // NORMAL: Full prompt with all modules
-      console.log('✅ Normal token usage (<25k) - using full dynamic prompt');
+      // NORMAL: Full prompt with intent-gated modules (Phase 4: Prompt Efficiency)
+      console.log('✅ Normal token usage (<25k) - using intent-gated dynamic prompt');
       
       // START WITH TOOL USAGE MODULE (most critical for tool-based architecture)
       systemPrompt = BASE_PROMPT;
@@ -2466,26 +2466,48 @@ serve(async (req) => {
       systemPrompt += '\n\n' + toolUsageWithCounts;
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       
+      // === INTENT-GATED MODULE LOADING (PE Fix 1) ===
+      const categories = queryIntent.categories || [];
+      const queryLower = userQuery.toLowerCase();
+      
+      // Chart modules: only for data-heavy categories
+      const needsCharts = categories.some((c: string) => ['content', 'keywords', 'campaigns', 'analytics', 'performance', 'competitors'].includes(c)) ||
+        /chart|graph|trend|analyz|metric|dashboard|report|compare/i.test(queryLower);
+      
+      // Table module: only when explicitly requested
+      const needsTable = /table|spreadsheet|list all|export|raw data|csv|show me all/i.test(queryLower);
+      
+      // Action module: for non-summary queries involving action-oriented categories
+      const needsActions = queryIntent.scope !== 'summary' && (
+        categories.some((c: string) => ['campaigns', 'engage', 'content', 'calendar', 'approvals'].includes(c)) ||
+        /create|generate|write|schedule|send|update|delete|remove|submit|approve/i.test(queryLower)
+      );
+      
+      // Platform knowledge: only for navigation/general queries
+      const needsPlatformKnowledge = categories.some((c: string) => ['navigation', 'general', 'help'].includes(c)) ||
+        /where|how do i|find|navigate|what is|help|tutorial|guide me/i.test(queryLower);
+      
       // PHASE 3: Check if multi-chart mode should be activated
       const needsMultiChart = shouldGenerateMultipleCharts(userQuery);
       
       if (needsMultiChart) {
         console.log('📊📊📊 MULTI-CHART MODE ACTIVATED - Enhanced analysis with multiple perspectives');
-        systemPrompt += '\n\n' + MULTI_CHART_MODULE; // Use multi-chart module instead of regular CHART_MODULE
-        systemPrompt += '\n\n' + TABLE_MODULE;
-        systemPrompt += '\n\n' + ACTION_MODULE;
+        systemPrompt += '\n\n' + MULTI_CHART_MODULE;
+        if (needsTable) systemPrompt += '\n\n' + TABLE_MODULE;
+        if (needsActions) systemPrompt += '\n\n' + ACTION_MODULE;
       } else {
-        const shouldPrioritizeVisualPrompt =
-          queryIntent.scope === 'detailed' ||
-          queryIntent.scope === 'full' ||
-          isVisualPromptRequired === true;
+        if (needsCharts) {
+          const shouldPrioritizeVisualPrompt =
+            queryIntent.scope === 'detailed' ||
+            queryIntent.scope === 'full' ||
+            isVisualPromptRequired === true;
 
-        if (shouldPrioritizeVisualPrompt) {
-          console.log('📊 Using standard chart analysis prompt');
+          if (shouldPrioritizeVisualPrompt) {
+            console.log('📊 Using standard chart analysis prompt');
+          }
+          systemPrompt += '\n\n' + CHART_MODULE;
         }
-
-        systemPrompt += '\n\n' + CHART_MODULE;
-        systemPrompt += '\n\n' + TABLE_MODULE;
+        if (needsTable) systemPrompt += '\n\n' + TABLE_MODULE;
       }
       
       // Add SERP module if SERP data present
@@ -2498,13 +2520,17 @@ serve(async (req) => {
         systemPrompt += webSearchContext;
       }
       
-      // Add action module for complex queries
-      if (queryIntent.scope !== 'summary') {
+      // Add action module for actionable queries
+      if (needsActions) {
         systemPrompt += '\n\n' + ACTION_MODULE;
       }
       
-      // Add platform knowledge for comprehensive understanding
-      systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
+      // Add platform knowledge only when relevant (PE Fix 3)
+      if (needsPlatformKnowledge) {
+        systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
+      }
+      
+      console.log(`🎯 Intent-gated modules: charts=${needsCharts}, table=${needsTable}, actions=${needsActions}, platform=${needsPlatformKnowledge}, multiChart=${needsMultiChart}`);
     }
 
     // Inject Analyst context if active (user has Analyst panel open)
@@ -2549,8 +2575,36 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       systemPrompt += `\n\n## ⚠️ DISAMBIGUATION REQUIRED:\n${queryIntent.disambiguationHint}`;
     }
     
-    // Inject real data context
-    systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;
+    // Inject brand voice into main chat (Fix 2)
+    let brandVoiceContext = '';
+    try {
+      const { data: brandData } = await supabase.from('brand_guidelines')
+        .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use')
+        .eq('user_id', userId).maybeSingle();
+      if (brandData) {
+        const bParts: string[] = [];
+        if (brandData.tone && Array.isArray(brandData.tone) && brandData.tone.length > 0) bParts.push(`Tone: ${brandData.tone.join(', ')}`);
+        if (brandData.brand_personality) bParts.push(`Personality: ${brandData.brand_personality}`);
+        if (brandData.do_use && Array.isArray(brandData.do_use) && brandData.do_use.length > 0) bParts.push(`Preferred phrases: ${brandData.do_use.slice(0, 5).join(', ')}`);
+        if (brandData.dont_use && Array.isArray(brandData.dont_use) && brandData.dont_use.length > 0) bParts.push(`Avoid phrases: ${brandData.dont_use.slice(0, 5).join(', ')}`);
+        if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE\nWhen generating any content, writing suggestions, or creative output, follow these guidelines:\n${bParts.join('\n')}`;
+      }
+    } catch (bvErr) {
+      console.warn('[BRAND-VOICE] Failed to fetch brand guidelines (non-blocking):', bvErr);
+    }
+
+    // Inject real data context + brand voice
+    systemPrompt += brandVoiceContext;
+    
+    // PE Fix 4: Compress data context for simple/summary queries
+    if (queryIntent.scope === 'summary' && realDataContext.length > 500) {
+      // For summary queries, inject only a compact snapshot
+      const snapshotLines = realDataContext.split('\n').filter((l: string) => l.includes(':') || l.includes('—')).slice(0, 10);
+      systemPrompt += `\n\n## DATA SNAPSHOT:\n${snapshotLines.join('\n')}`;
+      console.log(`📦 Compressed data context: ${realDataContext.length} → ${snapshotLines.join('\n').length} chars`);
+    } else {
+      systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;
+    }
     
     console.log(`✅ Dynamic system prompt built:
   - Scope: ${queryIntent.scope}
@@ -2594,8 +2648,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     // Initialize tool cache for this request
     const toolCache = new Map<string, { data: any; timestamp: number }>();
 
-    // Determine which tools to use
-    let toolsToUse = TOOL_DEFINITIONS; // Default tools
+    // Determine which tools to use (PE Fix 2: Intent-gated tool filtering)
+    let toolsToUse = TOOL_DEFINITIONS; // Default: all tools
     let toolChoice: any = undefined; // Default: let AI decide
     
     // Check if campaign strategy tool is requested
@@ -2604,10 +2658,46 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       toolsToUse = [CAMPAIGN_STRATEGY_TOOL]; // Use only this tool for focused generation
       toolChoice = { type: "function", function: { name: "generate_campaign_strategies" } };
       console.log('🎯 Using campaign strategy tool for structured generation');
-    } else if (queryRequiresToolExecution(queryIntent)) {
-      // Fix 1: Force tool_choice for data queries
-      toolChoice = "required";
-      console.log('🔧 Forcing tool_choice=required for data query (categories:', queryIntent.categories.join(', '), ')');
+    } else {
+      // PE Fix 2: Filter tools by intent categories
+      const intentCategories = queryIntent.categories || [];
+      const categoryToolMap: Record<string, string[]> = {
+        'content': ['get_content_items', 'create_content_item', 'update_content_item', 'delete_content_item', 'generate_full_content', 'launch_content_wizard', 'start_content_builder', 'submit_for_review', 'approve_content', 'reject_content'],
+        'keywords': ['get_keyword_data', 'get_content_items'],
+        'campaigns': ['get_campaigns', 'create_campaign', 'update_campaign', 'get_content_items'],
+        'calendar': ['get_calendar_items', 'create_calendar_item', 'update_calendar_item', 'delete_calendar_item'],
+        'engage': ['get_contacts', 'create_contact', 'create_email_campaign', 'send_email_campaign', 'create_segment'],
+        'analytics': ['get_content_performance', 'get_content_items'],
+        'competitors': ['get_competitors', 'get_content_items'],
+        'approvals': ['get_approval_queue', 'submit_for_review', 'approve_content', 'reject_content'],
+        'brand': ['get_brand_voice', 'update_brand_voice'],
+        'social': ['repurpose_for_social', 'get_content_items'],
+        'proposals': ['get_proposals', 'get_content_items']
+      };
+
+      // Build set of relevant tool names
+      const relevantToolNames = new Set<string>();
+      // Always include these core tools
+      ['get_content_items', 'get_brand_voice', 'generate_full_content', 'launch_content_wizard'].forEach(t => relevantToolNames.add(t));
+      
+      for (const cat of intentCategories) {
+        const tools = categoryToolMap[cat];
+        if (tools) tools.forEach(t => relevantToolNames.add(t));
+      }
+      
+      // If we have specific intent categories, filter tools; otherwise use all
+      if (intentCategories.length > 0 && intentCategories[0] !== 'general') {
+        toolsToUse = TOOL_DEFINITIONS.filter((t: any) => relevantToolNames.has(t.function?.name));
+        // Ensure we always have at least 5 tools (safety net)
+        if (toolsToUse.length < 5) toolsToUse = TOOL_DEFINITIONS;
+        console.log(`🔧 Intent-filtered tools: ${toolsToUse.length}/${TOOL_DEFINITIONS.length} (categories: ${intentCategories.join(', ')})`);
+      }
+
+      if (queryRequiresToolExecution(queryIntent)) {
+        // Fix 1: Force tool_choice for data queries
+        toolChoice = "required";
+        console.log('🔧 Forcing tool_choice=required for data query (categories:', queryIntent.categories.join(', '), ')');
+      }
     }
 
     // Call ai-proxy edge function with user's provider (including tools) with retry logic
