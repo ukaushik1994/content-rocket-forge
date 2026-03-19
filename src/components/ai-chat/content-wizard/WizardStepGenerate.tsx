@@ -1564,7 +1564,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               href={publishedUrl} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[10px] text-primary hover:underline"
+              className="flex items-center gap-1.5 text-[10px] text-amber-300 hover:underline"
             >
               <ExternalLink className="w-3 h-3" />
               Published: {publishedUrl}
