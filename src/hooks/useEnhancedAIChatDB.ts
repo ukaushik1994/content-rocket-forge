@@ -234,6 +234,7 @@ export const useEnhancedAIChatDB = () => {
       setActiveConversation(data.id);
       setMessages([]);
       freshConversationRef.current = data.id;
+      justCreatedConversationRef.current = true;
       
       // Local state already updated above — no redundant refetch needed
       
