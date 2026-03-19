@@ -751,8 +751,16 @@ export const useEnhancedAIChatDB = () => {
       console.error('Error sending enhanced message:', error);
       
       const isTimeout = error?.name === 'AbortError';
+      const errorMsg = error?.message || '';
+      const isRateLimit = errorMsg.includes('429') || errorMsg.toLowerCase().includes('rate limit');
+      const isContextLength = errorMsg.toLowerCase().includes('token') || errorMsg.toLowerCase().includes('context length');
+      
       const errorContent = isTimeout
         ? "The request timed out. The AI might be processing a complex query. You can retry or check your API key settings."
+        : isRateLimit
+        ? "The AI provider is rate-limited. Please wait 30 seconds and retry, or switch to a different provider in Settings."
+        : isContextLength
+        ? "This conversation is too long for the AI model's context window. Please start a new conversation to continue."
         : "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.";
       
       const errorActions = [
