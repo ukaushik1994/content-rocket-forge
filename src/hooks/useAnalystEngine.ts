@@ -409,12 +409,96 @@ export function useAnalystEngine(
     }
   }, [userId, isActive, topics]);
 
-  // Trigger platform data fetch when topics change
+  // Phase 6b: Auto-fetch ALL platform data on activation (even with no topics)
+  const hasInitialFetchedRef = useRef(false);
   useEffect(() => {
-    if (isActive && topics.length > 0) {
+    if (isActive && !hasInitialFetchedRef.current) {
+      hasInitialFetchedRef.current = true;
+      fetchPlatformData(true); // Force-fetch all categories on activation
+    } else if (isActive && topics.length > 0) {
       fetchPlatformData();
     }
+    if (!isActive) {
+      hasInitialFetchedRef.current = false;
+    }
   }, [isActive, topics, fetchPlatformData]);
+
+  // Phase 6d: Proactive anomaly detection after platform data loads
+  const [anomalyInsights, setAnomalyInsights] = useState<InsightItem[]>([]);
+  useEffect(() => {
+    if (!isActive || !userId || platformData.length === 0) return;
+
+    const detectAnomalies = async () => {
+      const alerts: InsightItem[] = [];
+      const now = new Date();
+      
+      try {
+        // Check for low SEO scores
+        const { data: lowSeo } = await supabase
+          .from('content_items')
+          .select('id, title, seo_score')
+          .eq('user_id', userId)
+          .eq('status', 'published')
+          .not('seo_score', 'is', null)
+          .lt('seo_score', 40)
+          .limit(3);
+        if (lowSeo && lowSeo.length > 0) {
+          alerts.push({
+            id: `anomaly-low-seo-${now.getTime()}`,
+            content: `⚠️ ${lowSeo.length} published article${lowSeo.length > 1 ? 's' : ''} with SEO score below 40 — consider optimizing "${lowSeo[0].title}"`,
+            type: 'warning',
+            source: 'platform',
+            timestamp: now,
+          });
+        }
+
+        // Check for stale drafts (>14 days)
+        const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+        const { count: staleDrafts } = await supabase
+          .from('content_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('status', 'draft')
+          .lt('updated_at', twoWeeksAgo);
+        if (staleDrafts && staleDrafts > 0) {
+          alerts.push({
+            id: `anomaly-stale-drafts-${now.getTime()}`,
+            content: `📝 ${staleDrafts} draft${staleDrafts > 1 ? 's' : ''} haven't been updated in 2+ weeks — finish or archive them`,
+            type: 'opportunity',
+            source: 'platform',
+            timestamp: now,
+          });
+        }
+
+        // Check for empty calendar (next 7 days)
+        const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0];
+        const { count: scheduledItems } = await supabase
+          .from('content_calendar')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .gte('scheduled_date', today)
+          .lte('scheduled_date', nextWeek);
+        if (scheduledItems === 0) {
+          alerts.push({
+            id: `anomaly-empty-calendar-${now.getTime()}`,
+            content: `📅 No content scheduled for the next 7 days — consider planning ahead`,
+            type: 'warning',
+            source: 'platform',
+            timestamp: now,
+          });
+        }
+      } catch (err) {
+        console.warn('Anomaly detection failed:', err);
+      }
+
+      if (alerts.length > 0) {
+        setAnomalyInsights(alerts);
+      }
+    };
+
+    detectAnomalies();
+  }, [isActive, userId, platformData]);
 
   // ─── Accumulated web search results ──────────────────────────────────
   const webSearchResults = useMemo(() => {
