@@ -8585,6 +8585,29 @@ export type Database = {
         Args: { p_start_date: string; p_user_id: string }
         Returns: number
       }
+      get_shared_conversation: {
+        Args: { p_share_token: string }
+        Returns: {
+          archived: boolean | null
+          created_at: string
+          id: string
+          is_shared: boolean | null
+          pinned: boolean | null
+          share_token: string | null
+          summary: string | null
+          summary_message_count: number | null
+          tags: string[] | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "ai_conversations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_user_engage_workspace_ids: {
         Args: { p_user_id: string }
         Returns: string[]

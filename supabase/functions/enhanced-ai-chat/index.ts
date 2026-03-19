@@ -2912,7 +2912,11 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     const DESTRUCTIVE_TOOLS = [
       'delete_content_item', 'delete_solution',
       'send_email_campaign', 'send_quick_email',
-      'toggle_automation', 'activate_journey'
+      'toggle_automation', 'activate_journey',
+      'delete_contact', 'delete_segment',
+      'delete_email_campaign', 'delete_journey',
+      'delete_automation', 'delete_social_post',
+      'delete_calendar_item', 'publish_to_website'
     ];
 
     let requestPromotedVisualData: any = null;

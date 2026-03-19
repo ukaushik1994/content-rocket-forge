@@ -75,7 +75,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     const truncatedInsights = analysis.insights.slice(0, 20).map(i => `- ${i}`).join('\n');
     const fileMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${truncatedSummary}\n\nKey insights:\n${truncatedInsights}${contextBlock}`;
     // Show a cleaner display version without the raw text dump
-    const displayMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${analysis.summary}\n\nKey insights:\n${analysis.insights.map(i => `- ${i}`).join('\n')}`;
+    const displayMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${truncatedSummary}\n\nKey insights:\n${truncatedInsights}`;
     onSendMessage(fileMessage, displayMessage);
     setShowFileUpload(false);
   }, [onSendMessage]);
