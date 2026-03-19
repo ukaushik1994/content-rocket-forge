@@ -1140,7 +1140,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           value={wizardState.title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="Enter content title..."
-          className="text-sm"
+          className="text-sm bg-white/[0.04] border-white/[0.06]"
         />
       </div>
 
