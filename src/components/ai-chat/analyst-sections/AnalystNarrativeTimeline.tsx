@@ -48,7 +48,8 @@ interface SectionDef {
   id: string;
   visible: boolean;
   render: () => React.ReactNode;
-  fixed?: boolean; // fixed sections don't get reordered
+  fixed?: boolean;
+  category?: string; // for topic-aware relevance scoring
 }
 
 export const AnalystNarrativeTimeline: React.FC<Props> = ({
