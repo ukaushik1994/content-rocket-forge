@@ -383,15 +383,15 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-4 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2"
+                    className="mb-4 p-3 glass-card border-amber-300/20 space-y-2"
                   >
                     <p className="text-xs font-medium text-foreground">Resume your previous draft?</p>
                     <p className="text-[10px] text-muted-foreground">You have an unsaved wizard session from earlier.</p>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="default" onClick={resumeDraft} className="text-xs h-7 gap-1">
+                      <Button size="sm" onClick={resumeDraft} className="text-xs h-7 gap-1 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30">
                         <Check className="w-3 h-3" /> Resume
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={dismissDraft} className="text-xs h-7">
+                      <Button size="sm" variant="ghost" onClick={dismissDraft} className="text-xs h-7 text-muted-foreground hover:bg-white/[0.04]">
                         Start Fresh
                       </Button>
                     </div>
