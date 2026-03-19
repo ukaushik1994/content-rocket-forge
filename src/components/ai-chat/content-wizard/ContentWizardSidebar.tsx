@@ -352,22 +352,22 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                   <React.Fragment key={step.id}>
                     <div className="flex flex-col items-center gap-1">
                       <div className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all",
-                        currentStep === idx && "bg-primary text-primary-foreground ring-2 ring-primary/30",
-                        currentStep > idx && "bg-primary/20 text-primary",
-                        currentStep < idx && "bg-muted text-muted-foreground"
+                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all border",
+                        currentStep === idx && "bg-amber-300/20 border-amber-300/30 text-amber-300",
+                        currentStep > idx && "bg-emerald-400/15 border-emerald-400/20 text-emerald-400",
+                        currentStep < idx && "bg-white/[0.04] border-white/[0.06] text-muted-foreground"
                       )}>
                         {currentStep > idx ? <Check className="w-3.5 h-3.5" /> : idx}
                       </div>
                       <span className={cn(
                         "text-[10px] font-medium",
-                        currentStep === idx ? "text-foreground" : "text-muted-foreground"
+                        currentStep === idx ? "text-amber-300/70" : "text-muted-foreground"
                       )}>{step.label}</span>
                     </div>
                     {idx < activeSteps.length - 1 && (
                       <div className={cn(
                         "flex-1 h-0.5 rounded-full mt-[-14px]",
-                        currentStep > idx ? "bg-primary/40" : "bg-border/30"
+                        currentStep > idx ? "bg-amber-300/30" : "bg-white/[0.06]"
                       )} />
                     )}
                   </React.Fragment>
