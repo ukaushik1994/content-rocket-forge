@@ -188,46 +188,47 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
 
           {/* Normal Message Content - Premium Minimal Styling */}
           {!message.confirmationData && message.content !== '__CAPABILITIES_CARD__' && (
-            <Card className={`relative ${
-               isUser 
-                 ? 'bg-primary/15 text-foreground border border-primary/25 ml-4' 
-                 : 'bg-transparent border border-border/20 mr-4'
-             }`}>
-              <div className="px-6 py-4 overflow-x-auto">
-                <div className={`text-sm leading-relaxed ${
-                  isUser ? 'text-foreground' : 'text-foreground'
-                }`}>
-                  {isUser ? (
-                    <div className="whitespace-pre-wrap break-words">
-                      {message.content}
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <FormattedResponseRenderer 
-                        content={message.content} 
-                        hasVisualData={!!message.visualData}
-                      />
-                    </div>
-                  )}
+            <>
+              <Card className={`relative ${
+                 isUser 
+                   ? 'bg-primary/15 text-foreground border border-primary/25 ml-4' 
+                   : 'bg-transparent border border-border/20 mr-4'
+               }`}>
+                <div className="px-6 py-4 overflow-x-auto">
+                  <div className={`text-sm leading-relaxed ${
+                    isUser ? 'text-foreground' : 'text-foreground'
+                  }`}>
+                    {isUser ? (
+                      <div className="whitespace-pre-wrap break-words">
+                        {message.content}
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <FormattedResponseRenderer 
+                          content={message.content} 
+                          hasVisualData={!!message.visualData}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Card>
               
-            </Card>
-            
-            {/* Message Actions below AI bubble, bottom-left */}
-            {!isUser && (
-              <div className="flex items-center gap-1 mt-1 ml-1">
-                <MessageActions
-                  messageId={message.id}
-                  content={message.content}
-                  isUser={isUser}
-                  timestamp={message.timestamp}
-                  onEdit={onEditMessage}
-                  onDelete={onDeleteMessage}
-                  onRegenerate={onRetry}
-                />
-              </div>
-            )}
+              {/* Message Actions below AI bubble, bottom-left */}
+              {!isUser && (
+                <div className="flex items-center gap-1 mt-1 ml-1">
+                  <MessageActions
+                    messageId={message.id}
+                    content={message.content}
+                    isUser={isUser}
+                    timestamp={message.timestamp}
+                    onEdit={onEditMessage}
+                    onDelete={onDeleteMessage}
+                    onRegenerate={onRetry}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {/* Action Result Cards - structured success/failure rendering */}
