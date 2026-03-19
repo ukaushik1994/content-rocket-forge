@@ -86,13 +86,16 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
     <div className="space-y-5">
       {/* Keyword Input */}
       <div>
-        <h3 className="text-sm font-semibold text-foreground">What would you like to write about?</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">1. Topic</span>
+        </div>
         <p className="text-xs text-muted-foreground mt-1">Enter a keyword or topic for your content</p>
         <Input
           value={keyword}
           onChange={(e) => onKeywordChange(e.target.value)}
           placeholder="e.g. AI in healthcare, best running shoes..."
-          className={cn("text-sm mt-2", keywordError && "border-destructive ring-2 ring-destructive/40 animate-shake")}
+          className={cn("text-sm mt-2 bg-white/[0.04] border-white/[0.06]", keywordError && "border-destructive ring-2 ring-destructive/40 animate-shake")}
           autoFocus
         />
         {keywordError && (
