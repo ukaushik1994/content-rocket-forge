@@ -44,6 +44,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Globe, ExternalLink, ChevronRight } from 'lucide-react';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebarTrendData, TimeframeOption } from '@/hooks/useSidebarTrendData';
@@ -97,6 +98,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('30d');
   const [isChartLoading, setIsChartLoading] = useState(false);
+  const [showAllSessionCharts, setShowAllSessionCharts] = useState(false);
+  const [expandedChartIndex, setExpandedChartIndex] = useState<number | null>(null);
   
   const { user } = useAuth();
 
@@ -913,6 +916,171 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </motion.div>
                   )}
 
+                  {/* ─── Section Divider ─── */}
+                  {(analystState?.platformData?.length || 0) > 0 && <div className="border-t border-border/10" />}
+
+                  {/* 5.5 SESSION CHARTS DASHBOARD — accumulated charts from conversation */}
+                  {analystState && analystState.accumulatedCharts.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Session Charts</span>
+                        <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">{analystState.accumulatedCharts.length} charts</Badge>
+                      </div>
+                      
+                      {/* If we have a current response chart, show accumulated as mini-grid */}
+                      {hasCurrentResponseData && hasChartData ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {analystState.accumulatedCharts
+                            .slice(0, showAllSessionCharts ? undefined : 4)
+                            .map((chart, idx) => (
+                            <Card 
+                              key={`session-chart-${idx}`}
+                              className={cn(
+                                "p-2 bg-muted/5 border-border/15 cursor-pointer transition-all hover:border-primary/30 hover:bg-primary/5",
+                                expandedChartIndex === idx && "border-primary/40 bg-primary/10"
+                              )}
+                              onClick={() => setExpandedChartIndex(expandedChartIndex === idx ? null : idx)}
+                            >
+                              <p className="text-[9px] font-medium text-muted-foreground truncate mb-1">{chart.title || `Chart ${idx + 1}`}</p>
+                              <div className="h-[100px]">
+                                {(() => {
+                                  const miniData = chart.data || [];
+                                  if (!miniData.length) return <div className="flex items-center justify-center h-full text-[9px] text-muted-foreground/40">No data</div>;
+                                  const miniKeys = chart.categories?.filter(c => c !== 'name') || Object.keys(miniData[0]).filter(k => k !== 'name' && typeof miniData[0][k] === 'number');
+                                  const miniColors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981'];
+                                  return (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <BarChart data={miniData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+                                        {miniKeys.slice(0, 2).map((key, kIdx) => (
+                                          <Bar key={key} dataKey={key} fill={miniColors[kIdx % miniColors.length]} radius={[2, 2, 0, 0]} />
+                                        ))}
+                                      </BarChart>
+                                    </ResponsiveContainer>
+                                  );
+                                })()}
+                              </div>
+                            </Card>
+                          ))}
+                          {analystState.accumulatedCharts.length > 4 && !showAllSessionCharts && (
+                            <button onClick={() => setShowAllSessionCharts(true)} className="col-span-2 text-[10px] text-primary/60 hover:text-primary transition-colors py-1">
+                              Show all ({analystState.accumulatedCharts.length}) →
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        /* No current response data — show all charts in a stack as the dashboard view */
+                        <div className="space-y-3">
+                          {analystState.accumulatedCharts.map((chart, idx) => (
+                            <Card key={`dashboard-chart-${idx}`} className="p-3 bg-muted/5 border-border/15">
+                              <p className="text-xs font-medium text-foreground/80 mb-2">{chart.title || `Chart ${idx + 1}`}</p>
+                              <div className="h-[180px]">
+                                {(() => {
+                                  const stackData = chart.data || [];
+                                  if (!stackData.length) return <div className="flex items-center justify-center h-full text-xs text-muted-foreground/40">No data</div>;
+                                  const stackKeys = chart.categories?.filter(c => c !== 'name') || Object.keys(stackData[0]).filter(k => k !== 'name' && typeof stackData[0][k] === 'number');
+                                  const stackColors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'];
+                                  return (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <BarChart data={stackData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+                                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} width={28} />
+                                        <RechartsTooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: 'none', borderRadius: '8px', fontSize: '10px' }} />
+                                        {stackKeys.slice(0, 3).map((key, kIdx) => (
+                                          <Bar key={key} dataKey={key} fill={stackColors[kIdx % stackColors.length]} radius={[4, 4, 0, 0]} />
+                                        ))}
+                                      </BarChart>
+                                    </ResponsiveContainer>
+                                  );
+                                })()}
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* ─── Section Divider ─── */}
+                  {analystState && analystState.accumulatedCharts.length > 0 && <div className="border-t border-border/10" />}
+
+                  {/* 5.7 WEB INTELLIGENCE — web search results from analyst */}
+                  {analystState && analystState.webSearchResults.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5 text-cyan-500" />
+                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Web Intelligence</span>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] text-cyan-500/60 border-cyan-500/20 h-5">{analystState.webSearchResults.length} searches</Badge>
+                      </div>
+                      <div className="space-y-2">
+                        {analystState.webSearchResults.map((ws, wsIdx) => (
+                          <Collapsible key={`ws-${wsIdx}`}>
+                            <CollapsibleTrigger className="w-full">
+                              <Card className="p-2.5 bg-transparent border-border/15 border-l-2 border-l-cyan-500/30 hover:border-l-cyan-500/60 transition-colors cursor-pointer">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Search className="w-3 h-3 text-cyan-500 flex-shrink-0" />
+                                    <span className="text-xs text-foreground/80 truncate">"{ws.query}"</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                                    <span className="text-[9px] text-muted-foreground/50">{ws.results.length} results</span>
+                                    <ChevronRight className="w-3 h-3 text-muted-foreground/40" />
+                                  </div>
+                                </div>
+                              </Card>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="mt-1.5 ml-4 space-y-1.5">
+                                {ws.results.slice(0, 3).map((result, rIdx) => (
+                                  <a
+                                    key={rIdx}
+                                    href={result.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block p-2 rounded-lg bg-muted/10 border border-border/10 hover:border-cyan-500/20 hover:bg-cyan-500/5 transition-colors group"
+                                  >
+                                    <div className="flex items-start gap-1.5">
+                                      <ExternalLink className="w-3 h-3 text-cyan-500/50 group-hover:text-cyan-500 mt-0.5 flex-shrink-0" />
+                                      <div className="min-w-0">
+                                        <p className="text-[11px] font-medium text-foreground/80 line-clamp-1 group-hover:text-cyan-500 transition-colors">{result.title}</p>
+                                        <p className="text-[9px] text-muted-foreground/60 line-clamp-2 mt-0.5">{result.snippet}</p>
+                                        <span className="text-[8px] text-muted-foreground/40 mt-0.5 block">{new URL(result.url).hostname}</span>
+                                      </div>
+                                    </div>
+                                  </a>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        ))}
+                      </div>
+                      {onSendMessage && (
+                        <button onClick={() => onSendMessage('[web-search] Search for more relevant information')} className="w-full text-[10px] text-cyan-500/60 hover:text-cyan-500 transition-colors py-1.5 border border-dashed border-cyan-500/15 hover:border-cyan-500/30 rounded-lg">
+                          Search more →
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* Web intel prompt when topics suggest it but no results yet */}
+                  {analystState && analystState.webSearchResults.length === 0 && analystState.topics.some(t => t.category === 'keywords' || t.category === 'competitors') && onSendMessage && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                      <button onClick={() => onSendMessage('[web-search] Get web intelligence on current topics')} className="w-full p-3 rounded-lg bg-cyan-500/5 border border-dashed border-cyan-500/15 hover:border-cyan-500/30 hover:bg-cyan-500/10 transition-colors text-left">
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-3.5 h-3.5 text-cyan-500/50" />
+                          <div>
+                            <p className="text-[11px] font-medium text-foreground/70">Get Web Intelligence</p>
+                            <p className="text-[9px] text-muted-foreground/50">Fetch SERP & competitor data for current topics</p>
+                          </div>
+                        </div>
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {/* ─── Section Divider ─── */}
+                  <div className="border-t border-border/10" />
+
                   {/* 6. INSIGHTS FEED (merged: analyst cumulative + current response) */}
                   {mergedInsightsFeed.length > 0 && (
                     <Collapsible open={isInsightsExpanded} onOpenChange={setIsInsightsExpanded}>
@@ -1040,6 +1208,19 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           ))}
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* 9. SESSION SUMMARY COUNTER */}
+                  {analystState && (analystState.accumulatedCharts.length > 0 || mergedInsightsFeed.length > 0 || analystState.webSearchResults.length > 0) && (
+                    <div className="border-t border-border/10 pt-3">
+                      <p className="text-[9px] text-center text-muted-foreground/40">
+                        {[
+                          analystState.accumulatedCharts.length > 0 && `${analystState.accumulatedCharts.length} chart${analystState.accumulatedCharts.length > 1 ? 's' : ''}`,
+                          mergedInsightsFeed.length > 0 && `${mergedInsightsFeed.length} insight${mergedInsightsFeed.length > 1 ? 's' : ''}`,
+                          analystState.webSearchResults.length > 0 && `${analystState.webSearchResults.length} web search${analystState.webSearchResults.length > 1 ? 'es' : ''}`,
+                        ].filter(Boolean).join(' · ')}
+                      </p>
                     </div>
                   )}
                 </div>

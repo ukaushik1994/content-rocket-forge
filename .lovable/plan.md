@@ -1,83 +1,198 @@
 
 
-# Analyst Sidebar: Web Intelligence + Dashboard Multi-Chart + Auto-Preload
+# Full Platform Audit: Chat-First Vision — Implementation Status
 
-## Current State
+## ✅ Phase 1 — COMPLETE
+- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
+- Expanded left sidebar with Library / Tools / Engage / Chats sections
+- Deprecated AI Proposals from + menu
+- Content Wizard triggers right panel from sidebar
 
-The unified sidebar has 8 sections (header → chart → AI summary → health score → metrics → platform stats → insights feed → explore next). Web Intelligence was removed in the last merge. The analyst engine already tracks `webSearchResults` and `platformData` but:
-1. Web search results are only surfaced as text in the insights feed (type: 'search')
-2. No multi-chart dashboard view — only one chart from the current response
-3. Sidebar only populates when AI responds with `visualData` or user clicks Analyst button
+## ✅ Phase 2 — COMPLETE
+- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
+- Offerings → right panel (wraps SolutionManager)
+- Approvals → right panel (wraps ContentApprovalView)
+- Contacts → right panel (wraps ContactsList)
 
-## Plan
+## ✅ Phase 3 — COMPLETE
+- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
+- Email → right panel (wraps EmailDashboard)
+- Social → right panel (wraps SocialDashboard)
+- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
 
-### Phase 1: Auto-Preload Analyst Data on Chat Start
+## ✅ Phase 4 — COMPLETE
+- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
+- Full /analytics page still available for deep-dive
 
-**File:** `useAnalystEngine.ts`
+## Standalone Pages (kept intentionally)
+- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
+- /engage/automations → Automation rules (complex table + builder)
+- /analytics → Dense dashboard (linked from Analytics panel)
+- /research/calendar → Full editorial calendar (navbar icon)
 
-- Change: On first message send (not just on Analyst button), trigger `fetchPlatformData(true)` immediately. Currently gated behind `hasInitialFetchedRef` which only fires when `isActive` flips. Since we made `isActive: true` always, it already fires — but only once. Add a second trigger: when `messages.length` goes from 0 to 1, re-fetch to ensure data is fresh for the session.
+## Panel Architecture
+All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
+Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
 
-**File:** `EnhancedChatInterface.tsx`
+---
 
-- On first user message, auto-open the sidebar with the analyst view (not just when AI returns `visualData`). Change the auto-open logic: if sidebar hasn't been explicitly closed and messages go from 0→1, set visualization to `{ type: 'analyst' }` and open sidebar.
+# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
 
-### Phase 2: Web Intelligence Section in Sidebar
+## Batch 1: Critical UI Bugs ✅ COMPLETE
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Chat message not appearing | ✅ Already works |
+| 2 | New chat greeting | ✅ Already works |
+| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
+| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
+| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
+| 6 | Repository delete | Deferred |
+| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
+| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
+| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
+| 10 | Campaign count mismatch | Investigate |
 
-**File:** `VisualizationSidebar.tsx`
+## Batch 2: Approvals Workflow — ✅ COMPLETE
+- Reject + Request Changes buttons on pending_review cards (with notes dialog)
+- Revert to Draft button on approved/rejected/needs_changes cards
+- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
+- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
+- Batch approve: checkbox selection + floating bulk action bar
+- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
 
-Add a new section between "Platform Stats" (#5) and "Insights Feed" (#6):
+## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
+- Cancel button during generation — already implemented (AbortController)
+- Granular progress bar — already implemented (stepped progress)
+- Campaigns validation on empty solution — already implemented
+- Campaigns empty state logic — already implemented
 
-**Web Intelligence** — renders when `analystState.webSearchResults.length > 0` OR when context-relevant SERP/competitor data exists in the chat session.
+## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
+- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
+- Keywords: "Connect SERP API" info banner when no volume data
+- Email: Rich text editor — already implemented
+- Contacts: CSV upload — already implemented (drag-drop + FileReader)
+- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
+- Calendar: Week/Day views — already implemented (CalendarView toggle)
+- Journeys: Visual trash icon on node hover (all 9 node types)
+- Repository: Bulk select — already implemented (RepositoryBulkBar)
+- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
+- Settings: Password change — already implemented (supabase.auth.updateUser)
 
-Content:
-- Each web search query shown as a collapsible card with query text + result count
-- Top 3 results per query: title (linked), snippet, source domain
-- Classified with the existing insight icons (🌐 Web source label)
-- "Search more" button that sends a web search prompt to the chat
+## Batch 5: Analytics & Reporting — ✅ COMPLETE
+- Analytics empty states — already implemented ("Configure API Keys" CTA)
+- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
 
-Also add context-aware auto-detection: scan the analyst engine's `topics` to determine if SERP or competitor data should be fetched proactively. If topics include 'keywords' or 'competitors' and no web results exist yet, show a subtle "Get web intel" prompt button.
+---
 
-### Phase 3: Dashboard Multi-Chart View
+# Audit-Driven Fixes (Phase 1 — Critical Bugs)
 
-**File:** `VisualizationSidebar.tsx`
+## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
+- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
+- **Fix**: Deleted the `.tsx` duplicate
 
-Replace the single "Current Response" chart section with a smart dashboard layout:
+## ✅ 1.7 — Repository: Sanitize HTML in Titles
+- Added DOMPurify sanitization in `ContentCardPreview.tsx`
 
-**When current response has chart data:**
-- Show it as the primary (larger) chart with chart/table toggle + type picker (existing behavior)
+## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
+- Wrapped stat cards in `onClick` handlers with `useNavigate`
 
-**Below it, add "Session Charts" grid** — always visible when `analystState.accumulatedCharts.length > 0`:
-- 2-column grid of mini-charts (height: 140px each) from `analystState.accumulatedCharts`
-- Each mini-chart: title label, small chart using `renderChart()` with reduced height, click to expand as primary
-- Max 4 mini-charts shown, with "Show all (N)" expand button if more
-- Uses the same `renderChart` function but with a compact flag (no legend, smaller margins)
+---
 
-**When NO current response data but analyst has accumulated charts:**
-- Show all accumulated charts in a 1-column stack (larger, 200px each) as the "dashboard view"
-- This is the "bigger picture" — all charts from the session in one scrollable view
+# AI Chat Awareness Gaps — Implementation Tracker
 
-### Phase 4: Visual Polish
+## ✅ Batch 1: Remove Glossary — COMPLETE
+- Removed `/glossary-builder` route (redirects to /ai-chat)
+- Removed RepositoryHeader "Build Glossary" button
+- Removed `get_glossary_terms` read tool from tools.ts
+- Removed `create_glossary_term` write tool from content-action-tools.ts
+- Removed glossary from query-analyzer.ts intent detection
+- Removed glossary from system prompt capabilities
+- Removed glossary from ContentType union and content type enums
+- Removed glossary from DashboardSummary stats
+- Removed glossary from ContentTypeSelection page
+- DB tables kept (no destructive migration)
 
-**File:** `VisualizationSidebar.tsx`
+## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
+- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
+- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
+- Added `create_campaign` to cross-module-tools.ts
+- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
+- Added `update_email_template` to engage-action-tools.ts
+- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
+- Added cache invalidation for all new write tools
+- Updated query-analyzer.ts with new intent patterns
+- Updated system prompt with new tool capabilities + usage examples
+- Edge function deployed successfully
 
-- Add subtle section dividers (thin `border-border/10` lines between major sections)
-- Ensure web intelligence cards use the same card style as insights feed (border-l-2 with cyan color for web source)
-- Mini-charts get a hover state that highlights the card border
-- Add a small "session summary" counter at the bottom of the sidebar: "3 charts · 12 insights · 2 web searches"
+## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
+- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
+- 3-step flow: content selection → format selection → generated results with copy/download
+- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
+- Imported RepurposePanel alongside other panels
+- Excluded `content_repurpose` from auto-chart-conversion in edge function
+- Updated system prompt to instruct AI to emit `content_repurpose` visualData
+- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
+- Edge function deployed
 
-### Phase 5: Analyst Button Behavior Update
+## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
+- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
+- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
+- Auto-triggers after `create_content_item` — saves seo_score to content_items
+- Auto-triggers after `generate_full_content` — saves seo_score to content_items
+- Content Wizard already saves seo_score on insert (verified)
+- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
+- Edge function deployed
+## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
+- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
+- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
+- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
+- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
+- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
+- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
+- Updated system prompt tool listing (25 read tools) and usage examples
+- Edge function deployed
 
-**File:** `EnhancedChatInterface.tsx` (onOpenAnalyst handler)
+---
 
-Currently sets `type: 'analyst'` which was used for the old branch. Now it should:
-- If sidebar is already open → close it (toggle behavior)
-- If sidebar is closed → open it with the unified view, trigger a fresh `fetchPlatformData(true)`
+# AI Chat Frontend Bug Fixes — 10 Issues, 3 Phases ✅ COMPLETE
 
-## Files Changed
+## ✅ Phase 1: Critical Functional Bugs
+- **Fix 1 — Error Retry Button:** Added `onRetry` prop to `EnhancedMessageBubble` in `EnhancedChatInterface.tsx` — finds last user message before error and re-sends
+- **Fix 2 — Edit Message Duplication:** Rewrote `editMessage` in `useEnhancedAIChatDB.ts` to invoke SSE inline (no `sendMessage` call) — inserts new AI response at correct position without duplicating user message
+- **Fix 3 — SSE Timeout:** Moved `clearTimeout(timeoutId)` into `finally` block after reader loop completes (both in `sendMessage` and `editMessage`)
 
-| File | Change |
-|------|--------|
-| `VisualizationSidebar.tsx` | Add Web Intelligence section, mini-chart dashboard grid, section dividers, session counter |
-| `EnhancedChatInterface.tsx` | Auto-open on first message, toggle behavior for Analyst button |
-| `useAnalystEngine.ts` | Re-fetch platform data when messages go 0→1 |
+## ✅ Phase 2: Medium Severity Fixes
+- **Fix 4 — open_settings Event:** Changed `{ detail: action.data?.tab }` → `{ detail: { tab: action.data?.tab } }` to match listener expectations
+- **Fix 5 — RateLimitBanner Retry:** Wired to re-send last user message instead of console.log no-op
+- **Fix 6 — setState in useMemo:** Replaced `useState` + `setMessageSearchResults` inside `useMemo` with pure derived `useMemo` value
+- **Fix 7 — Title Truncation:** Smart truncation at last word boundary before 40 chars
 
+## ✅ Phase 3: Dead Code Cleanup & State Sync
+- **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
+- **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
+- **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed
+
+---
+
+# Strategic Intelligence Layer — Sprint Tracker
+
+## ✅ Sprint 1: System Prompt Intelligence — COMPLETE
+- Enhancement 4: AI Negotiation Before Generation (content creation protocol)
+- Enhancement 8: Multi-Step Workflows (progressive execution with confirmation)
+- Enhancement 6: Enhanced Edit Pattern Learning (7 pattern detectors in contentFeedbackService)
+
+## ✅ Sprint 2: Performance Signals + Business Context — COMPLETE
+- content_performance_signals table + tracking in cross-module-tools and RepositoryPanel
+- Enhancement 3: Performance feedback injection in content generation prompts
+- Enhancement 7: Business outcome connection (solution pain points → content alignment)
+
+## ✅ Sprint 3: Weekly Briefing + Proactive Recommendations — COMPLETE
+- generate_weekly_briefing tool in brand-analytics-tools
+- proactive_recommendations table + generate-proactive-insights edge function (daily 6AM cron)
+- UI integration: recommendation cards on chat welcome screen
+
+## ✅ Sprint 4: User Intelligence Profile — COMPLETE
+- user_intelligence_profile table (persistent per-user preferences)
+- aggregate-user-intelligence edge function (daily 5:30AM cron)
+- Profile injection into AI system prompt (preferred length, tone, formats, editing patterns, topics, solutions, negotiation preference, response detail level)
+- Verified: profiles aggregated for 2 users with real data
