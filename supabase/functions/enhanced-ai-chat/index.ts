@@ -3001,6 +3001,25 @@ Only ask once — if they respond with a new topic, don't ask again.`;
       }
     }
 
+    // ===== FIX 10: Data Reuse from Earlier in Conversation =====
+    const recentAssistantContent = messages.filter((m: any) => m.role === 'assistant').slice(-4);
+    const hasToolResultsInHistory = recentAssistantContent.some((m: any) => {
+      const c = typeof m.content === 'string' ? m.content : '';
+      return c.includes('SEO score') || c.includes('word count') || c.includes('proposals') || 
+             c.includes('content items') || c.includes('SERP') || c.includes('competitors');
+    });
+    if (hasToolResultsInHistory && !queryIntent.isConversational) {
+      systemPrompt += `\n\n## DATA REUSE
+Previous messages in this conversation contain tool results and data. BEFORE calling a tool to re-fetch data:
+1. Check if the data is already in this conversation's history.
+2. If it is, reference it directly: "Based on the data we looked at earlier..."
+3. Only re-fetch if the user explicitly asks for fresh/updated data or the request requires different parameters.`;
+    }
+
+    // ===== FIX 13: Long Response Scanability =====
+    systemPrompt += `\n\n## FORMATTING
+For responses over 200 words: use **H2/H3 headings** for sections, **bold** key numbers and metrics, bullet points for 3+ items. Keep paragraphs to 2-3 sentences max.`;
+
     // ===== Original length guidance (enhanced) =====
     const lengthGuidance: Record<string, string> = {
       conversational: '', // Handled by responseCalibration above

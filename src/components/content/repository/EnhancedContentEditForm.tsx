@@ -112,8 +112,25 @@ export const EnhancedContentEditForm: React.FC<EnhancedContentEditFormProps> = (
     }, 0);
   };
   
-  // Save handling
-  const handleSave = form.handleSubmit(onSubmit);
+  // Track original content for edit tracking
+  const originalContentRef = useRef(content?.content || '');
+  useEffect(() => {
+    if (content?.content) {
+      originalContentRef.current = content.content;
+    }
+  }, [content?.id]);
+
+  // Save handling with edit tracking
+  const handleSave = form.handleSubmit(async (values) => {
+    // Track edits for AI-generated content
+    if (content?.id && content?.metadata && (content.metadata as any)?.ai_generated) {
+      const original = originalContentRef.current;
+      if (original && values.content !== original) {
+        trackContentEdit(content.id, original, values.content).catch(() => {});
+      }
+    }
+    await onSubmit(values);
+  });
   
   // Auto-save with debounce (every 5 seconds of inactivity after changes)
   useEffect(() => {
