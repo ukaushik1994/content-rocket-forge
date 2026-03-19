@@ -258,24 +258,22 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 </div>
               </Card>
               
-              {/* Message Actions below AI bubble, bottom-left */}
-              {!isUser && (
-                <div className="flex items-center gap-1 mt-1 ml-1">
-                  <MessageActions
-                    messageId={message.id}
-                    content={message.content}
-                    isUser={isUser}
-                    timestamp={message.timestamp}
-                    onEdit={onEditMessage}
-                    onDelete={onDeleteMessage}
-                    onRegenerate={onRetry}
-                    onFeedback={onFeedback}
-                    onPin={onPinMessage}
-                    feedbackValue={(message as any).feedbackHelpful ?? null}
-                    isPinned={(message as any).isPinned ?? false}
-                  />
-                </div>
-              )}
+              {/* Message Actions below bubble */}
+              <div className={`flex items-center gap-1 mt-1 ${isUser ? 'justify-end mr-1' : 'ml-1'}`}>
+                <MessageActions
+                  messageId={message.id}
+                  content={message.content}
+                  isUser={isUser}
+                  timestamp={message.timestamp}
+                  onEdit={isUser ? onEditMessage : undefined}
+                  onDelete={onDeleteMessage}
+                  onRegenerate={!isUser ? onRetry : undefined}
+                  onFeedback={!isUser ? onFeedback : undefined}
+                  onPin={!isUser ? onPinMessage : undefined}
+                  feedbackValue={!isUser ? ((message as any).feedbackHelpful ?? null) : undefined}
+                  isPinned={!isUser ? ((message as any).isPinned ?? false) : false}
+                />
+              </div>
             </>
           )}
 

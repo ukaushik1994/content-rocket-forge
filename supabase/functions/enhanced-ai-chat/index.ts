@@ -2653,80 +2653,82 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       systemPrompt += `\n\n## ⚠️ DISAMBIGUATION REQUIRED:\n${queryIntent.disambiguationHint}`;
     }
     
-    // Inject brand voice into main chat (Fix 2)
+    // ===== Parallelized: Brand voice + User intelligence fetches (TTFT optimization) =====
     let brandVoiceContext = '';
-    try {
-      const { data: brandData } = await supabase.from('brand_guidelines')
+    let userIntelligenceContext = '';
+
+    const [brandResult, profileResult] = await Promise.allSettled([
+      supabase.from('brand_guidelines')
         .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use')
-        .eq('user_id', userId).maybeSingle();
-      if (brandData) {
-        const bParts: string[] = [];
-        if (brandData.tone && Array.isArray(brandData.tone) && brandData.tone.length > 0) bParts.push(`Tone: ${brandData.tone.join(', ')}`);
-        if (brandData.brand_personality) bParts.push(`Personality: ${brandData.brand_personality}`);
-        if (brandData.do_use && Array.isArray(brandData.do_use) && brandData.do_use.length > 0) bParts.push(`Preferred phrases: ${brandData.do_use.slice(0, 5).join(', ')}`);
-        if (brandData.dont_use && Array.isArray(brandData.dont_use) && brandData.dont_use.length > 0) bParts.push(`Avoid phrases: ${brandData.dont_use.slice(0, 5).join(', ')}`);
-        if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE\nWhen generating any content, writing suggestions, or creative output, follow these guidelines:\n${bParts.join('\n')}`;
-      }
-    } catch (bvErr) {
-      console.warn('[BRAND-VOICE] Failed to fetch brand guidelines (non-blocking):', bvErr);
+        .eq('user_id', userId).maybeSingle(),
+      supabase.from('user_intelligence_profile')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+    ]);
+
+    // Process brand voice result
+    if (brandResult.status === 'fulfilled' && brandResult.value.data) {
+      const brandData = brandResult.value.data;
+      const bParts: string[] = [];
+      if (brandData.tone && Array.isArray(brandData.tone) && brandData.tone.length > 0) bParts.push(`Tone: ${brandData.tone.join(', ')}`);
+      if (brandData.brand_personality) bParts.push(`Personality: ${brandData.brand_personality}`);
+      if (brandData.do_use && Array.isArray(brandData.do_use) && brandData.do_use.length > 0) bParts.push(`Preferred phrases: ${brandData.do_use.slice(0, 5).join(', ')}`);
+      if (brandData.dont_use && Array.isArray(brandData.dont_use) && brandData.dont_use.length > 0) bParts.push(`Avoid phrases: ${brandData.dont_use.slice(0, 5).join(', ')}`);
+      if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE\nWhen generating any content, writing suggestions, or creative output, follow these guidelines:\n${bParts.join('\n')}`;
+    } else if (brandResult.status === 'rejected') {
+      console.warn('[BRAND-VOICE] Failed to fetch brand guidelines (non-blocking):', brandResult.reason);
     }
 
     // Inject real data context + brand voice
     systemPrompt += brandVoiceContext;
 
-    // ===== SPRINT 4: User Intelligence Profile Injection =====
-    let userIntelligenceContext = '';
-    try {
-      const { data: profile } = await supabase.from('user_intelligence_profile')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (profile) {
-        const parts: string[] = [];
-        if (profile.preferred_length && profile.preferred_length !== 'medium') {
-          parts.push(`Content length preference: ${profile.preferred_length} (adjust word count accordingly)`);
-        }
-        if (profile.preferred_tone && Array.isArray(profile.preferred_tone) && profile.preferred_tone.length > 0) {
-          parts.push(`Preferred tone: ${profile.preferred_tone.join(', ')}`);
-        }
-        if (profile.preferred_formats && Array.isArray(profile.preferred_formats) && profile.preferred_formats.length > 0) {
-          parts.push(`Preferred content formats: ${profile.preferred_formats.join(', ')}`);
-        }
-        if (profile.editing_patterns && typeof profile.editing_patterns === 'object') {
-          const ep = profile.editing_patterns as Record<string, any>;
-          const patternInstructions: string[] = [];
-          if (ep.splits_long_paragraphs) patternInstructions.push('Keep paragraphs to 2-3 sentences max');
-          if (ep.adds_examples) patternInstructions.push('Include concrete examples and real-world scenarios');
-          if (ep.removes_generic_filler) patternInstructions.push('Avoid filler phrases like "in today\'s digital world"');
-          if (ep.adds_data_statistics) patternInstructions.push('Include relevant numbers, percentages, and data');
-          if (ep.consolidates_headings) patternInstructions.push('Use fewer, more meaningful section headers');
-          if (ep.adds_more_structure) patternInstructions.push('Use more subheadings and clear section breaks');
-          if (ep.converts_to_lists) patternInstructions.push('Use bullet points and numbered lists where appropriate');
-          if (patternInstructions.length > 0) parts.push(`Editing patterns learned:\n- ${patternInstructions.join('\n- ')}`);
-        }
-        if (profile.top_topics && Array.isArray(profile.top_topics) && profile.top_topics.length > 0) {
-          parts.push(`User's top topics: ${profile.top_topics.slice(0, 5).join(', ')}`);
-        }
-        if (profile.top_solutions && Array.isArray(profile.top_solutions) && profile.top_solutions.length > 0) {
-          parts.push(`User's key solutions/products: ${profile.top_solutions.slice(0, 5).join(', ')}`);
-        }
-        if (!profile.prefers_negotiation) {
-          parts.push('User prefers direct content generation — minimize pre-generation questions');
-        }
-        if (profile.avg_response_detail === 'brief') {
-          parts.push('User prefers brief, concise responses');
-        } else if (profile.avg_response_detail === 'detailed') {
-          parts.push('User prefers detailed, thorough responses');
-        }
-
-        if (parts.length > 0) {
-          userIntelligenceContext = `\n\n## USER INTELLIGENCE PROFILE\nThese are learned preferences from this user's history. Apply them to ALL responses:\n${parts.join('\n')}`;
-          console.log('🧠 Injected User Intelligence Profile');
-        }
+    // Process user intelligence result
+    if (profileResult.status === 'fulfilled' && profileResult.value.data) {
+      const profile = profileResult.value.data;
+      const parts: string[] = [];
+      if (profile.preferred_length && profile.preferred_length !== 'medium') {
+        parts.push(`Content length preference: ${profile.preferred_length} (adjust word count accordingly)`);
       }
-    } catch (uipErr) {
-      console.warn('[USER-INTELLIGENCE] Failed to fetch profile (non-blocking):', uipErr);
+      if (profile.preferred_tone && Array.isArray(profile.preferred_tone) && profile.preferred_tone.length > 0) {
+        parts.push(`Preferred tone: ${profile.preferred_tone.join(', ')}`);
+      }
+      if (profile.preferred_formats && Array.isArray(profile.preferred_formats) && profile.preferred_formats.length > 0) {
+        parts.push(`Preferred content formats: ${profile.preferred_formats.join(', ')}`);
+      }
+      if (profile.editing_patterns && typeof profile.editing_patterns === 'object') {
+        const ep = profile.editing_patterns as Record<string, any>;
+        const patternInstructions: string[] = [];
+        if (ep.splits_long_paragraphs) patternInstructions.push('Keep paragraphs to 2-3 sentences max');
+        if (ep.adds_examples) patternInstructions.push('Include concrete examples and real-world scenarios');
+        if (ep.removes_generic_filler) patternInstructions.push('Avoid filler phrases like "in today\'s digital world"');
+        if (ep.adds_data_statistics) patternInstructions.push('Include relevant numbers, percentages, and data');
+        if (ep.consolidates_headings) patternInstructions.push('Use fewer, more meaningful section headers');
+        if (ep.adds_more_structure) patternInstructions.push('Use more subheadings and clear section breaks');
+        if (ep.converts_to_lists) patternInstructions.push('Use bullet points and numbered lists where appropriate');
+        if (patternInstructions.length > 0) parts.push(`Editing patterns learned:\n- ${patternInstructions.join('\n- ')}`);
+      }
+      if (profile.top_topics && Array.isArray(profile.top_topics) && profile.top_topics.length > 0) {
+        parts.push(`User's top topics: ${profile.top_topics.slice(0, 5).join(', ')}`);
+      }
+      if (profile.top_solutions && Array.isArray(profile.top_solutions) && profile.top_solutions.length > 0) {
+        parts.push(`User's key solutions/products: ${profile.top_solutions.slice(0, 5).join(', ')}`);
+      }
+      if (!profile.prefers_negotiation) {
+        parts.push('User prefers direct content generation — minimize pre-generation questions');
+      }
+      if (profile.avg_response_detail === 'brief') {
+        parts.push('User prefers brief, concise responses');
+      } else if (profile.avg_response_detail === 'detailed') {
+        parts.push('User prefers detailed, thorough responses');
+      }
+
+      if (parts.length > 0) {
+        userIntelligenceContext = `\n\n## USER INTELLIGENCE PROFILE\nThese are learned preferences from this user's history. Apply them to ALL responses:\n${parts.join('\n')}`;
+        console.log('🧠 Injected User Intelligence Profile');
+      }
+    } else if (profileResult.status === 'rejected') {
+      console.warn('[USER-INTELLIGENCE] Failed to fetch profile (non-blocking):', profileResult.reason);
     }
     systemPrompt += userIntelligenceContext;
 

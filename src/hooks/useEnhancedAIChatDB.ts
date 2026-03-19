@@ -1132,8 +1132,29 @@ export const useEnhancedAIChatDB = () => {
   // Export conversation (supports JSON, TXT, and Markdown)
   const exportConversation = useCallback(async (conversationId: string, format: 'json' | 'txt' | 'markdown' = 'json') => {
     try {
-      const conversation = conversations.find(c => c.id === conversationId);
-      if (!conversation) return;
+      let conversation = conversations.find(c => c.id === conversationId);
+      if (!conversation) {
+        // Fallback: fetch from Supabase if not in local state
+        const { data: convData } = await supabase
+          .from('ai_conversations')
+          .select('*')
+          .eq('id', conversationId)
+          .maybeSingle();
+        if (!convData) {
+          toast({ title: "Export failed", description: "Conversation not found", variant: "destructive" });
+          return;
+        }
+        conversation = {
+          id: convData.id,
+          title: convData.title || 'Untitled',
+          updatedAt: new Date(convData.updated_at),
+          pinned: convData.pinned ?? false,
+          archived: convData.archived ?? false,
+          tags: convData.tags ?? [],
+          summary: convData.summary ?? undefined,
+          goal: convData.goal ?? undefined,
+        };
+      }
 
       // Load all messages for this conversation
       const { data: messagesData, error } = await supabase
