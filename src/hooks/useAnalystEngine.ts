@@ -226,6 +226,7 @@ function computeCrossSignals(
               type: 'warning',
               source: 'cross-signal',
               timestamp: now,
+              urgency: 'low',
             });
             break;
           }
