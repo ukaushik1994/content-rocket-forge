@@ -542,7 +542,7 @@ export async function executeEngageActionTool(
         }
         updates.updated_at = new Date().toISOString();
 
-        const { data, error } = await supabase.from('engage_email_campaigns')
+        const { data, error } = await supabase.from('email_campaigns')
           .update(updates)
           .eq('id', toolArgs.campaign_id)
           .eq('workspace_id', workspaceId)
