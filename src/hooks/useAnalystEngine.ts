@@ -312,6 +312,207 @@ function computeCrossSignals(
           });
         }
       }
+
+      // ─── Fix 1: Cross-Data Pattern Engine ────────────────────────────────
+
+      // 8. Keyword cannibalization: multiple articles targeting same keyword
+      const { data: contentKeywords } = await supabase
+        .from('content_items')
+        .select('title, main_keyword')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .not('main_keyword', 'is', null)
+        .limit(50);
+
+      if (contentKeywords && contentKeywords.length >= 2) {
+        const kwMap = new Map<string, string[]>();
+        for (const item of contentKeywords) {
+          const kw = (item.main_keyword as string).toLowerCase().trim();
+          if (!kw) continue;
+          const existing = kwMap.get(kw) || [];
+          existing.push(item.title);
+          kwMap.set(kw, existing);
+        }
+        for (const [kw, titles] of kwMap) {
+          if (titles.length >= 2) {
+            signals.push({
+              id: `cross-cannibalization-${kw}-${now.getTime()}`,
+              content: `⚠️ Keyword cannibalization: ${titles.length} articles target "${kw}" — they may compete against each other in search. Consider consolidating or differentiating.`,
+              type: 'warning',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'high',
+            });
+            break;
+          }
+        }
+      }
+
+      // 9. WHY SEO is declining — analyze recent low-score articles
+      if (recentArticles && recentArticles.length >= 3) {
+        const scores2 = recentArticles.map(a => a.seo_score as number);
+        const avgF = (scores2[0] + scores2[1]) / 2;
+        const avgL = (scores2[scores2.length - 2] + scores2[scores2.length - 1]) / 2;
+        if (avgF < avgL - 10) {
+          const { data: diagArticles } = await supabase
+            .from('content_items')
+            .select('title, seo_score, word_count, content')
+            .eq('user_id', userId)
+            .eq('status', 'published')
+            .not('seo_score', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+          if (diagArticles) {
+            const issues: string[] = [];
+            for (const article of diagArticles) {
+              if (article.word_count && article.word_count < 500) issues.push('short content (<500 words)');
+              if (article.content && !article.content.includes('?')) issues.push('no FAQ section');
+              if (article.content) {
+                const headingCount = (article.content.match(/#{2,3}\s/g) || []).length;
+                if (headingCount < 3) issues.push('too few headings');
+              }
+            }
+            const uniqueIssues = [...new Set(issues)];
+            if (uniqueIssues.length > 0) {
+              signals.push({
+                id: `cross-seo-diagnosis-${now.getTime()}`,
+                content: `🔍 Why SEO is declining: Recent articles show ${uniqueIssues.slice(0, 3).join(', ')}. These are the most common causes of low scores.`,
+                type: 'warning',
+                source: 'cross-signal',
+                timestamp: now,
+                urgency: 'high',
+              });
+            }
+          }
+        }
+      }
+
+      // ─── Fix 4: Predictive Intelligence ──────────────────────────────────
+
+      // 10. Draft depletion forecast
+      if (published >= 3) {
+        const { data: publishDates } = await supabase
+          .from('content_items')
+          .select('created_at')
+          .eq('user_id', userId)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (publishDates && publishDates.length >= 2) {
+          const dates = publishDates.map(d => new Date(d.created_at).getTime());
+          const gaps: number[] = [];
+          for (let i = 0; i < dates.length - 1; i++) {
+            gaps.push((dates[i] - dates[i + 1]) / (1000 * 60 * 60 * 24));
+          }
+          const avgDaysBetween = gaps.reduce((s, g) => s + g, 0) / gaps.length;
+          const currentDrafts = totalContent - published;
+          if (avgDaysBetween > 0 && currentDrafts > 0) {
+            const daysOfRunway = Math.round(currentDrafts * avgDaysBetween);
+            if (daysOfRunway < 14) {
+              signals.push({
+                id: `cross-draft-depletion-${now.getTime()}`,
+                content: `⏳ At your current pace (1 article every ${Math.round(avgDaysBetween)} days), your ${currentDrafts} drafts will run out in ~${daysOfRunway} days. Start creating new content now.`,
+                type: 'warning',
+                source: 'cross-signal',
+                timestamp: now,
+                urgency: 'high',
+              });
+            }
+          }
+        }
+      }
+
+      // 11. Topic saturation: 4+ articles with same 2-word prefix
+      if (contentKeywords && contentKeywords.length >= 4) {
+        const prefixMap = new Map<string, number>();
+        for (const item of contentKeywords) {
+          const kw = (item.main_keyword as string).toLowerCase().trim();
+          const words = kw.split(/\s+/);
+          if (words.length >= 2) {
+            const prefix = words.slice(0, 2).join(' ');
+            prefixMap.set(prefix, (prefixMap.get(prefix) || 0) + 1);
+          }
+        }
+        for (const [prefix, count] of prefixMap) {
+          if (count >= 4) {
+            signals.push({
+              id: `cross-topic-saturation-${prefix}-${now.getTime()}`,
+              content: `📊 Topic saturation: ${count} articles target "${prefix}..." — diminishing returns likely. Expand into adjacent topics for better coverage.`,
+              type: 'warning',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'low',
+            });
+            break;
+          }
+        }
+      }
+
+      // ─── Fix 5: Temporal/Seasonal Awareness ─────────────────────────────
+
+      // 12. Content aging: published articles older than 180 days
+      const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: oldArticles } = await supabase
+        .from('content_items')
+        .select('title, created_at')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .lt('created_at', sixMonthsAgo)
+        .order('created_at', { ascending: true })
+        .limit(3);
+
+      if (oldArticles && oldArticles.length > 0) {
+        const oldestTitle = oldArticles[0].title;
+        const daysSince = Math.floor((now.getTime() - new Date(oldArticles[0].created_at).getTime()) / (1000 * 60 * 60 * 24));
+        signals.push({
+          id: `cross-content-aging-${now.getTime()}`,
+          content: `📅 "${oldestTitle}" is ${daysSince} days old. ${oldArticles.length > 1 ? `${oldArticles.length} articles` : 'This article'} may need refreshing to maintain rankings.`,
+          type: 'opportunity',
+          source: 'cross-signal',
+          timestamp: now,
+          urgency: 'medium',
+        });
+      }
+
+      // 13. Seasonal gap awareness
+      const currentMonth = now.getMonth();
+      const seasonalTopics: Record<number, string[]> = {
+        0: ['new year', 'resolutions', 'planning', 'goals'],
+        1: ['valentine', 'engagement', 'relationship'],
+        2: ['spring', 'renewal', 'launch', 'q1 review'],
+        3: ['spring', 'tax', 'q2 planning'],
+        4: ['summer', 'midyear', 'review'],
+        5: ['midyear', 'summer', 'half-year'],
+        6: ['summer', 'back to school'],
+        7: ['back to school', 'fall prep', 'q3'],
+        8: ['fall', 'autumn', 'q4 planning', 'holiday prep'],
+        9: ['halloween', 'black friday prep', 'holiday'],
+        10: ['thanksgiving', 'black friday', 'cyber monday'],
+        11: ['christmas', 'holiday', 'year-end', 'gift'],
+      };
+
+      if (totalContent >= 5 && contentKeywords) {
+        const currentSeasonalTopics = seasonalTopics[currentMonth] || [];
+        if (currentSeasonalTopics.length > 0) {
+          const allKws = contentKeywords.map(c => (c.main_keyword as string).toLowerCase());
+          const hasSeasonalContent = currentSeasonalTopics.some(st => 
+            allKws.some(kw => kw.includes(st))
+          );
+          if (!hasSeasonalContent) {
+            signals.push({
+              id: `cross-seasonal-gap-${now.getTime()}`,
+              content: `🗓️ No content targeting seasonal trends (${currentSeasonalTopics.slice(0, 3).join(', ')}). Seasonal content can capture trending search volume.`,
+              type: 'opportunity',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'low',
+            });
+          }
+        }
+      }
+
     } catch (err) {
       console.warn('Cross-signal analysis failed:', err);
     }
