@@ -1487,7 +1487,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             });
             const totalFeatures = Array.isArray(wizardState.selectedSolution!.features) ? wizardState.selectedSolution!.features.length : 0;
             return (
-              <div className="rounded-lg border border-border/20 bg-muted/20 p-2.5 space-y-1">
+              <div className="glass-card p-2.5 space-y-1">
                 <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
                   <Package className="w-3 h-3" /> Solution Integration
                 </div>
