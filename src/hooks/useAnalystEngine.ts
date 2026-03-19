@@ -1632,5 +1632,6 @@ export function useAnalystEngine(
     strategicRecommendation,
     userStage,
     benchmarks,
+    triggerRefresh,
   };
 }
