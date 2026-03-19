@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAnalystEngine } from '@/hooks/useAnalystEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedMessageBubble } from './EnhancedMessageBubble';
@@ -6,6 +7,7 @@ import { ContextAwareMessageInput } from './ContextAwareMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
 import { DynamicGreeting } from './DynamicGreeting';
+import { GettingStartedChecklist } from './GettingStartedChecklist';
 import { VisualizationSidebar } from './VisualizationSidebar';
 import { ThinkingTextRotator } from './ThinkingTextRotator';
 import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
@@ -75,6 +77,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     justCreatedConversation
   } = useSharedAIChatDB();
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // API Key onboarding gate
   const [showKeyOnboarding, setShowKeyOnboarding] = useState(false);
@@ -309,6 +313,31 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       setPendingPanel(null);
     }
   }, [pendingPanel, setPendingPanel]);
+
+  // SB-1: Auto-open wizard when navigated with selectedProposal from Proposals page
+  useEffect(() => {
+    const state = location.state as { selectedProposal?: any } | null;
+    if (state?.selectedProposal) {
+      const p = state.selectedProposal;
+      handleSetVisualization({
+        type: 'content_wizard',
+        keyword: typeof p.primary_keyword === 'string' ? p.primary_keyword : p.primary_keyword?.keyword || '',
+        solution_id: p.solution_id,
+        content_type: p.content_type || 'blog',
+        extractedContext: {
+          keyword: typeof p.primary_keyword === 'string' ? p.primary_keyword : p.primary_keyword?.keyword || '',
+          title: p.title,
+          description: p.description,
+          related_keywords: p.related_keywords,
+          solution_id: p.solution_id,
+          content_type: p.content_type || 'blog',
+        }
+      });
+      // Clear navigation state to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state]);
+
 
   // AUTO-OPEN sidebar when AI response contains visual data OR first message sent
   // Respects user's explicit close intent (Issue #4 fix)
@@ -615,7 +644,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
             if (lastUserMsg) sendMessage(lastUserMsg.content);
           }} />
-        
+
+
 
           {/* Message Search Bar (toggleable) */}
           {messages.length > 0 &&
@@ -686,6 +716,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
                     {/* Dynamic Rotating Greeting */}
                     <DynamicGreeting firstName={user?.user_metadata?.first_name || user?.user_metadata?.name?.split(' ')[0] || ''} />
+
+                    {/* SB-10: Getting Started Milestones */}
+                    <GettingStartedChecklist />
 
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />

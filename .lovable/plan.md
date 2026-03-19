@@ -1,6 +1,7 @@
 
 
 
+
 # Major 80 — Phased Implementation Plan
 
 ## Phase 1: Backend Safety Nets ✅ COMPLETE
@@ -28,9 +29,9 @@
 | SB-21 | ✅ | `conversation_id` column on `content_items`, wired during AI generation, "View Source Conversation" button in detail view |
 | SB-22 | ✅ | Internal links injected as actual `<a>` tags into generated HTML (matching published articles by keyword overlap) |
 
-## Phase 4: Proposal→Action Flow + Onboarding (NEXT)
+## Phase 4: Proposal→Action Flow + Onboarding ✅ COMPLETE
 
-| Item | What | Where |
-|------|------|-------|
-| SB-1 | "Write This" on proposals | `AIProposalsHero.tsx` + wizard pre-fill |
-| SB-10 | Getting Started milestones | Post-onboarding guidance component |
+| Item | Status | What was done |
+|------|--------|---------------|
+| SB-1 | ✅ | "Write This" CTA on ProposalCard with primary styling; auto-opens Content Wizard via `useLocation` state in EnhancedChatInterface |
+| SB-10 | ✅ | `GettingStartedChecklist` component on AI Chat welcome screen — 4 milestones (company, offerings, proposals, content) with live DB checks, progress bar, collapsible, auto-dismiss on completion |
