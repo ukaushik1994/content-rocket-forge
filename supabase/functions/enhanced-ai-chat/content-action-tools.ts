@@ -451,7 +451,7 @@ export async function executeContentActionTool(
         let editPatternHint = '';
 
         try {
-          const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult] = await Promise.allSettled([
+          const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult] = await Promise.allSettled([
             // Brand voice
             supabase.from('brand_guidelines')
               .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use, mission_statement')
@@ -473,7 +473,12 @@ export async function executeContentActionTool(
             supabase.from('content_items')
               .select('content, seo_score')
               .eq('user_id', userId).eq('status', 'published')
-              .order('seo_score', { ascending: false }).limit(3)
+              .order('seo_score', { ascending: false }).limit(3),
+            // Edit pattern feedback (Fix 9)
+            supabase.from('content_generation_feedback')
+              .select('feedback_data')
+              .eq('user_id', userId).eq('feedback_type', 'edit_pattern')
+              .order('created_at', { ascending: false }).limit(10)
           ]);
 
           // Brand voice context
