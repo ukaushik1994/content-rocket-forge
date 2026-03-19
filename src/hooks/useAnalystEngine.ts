@@ -11,6 +11,24 @@ export interface InsightItem {
   source: 'ai' | 'platform' | 'web' | 'cross-signal' | 'memory';
   timestamp: Date;
   messageId?: string;
+  urgency?: 'critical' | 'high' | 'medium' | 'low';
+}
+
+// ─── Strategic Recommendation ──────────────────────────────────────────────
+export type StrategicStance = 'stop-creating' | 'fix-quality' | 'accelerate' | 'build-foundation';
+
+export interface StrategicAction {
+  label: string;
+  prompt: string;
+  effort: 'low' | 'medium' | 'high';
+  impact: 'low' | 'medium' | 'high';
+}
+
+export interface StrategicRecommendation {
+  stance: StrategicStance;
+  reasoning: string;
+  promptQuestion: string;
+  actions: StrategicAction[];
 }
 
 export interface AnalystTopic {
