@@ -596,6 +596,24 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const qualityConfig = getQualityConfig(dataInfo.quality);
   const { isMobile, isTablet } = useResponsiveBreakpoint();
 
+  // Merge analyst insights feed with current response insights
+  const mergedInsightsFeed = useMemo(() => {
+    const allInsights = [...(analystState?.insightsFeed || [])];
+    for (const insight of insights) {
+      const content = typeof insight === 'string' ? insight : insight.content;
+      if (!allInsights.some(i => i.content === content)) {
+        allInsights.push({
+          id: `current-${Math.random().toString(36).slice(2)}`,
+          content,
+          type: insight.insightType || 'trend',
+          source: 'ai' as const,
+          timestamp: new Date(),
+        });
+      }
+    }
+    return allInsights;
+  }, [analystState?.insightsFeed, insights]);
+
   // ─── Delegate to specialized panels ───────────────────────────────────
   if (visualData?.type === 'content_wizard') {
     return <ContentWizardSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} solutionId={visualData.solution_id} contentType={visualData.content_type} extractedContext={visualData.extractedContext} />;
