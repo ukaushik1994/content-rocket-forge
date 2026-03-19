@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { StatusBadge } from './StatusBadge';
 import { ScoreBadge } from './ScoreBadge';
-import { Edit, BarChart2, Archive, FileText, Copy, Trash, TrendingUp, Loader2 } from 'lucide-react';
+import { Edit, BarChart2, Archive, FileText, Copy, Trash, TrendingUp, Loader2, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useContentPerformancePrediction } from '@/hooks/useContentPerformancePrediction';
+import { useNavigate } from 'react-router-dom';
 
 interface ContentDetailViewProps {
   item: ContentItemType | null;
