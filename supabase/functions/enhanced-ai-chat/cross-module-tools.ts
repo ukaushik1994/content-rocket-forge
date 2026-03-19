@@ -238,6 +238,16 @@ ${content.content || ''}
 
         if (emailError) throw emailError;
 
+        // Track performance signal: email_convert
+        try {
+          await supabase.from('content_performance_signals').insert({
+            content_id: toolArgs.content_id,
+            user_id: userId,
+            signal_type: 'email_convert',
+            metadata: { email_campaign_id: emailCampaign.id }
+          });
+        } catch (_) { /* non-blocking */ }
+
         return {
           success: true,
           message: `Created email campaign "${emailCampaign.name}" from content "${content.title}"`,
