@@ -259,7 +259,7 @@ export async function executeKeywordActionTool(
 
         const count = toolArgs.subtopic_count || 8;
 
-        const proxyResponse = await fetch(`${supabaseUrl}/functions/v1/ai-proxy`, {
+        const proxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${supabaseKey}`,

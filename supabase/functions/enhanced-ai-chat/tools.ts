@@ -633,9 +633,18 @@ export async function executeToolCall(
     console.log(`[TOOL] ${toolName} | cache: SKIP (always fresh)`);
   }
   
-  // Wrap in try-catch with timeout
+  // Tiered timeouts based on tool type
+  const getToolTimeout = (name: string): number => {
+    const AI_GENERATION_TOOLS = ['generate_full_content', 'create_topic_cluster', 'repurpose_for_social', 'trigger_competitor_analysis', 'generate_image', 'generate_content_image'];
+    const SERP_TOOLS = ['trigger_serp_analysis', 'trigger_content_gap_analysis'];
+    if (AI_GENERATION_TOOLS.includes(name)) return 60000;
+    if (SERP_TOOLS.includes(name)) return 30000;
+    return 10000;
+  };
+
+  const toolTimeout = getToolTimeout(toolName);
   const timeoutPromise = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('Tool execution timeout (10s)')), 10000)
+    setTimeout(() => reject(new Error(`Tool execution timeout (${toolTimeout / 1000}s)`)), toolTimeout)
   );
   
   let result;
