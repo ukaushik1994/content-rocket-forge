@@ -209,6 +209,23 @@ export const CAMPAIGN_INTELLIGENCE_TOOL_DEFINITIONS = [
         required: ["campaign_id"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "run_campaign_pipeline",
+      description: "One-click campaign pipeline: creates a campaign from an idea, generates a content strategy, and queues content generation — all in one step. Use when user says 'run full pipeline', 'create campaign and generate content', or 'one-click campaign'.",
+      parameters: {
+        type: "object",
+        properties: {
+          idea: { type: "string", description: "Campaign idea or topic" },
+          name: { type: "string", description: "Campaign name" },
+          target_audience: { type: "string", description: "Target audience description" },
+          content_count: { type: "number", default: 3, description: "Number of content pieces to generate (1-5)" }
+        },
+        required: ["idea", "name"]
+      }
+    }
   }
 ];
 
