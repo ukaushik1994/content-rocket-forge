@@ -34,19 +34,15 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
       role="group"
       aria-label="Quick actions"
     >
-      {suggestions.map((item, index) => (
-        <motion.button
+        <button
           key={item.text}
-          className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors cursor-pointer"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors cursor-pointer text-left"
           onClick={() => handleClick(item)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 + index * 0.04, duration: 0.3 }}
         >
           <item.icon className={`h-4 w-4 ${item.iconColor} shrink-0`} />
           {item.text}
-        </motion.button>
+        </button>
       ))}
-    </motion.div>
+    </div>
   );
 };
