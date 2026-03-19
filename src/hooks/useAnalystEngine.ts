@@ -880,8 +880,6 @@ export function useAnalystEngine(
   }, [userId, isActive, topics]);
 
   // Auto-fetch ALL platform data on activation
-  const hasInitialFetchedRef = useRef(false);
-  const prevMessageCountRef = useRef(0);
   useEffect(() => {
     if (isActive && !hasInitialFetchedRef.current) {
       hasInitialFetchedRef.current = true;
