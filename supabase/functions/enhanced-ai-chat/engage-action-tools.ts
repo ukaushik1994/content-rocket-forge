@@ -760,9 +760,12 @@ export async function executeEngageActionTool(
         return {
           success: true,
           message: toolArgs.scheduled_at
-            ? `📋 Social post saved and scheduled for ${platforms.join(', ')} at ${toolArgs.scheduled_at}. Note: Direct social publishing is coming soon — your post is saved as a draft and will be ready to publish once integrations are live.`
-            : `📋 Draft social post created for ${platforms.join(', ')}. Note: Direct social publishing is coming soon — your post is saved and ready to publish once integrations are live.`,
-          item: { ...socialPost, platforms }
+            ? `📋 Social post saved and scheduled for ${platforms.join(', ')} at ${toolArgs.scheduled_at}. Direct publishing to platforms is coming soon — for now, copy the text and post manually.`
+            : `📋 Draft social post created for ${platforms.join(', ')}. Direct publishing to platforms is coming soon — for now, copy the text and post manually.`,
+          item: { ...socialPost, platforms },
+          actions: [
+            { id: 'copy_post', label: '📋 Copy Post Text', type: 'copy', content: fullContent }
+          ]
         };
       }
 
