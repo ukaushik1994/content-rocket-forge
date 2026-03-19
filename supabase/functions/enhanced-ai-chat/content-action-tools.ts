@@ -509,14 +509,14 @@ export async function executeContentActionTool(
         let editPatternHint = '';
 
         try {
-          const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult] = await Promise.allSettled([
+          const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult, perfSignalsResult] = await Promise.allSettled([
             // Brand voice
             supabase.from('brand_guidelines')
               .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use, mission_statement')
               .eq('user_id', userId).maybeSingle(),
             // Solutions
             supabase.from('solutions')
-              .select('name, description, key_features, results')
+              .select('name, description, key_features, results, pain_points, use_cases, target_audience')
               .eq('user_id', userId).limit(5),
             // Content freshness — check for existing articles on same keyword
             supabase.from('content_items')
@@ -536,7 +536,12 @@ export async function executeContentActionTool(
             supabase.from('content_generation_feedback')
               .select('feedback_data')
               .eq('user_id', userId).eq('feedback_type', 'edit_pattern')
-              .order('created_at', { ascending: false }).limit(10)
+              .order('created_at', { ascending: false }).limit(10),
+            // Performance signals — most reused content (Sprint 2)
+            supabase.from('content_performance_signals')
+              .select('content_id, signal_type')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false }).limit(50)
           ]);
 
           // Brand voice context
