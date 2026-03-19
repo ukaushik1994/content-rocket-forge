@@ -1440,7 +1440,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               size="sm" 
               onClick={refineContent} 
               disabled={isRefining || !refinementInstruction.trim()} 
-              className="text-xs h-8 gap-1 flex-shrink-0"
+              className="text-xs h-8 gap-1 flex-shrink-0 border-white/[0.06] hover:bg-white/[0.04]"
             >
               {isRefining ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
               Refine
