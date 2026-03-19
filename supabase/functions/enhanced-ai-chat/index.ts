@@ -2648,8 +2648,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     // Initialize tool cache for this request
     const toolCache = new Map<string, { data: any; timestamp: number }>();
 
-    // Determine which tools to use
-    let toolsToUse = TOOL_DEFINITIONS; // Default tools
+    // Determine which tools to use (PE Fix 2: Intent-gated tool filtering)
+    let toolsToUse = TOOL_DEFINITIONS; // Default: all tools
     let toolChoice: any = undefined; // Default: let AI decide
     
     // Check if campaign strategy tool is requested
@@ -2658,10 +2658,46 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       toolsToUse = [CAMPAIGN_STRATEGY_TOOL]; // Use only this tool for focused generation
       toolChoice = { type: "function", function: { name: "generate_campaign_strategies" } };
       console.log('🎯 Using campaign strategy tool for structured generation');
-    } else if (queryRequiresToolExecution(queryIntent)) {
-      // Fix 1: Force tool_choice for data queries
-      toolChoice = "required";
-      console.log('🔧 Forcing tool_choice=required for data query (categories:', queryIntent.categories.join(', '), ')');
+    } else {
+      // PE Fix 2: Filter tools by intent categories
+      const intentCategories = queryIntent.categories || [];
+      const categoryToolMap: Record<string, string[]> = {
+        'content': ['get_content_items', 'create_content_item', 'update_content_item', 'delete_content_item', 'generate_full_content', 'launch_content_wizard', 'start_content_builder', 'submit_for_review', 'approve_content', 'reject_content'],
+        'keywords': ['get_keyword_data', 'get_content_items'],
+        'campaigns': ['get_campaigns', 'create_campaign', 'update_campaign', 'get_content_items'],
+        'calendar': ['get_calendar_items', 'create_calendar_item', 'update_calendar_item', 'delete_calendar_item'],
+        'engage': ['get_contacts', 'create_contact', 'create_email_campaign', 'send_email_campaign', 'create_segment'],
+        'analytics': ['get_content_performance', 'get_content_items'],
+        'competitors': ['get_competitors', 'get_content_items'],
+        'approvals': ['get_approval_queue', 'submit_for_review', 'approve_content', 'reject_content'],
+        'brand': ['get_brand_voice', 'update_brand_voice'],
+        'social': ['repurpose_for_social', 'get_content_items'],
+        'proposals': ['get_proposals', 'get_content_items']
+      };
+
+      // Build set of relevant tool names
+      const relevantToolNames = new Set<string>();
+      // Always include these core tools
+      ['get_content_items', 'get_brand_voice', 'generate_full_content', 'launch_content_wizard'].forEach(t => relevantToolNames.add(t));
+      
+      for (const cat of intentCategories) {
+        const tools = categoryToolMap[cat];
+        if (tools) tools.forEach(t => relevantToolNames.add(t));
+      }
+      
+      // If we have specific intent categories, filter tools; otherwise use all
+      if (intentCategories.length > 0 && intentCategories[0] !== 'general') {
+        toolsToUse = TOOL_DEFINITIONS.filter((t: any) => relevantToolNames.has(t.function?.name));
+        // Ensure we always have at least 5 tools (safety net)
+        if (toolsToUse.length < 5) toolsToUse = TOOL_DEFINITIONS;
+        console.log(`🔧 Intent-filtered tools: ${toolsToUse.length}/${TOOL_DEFINITIONS.length} (categories: ${intentCategories.join(', ')})`);
+      }
+
+      if (queryRequiresToolExecution(queryIntent)) {
+        // Fix 1: Force tool_choice for data queries
+        toolChoice = "required";
+        console.log('🔧 Forcing tool_choice=required for data query (categories:', queryIntent.categories.join(', '), ')');
+      }
     }
 
     // Call ai-proxy edge function with user's provider (including tools) with retry logic
