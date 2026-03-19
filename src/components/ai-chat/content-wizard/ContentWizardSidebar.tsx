@@ -188,6 +188,56 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
     });
   }, []);
 
+  // Phase 5c: Auto-save wizard state to localStorage on step change
+  useEffect(() => {
+    if (wizardState.keyword.trim().length >= 2 && currentStep > 0) {
+      try {
+        localStorage.setItem(WIZARD_DRAFT_KEY, JSON.stringify({
+          state: wizardState,
+          savedAt: Date.now(),
+        }));
+      } catch { /* storage full, non-critical */ }
+    }
+  }, [currentStep, wizardState]);
+
+  // Phase 5a: Save preset on content generation
+  useEffect(() => {
+    if (wizardState.generatedContent) {
+      try {
+        localStorage.setItem(WIZARD_PRESET_KEY, JSON.stringify({
+          writingStyle: wizardState.writingStyle,
+          expertiseLevel: wizardState.expertiseLevel,
+          contentArticleType: wizardState.contentArticleType,
+          wordCount: wizardState.wordCount,
+          wordCountMode: wizardState.wordCountMode,
+          includeStats: wizardState.includeStats,
+          includeCaseStudies: wizardState.includeCaseStudies,
+          includeFAQs: wizardState.includeFAQs,
+        }));
+      } catch { /* non-critical */ }
+    }
+  }, [wizardState.generatedContent]);
+
+  // Phase 5c: Resume draft handler
+  const resumeDraft = useCallback(() => {
+    const draft = loadSavedDraft();
+    if (draft) {
+      setWizardState(draft);
+      // Determine which step to resume at based on progress
+      if (draft.generatedContent) setCurrentStep(quick ? 1 : 4);
+      else if (draft.outline.length > 0 && !quick) setCurrentStep(3);
+      else if ((draft.researchSelections.faqs.length + draft.researchSelections.contentGaps.length) > 0 && !quick) setCurrentStep(2);
+      else if (draft.selectedSolution) setCurrentStep(quick ? 1 : 1);
+      toast.success('Draft resumed!');
+    }
+    setShowResumePrompt(false);
+  }, [quick]);
+
+  const dismissDraft = useCallback(() => {
+    localStorage.removeItem(WIZARD_DRAFT_KEY);
+    setShowResumePrompt(false);
+  }, []);
+
   // Clamp step when switching between quick/blog
   React.useEffect(() => {
     if (currentStep > maxStep) setCurrentStep(maxStep);
