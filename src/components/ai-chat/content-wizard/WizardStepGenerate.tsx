@@ -1182,7 +1182,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           </Button>
           {isGeneratingContent && (
             <>
-              <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-2">
+              <div className="p-3 glass-card space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-foreground">{generationStage || 'Preparing...'}</span>
                   <span className="text-xs text-muted-foreground">{generationProgress}%</span>
