@@ -485,7 +485,8 @@ const CAMPAIGN_TOOL_NAMES = [
   'get_queue_status',
   'get_campaign_content',
   'trigger_content_generation',
-  'retry_failed_content'
+  'retry_failed_content',
+  'run_campaign_pipeline'
 ];
 
 // New read tool names for routing

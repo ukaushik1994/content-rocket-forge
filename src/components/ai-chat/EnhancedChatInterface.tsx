@@ -99,6 +99,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [proactiveInsights, setProactiveInsights] = useState<Array<{type: string; label: string; count: number; icon: React.ReactNode}>>([]);
   // 4e: Conversation templates from patterns
   const [workflowTemplates, setWorkflowTemplates] = useState<string[]>([]);
+  // E6: Brand voice detection eligibility
+  const [canDetectBrandVoice, setCanDetectBrandVoice] = useState(false);
 
   useEffect(() => {
     if (!user || messages.length > 0) return;
@@ -148,8 +150,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       } catch (_) { /* non-blocking */ }
     };
 
+    const checkBrandVoiceEligibility = async () => {
+      try {
+        const { count } = await supabase.from('content_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id).eq('status', 'published');
+        setCanDetectBrandVoice((count ?? 0) >= 2);
+      } catch (_) { /* non-blocking */ }
+    };
+
     fetchInsights();
     fetchTemplates();
+    checkBrandVoiceEligibility();
   }, [user, messages.length]);
 
   // Analyst engine: track if analyst is active and provide cumulative state
@@ -620,6 +632,24 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                             </button>
                           ))}
                         </div>
+                      </motion.div>
+                    )}
+
+                    {/* Brand Voice Detection */}
+                    {canDetectBrandVoice && (
+                      <motion.div
+                        className="flex justify-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.7 }}
+                      >
+                        <button
+                          onClick={() => sendMessage('Detect my brand voice from my published content')}
+                          className="px-4 py-2 rounded-lg text-xs bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 transition-colors text-primary flex items-center gap-2"
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Detect my brand voice
+                        </button>
                       </motion.div>
                     )}
 

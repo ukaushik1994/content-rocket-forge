@@ -276,13 +276,44 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
     }
   },
   // Glossary write tool removed — feature deprecated
+  {
+    type: "function",
+    function: {
+      name: "get_content_versions",
+      description: "Fetch version history for a content item. Shows all saved versions with timestamps, change sources, and SEO scores. Use when user asks 'show history', 'version history', or 'previous versions'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "UUID of the content item" },
+          limit: { type: "number", default: 10, description: "Number of versions to return" }
+        },
+        required: ["content_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "restore_content_version",
+      description: "Restore a content item to a previous version. Saves current state as a new version first. Use when user says 'restore version', 'revert to', or 'go back to version'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "UUID of the content item" },
+          version_number: { type: "number", description: "Version number to restore" }
+        },
+        required: ["content_id", "version_number"]
+      }
+    }
+  }
 ];
 
 export const CONTENT_ACTION_TOOL_NAMES = [
   'create_content_item', 'update_content_item', 'delete_content_item',
   'submit_for_review', 'approve_content', 'reject_content',
   'generate_full_content', 'start_content_builder', 'launch_content_wizard',
-  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item'
+  'create_calendar_item', 'update_calendar_item', 'delete_calendar_item',
+  'get_content_versions', 'restore_content_version'
 ];
 
 export async function executeContentActionTool(
@@ -321,7 +352,8 @@ export async function executeContentActionTool(
           await saveAutoSeoScore(supabase, userId, data.id, seoScore, toolArgs.main_keyword || '');
         }
 
-        return { success: true, message: `Created "${data.title}" as ${data.status} (SEO: ${seoScore}/100)`, item: { ...data, seo_score: seoScore } };
+        const seoContext = seoScore < 40 ? ' (basic check — full SEO analysis available in the Content Wizard)' : '';
+        return { success: true, message: `Created "${data.title}" as ${data.status} (SEO: ${seoScore}/100${seoContext})`, item: { ...data, seo_score: seoScore } };
       }
 
       case 'update_content_item': {
@@ -333,6 +365,32 @@ export async function executeContentActionTool(
         if (toolArgs.meta_title !== undefined) updates.meta_title = toolArgs.meta_title;
         if (toolArgs.meta_description !== undefined) updates.meta_description = toolArgs.meta_description;
         updates.updated_at = new Date().toISOString();
+
+        // Snapshot current version before updating (E1)
+        try {
+          const { data: current } = await supabase.from('content_items')
+            .select('id, title, content, meta_title, meta_description, seo_score')
+            .eq('id', toolArgs.content_id).eq('user_id', userId).single();
+          if (current && current.content) {
+            const { data: latestVersion } = await supabase.from('content_versions')
+              .select('version_number')
+              .eq('content_id', toolArgs.content_id)
+              .order('version_number', { ascending: false }).limit(1).maybeSingle();
+            const nextVersion = (latestVersion?.version_number || 0) + 1;
+            await supabase.from('content_versions').insert({
+              content_id: toolArgs.content_id,
+              user_id: userId,
+              content: current.content,
+              title: current.title,
+              meta_title: current.meta_title,
+              meta_description: current.meta_description,
+              seo_score: current.seo_score,
+              version_number: nextVersion,
+              change_source: 'pre_update_snapshot',
+              change_description: `Snapshot before update`
+            });
+          }
+        } catch (_) { /* non-blocking versioning */ }
 
         const { data, error } = await supabase.from('content_items')
           .update(updates)
@@ -650,6 +708,22 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
           await saveAutoSeoScore(supabase, userId, saved.id, seoScore, toolArgs.keyword);
         }
 
+        // Create version 1 (E1)
+        try {
+          await supabase.from('content_versions').insert({
+            content_id: saved.id,
+            user_id: userId,
+            content: generatedContent,
+            title: saved.title,
+            meta_title: autoMetaTitle,
+            meta_description: autoMetaDesc,
+            seo_score: seoScore,
+            version_number: 1,
+            change_source: 'ai_generation',
+            change_description: `Initial generation via AI Chat`
+          });
+        } catch (_) { /* non-blocking */ }
+
         // Fact-checking flags (Fix 18)
         let factCheckWarning = '';
         try {
@@ -684,9 +758,36 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         } catch (_) { /* non-blocking */ }
 
         const wordCount = generatedContent.split(/\s+/).length;
+        // Auto-suggest keywords from headings (E2)
+        let keywordSuggestions = '';
+        try {
+          const headingMatches = generatedContent.match(/^#{1,3}\s+(.+)$/gm) || [];
+          if (headingMatches.length > 0) {
+            const extractedPhrases = headingMatches
+              .map((h: string) => h.replace(/^#+\s+/, '').trim().toLowerCase())
+              .filter((p: string) => p.length > 3 && p.length < 60)
+              .slice(0, 5);
+            
+            if (extractedPhrases.length > 0) {
+              // Check which ones are NOT already tracked
+              const { data: existingKw } = await supabase
+                .from('keywords')
+                .select('keyword')
+                .eq('user_id', userId)
+                .in('keyword', extractedPhrases);
+              const existingSet = new Set((existingKw || []).map((k: any) => k.keyword.toLowerCase()));
+              const newPhrases = extractedPhrases.filter((p: string) => !existingSet.has(p));
+              if (newPhrases.length > 0) {
+                keywordSuggestions = `\n\n💡 **Keyword suggestions** from headings: ${newPhrases.map((p: string) => `"${p}"`).join(', ')}. Say "add these keywords" to start tracking them.`;
+              }
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
+        const seoContext = seoScore < 40 ? ' (basic check — full SEO analysis available in the Content Wizard)' : '';
         return {
           success: true,
-          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100) as draft${factCheckWarning}${linkSuggestions}`,
+          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${factCheckWarning}${linkSuggestions}${keywordSuggestions}`,
           item: { ...saved, seo_score: seoScore, meta_title: autoMetaTitle, meta_description: autoMetaDesc },
           wordCount,
           actions: [
@@ -701,15 +802,12 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
       case 'start_content_builder': {
         return {
           success: true,
-          message: `Opening Content Builder with keyword "${toolArgs.keyword}"`,
-          action: {
-            type: 'navigate',
-            url: '/ai-chat',
-            payload: {
-              keyword: toolArgs.keyword,
-              solution_id: toolArgs.solution_id,
-              suggested_title: toolArgs.suggested_title
-            }
+          message: `Ready to create content about "${toolArgs.keyword}". Choose how you'd like to proceed.`,
+          visualData: {
+            type: 'content_creation_choice',
+            keyword: toolArgs.keyword,
+            solution_id: toolArgs.solution_id || null,
+            content_type: toolArgs.content_type || 'blog'
           }
         };
       }
@@ -801,6 +899,87 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
       }
 
       // Glossary write removed — feature deprecated
+
+      case 'get_content_versions': {
+        const { data, error } = await supabase.from('content_versions')
+          .select('id, version_number, title, seo_score, change_source, change_description, created_at')
+          .eq('content_id', toolArgs.content_id)
+          .eq('user_id', userId)
+          .order('version_number', { ascending: false })
+          .limit(toolArgs.limit || 10);
+
+        if (error) throw error;
+
+        return {
+          success: true,
+          versions: data || [],
+          count: data?.length || 0,
+          message: data?.length
+            ? `Found ${data.length} version(s). Latest: v${data[0].version_number} (${data[0].change_source}).`
+            : 'No version history found for this content.'
+        };
+      }
+
+      case 'restore_content_version': {
+        // Find the target version
+        const { data: targetVersion, error: findError } = await supabase.from('content_versions')
+          .select('*')
+          .eq('content_id', toolArgs.content_id)
+          .eq('user_id', userId)
+          .eq('version_number', toolArgs.version_number)
+          .single();
+
+        if (findError || !targetVersion) {
+          return { success: false, message: `Version ${toolArgs.version_number} not found.` };
+        }
+
+        // Snapshot current state first
+        const { data: current } = await supabase.from('content_items')
+          .select('title, content, meta_title, meta_description, seo_score')
+          .eq('id', toolArgs.content_id).eq('user_id', userId).single();
+
+        if (current) {
+          const { data: latestVersion } = await supabase.from('content_versions')
+            .select('version_number')
+            .eq('content_id', toolArgs.content_id)
+            .order('version_number', { ascending: false }).limit(1).maybeSingle();
+          const nextVersion = (latestVersion?.version_number || 0) + 1;
+          await supabase.from('content_versions').insert({
+            content_id: toolArgs.content_id,
+            user_id: userId,
+            content: current.content,
+            title: current.title,
+            meta_title: current.meta_title,
+            meta_description: current.meta_description,
+            seo_score: current.seo_score,
+            version_number: nextVersion,
+            change_source: 'pre_restore_snapshot',
+            change_description: `Snapshot before restoring to v${toolArgs.version_number}`
+          });
+        }
+
+        // Restore the target version
+        const restoreUpdates: any = { updated_at: new Date().toISOString() };
+        if (targetVersion.content) restoreUpdates.content = targetVersion.content;
+        if (targetVersion.title) restoreUpdates.title = targetVersion.title;
+        if (targetVersion.meta_title) restoreUpdates.meta_title = targetVersion.meta_title;
+        if (targetVersion.meta_description) restoreUpdates.meta_description = targetVersion.meta_description;
+
+        const { data: restored, error: restoreError } = await supabase.from('content_items')
+          .update(restoreUpdates)
+          .eq('id', toolArgs.content_id)
+          .eq('user_id', userId)
+          .select('id, title, status')
+          .single();
+
+        if (restoreError) throw restoreError;
+
+        return {
+          success: true,
+          message: `Restored "${restored.title}" to version ${toolArgs.version_number}. Previous state saved as a new version.`,
+          item: restored
+        };
+      }
 
       default:
         return { error: `Unknown content action tool: ${toolName}` };

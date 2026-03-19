@@ -176,9 +176,19 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       });
     }
     
-    // Fallback 3: Generate from metricCards if available
+    // Fallback 3: Comparison chart data (E5)
+    if (visualData?.type === 'comparison_chart' && visualData?.metrics) {
+      console.log('📊 Chart data fallback 3: converting comparison_chart data');
+      return visualData.metrics.map((metric: string, idx: number) => ({
+        name: metric,
+        [visualData.labels?.[0] || 'Current']: visualData.current?.[idx] || 0,
+        [visualData.labels?.[1] || 'Previous']: visualData.previous?.[idx] || 0
+      }));
+    }
+
+    // Fallback 4: Generate from metricCards if available
     if (visualData?.summaryInsights?.metricCards && visualData.summaryInsights.metricCards.length > 0) {
-      console.log('📊 Chart data fallback 3: generating from metricCards');
+      console.log('📊 Chart data fallback 4: generating from metricCards');
       return visualData.summaryInsights.metricCards.map((card: any) => ({
         name: card.label || card.title || 'Metric',
         value: typeof card.value === 'number' ? card.value : parseFloat(card.value) || 0

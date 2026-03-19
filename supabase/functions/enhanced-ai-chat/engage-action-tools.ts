@@ -519,7 +519,34 @@ export async function executeEngageActionTool(
           }
         } catch (_) { /* non-blocking */ }
 
-        return { success: true, message: `Created email campaign "${data.name}" (draft)${workspaceNotice}${toneHint}`, item: data };
+        // Email template suggestions from past campaigns (E4)
+        let emailTip = '';
+        try {
+          const { data: pastCampaigns } = await supabase.from('email_campaigns')
+            .select('subject')
+            .eq('workspace_id', workspaceId)
+            .in('status', ['sent', 'completed'])
+            .order('created_at', { ascending: false })
+            .limit(10);
+          
+          if (pastCampaigns && pastCampaigns.length >= 3) {
+            const subjects = pastCampaigns.map((c: any) => c.subject || '').filter(Boolean);
+            const questionStyle = subjects.filter((s: string) => s.includes('?')).length;
+            const shortStyle = subjects.filter((s: string) => s.length < 40).length;
+            const emojiStyle = subjects.filter((s: string) => /[\u{1F300}-\u{1FAFF}]/u.test(s)).length;
+            
+            const patterns: string[] = [];
+            if (questionStyle > subjects.length / 2) patterns.push('question-style subjects work well for you');
+            if (shortStyle > subjects.length / 2) patterns.push('shorter subjects (<40 chars) are your pattern');
+            if (emojiStyle > subjects.length / 3) patterns.push('you often use emoji in subjects');
+            
+            if (patterns.length > 0) {
+              emailTip = ` 📊 Pattern insight: ${patterns.join('; ')}.`;
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
+        return { success: true, message: `Created email campaign "${data.name}" (draft)${workspaceNotice}${toneHint}${emailTip}`, item: data };
       }
 
       case 'send_email_campaign': {
@@ -760,9 +787,12 @@ export async function executeEngageActionTool(
         return {
           success: true,
           message: toolArgs.scheduled_at
-            ? `📋 Social post saved and scheduled for ${platforms.join(', ')} at ${toolArgs.scheduled_at}. Note: Direct social publishing is coming soon — your post is saved as a draft and will be ready to publish once integrations are live.`
-            : `📋 Draft social post created for ${platforms.join(', ')}. Note: Direct social publishing is coming soon — your post is saved and ready to publish once integrations are live.`,
-          item: { ...socialPost, platforms }
+            ? `📋 Social post saved and scheduled for ${platforms.join(', ')} at ${toolArgs.scheduled_at}. Direct publishing to platforms is coming soon — for now, copy the text and post manually.`
+            : `📋 Draft social post created for ${platforms.join(', ')}. Direct publishing to platforms is coming soon — for now, copy the text and post manually.`,
+          item: { ...socialPost, platforms },
+          actions: [
+            { id: 'copy_post', label: '📋 Copy Post Text', type: 'copy', content: fullContent }
+          ]
         };
       }
 
@@ -901,7 +931,14 @@ export async function executeEngageActionTool(
           .update({ status: 'pending' })
           .eq('post_id', toolArgs.post_id);
 
-        return { success: true, message: `Scheduled social post for ${toolArgs.scheduled_at}`, item: data };
+        return {
+          success: true,
+          message: `Scheduled social post for ${toolArgs.scheduled_at}. Direct publishing to platforms is coming soon — for now, copy the text and post manually.`,
+          item: data,
+          actions: [
+            { id: 'copy_post', label: '📋 Copy Post Text', type: 'copy', content: data.content }
+          ]
+        };
       }
 
       default:
