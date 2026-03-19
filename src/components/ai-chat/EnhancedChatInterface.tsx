@@ -536,7 +536,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       isCurrentMatch && "ring-2 ring-primary/50 rounded-lg"
                     )}>
                     
-                        <EnhancedMessageBubble
+                    <EnhancedMessageBubble
                       message={message}
                       isLatest={index === messages.length - 1}
                       onAction={handleAction}
@@ -547,6 +547,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       onConfirmAction={handleConfirmAction}
                       onCancelAction={handleCancelAction}
                       onSetVisualization={handleSetVisualization}
+                      onFeedback={handleFeedback}
+                      onPinMessage={handlePinMessage}
                       onRetry={() => {
                         const idx = messages.findIndex((m) => m.id === message.id);
                         const lastUserMsg = messages.slice(0, idx).reverse().find((m) => m.role === 'user');
