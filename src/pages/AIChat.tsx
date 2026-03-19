@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
