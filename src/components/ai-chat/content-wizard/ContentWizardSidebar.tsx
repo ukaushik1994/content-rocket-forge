@@ -332,13 +332,16 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
             )}
           >
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 border-b border-border/10">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-white/[0.06]">
               <div className="flex items-center justify-between mb-4">
                 <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-foreground truncate">Content Wizard</h2>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">"{wizardState.keyword}"</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Content Wizard</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">"{wizardState.keyword}"</p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-muted text-muted-foreground">
+                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/[0.04] text-muted-foreground">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
