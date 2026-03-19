@@ -358,7 +358,7 @@ export async function executeCrossModuleTool(
 
         return {
           success: true,
-          message: `Generated ${posts.posts?.length || 0} social posts from "${content.title}"`,
+          message: `Generated ${posts.posts?.length || 0} social posts from "${content.title}". Note: Direct social publishing is coming soon — your posts are saved as drafts. Copy and post manually for now.`,
           socialPosts: posts.posts || [],
           sourceContent: { id: content.id, title: content.title }
         };
