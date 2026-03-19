@@ -80,10 +80,7 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
     <div className="space-y-12">
       {/* 10. Previous Session — shows when memory insights exist */}
       {analystState && analystState.insightsFeed.some(i => i.source === 'memory') && (
-        <PreviousSessionSection
-          insights={analystState.insightsFeed.filter(i => i.source === 'memory')}
-          onSendMessage={onSendMessage}
-        />
+        <PreviousSessionSection onSendMessage={onSendMessage} />
       )}
 
       {/* 01. Health Assessment */}
