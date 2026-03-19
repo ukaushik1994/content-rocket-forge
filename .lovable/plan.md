@@ -171,3 +171,28 @@ Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterfa
 - **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
 - **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
 - **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed
+
+---
+
+# Strategic Intelligence Layer — Sprint Tracker
+
+## ✅ Sprint 1: System Prompt Intelligence — COMPLETE
+- Enhancement 4: AI Negotiation Before Generation (content creation protocol)
+- Enhancement 8: Multi-Step Workflows (progressive execution with confirmation)
+- Enhancement 6: Enhanced Edit Pattern Learning (7 pattern detectors in contentFeedbackService)
+
+## ✅ Sprint 2: Performance Signals + Business Context — COMPLETE
+- content_performance_signals table + tracking in cross-module-tools and RepositoryPanel
+- Enhancement 3: Performance feedback injection in content generation prompts
+- Enhancement 7: Business outcome connection (solution pain points → content alignment)
+
+## ✅ Sprint 3: Weekly Briefing + Proactive Recommendations — COMPLETE
+- generate_weekly_briefing tool in brand-analytics-tools
+- proactive_recommendations table + generate-proactive-insights edge function (daily 6AM cron)
+- UI integration: recommendation cards on chat welcome screen
+
+## ✅ Sprint 4: User Intelligence Profile — COMPLETE
+- user_intelligence_profile table (persistent per-user preferences)
+- aggregate-user-intelligence edge function (daily 5:30AM cron)
+- Profile injection into AI system prompt (preferred length, tone, formats, editing patterns, topics, solutions, negotiation preference, response detail level)
+- Verified: profiles aggregated for 2 users with real data
