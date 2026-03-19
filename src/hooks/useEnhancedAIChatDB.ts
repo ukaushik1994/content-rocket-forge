@@ -570,6 +570,27 @@ export const useEnhancedAIChatDB = () => {
       } catch (titleErr) {
         console.warn('Failed to update conversation title:', titleErr);
       }
+
+      // Auto-detect conversation goal from first message
+      try {
+        let goal: string | null = null;
+        const cl = content.toLowerCase();
+        if (/write|create|generate|draft/i.test(cl) && /blog|article|post|content/i.test(cl)) goal = 'Content Creation';
+        else if (/keyword|seo|rank|serp/i.test(cl)) goal = 'SEO Research';
+        else if (/email|campaign|send|newsletter/i.test(cl)) goal = 'Email Campaign';
+        else if (/strategy|plan|roadmap/i.test(cl)) goal = 'Strategy Planning';
+        else if (/analyz|metric|performance|report/i.test(cl)) goal = 'Performance Analysis';
+        else if (/competitor|market|benchmark/i.test(cl)) goal = 'Competitive Analysis';
+        
+        if (goal) {
+          await supabase
+            .from('ai_conversations')
+            .update({ goal } as any)
+            .eq('id', conversationId);
+        }
+      } catch (goalErr) {
+        console.warn('Failed to set conversation goal:', goalErr);
+      }
     }
 
     try {

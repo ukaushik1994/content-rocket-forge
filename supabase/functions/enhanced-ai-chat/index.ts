@@ -1983,6 +1983,54 @@ serve(async (req) => {
       }
     }
 
+    // ── PINNED MESSAGES + FEEDBACK + GOAL CONTEXT (Phase 2-4) ──
+    if (conversationId) {
+      try {
+        // Fetch pinned messages — always include in context regardless of message limit
+        const { data: pinnedMsgs } = await supabase.from('ai_messages')
+          .select('content, type')
+          .eq('conversation_id', conversationId)
+          .eq('is_pinned', true)
+          .order('message_sequence', { ascending: true })
+          .limit(5);
+        
+        if (pinnedMsgs && pinnedMsgs.length > 0) {
+          const pinnedContext = pinnedMsgs.map((m: any) => `[PINNED ${m.type}]: ${(m.content || '').substring(0, 300)}`).join('\n');
+          messages.unshift({ role: 'system', content: `[Important pinned messages from this conversation]:\n${pinnedContext}` });
+          console.log(`📌 Injected ${pinnedMsgs.length} pinned messages into context`);
+        }
+
+        // Check recent negative feedback — inject hint to try different approach
+        const { data: recentFeedback } = await supabase.from('ai_messages')
+          .select('feedback_helpful')
+          .eq('conversation_id', conversationId)
+          .not('feedback_helpful', 'is', null)
+          .order('message_sequence', { ascending: false })
+          .limit(10);
+        
+        if (recentFeedback) {
+          const negCount = recentFeedback.filter((m: any) => m.feedback_helpful === false).length;
+          if (negCount >= 3) {
+            messages.unshift({ role: 'system', content: '[Context]: The user has indicated multiple recent responses were not helpful. Try a DIFFERENT approach — be more specific, use concrete examples, provide actionable steps, and ask clarifying questions when unsure.' });
+            console.log(`⚠️ ${negCount} negative feedback signals — injecting improvement hint`);
+          }
+        }
+
+        // Fetch conversation goal
+        const { data: convoGoal } = await supabase.from('ai_conversations')
+          .select('goal')
+          .eq('id', conversationId)
+          .single();
+        
+        if (convoGoal?.goal) {
+          messages.unshift({ role: 'system', content: `[Conversation goal]: ${convoGoal.goal}. Keep responses focused on this objective.` });
+          console.log(`🎯 Conversation goal: ${convoGoal.goal}`);
+        }
+      } catch (ctxErr) {
+        console.warn('⚠️ Failed to load pinned/feedback/goal context (non-blocking):', ctxErr);
+      }
+    }
+
     // ✅ NEW: Analyze query intent BEFORE fetching context (with runtime-safe fallback)
     let userQuery = messages[messages.length - 1]?.content || '';
     
