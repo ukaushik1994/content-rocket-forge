@@ -3211,6 +3211,59 @@ export type Database = {
         }
         Relationships: []
       }
+      content_versions: {
+        Row: {
+          change_description: string | null
+          change_source: string
+          content: string | null
+          content_id: string
+          created_at: string
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          seo_score: number | null
+          title: string | null
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          change_description?: string | null
+          change_source?: string
+          content?: string | null
+          content_id: string
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          seo_score?: number | null
+          title?: string | null
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          change_description?: string | null
+          change_source?: string
+          content?: string | null
+          content_id?: string
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          seo_score?: number | null
+          title?: string | null
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_versions_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       context_topics: {
         Row: {
           created_at: string | null
