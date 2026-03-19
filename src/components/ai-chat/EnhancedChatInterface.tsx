@@ -633,56 +633,71 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
 
-                    {/* Quick Actions */}
-                    <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
+                    {/* 3-Column Layout: Actions | Insights | Recommended */}
+                    <motion.div
+                      className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-3xl"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3, duration: 0.4 }}
+                    >
+                      {/* Column 1: Quick Actions */}
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3">Quick Actions</span>
+                        <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
+                      </div>
 
-                    {/* Insights & Recommendations — inline rows */}
-                    {(proactiveInsights.length > 0 || aiRecommendations.length > 0) && (
-                      <motion.div
-                        className="flex flex-col items-center gap-3 w-full max-w-md"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5, duration: 0.4 }}
-                      >
-                        <div className="w-full h-px bg-border/10" />
-                        <div className="flex flex-col gap-1 w-full">
-                          {proactiveInsights.map((insight) => (
-                            <button
-                              key={insight.type}
-                              onClick={() => {
-                                const prompts: Record<string, string> = {
-                                  stale: 'Show me my stale drafts that need attention',
-                                  failed: 'What content generation tasks failed?',
-                                  empty_cal: 'Help me plan content for this week',
-                                  approvals: 'Show me content pending my review'
-                                };
-                                sendMessage(prompts[insight.type] || '');
-                              }}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors text-left"
-                            >
-                              <span className="shrink-0">{insight.icon}</span>
-                              <span>{insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}</span>
-                            </button>
-                          ))}
-                          {aiRecommendations.map((rec) => (
-                            <button
-                              key={rec.id}
-                              onClick={() => {
-                                sendMessage(rec.action);
-                                (supabase as any).from('proactive_recommendations')
-                                  .update({ acted_on: true })
-                                  .eq('id', rec.id).then(() => {});
-                                setAiRecommendations(prev => prev.filter(r => r.id !== rec.id));
-                              }}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-colors text-left"
-                            >
-                              <span className="shrink-0 text-primary">✦</span>
-                              <span>{rec.title}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
+                      {/* Column 2: Insights */}
+                      <div className="flex flex-col gap-1">
+                        {proactiveInsights.length > 0 && (
+                          <>
+                            <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3">Insights</span>
+                            {proactiveInsights.map((insight) => (
+                              <button
+                                key={insight.type}
+                                onClick={() => {
+                                  const prompts: Record<string, string> = {
+                                    stale: 'Show me my stale drafts that need attention',
+                                    failed: 'What content generation tasks failed?',
+                                    empty_cal: 'Help me plan content for this week',
+                                    approvals: 'Show me content pending my review'
+                                  };
+                                  sendMessage(prompts[insight.type] || '');
+                                }}
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors text-left"
+                              >
+                                <span className="shrink-0">{insight.icon}</span>
+                                <span>{insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}</span>
+                              </button>
+                            ))}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Column 3: Recommended */}
+                      <div className="flex flex-col gap-1">
+                        {aiRecommendations.length > 0 && (
+                          <>
+                            <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3">Recommended</span>
+                            {aiRecommendations.map((rec) => (
+                              <button
+                                key={rec.id}
+                                onClick={() => {
+                                  sendMessage(rec.action);
+                                  (supabase as any).from('proactive_recommendations')
+                                    .update({ acted_on: true })
+                                    .eq('id', rec.id).then(() => {});
+                                  setAiRecommendations(prev => prev.filter(r => r.id !== rec.id));
+                                }}
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-colors text-left"
+                              >
+                                <span className="shrink-0 text-primary">✦</span>
+                                <span>{rec.title}</span>
+                              </button>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    </motion.div>
                   </motion.div>}
               </AnimatePresence>
 
