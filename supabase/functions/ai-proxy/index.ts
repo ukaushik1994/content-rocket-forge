@@ -56,10 +56,27 @@ serve(async (req) => {
 
     // Determine which API key to use
     let apiKey = providedApiKey || userApiKey;
+    let resolvedService = service;
+
+    // Auto-fallback: if service is 'auto', pick the first available provider
+    if (service === 'auto' && userId) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const providerPriority = ['openrouter', 'openai', 'anthropic', 'gemini', 'mistral'];
+      
+      for (const svc of providerPriority) {
+        const key = await getApiKey(svc, userId);
+        if (key) {
+          apiKey = key;
+          resolvedService = svc;
+          console.log(`🔄 Auto-fallback: resolved to ${svc}`);
+          break;
+        }
+      }
+    }
 
     if (!apiKey) {
       return createErrorResponse(
-        `No API key found for ${service}. Please configure your API key in Settings.`,
+        `No API key found for ${resolvedService}. Please configure your API key in Settings.`,
         401,
         'ai-proxy',
         endpoint
@@ -68,7 +85,7 @@ serve(async (req) => {
 
     let result;
     
-    switch (service) {
+    switch (resolvedService) {
       case 'openai':
         result = await handleOpenAI(endpoint, apiKey, params);
         break;
@@ -92,7 +109,7 @@ serve(async (req) => {
           endpoint
         );
       default:
-        throw new Error(`Unsupported service: ${service}. Supported services: openai, anthropic, gemini, openrouter, mistral, lmstudio`);
+        throw new Error(`Unsupported service: ${resolvedService}. Supported services: openai, anthropic, gemini, openrouter, mistral, lmstudio`);
     }
 
     // Log successful usage
@@ -101,7 +118,7 @@ serve(async (req) => {
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
         await supabase.from('llm_usage_logs').insert({
           user_id: userId,
-          provider: service,
+          provider: resolvedService,
           model: params?.model || 'unknown',
           input_tokens: result.data?.usage?.prompt_tokens || 0,
           output_tokens: result.data?.usage?.completion_tokens || 0,

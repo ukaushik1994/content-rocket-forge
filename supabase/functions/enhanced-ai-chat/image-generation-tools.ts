@@ -89,12 +89,33 @@ export async function executeImageGenerationTool(
     .eq('status', 'active')
     .maybeSingle();
 
-  if (providerError || !providerData) {
+  // Fallback: check api_keys table if ai_service_providers has no entry
+  let hasKey = !!providerData;
+  if (!hasKey) {
+    const serviceMap: Record<string, string> = {
+      'openai_image': 'openai',
+      'gemini_image': 'gemini',
+      'lmstudio_image': 'lmstudio'
+    };
+    const keyService = serviceMap[provider] || provider;
+    const { data: apiKeyEntry } = await supabase
+      .from('api_keys')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('service', keyService)
+      .eq('is_active', true)
+      .maybeSingle();
+    hasKey = !!apiKeyEntry;
+  }
+
+  if (providerError || !hasKey) {
+    const providerName = provider === 'openai_image' ? 'OpenAI (DALL-E)' : provider === 'gemini_image' ? 'Google Gemini' : 'LMStudio';
     console.log(`[IMAGE-TOOL] Provider ${provider} not configured for user ${userId}`);
     return {
       success: false,
-      error: `Image generation provider "${provider}" is not configured. Please go to Settings → AI Providers and add your API key for ${provider === 'openai_image' ? 'OpenAI (DALL-E)' : provider === 'gemini_image' ? 'Google Gemini' : 'LMStudio'}.`,
-      setup_required: true
+      error: `🎨 Image generation requires an API key for **${providerName}**.\n\nTo set up:\n1. Go to **Settings → API Keys**\n2. Add your ${providerName} API key\n3. Try again\n\n💡 Tip: OpenAI DALL-E is recommended for best results.`,
+      setup_required: true,
+      settingsAction: { tab: 'api-keys', label: 'Add Image Provider Key' }
     };
   }
 
