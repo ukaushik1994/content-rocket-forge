@@ -291,15 +291,31 @@ export async function executeOfferingsActionTool(
 
           if (jobError) throw jobError;
 
-          // Trigger the analyzer (non-blocking)
-          fetch(`${supabaseUrl}/functions/v1/competitor-analyzer`, {
+          // Trigger the analyzer (non-blocking) with verification
+          const analyzerResponse = await fetch(`${supabaseUrl}/functions/v1/competitor-intel`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${supabaseKey}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({ competitor_id: competitorId, user_id: userId, job_id: job?.id })
-          }).catch(err => console.error('[OFFERINGS-ACTION] Analyzer trigger error:', err));
+          }).catch(err => {
+            console.error('[OFFERINGS-ACTION] Analyzer trigger error:', err);
+            return null;
+          });
+
+          if (!analyzerResponse || !analyzerResponse.ok) {
+            // Update job status to indicate trigger failure
+            await supabase.from('competitor_discovery_jobs')
+              .update({ status: 'error', error: 'Failed to trigger analysis function. Please try again.' })
+              .eq('id', job?.id);
+            
+            return {
+              success: false,
+              message: 'The competitor analysis service could not be reached. Please try again in a moment.',
+              jobId: job?.id
+            };
+          }
 
           return {
             success: true,

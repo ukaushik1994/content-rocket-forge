@@ -2324,9 +2324,7 @@ serve(async (req) => {
         try {
           if (!serpApiKey) {
             console.warn('⚠️ No SERP API key found in user settings');
-            if (forceWebSearch) {
-              webSearchContext = '\n\n⚠️ Web search was requested but no SERP API key is configured. Please add a SerpAPI or Serpstack API key in Settings → API Keys to enable web search.\n';
-            }
+            webSearchContext = '\n\n⚠️ Web search was requested but no SERP API key is configured. Please add a SerpAPI or Serpstack API key in **Settings → API Keys** to enable web search and live data.\n';
           } else {
             const searchQuery = serpIntelligence.keywords.join(' ');
             const webResults = await executeWebSearch(searchQuery, 'us', serpApiKey);

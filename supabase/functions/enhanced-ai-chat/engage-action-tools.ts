@@ -12,13 +12,13 @@ async function getUserWorkspaceId(supabase: any, userId: string): Promise<string
   return data?.workspace_id || null;
 }
 
-async function ensureWorkspace(supabase: any, userId: string): Promise<string> {
+async function ensureWorkspace(supabase: any, userId: string): Promise<{ id: string; isNew: boolean }> {
   const existing = await getUserWorkspaceId(supabase, userId);
-  if (existing) return existing;
+  if (existing) return { id: existing, isNew: false };
 
   // Create workspace via RPC
   const { data } = await supabase.rpc('ensure_engage_workspace', { p_user_id: userId });
-  return data;
+  return { id: data, isNew: true };
 }
 
 export const ENGAGE_ACTION_TOOL_DEFINITIONS = [

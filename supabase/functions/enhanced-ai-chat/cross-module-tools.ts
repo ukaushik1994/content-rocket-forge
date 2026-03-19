@@ -216,12 +216,21 @@ export async function executeCrossModuleTool(
           workspaceId = newWsId;
         }
 
+        // Wrap content in email-safe HTML template
+        const emailHtml = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; line-height: 1.6;">
+${content.content || ''}
+</body>
+</html>`;
+
         // Create email campaign
         const { data: emailCampaign, error: emailError } = await supabase.from('engage_email_campaigns').insert({
           workspace_id: workspaceId,
           name: `Email: ${content.title}`,
           subject: toolArgs.subject || content.title,
-          body_html: content.content,
+          body_html: emailHtml,
           segment_id: toolArgs.segment_id || null,
           from_name: toolArgs.from_name || null,
           status: 'draft'
