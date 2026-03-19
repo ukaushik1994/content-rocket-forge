@@ -237,6 +237,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Issue #4 Fix: Track explicit user close intent
   const [userClosedSidebar, setUserClosedSidebar] = useState(false);
 
+  // Phase 1 Fix: Track previous message count for smart auto-open
+  const prevMessageCountRef = useRef(0);
+
+  // Phase 1 Fix: Loading state for conversation transitions
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
+
   // Handle manual expand visualization (kept for backwards compatibility)
   const handleExpandVisualization = (visualData: any, chartConfig: ChartConfiguration) => {
     setVisualizationData({
