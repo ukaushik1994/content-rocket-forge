@@ -497,7 +497,7 @@ export async function executeEngageActionTool(
           .select('id, name, subject, status, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created email campaign "${data.name}" (draft)`, item: data };
+        return { success: true, message: `Created email campaign "${data.name}" (draft)${workspaceNotice}`, item: data };
       }
 
       case 'send_email_campaign': {
