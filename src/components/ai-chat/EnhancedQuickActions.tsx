@@ -1,19 +1,9 @@
 import React, { useMemo } from 'react';
 import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle, FileText, Award, PartyPopper, AlertTriangle, Sparkles } from 'lucide-react';
 
-interface ProactiveRecommendation {
-  id: string;
-  type: string;
-  title: string;
-  description: string;
-  action: string;
-  priority: number;
-}
-
 interface EnhancedQuickActionsProps {
   onAction: (action: string, data?: any) => void;
   onSetVisualization?: (visualData: any) => void;
-  recommendations?: ProactiveRecommendation[];
   contentCount?: number;
   publishedCount?: number;
   draftCount?: number;
@@ -22,7 +12,6 @@ interface EnhancedQuickActionsProps {
 export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ 
   onAction, 
   onSetVisualization,
-  recommendations = [],
   contentCount = -1,
   publishedCount = -1,
   draftCount = -1,
@@ -36,17 +25,6 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
       iconColor: string;
       priority: number;
     }> = [];
-
-    // 1. Proactive recommendations (highest priority)
-    for (const rec of recommendations.slice(0, 2)) {
-      items.push({
-        text: rec.title,
-        prompt: rec.action,
-        icon: Sparkles,
-        iconColor: 'text-primary',
-        priority: 0,
-      });
-    }
 
     // 2. State-based actions
     if (contentCount === 0) {
@@ -98,7 +76,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
     }
 
     return items.slice(0, 6);
-  }, [recommendations, contentCount, publishedCount, draftCount]);
+  }, [contentCount, publishedCount, draftCount]);
 
   const handleClick = (item: typeof actions[0]) => {
     if (item.directWizard && onSetVisualization) {
