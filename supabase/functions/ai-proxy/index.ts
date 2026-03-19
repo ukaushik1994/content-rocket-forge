@@ -85,7 +85,7 @@ serve(async (req) => {
 
     let result;
     
-    switch (service) {
+    switch (resolvedService) {
       case 'openai':
         result = await handleOpenAI(endpoint, apiKey, params);
         break;
@@ -109,7 +109,7 @@ serve(async (req) => {
           endpoint
         );
       default:
-        throw new Error(`Unsupported service: ${service}. Supported services: openai, anthropic, gemini, openrouter, mistral, lmstudio`);
+        throw new Error(`Unsupported service: ${resolvedService}. Supported services: openai, anthropic, gemini, openrouter, mistral, lmstudio`);
     }
 
     // Log successful usage

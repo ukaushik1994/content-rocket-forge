@@ -692,21 +692,36 @@ async function triggerContentGeneration(supabase: any, userId: string, args: any
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   
   if (supabaseUrl && supabaseKey) {
-    fetch(`${supabaseUrl}/functions/v1/process-content-queue`, {
+    const triggerResponse = await fetch(`${supabaseUrl}/functions/v1/process-content-queue`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ campaign_id })
-    }).catch(err => console.error('[CAMPAIGN-TOOL] Queue trigger error:', err));
+    }).catch(err => {
+      console.error('[CAMPAIGN-TOOL] Queue trigger error:', err);
+      return null;
+    });
+
+    if (!triggerResponse || !triggerResponse.ok) {
+      // Queue items are created but processor couldn't start — inform user
+      return {
+        success: true,
+        message: `Queued ${insertedItems?.length || 0} content items for generation, but the processor may be delayed. Items will be processed automatically. Check back in a few minutes for results.`,
+        itemsQueued: insertedItems?.length || 0,
+        campaignName: campaign.name,
+        processorStatus: 'delayed'
+      };
+    }
   }
 
   return {
     success: true,
-    message: `Started generation for ${insertedItems?.length || 0} content items`,
+    message: `Started generation for ${insertedItems?.length || 0} content items. Content will appear in your campaign as it's generated.`,
     itemsQueued: insertedItems?.length || 0,
-    campaignName: campaign.name
+    campaignName: campaign.name,
+    processorStatus: 'started'
   };
 }
 
