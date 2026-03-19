@@ -1149,18 +1149,26 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <motion.div className="mt-3 space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+                        <motion.div className="mt-3 space-y-2.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
                           {mergedInsightsFeed.slice(-12).reverse().map((insight: any, idx: number) => {
                             const config = getInsightConfig(insight.insightType || insight.type);
                             const InsightIcon = config.icon;
                             return (
-                              <div key={insight.id || idx} className="glass-card p-2.5">
-                                <div className="flex items-start gap-2.5">
-                                  <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", config.bgColor.replace('bg-', 'bg-').replace('/10', ''))} />
-                                  <InsightIcon className={cn("w-3.5 h-3.5 mt-0.5 flex-shrink-0", config.textColor)} />
+                              <div
+                                key={insight.id || idx}
+                                className="glass-card p-3 relative overflow-hidden"
+                                style={{
+                                  borderLeft: `2px solid`,
+                                  borderLeftColor: config.textColor.includes('blue') ? 'rgba(59,130,246,0.4)' : config.textColor.includes('amber') ? 'rgba(245,158,11,0.4)' : config.textColor.includes('emerald') ? 'rgba(16,185,129,0.4)' : config.textColor.includes('cyan') ? 'rgba(6,182,212,0.4)' : 'rgba(245,158,11,0.4)',
+                                }}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0", config.bgColor)}>
+                                    <InsightIcon className={cn("w-3.5 h-3.5", config.textColor)} />
+                                  </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-foreground/80 leading-relaxed">{insight.content}</p>
-                                    <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-sm text-foreground/80 leading-relaxed">{insight.content}</p>
+                                    <div className="flex items-center gap-2 mt-1.5">
                                       <span className="text-[9px] text-muted-foreground/40">
                                         {insight.source === 'platform' ? '📊 Platform' : insight.source === 'web' ? '🌐 Web' : insight.source === 'cross-signal' ? '🔗 Cross-signal' : '🤖 AI'}
                                       </span>
