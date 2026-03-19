@@ -784,7 +784,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
               {/* ─── Scrollable Content ──────────────────────────────── */}
               <ScrollArea className="flex-1">
-                <div className="p-6 pb-28 space-y-5">
+                <div className="p-6 pb-28 space-y-8">
 
                   {/* 1. CURRENT RESPONSE: Chart/Table (only if current message has data) */}
                   {hasCurrentResponseData && hasChartData && (
