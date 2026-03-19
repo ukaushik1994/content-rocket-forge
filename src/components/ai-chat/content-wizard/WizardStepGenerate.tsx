@@ -1108,7 +1108,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                 <button
                   key={item.type}
                   onClick={() => onRepurpose(item.type, contentToSave, wizardState.keyword)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-border/30 bg-muted/30 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-primary/5 transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-white/[0.06] bg-white/[0.04] text-[10px] text-muted-foreground hover:text-foreground hover:border-amber-300/30 hover:bg-white/[0.08] transition-all"
                 >
                   <item.icon className="w-3 h-3" />
                   {item.label}
