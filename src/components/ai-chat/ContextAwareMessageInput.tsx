@@ -325,13 +325,13 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
 
       <form onSubmit={handleSubmit} className="relative">
         <div 
-          className={`relative flex items-end gap-2 p-2.5 bg-background/60 backdrop-blur-xl border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
+          className={`relative flex items-center gap-2 p-2.5 bg-background/60 backdrop-blur-xl border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
             webSearchMode
               ? 'border-accent/30 ring-1 ring-accent/10'
               : wizardMode
                 ? 'border-primary/30 ring-1 ring-primary/10'
                 : isFocused 
-                  ? 'border-primary/40 shadow-[0_0_20px_rgba(139,92,246,0.1)]' 
+                  ? 'border-white/[0.15] shadow-[0_0_20px_rgba(255,255,255,0.03)]' 
                   : 'border-white/[0.08] hover:border-white/[0.15]'
           }`}
         >
@@ -370,7 +370,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             }}
             placeholder={activePlaceholder}
             disabled={isLoading}
-            className="flex-1 min-h-[24px] max-h-[160px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-[15px] leading-relaxed"
+            className="flex-1 min-h-[24px] max-h-[160px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-[15px] leading-relaxed scrollbar-thin-dark"
             rows={1}
           />
 

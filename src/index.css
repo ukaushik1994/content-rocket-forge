@@ -613,3 +613,9 @@
 .search-match-text {
   @apply bg-primary/30 rounded px-0.5;
 }
+
+/* Dark semi-transparent scrollbar for textareas */
+.scrollbar-thin-dark::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin-dark::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin-dark::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.scrollbar-thin-dark { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
