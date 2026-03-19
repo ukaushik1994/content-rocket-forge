@@ -1268,7 +1268,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                 </div>
 
                 <TabsContent value="preview" className="mt-0">
-                  <div className="rounded-lg border border-border/20 bg-muted/20 max-h-[300px] overflow-auto p-3">
+                  <div className="glass-card max-h-[300px] overflow-auto p-3">
                     <div className="prose prose-sm prose-invert max-w-none text-xs">
                       <SafeMarkdown>{editableContent || contentToSave}</SafeMarkdown>
                     </div>
