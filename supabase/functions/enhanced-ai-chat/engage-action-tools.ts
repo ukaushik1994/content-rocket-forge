@@ -399,7 +399,7 @@ export async function executeEngageActionTool(
         }).select('id, email, first_name, last_name, tags, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created contact "${data.email}"`, item: data };
+        return { success: true, message: `Created contact "${data.email}"${workspaceNotice}`, item: data };
       }
 
       case 'update_contact': {
