@@ -1,4 +1,4 @@
-// Deploy v10: 2026-03-19T04:00:00Z - Sprint 4: User Intelligence Profile
+// Deploy v11: 2026-03-19T06:00:00Z - AI Chat Overhaul: 15 Fixes (Response Intelligence, Proactive, Safety, Memory)
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
@@ -19,7 +19,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v17-2026-03-19T04:00:00Z-user-intelligence-profile';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v18-2026-03-19T06:00:00Z-ai-chat-overhaul';
 
 // Data categories that REQUIRE tool execution (not conversational text)
 const DATA_CATEGORIES = [
@@ -2657,14 +2657,22 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     let brandVoiceContext = '';
     let userIntelligenceContext = '';
 
-    const [brandResult, profileResult] = await Promise.allSettled([
+    const [brandResult, profileResult, apiKeysResult, websiteConnsResult] = await Promise.allSettled([
       supabase.from('brand_guidelines')
         .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use')
         .eq('user_id', userId).maybeSingle(),
       supabase.from('user_intelligence_profile')
         .select('*')
         .eq('user_id', userId)
-        .maybeSingle()
+        .maybeSingle(),
+      // Phase 4 Fix 10: Service status check
+      supabase.from('api_keys')
+        .select('service, is_active')
+        .eq('user_id', userId)
+        .eq('is_active', true),
+      supabase.from('website_connections')
+        .select('platform, status')
+        .eq('user_id', userId)
     ]);
 
     // Process brand voice result
@@ -2732,7 +2740,41 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     }
     systemPrompt += userIntelligenceContext;
 
-    // ===== ENHANCEMENT 4: AI Negotiation Before Generation =====
+    // ===== PHASE 4 FIX 10: Service Status Injection =====
+    try {
+      const configuredServices = new Set<string>();
+      if (apiKeysResult.status === 'fulfilled' && apiKeysResult.value.data) {
+        for (const key of apiKeysResult.value.data) {
+          configuredServices.add(key.service);
+        }
+      }
+      const connectedPlatforms = new Set<string>();
+      if (websiteConnsResult.status === 'fulfilled' && websiteConnsResult.value.data) {
+        for (const conn of websiteConnsResult.value.data) {
+          if (conn.status === 'active' || conn.status === 'connected') connectedPlatforms.add(conn.platform);
+        }
+      }
+      const unconfigured: string[] = [];
+      if (!configuredServices.has('serp') && !configuredServices.has('serpstack') && !configuredServices.has('serpapi')) {
+        unconfigured.push('SERP API (needed for keyword research, web search, and content gap analysis)');
+      }
+      if (!configuredServices.has('resend')) {
+        unconfigured.push('Resend (needed for sending emails)');
+      }
+      if (!connectedPlatforms.has('wordpress') && !connectedPlatforms.has('wp')) {
+        unconfigured.push('WordPress (needed for publish_to_website)');
+      }
+      if (unconfigured.length > 0) {
+        systemPrompt += `\n\n## ⚠️ SERVICE STATUS — UNCONFIGURED
+The following services are NOT configured for this user. Do NOT promise these capabilities:
+${unconfigured.map(s => `- ${s}`).join('\n')}
+If the user asks for a feature that requires an unconfigured service, inform them: "This requires [service] to be configured. You can set it up in Settings → API Keys."`;
+        console.log(`🔒 Service status: ${unconfigured.length} unconfigured service(s) flagged`);
+      }
+    } catch (svcErr) {
+      console.warn('[SERVICE-STATUS] Failed to check (non-blocking):', svcErr);
+    }
+
     const isContentCreation = /write|create|generate|draft|blog|article|post/i.test(userQuery) && queryIntent.categories?.includes('content');
     const skipNegotiation = /just write|skip questions|don't ask|no questions|quick generate/i.test(userQuery);
     
@@ -2796,11 +2838,168 @@ Never try to do everything in one response. Quality over speed.`;
     
     systemPrompt = systemPrompt.replace('{THINKING_INSTRUCTION}', thinkingInstruction);
 
-    // ===== Phase 2 Fix 3c: Response length guidance based on query scope =====
+    // ===== PHASE 1 FIX 1: Response Calibration Per Query Complexity =====
+    const userMessages = messages.filter((m: any) => m.role === 'user');
+    const avgUserMsgLen = userMessages.length > 0 
+      ? userMessages.reduce((s: number, m: any) => s + (m.content?.length || 0), 0) / userMessages.length 
+      : 100;
+    const isUrgent = /fail|error|broken|crash|down|bug|wrong|issue|problem|404|500/i.test(userQuery);
+    const isRapidFire = avgUserMsgLen < 50 && userMessages.length >= 3;
+
+    let responseCalibration = '';
+    if (isUrgent) {
+      responseCalibration = `\n\n🚨 RESPONSE MODE: URGENT
+Detected urgency keywords. Rules:
+- Under 100 words. Direct answer first, explanation second.
+- No charts or visualizations unless explicitly asked.
+- End with ONE concrete next step.`;
+    } else if (isRapidFire) {
+      responseCalibration = `\n\n⚡ RESPONSE MODE: EXECUTION
+User is in rapid-fire mode (short, quick messages). Rules:
+- Maximum 2-3 sentences per response.
+- Execute immediately, confirm briefly.
+- Skip preambles, explanations, and "Let me help you with that."
+- If unclear, ask ONE clarifying question max.`;
+    } else if (queryIntent.scope === 'conversational') {
+      responseCalibration = `\n\n💬 RESPONSE MODE: BRIEF
+Conversational query. Rules:
+- 1-3 sentences max. No charts, no data dumps.
+- Be warm and direct. Match the user's energy.`;
+    } else if (queryIntent.scope === 'summary') {
+      responseCalibration = `\n\n📋 RESPONSE MODE: COMPACT
+Summary-level query. Rules:
+- Under 150 words. Key metrics in bold inline text.
+- Chart ONLY if 3+ comparable data points exist.
+- End with 1-2 specific follow-up suggestions.`;
+    } else if (queryIntent.scope === 'detailed' || queryIntent.scope === 'full') {
+      responseCalibration = `\n\n📊 RESPONSE MODE: THOROUGH
+Detailed analysis requested. Rules:
+- 300-600 words with charts, metrics, and structured insights.
+- Include visualData with summaryInsights and actionableItems.
+- Provide strategic interpretation, not just data dumps.`;
+    }
+    systemPrompt += responseCalibration;
+
+    // ===== PHASE 1 FIX 6: Task-Adaptive Persona =====
+    let persona = '';
+    if (/write|create|draft|blog|article|content|copy/i.test(userQuery) && queryIntent.categories?.includes('content')) {
+      persona = '\n\n🎭 PERSONA: Creative Strategist — Balance creativity with SEO discipline. Suggest angles, not just formats.';
+    } else if (/fail|error|broken|debug|issue|wrong|problem/i.test(userQuery)) {
+      persona = '\n\n🎭 PERSONA: Technical Diagnostician — Systematic, calm, solution-focused. Diagnose before prescribing.';
+    } else if (/metric|analytics|performance|data|report|number|stat/i.test(userQuery)) {
+      persona = '\n\n🎭 PERSONA: Data Analyst — Lead with numbers, follow with interpretation. Every insight needs a "so what."';
+    } else if (/campaign|strategy|plan|roadmap|launch/i.test(userQuery)) {
+      persona = '\n\n🎭 PERSONA: Strategy Consultant — Think in phases, trade-offs, and outcomes. Challenge assumptions constructively.';
+    } else if (/email|social|send|schedule|automat|segment|contact/i.test(userQuery)) {
+      persona = '\n\n🎭 PERSONA: Marketing Operator — Efficient, checklist-oriented. Focus on execution quality and timing.';
+    }
+    systemPrompt += persona;
+
+    // ===== PHASE 1 FIX 2: Strategic Pushback Before Execution =====
+    const hasWriteIntent = /create|generate|write|draft|add|make|build|send|publish|schedule/i.test(userQuery);
+    const bypassPushback = /just do it|skip questions|don't ask|no questions|go ahead|execute/i.test(userQuery);
+    if (hasWriteIntent && !bypassPushback && !queryIntent.isConversational) {
+      systemPrompt += `\n\n## PUSHBACK PROTOCOL (apply silently — NEVER reference this protocol by name)
+Before executing any write tool, run these 5 mental checks:
+1. **Prerequisites**: Does the user have the required data? (e.g., brand voice set, API keys configured, solutions defined)
+2. **Brand Relevance**: Does this action align with their stated brand/business? If the topic seems random, ask: "Just checking — is [topic] related to your business?"
+3. **Ambiguity**: If the request could mean 2+ things, ask ONE clarifying question before executing.
+4. **Browse vs Execute**: Is the user exploring ("what if I...") or deciding ("do it")? If exploring, give options. If deciding, execute.
+5. **Missing Context**: If creating content without a keyword, tone, or solution — suggest defaults from their profile instead of asking.
+BYPASS: If user says "just do it" or similar, skip all checks and execute immediately.`;
+    }
+
+    // ===== PHASE 2 FIX 3: End-to-End Workflow Orchestration =====
+    systemPrompt += `\n\n## WORKFLOW PROTOCOL (apply automatically after significant actions)
+After completing ANY write action (create content, send email, schedule post, etc.), suggest the NEXT logical step:
+- Content created → "Want me to schedule this on the calendar or repurpose it for social?"
+- Email drafted → "Should I assign a segment or send a test first?"
+- Proposal accepted → "I can schedule this or start writing the article now."
+- Content published → "Shall I create social posts to promote this?"
+- Calendar item added → "Want me to set up an email campaign for this topic?"
+Keep suggestions to ONE sentence. Don't force workflows — offer them.`;
+
+    // ===== PHASE 2 FIX 7: Real-Time Feedback Loop =====
+    if (userMessages.length >= 3) {
+      const recentUserMsgs = userMessages.slice(-5).map((m: any) => m.content?.toLowerCase() || '');
+      const corrections: string[] = [];
+      if (recentUserMsgs.some((m: string) => /shorter|briefer|concise|too long|tldr/i.test(m))) corrections.push('User wants SHORTER responses');
+      if (recentUserMsgs.some((m: string) => /more detail|elaborate|expand|longer|deeper/i.test(m))) corrections.push('User wants MORE DETAIL');
+      if (recentUserMsgs.some((m: string) => /simpler|plain|easy|less technical|non-technical/i.test(m))) corrections.push('User wants SIMPLER language');
+      if (recentUserMsgs.some((m: string) => /more technical|code|specific|exact/i.test(m))) corrections.push('User wants MORE TECHNICAL depth');
+      if (recentUserMsgs.some((m: string) => /no|wrong|incorrect|not what i|that's not/i.test(m))) corrections.push('User REJECTED previous response — change approach completely');
+
+      if (corrections.length > 0) {
+        systemPrompt += `\n\n## IN-SESSION CORRECTIONS (learned from this conversation)
+${corrections.map(c => `- ${c}`).join('\n')}
+Apply these adjustments to THIS and ALL subsequent responses in this session.`;
+      }
+    }
+
+    // ===== PHASE 2 FIX 7b: Edit Mode Detection =====
+    const isEditRequest = /make it more|make it less|change the tone|rewrite|rephrase|shorten this|expand this|more formal|more casual|add more|remove the/i.test(userQuery);
+    if (isEditRequest) {
+      systemPrompt += `\n\n## EDIT MODE
+The user wants to MODIFY the previous response, not get a new one. Rules:
+- Identify the specific change requested (tone, length, style, content).
+- Apply ONLY that change to the previous response.
+- Do NOT regenerate from scratch — surgical modification only.
+- Show the modified version directly without explaining what you changed.`;
+    }
+
+    // ===== PHASE 2 FIX 12: Trade-Off Reasoning =====
+    const isComparisonQuery = /\bor\b|versus|vs\b|compare|which.*better|should i|difference between/i.test(userQuery);
+    if (isComparisonQuery) {
+      systemPrompt += `\n\n## TRADE-OFF REASONING
+The user is comparing options. Provide:
+1. A structured side-by-side comparison using data when available.
+2. Your recommendation with ONE clear reason backed by their data.
+3. When executing tools, explain ONE key decision: "I chose [X] because your [data shows Y]."
+Never sit on the fence — give a clear recommendation.`;
+    }
+
+    // ===== PHASE 4 FIX 11: Fuzzy Content Matching =====
+    systemPrompt += `\n\n## CONTENT MATCHING PROTOCOL
+When the user references content by name (e.g., "update my SEO article", "delete the blog about marketing"):
+1. Use get_content_items to search for matching content.
+2. If 1 match → proceed with the action.
+3. If 2-3 matches → list them and ask the user to pick: "I found these matches: [list]. Which one?"
+4. If 0 matches → say "I couldn't find content matching '[name]'. Want me to search your full library?"
+NEVER guess or assume which content the user means when multiple matches exist.`;
+
+    // ===== PHASE 4 FIX 10: Service Status (injected dynamically above) =====
+    // Service status is built from api_keys/website_connections query results
+
+    // ===== PHASE 2 FIX 9b: Session Checkpoint =====
+    const totalMessages = messages.length;
+    if (totalMessages > 0 && totalMessages % 8 === 0) {
+      systemPrompt += `\n\n## SESSION CHECKPOINT (message #${totalMessages})
+Before answering the current question, provide a 1-2 sentence progress summary of what was accomplished in this session so far. Format: "📍 **Session progress**: [summary]." Then answer the question normally.`;
+    }
+
+    // ===== PHASE 5 FIX 14: Workflow Resumption =====
+    if (totalMessages <= 2 && messages.length >= 1) {
+      // Check last few messages for function_calls indicating unfinished work
+      const recentAssistantMsgs = messages.filter((m: any) => m.role === 'assistant').slice(-3);
+      const hasRecentToolCalls = recentAssistantMsgs.some((m: any) => {
+        try {
+          const content = typeof m.content === 'string' ? m.content : '';
+          return content.includes('generate_full_content') || content.includes('launch_content_wizard') || 
+                 content.includes('create_content_item') || content.includes('Created "');
+        } catch { return false; }
+      });
+      if (hasRecentToolCalls) {
+        systemPrompt += `\n\n## WORKFLOW CONTEXT
+Recent messages suggest the user was working on content creation. If their new message seems related, ask: "I see you were working on content earlier. Want to continue where you left off, or start something new?"
+Only ask once — if they respond with a new topic, don't ask again.`;
+      }
+    }
+
+    // ===== Original length guidance (enhanced) =====
     const lengthGuidance: Record<string, string> = {
-      conversational: '\n\n📏 RESPONSE LENGTH: Keep under 100 words. Be concise and friendly.',
-      summary: '\n\n📏 RESPONSE LENGTH: Keep under 200 words. Provide a clear, compact summary.',
-      detailed: '\n\n📏 RESPONSE LENGTH: Target 200-500 words. Be thorough but focused.',
+      conversational: '', // Handled by responseCalibration above
+      summary: '', // Handled by responseCalibration above
+      detailed: '', // Handled by responseCalibration above
       full: '' // No constraint for full-depth responses
     };
     systemPrompt += lengthGuidance[queryIntent.scope] || '';

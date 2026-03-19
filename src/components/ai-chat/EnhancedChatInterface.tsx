@@ -700,7 +700,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       {/* Column 1: Quick Actions */}
                       <div className="flex flex-col gap-1">
                         <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3">Quick Actions</span>
-                        <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
+                        <EnhancedQuickActions 
+                          onAction={handleLegacyAction} 
+                          onSetVisualization={handleSetVisualization}
+                          recommendations={aiRecommendations}
+                        />
                       </div>
 
                       {/* Column 2: Insights */}

@@ -401,7 +401,7 @@ export async function executeContentActionTool(
 
         if (error) throw error;
         if (!data) return { success: false, message: 'Content not found or access denied' };
-        return { success: true, message: `Updated "${data.title}"`, item: data };
+        return { success: true, message: `Updated "${data.title}". 💡 Tip: Say "show version history for ${data.title}" to see all previous versions, or "undo" to restore the previous version.`, item: data };
       }
 
       case 'delete_content_item': {
@@ -413,7 +413,7 @@ export async function executeContentActionTool(
 
         if (error) throw error;
         if (!data) return { success: false, message: 'Content not found or access denied' };
-        return { success: true, message: `Archived "${data.title}"` };
+        return { success: true, message: `Archived "${data.title}". 💡 Tip: Say "restore ${data.title}" to bring it back.` };
       }
 
       case 'submit_for_review': {

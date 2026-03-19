@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     let totalRecs = 0;
 
     for (const userId of uniqueUserIds) {
-      const recommendations: Array<{ user_id: string; type: string; title: string; description: string; action: string; priority: number }> = [];
+      const recommendations: Array<{ user_id: string; type: string; title: string; description: string; action: string; priority: number; priority_score: number }> = [];
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
       const fourteenDaysAgo = new Date(now.getTime() - 14 * 86400000).toISOString();
@@ -51,7 +51,8 @@ Deno.serve(async (req) => {
           title: `"${best.title}" is ready to publish`,
           description: `This draft has ${best.seo_score ? `an SEO score of ${best.seo_score} and` : ''} been sitting for 14+ days. ${staleDrafts.length > 1 ? `Plus ${staleDrafts.length - 1} more stale draft(s).` : ''}`,
           action: `Review and help me finalize my draft "${best.title}" for publishing`,
-          priority: 1
+          priority: 1,
+          priority_score: 80
         });
       }
 
@@ -69,7 +70,8 @@ Deno.serve(async (req) => {
           title: 'Empty content calendar this week',
           description: 'You have nothing scheduled for the next 7 days. Fill your calendar from available proposals or create new content.',
           action: 'Help me plan content for this week based on my available proposals',
-          priority: 2
+          priority: 2,
+          priority_score: 75
         });
       }
 
@@ -88,7 +90,8 @@ Deno.serve(async (req) => {
           title: `${unusedProposals.length} proposal(s) waiting for action`,
           description: `"${unusedProposals[0].title}" and ${unusedProposals.length > 1 ? `${unusedProposals.length - 1} more` : 'others'} have been available for 7+ days.`,
           action: `Show me my available proposals and help me schedule the best ones`,
-          priority: 3
+          priority: 3,
+          priority_score: 65
         });
       }
 
@@ -110,7 +113,8 @@ Deno.serve(async (req) => {
           title: `${needsRefresh.length} competitor(s) need fresh analysis`,
           description: `${needsRefresh.map((c: any) => c.name).join(', ')} haven't been analyzed in 30+ days.`,
           action: `Analyze my competitors and show me what's changed recently`,
-          priority: 4
+          priority: 4,
+          priority_score: 60
         });
       }
 
