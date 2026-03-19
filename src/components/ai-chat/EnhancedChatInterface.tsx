@@ -34,6 +34,7 @@ import { extractWizardContext, WizardContextExtraction } from '@/services/wizard
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSidebarContext } from '@/contexts/SidebarContext';
+import { APIKeyOnboarding } from '@/components/onboarding/APIKeyOnboarding';
 
 interface EnhancedChatInterfaceProps {
   className?: string;
