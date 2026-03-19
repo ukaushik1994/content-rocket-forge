@@ -1375,7 +1375,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           {/* Phase 1B: Compliance Analysis */}
           {!quick && complianceResult && (
             <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5">
+              <CollapsibleTrigger className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-2 px-3 bg-white/[0.04] border border-white/[0.06] rounded-2xl">
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Compliance ({complianceResult.overall.score}/100)
