@@ -748,6 +748,19 @@ export const useEnhancedAIChatDB = () => {
         setMessages(prev => prev.map(m => m.id === finalMessage.id ? { ...m, id: assistantDbId } : m));
       }
 
+      // Phase 3 Fix 9: Auto-update conversation title from suggestedTitle
+      const suggestedTitle = response?.suggestedTitle;
+      if (suggestedTitle && conversationId) {
+        try {
+          const currentConv = conversations.find(c => c.id === conversationId);
+          const isDefaultTitle = currentConv?.title?.endsWith('...') || (currentConv?.title?.length || 0) <= 50;
+          if (isDefaultTitle) {
+            await supabase.from('ai_conversations').update({ title: suggestedTitle }).eq('id', conversationId);
+            setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, title: suggestedTitle } : c));
+          }
+        } catch (_) { /* non-blocking */ }
+      }
+
       // Title already set early (line 392-408) — no duplicate update needed
     } catch (error: any) {
       console.error('Error sending enhanced message:', error);
