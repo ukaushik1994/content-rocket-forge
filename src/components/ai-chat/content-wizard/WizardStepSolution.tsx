@@ -128,7 +128,7 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="relative">
-                      <Avatar className={`h-14 w-14 border-2 transition-colors ${selectedSolution?.id === solution.id ? 'border-primary ring-2 ring-primary/30' : 'border-border/30 hover:border-primary/40'}`}>
+                      <Avatar className={`h-14 w-14 border-2 transition-colors ${selectedSolution?.id === solution.id ? 'border-amber-300/40 ring-2 ring-amber-300/20' : 'border-white/[0.06] hover:border-amber-300/30'}`}>
                         {solution.logoUrl ? <AvatarImage src={solution.logoUrl} alt={solution.name} className="object-cover" /> : (
                           <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground font-semibold text-sm">{getInitials(solution.name)}</AvatarFallback>
                         )}
