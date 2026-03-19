@@ -315,7 +315,7 @@ export async function executeCrossModuleTool(
         // Truncate content for the prompt
         const contentPreview = (content.content || '').replace(/<[^>]+>/g, '').substring(0, 2000);
 
-        const proxyResponse = await fetch(`${supabaseUrl}/functions/v1/ai-proxy`, {
+        const proxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${supabaseKey}`,
