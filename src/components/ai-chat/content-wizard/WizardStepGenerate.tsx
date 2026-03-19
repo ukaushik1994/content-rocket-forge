@@ -1156,7 +1156,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               value={wizardState.metaTitle}
               onChange={(e) => onMetaChange(e.target.value, wizardState.metaDescription)}
               placeholder="SEO title..."
-              className="text-xs h-8"
+              className="text-xs h-8 bg-white/[0.04] border-white/[0.06]"
             />
             <p className={cn("text-[10px]", wizardState.metaTitle.length < 50 ? "text-destructive" : "text-muted-foreground")}>{wizardState.metaTitle.length}/60 characters{wizardState.metaTitle.length < 50 ? ' (min 50)' : ''}</p>
           </div>
