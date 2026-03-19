@@ -799,7 +799,7 @@ export async function executeEngageActionTool(
       }
 
       case 'delete_journey': {
-        const { error } = await supabase.from('engage_journeys')
+        const { error } = await supabase.from('journeys')
           .delete()
           .eq('id', toolArgs.journey_id)
           .eq('workspace_id', workspaceId);
