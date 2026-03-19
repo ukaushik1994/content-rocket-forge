@@ -843,11 +843,11 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
           }
         } catch (_) { /* non-blocking */ }
 
-        // Internal linking suggestions (Fix 12)
+        // SB-22: Internal links — actually inject <a> tags into the generated HTML
         let linkSuggestions = '';
         try {
           const { data: published } = await supabase.from('content_items')
-            .select('id, title, main_keyword')
+            .select('id, title, main_keyword, published_url')
             .eq('user_id', userId).eq('status', 'published')
             .neq('id', saved.id).limit(20);
 
@@ -861,7 +861,29 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
             }).slice(0, 3);
 
             if (relatedArticles.length > 0) {
-              linkSuggestions = `\n🔗 **Internal linking suggestions**: Consider linking to: ${relatedArticles.map((a: any) => `"${a.title}"`).join(', ')}`;
+              // Inject actual <a> tags into content where relevant keywords/titles appear
+              let updatedContent = generatedContent;
+              const injectedLinks: string[] = [];
+              for (const article of relatedArticles) {
+                const linkText = article.main_keyword || article.title;
+                const linkUrl = article.published_url || `/content/${article.id}`;
+                // Find first mention of the keyword in content (case-insensitive) and wrap it
+                const escapedLink = linkText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(?<!<a[^>]*>)(?<!<[^>]*)\\b(${escapedLink})\\b(?![^<]*<\\/a>)`, 'i');
+                if (regex.test(updatedContent)) {
+                  updatedContent = updatedContent.replace(regex, `<a href="${linkUrl}" title="${article.title}">$1</a>`);
+                  injectedLinks.push(`"${article.title}"`);
+                }
+              }
+              // Save updated content with injected links
+              if (injectedLinks.length > 0) {
+                await supabase.from('content_items')
+                  .update({ content: updatedContent })
+                  .eq('id', saved.id).eq('user_id', userId);
+                linkSuggestions = `\n🔗 **Internal links injected**: Automatically linked to ${injectedLinks.join(', ')} within the content.`;
+              } else {
+                linkSuggestions = `\n🔗 **Internal linking suggestions**: Consider linking to: ${relatedArticles.map((a: any) => `"${a.title}"`).join(', ')}`;
+              }
             }
           }
         } catch (_) { /* non-blocking */ }

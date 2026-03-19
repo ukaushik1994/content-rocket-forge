@@ -45,8 +45,10 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
       );
     }
     
-    // Apply status filter
-    if (filterStatus !== 'all') {
+    // Apply status filter (SB-2: ready_to_publish = drafts with SEO ≥ 60)
+    if (filterStatus === 'ready_to_publish') {
+      filtered = filtered.filter(item => item.status === 'draft' && (item.seo_score || 0) >= 60);
+    } else if (filterStatus !== 'all') {
       filtered = filtered.filter(item => item.status === filterStatus);
     }
     

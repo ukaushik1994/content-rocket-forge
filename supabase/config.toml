@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.aggregate-user-intelligence]
 verify_jwt = false
+
+[functions.rescore-all-content]
+verify_jwt = false
