@@ -34,6 +34,7 @@ import { extractWizardContext, WizardContextExtraction } from '@/services/wizard
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSidebarContext } from '@/contexts/SidebarContext';
+import { APIKeyOnboarding } from '@/components/onboarding/APIKeyOnboarding';
 
 interface EnhancedChatInterfaceProps {
   className?: string;
@@ -71,6 +72,26 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     progressText
   } = useSharedAIChatDB();
   const { user } = useAuth();
+
+  // API Key onboarding gate
+  const [showKeyOnboarding, setShowKeyOnboarding] = useState(false);
+  const [hasCheckedKeys, setHasCheckedKeys] = useState(false);
+
+  useEffect(() => {
+    if (!user || hasCheckedKeys) return;
+    const checkKeys = async () => {
+      const { count, error } = await supabase
+        .from('api_keys')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+      if (!error && (count === null || count === 0)) {
+        setShowKeyOnboarding(true);
+      }
+      setHasCheckedKeys(true);
+    };
+    checkKeys();
+  }, [user, hasCheckedKeys]);
 
   // Analyst engine: track if analyst is active and provide cumulative state
   const [isAnalystPanelActive, setIsAnalystPanelActive] = useState(false);
@@ -380,6 +401,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const { isMobile, isTablet, isDesktop } = useResponsiveBreakpoint();
 
   return <div className={cn("h-full flex flex-col", className)}>
+
+      {/* API Key Onboarding Modal */}
+      <APIKeyOnboarding
+        open={showKeyOnboarding}
+        onComplete={() => setShowKeyOnboarding(false)}
+      />
 
       {/* Visualization Sidebar (Right) - positioned within chat area */}
       <VisualizationSidebar

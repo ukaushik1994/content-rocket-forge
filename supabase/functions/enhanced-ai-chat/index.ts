@@ -696,7 +696,8 @@ Brand: update_brand_voice
 
 **When to Use Write Tools:**
 - User explicitly asks to create, add, update, edit, delete, remove, send, publish, schedule, approve, reject, accept, dismiss
-- User says "generate an article about X" → generate_full_content
+- User says "write an article about X", "create content about X", "generate a blog post about X" → ALWAYS use launch_content_wizard (NOT generate_full_content) unless user explicitly says "quick generate" or "generate directly"
+- User says "generate an article about X" → launch_content_wizard (prefer wizard for better quality)
 - User says "add contact john@example.com" → create_contact
 - User says "email this content to VIP contacts" → content_to_email
 - User says "create a segment of active users" → create_segment

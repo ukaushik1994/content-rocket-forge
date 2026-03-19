@@ -358,7 +358,7 @@ export async function executeCrossModuleTool(
 
         return {
           success: true,
-          message: `Generated ${posts.posts?.length || 0} social posts from "${content.title}"`,
+          message: `Generated ${posts.posts?.length || 0} social posts from "${content.title}". Note: Direct social publishing is coming soon — your posts are saved as drafts. Copy and post manually for now.`,
           socialPosts: posts.posts || [],
           sourceContent: { id: content.id, title: content.title }
         };
@@ -502,7 +502,7 @@ export async function executeCrossModuleTool(
 
         return {
           success: true,
-          message: `${toolArgs.scheduled_at ? 'Scheduled' : 'Saved'} ${createdPosts.length} social post(s) for ${createdPosts.map(p => p.platform).join(', ')}${toolArgs.scheduled_at ? ` at ${toolArgs.scheduled_at}` : ''}`,
+          message: `${toolArgs.scheduled_at ? 'Scheduled' : 'Saved'} ${createdPosts.length} social post(s) for ${createdPosts.map(p => p.platform).join(', ')}${toolArgs.scheduled_at ? ` at ${toolArgs.scheduled_at}` : ''}. Note: Direct social publishing is coming soon — your posts are saved and ready to publish once integrations are live.`,
           posts: createdPosts
         };
       }
