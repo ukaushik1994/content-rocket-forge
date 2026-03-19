@@ -211,7 +211,7 @@ export async function executeEngageIntelligenceTool(
 
     case 'get_engage_email_campaigns': {
       let query = supabase
-        .from('engage_email_campaigns')
+        .from('email_campaigns')
         .select('id, name, subject, status, scheduled_at, sent_at, created_at')
         .eq('workspace_id', workspaceId);
       

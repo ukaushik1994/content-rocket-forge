@@ -150,7 +150,7 @@ Max 3 insights and 3 actions. Be specific and actionable. Only return valid JSON
         .limit(5);
 
       const { data: journeys } = await supabase
-        .from("engage_journeys")
+        .from("journeys")
         .select("name, status")
         .eq("workspace_id", workspace_id)
         .eq("status", "active");

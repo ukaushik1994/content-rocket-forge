@@ -278,7 +278,7 @@ ${topContent.content || ''}
 </body>
 </html>`;
 
-        const { data: emailCampaign, error: emailError } = await supabase.from('engage_email_campaigns').insert({
+        const { data: emailCampaign, error: emailError } = await supabase.from('email_campaigns').insert({
           workspace_id: workspaceId,
           name: `Campaign Digest: ${topContent.title}`,
           subject: toolArgs.subject || topContent.title,

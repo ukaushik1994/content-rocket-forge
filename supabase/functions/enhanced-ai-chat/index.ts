@@ -3921,8 +3921,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
             const { data: wsData } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
             const analystWorkspaceId = wsData?.workspace_id;
             const emailQuery = analystWorkspaceId 
-              ? supabase.from('engage_email_campaigns').select('id', { count: 'exact', head: true }).eq('workspace_id', analystWorkspaceId)
-              : supabase.from('engage_email_campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+              ? supabase.from('email_campaigns').select('id', { count: 'exact', head: true }).eq('workspace_id', analystWorkspaceId)
+              : supabase.from('email_campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId);
             const { count } = await emailQuery;
             if (count !== null && count > 0) { platformStats['totalEmailCampaigns'] = count; analyticsInsights.push(`${count} email campaigns in Engage`); }
           } catch (_) { /* table may not exist */ }
