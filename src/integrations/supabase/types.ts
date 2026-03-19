@@ -3516,45 +3516,60 @@ export type Database = {
       email_campaigns: {
         Row: {
           audience_definition: Json | null
+          body_html: string | null
           completed_at: string | null
           created_at: string | null
           created_by: string | null
+          from_email: string | null
+          from_name: string | null
           id: string
           name: string
           scheduled_at: string | null
+          segment_id: string | null
           started_at: string | null
           stats: Json | null
           status: string
+          subject: string | null
           template_id: string | null
           updated_at: string | null
           workspace_id: string
         }
         Insert: {
           audience_definition?: Json | null
+          body_html?: string | null
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
+          from_email?: string | null
+          from_name?: string | null
           id?: string
           name: string
           scheduled_at?: string | null
+          segment_id?: string | null
           started_at?: string | null
           stats?: Json | null
           status?: string
+          subject?: string | null
           template_id?: string | null
           updated_at?: string | null
           workspace_id: string
         }
         Update: {
           audience_definition?: Json | null
+          body_html?: string | null
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
+          from_email?: string | null
+          from_name?: string | null
           id?: string
           name?: string
           scheduled_at?: string | null
+          segment_id?: string | null
           started_at?: string | null
           stats?: Json | null
           status?: string
+          subject?: string | null
           template_id?: string | null
           updated_at?: string | null
           workspace_id?: string
@@ -4581,6 +4596,7 @@ export type Database = {
       journey_enrollments: {
         Row: {
           contact_id: string
+          current_step_index: number | null
           enrolled_at: string | null
           id: string
           journey_id: string
@@ -4590,6 +4606,7 @@ export type Database = {
         }
         Insert: {
           contact_id: string
+          current_step_index?: number | null
           enrolled_at?: string | null
           id?: string
           journey_id: string
@@ -4599,6 +4616,7 @@ export type Database = {
         }
         Update: {
           contact_id?: string
+          current_step_index?: number | null
           enrolled_at?: string | null
           id?: string
           journey_id?: string
@@ -4778,6 +4796,7 @@ export type Database = {
           status: string
           suppression_rules: Json | null
           trigger_config: Json | null
+          trigger_type: string | null
           updated_at: string | null
           version: number
           workspace_id: string
@@ -4792,6 +4811,7 @@ export type Database = {
           status?: string
           suppression_rules?: Json | null
           trigger_config?: Json | null
+          trigger_type?: string | null
           updated_at?: string | null
           version?: number
           workspace_id: string
@@ -4806,6 +4826,7 @@ export type Database = {
           status?: string
           suppression_rules?: Json | null
           trigger_config?: Json | null
+          trigger_type?: string | null
           updated_at?: string | null
           version?: number
           workspace_id?: string
