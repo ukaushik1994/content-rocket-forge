@@ -1038,7 +1038,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                     href={result.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="block p-2 rounded-lg bg-muted/10 border border-border/10 hover:border-cyan-500/20 hover:bg-cyan-500/5 transition-colors group"
+                                    className="block p-2 glass-card glass-card-hover group"
                                   >
                                     <div className="flex items-start gap-1.5">
                                       <ExternalLink className="w-3 h-3 text-cyan-500/50 group-hover:text-cyan-500 mt-0.5 flex-shrink-0" />
