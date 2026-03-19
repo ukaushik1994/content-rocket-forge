@@ -76,6 +76,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     justCreatedConversation
   } = useSharedAIChatDB();
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // API Key onboarding gate
   const [showKeyOnboarding, setShowKeyOnboarding] = useState(false);
