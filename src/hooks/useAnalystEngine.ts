@@ -112,6 +112,7 @@ export interface AnalystState {
   strategicRecommendation: StrategicRecommendation | null;
   userStage: UserStage | null;
   benchmarks: StageBenchmarks | null;
+  triggerRefresh: () => void;
 }
 
 // ─── Topic Detection ────────────────────────────────────────────────────────
@@ -1355,6 +1356,23 @@ export function useAnalystEngine(
     prevMessageCountRef.current = messages.length;
   }, [messages.length, isActive, fetchPlatformData]);
 
+  // 60-second health score refresh interval while analyst is active
+  useEffect(() => {
+    if (!isActive || !userId) return;
+    const interval = setInterval(() => {
+      fetchPlatformData(true);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [isActive, userId, fetchPlatformData]);
+
+  // Expose triggerRefresh for external callers (e.g., after tool success)
+  const triggerRefresh = useCallback(() => {
+    if (isActive) {
+      lastFetchedTopicsRef.current = '';
+      fetchPlatformData(true);
+    }
+  }, [isActive, fetchPlatformData]);
+
   // ─── Proactive anomaly detection ────────────────────────────────────────
   useEffect(() => {
     if (!isActive || !userId || platformData.length === 0) return;
@@ -1436,7 +1454,7 @@ export function useAnalystEngine(
     computeCrossSignals(userId, platformData, userMsgs).then(signals => {
       if (signals.length > 0) setCrossSignalInsights(signals);
     });
-  }, [isActive, userId, platformData]);
+  }, [isActive, userId, platformData, messages.length]);
 
   // ─── Enhancement D: Load session memory on activation ───────────────────
   useEffect(() => {
@@ -1615,5 +1633,6 @@ export function useAnalystEngine(
     strategicRecommendation,
     userStage,
     benchmarks,
+    triggerRefresh,
   };
 }

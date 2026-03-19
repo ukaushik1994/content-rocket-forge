@@ -770,10 +770,45 @@ export const useEnhancedAIChatDB = () => {
       const isRateLimit = errorMsg.includes('429') || errorMsg.toLowerCase().includes('rate limit');
       const isContextLength = errorMsg.toLowerCase().includes('token') || errorMsg.toLowerCase().includes('context length');
       
+      // Auto-retry on rate limit
+      if (isRateLimit) {
+        const retryMsg: EnhancedChatMessage = {
+          id: assistantId,
+          role: 'assistant',
+          content: '⏳ Rate limited by AI provider. Automatically retrying in 30 seconds...',
+          timestamp: new Date(),
+          actions: [
+            {
+              id: 'retry-now-' + assistantId,
+              type: 'button' as const,
+              label: '🔄 Retry Now',
+              action: 'send_message',
+              data: { message: content }
+            },
+            {
+              id: 'cancel-retry-' + assistantId,
+              type: 'button' as const,
+              label: '✕ Cancel',
+              action: 'dismiss',
+              data: {}
+            }
+          ]
+        };
+        setMessages(prev => [...prev.filter(m => m.id !== assistantId), retryMsg]);
+        
+        // Auto-retry after 30s
+        const retryTimer = setTimeout(() => {
+          setMessages(prev => prev.filter(m => m.id !== assistantId));
+          sendMessage(content, activeConversation || undefined);
+        }, 30000);
+        
+        // Store timer for cleanup
+        (window as any).__rateLimitRetryTimer = retryTimer;
+        return;
+      }
+
       const errorContent = isTimeout
         ? "The request timed out. The AI might be processing a complex query. You can retry or check your API key settings."
-        : isRateLimit
-        ? "The AI provider is rate-limited. Please wait 30 seconds and retry, or switch to a different provider in Settings."
         : isContextLength
         ? "This conversation is too long for the AI model's context window. Please start a new conversation to continue."
         : "I wasn't able to process your request. This could be due to a missing API key or a temporary service issue. You can retry or check your API key settings.";

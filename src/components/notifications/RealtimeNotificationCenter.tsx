@@ -85,6 +85,7 @@ export const RealtimeNotificationCenter: React.FC<RealtimeNotificationCenterProp
           .from('dashboard_alerts')
           .select('*')
           .eq('user_id', user.id)
+          .neq('status', 'resolved')
           .order('created_at', { ascending: false })
           .limit(50);
 

@@ -235,8 +235,14 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
   const filteredConversations = conversations
     .filter(conv => {
-      if (searchTerm && !conv.title.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
+      if (searchTerm) {
+        // Tag-based search: #tag filters by tag match
+        if (searchTerm.startsWith('#')) {
+          const tagSearch = searchTerm.slice(1).toLowerCase();
+          if (!conv.tags?.some(t => t.toLowerCase().includes(tagSearch))) return false;
+        } else if (!conv.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
       }
       if (conv.archived) return false;
       return true;

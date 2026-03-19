@@ -2653,26 +2653,33 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       systemPrompt += `\n\n## ⚠️ DISAMBIGUATION REQUIRED:\n${queryIntent.disambiguationHint}`;
     }
     
-    // ===== Parallelized: Brand voice + User intelligence fetches (TTFT optimization) =====
+    // ===== Parallelized: Brand voice + User intelligence + Standing instructions (TTFT optimization) =====
     let brandVoiceContext = '';
     let userIntelligenceContext = '';
+    let standingInstructionsContext = '';
 
-    const [brandResult, profileResult, apiKeysResult, websiteConnsResult] = await Promise.allSettled([
+    const [brandResult, profileResult, apiKeysResult, websiteConnsResult, instructionsResult] = await Promise.allSettled([
       supabase.from('brand_guidelines')
         .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use')
-        .eq('user_id', userId).maybeSingle(),
-      supabase.from('user_intelligence_profile')
-        .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .maybeSingle(),
-      // Phase 4 Fix 10: Service status check
+      supabase.from('profiles')
+        .select('first_name, last_name, company')
+        .eq('id', user.id)
+        .maybeSingle(),
       supabase.from('api_keys')
         .select('service, is_active')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .eq('is_active', true),
       supabase.from('website_connections')
-        .select('platform, status')
-        .eq('user_id', userId)
+        .select('provider, site_name, site_url, status')
+        .eq('user_id', user.id)
+        .eq('status', 'active'),
+      supabase.from('user_content_instructions')
+        .select('instruction_text, use_case')
+        .eq('user_id', user.id)
+        .order('applied_count', { ascending: false })
+        .limit(5),
     ]);
 
     // Process brand voice result
@@ -2681,6 +2688,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       const bParts: string[] = [];
       if (brandData.tone && Array.isArray(brandData.tone) && brandData.tone.length > 0) bParts.push(`Tone: ${brandData.tone.join(', ')}`);
       if (brandData.brand_personality) bParts.push(`Personality: ${brandData.brand_personality}`);
+      if (brandData.brand_values) bParts.push(`Values: ${brandData.brand_values}`);
+      if (brandData.target_audience) bParts.push(`Target Audience: ${brandData.target_audience}`);
       if (brandData.do_use && Array.isArray(brandData.do_use) && brandData.do_use.length > 0) bParts.push(`Preferred phrases: ${brandData.do_use.slice(0, 5).join(', ')}`);
       if (brandData.dont_use && Array.isArray(brandData.dont_use) && brandData.dont_use.length > 0) bParts.push(`Avoid phrases: ${brandData.dont_use.slice(0, 5).join(', ')}`);
       if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE\nWhen generating any content, writing suggestions, or creative output, follow these guidelines:\n${bParts.join('\n')}`;
@@ -2688,8 +2697,15 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       console.warn('[BRAND-VOICE] Failed to fetch brand guidelines (non-blocking):', brandResult.reason);
     }
 
-    // Inject real data context + brand voice
+    // Process standing user instructions
+    if (instructionsResult.status === 'fulfilled' && instructionsResult.value.data?.length) {
+      const instructions = instructionsResult.value.data.map((i: any) => `- ${i.instruction_text}`).join('\n');
+      standingInstructionsContext = `\n\n## STANDING INSTRUCTIONS (user-defined preferences)\n${instructions}\nApply these preferences to all relevant responses.`;
+    }
+
+    // Inject real data context + brand voice + standing instructions
     systemPrompt += brandVoiceContext;
+    systemPrompt += standingInstructionsContext;
 
     // Process user intelligence result
     if (profileResult.status === 'fulfilled' && profileResult.value.data) {
@@ -2909,8 +2925,10 @@ Before executing any write tool, run these 5 mental checks:
 BYPASS: If user says "just do it" or similar, skip all checks and execute immediately.`;
     }
 
-    // ===== PHASE 2 FIX 3: End-to-End Workflow Orchestration =====
-    systemPrompt += `\n\n## WORKFLOW PROTOCOL (apply automatically after significant actions)
+    // ===== PHASE 2 FIX 3: End-to-End Workflow Orchestration (conditional) =====
+    const isMultiStep = hasWriteIntent || /then|after that|next|also|and then|workflow|steps|plan/i.test(userQuery);
+    if (isMultiStep) {
+      systemPrompt += `\n\n## WORKFLOW PROTOCOL (apply automatically after significant actions)
 After completing ANY write action (create content, send email, schedule post, etc.), suggest the NEXT logical step:
 - Content created → "Want me to schedule this on the calendar or repurpose it for social?"
 - Email drafted → "Should I assign a segment or send a test first?"
@@ -2918,6 +2936,7 @@ After completing ANY write action (create content, send email, schedule post, et
 - Content published → "Shall I create social posts to promote this?"
 - Calendar item added → "Want me to set up an email campaign for this topic?"
 Keep suggestions to ONE sentence. Don't force workflows — offer them.`;
+    }
 
     // ===== PHASE 2 FIX 7: Real-Time Feedback Loop =====
     if (userMessages.length >= 3) {
@@ -2958,14 +2977,17 @@ The user is comparing options. Provide:
 Never sit on the fence — give a clear recommendation.`;
     }
 
-    // ===== PHASE 4 FIX 11: Fuzzy Content Matching =====
-    systemPrompt += `\n\n## CONTENT MATCHING PROTOCOL
+    // ===== PHASE 4 FIX 11: Fuzzy Content Matching (conditional) =====
+    const referencesContent = /my (article|blog|post|content|draft|page)|the one about|update .*(article|blog|post|content)|delete .*(article|blog|post|content)|edit .*(article|blog|post|content)/i.test(userQuery);
+    if (referencesContent) {
+      systemPrompt += `\n\n## CONTENT MATCHING PROTOCOL
 When the user references content by name (e.g., "update my SEO article", "delete the blog about marketing"):
 1. Use get_content_items to search for matching content.
 2. If 1 match → proceed with the action.
 3. If 2-3 matches → list them and ask the user to pick: "I found these matches: [list]. Which one?"
 4. If 0 matches → say "I couldn't find content matching '[name]'. Want me to search your full library?"
 NEVER guess or assume which content the user means when multiple matches exist.`;
+    }
 
     // ===== PHASE 4 FIX 10: Service Status (injected dynamically above) =====
     // Service status is built from api_keys/website_connections query results
@@ -2994,6 +3016,25 @@ Recent messages suggest the user was working on content creation. If their new m
 Only ask once — if they respond with a new topic, don't ask again.`;
       }
     }
+
+    // ===== FIX 10: Data Reuse from Earlier in Conversation =====
+    const recentAssistantContent = messages.filter((m: any) => m.role === 'assistant').slice(-4);
+    const hasToolResultsInHistory = recentAssistantContent.some((m: any) => {
+      const c = typeof m.content === 'string' ? m.content : '';
+      return c.includes('SEO score') || c.includes('word count') || c.includes('proposals') || 
+             c.includes('content items') || c.includes('SERP') || c.includes('competitors');
+    });
+    if (hasToolResultsInHistory && !queryIntent.isConversational) {
+      systemPrompt += `\n\n## DATA REUSE
+Previous messages in this conversation contain tool results and data. BEFORE calling a tool to re-fetch data:
+1. Check if the data is already in this conversation's history.
+2. If it is, reference it directly: "Based on the data we looked at earlier..."
+3. Only re-fetch if the user explicitly asks for fresh/updated data or the request requires different parameters.`;
+    }
+
+    // ===== FIX 13: Long Response Scanability =====
+    systemPrompt += `\n\n## FORMATTING
+For responses over 200 words: use **H2/H3 headings** for sections, **bold** key numbers and metrics, bullet points for 3+ items. Keep paragraphs to 2-3 sentences max.`;
 
     // ===== Original length guidance (enhanced) =====
     const lengthGuidance: Record<string, string> = {
@@ -3414,8 +3455,32 @@ Only ask once — if they respond with a new topic, don't ask again.`;
 
     let requestPromotedVisualData: any = null;
 
+    // Tool-aware progress messages with time estimates
+    const TOOL_TIME_ESTIMATES: Record<string, string> = {
+      generate_full_content: 'Generating article (~20-30s)...',
+      create_content_item: 'Creating content item (~5s)...',
+      update_content_item: 'Updating content (~5s)...',
+      delete_content_item: 'Deleting content...',
+      get_content_items: 'Searching your content library...',
+      serp_analysis: 'Running SERP analysis (~10s)...',
+      analyze_serp: 'Running SERP analysis (~10s)...',
+      get_serp_data: 'Fetching search data (~10s)...',
+      analyze_content_gap: 'Analyzing content gaps (~15s)...',
+      launch_content_wizard: 'Opening content wizard...',
+      schedule_content: 'Scheduling content...',
+      create_calendar_item: 'Adding to calendar...',
+      send_email_campaign: 'Preparing email campaign...',
+      send_quick_email: 'Preparing email...',
+      get_strategy_proposals: 'Fetching strategy proposals...',
+      create_social_post: 'Creating social post...',
+      repurpose_content: 'Repurposing content (~15s)...',
+      compare_content: 'Comparing content items...',
+    };
+
     if (toolCalls && toolCalls.length > 0) {
-      emitProgress('tools', 'Executing actions...');
+      const firstToolName = toolCalls[0]?.function?.name || '';
+      const progressMsg = TOOL_TIME_ESTIMATES[firstToolName] || `Executing ${toolCalls.length > 1 ? toolCalls.length + ' actions' : 'action'}...`;
+      emitProgress('tools', progressMsg);
       console.log(`🔧 AI requested ${toolCalls.length} tool calls`);
       
       const toolResults = [];

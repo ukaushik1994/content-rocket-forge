@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { sanitizeMarkdownSync } from '@/utils/sanitize';
+import { trackContentEdit } from '@/services/contentFeedbackService';
 
 type FormValues = {
   title: string;
@@ -111,8 +112,25 @@ export const EnhancedContentEditForm: React.FC<EnhancedContentEditFormProps> = (
     }, 0);
   };
   
-  // Save handling
-  const handleSave = form.handleSubmit(onSubmit);
+  // Track original content for edit tracking
+  const originalContentRef = useRef(content?.content || '');
+  useEffect(() => {
+    if (content?.content) {
+      originalContentRef.current = content.content;
+    }
+  }, [content?.id]);
+
+  // Save handling with edit tracking
+  const handleSave = form.handleSubmit(async (values) => {
+    // Track edits for AI-generated content
+    if (content?.id && content?.metadata && (content.metadata as any)?.ai_generated) {
+      const original = originalContentRef.current;
+      if (original && values.content !== original) {
+        trackContentEdit(content.id, original, values.content).catch(() => {});
+      }
+    }
+    await onSubmit(values);
+  });
   
   // Auto-save with debounce (every 5 seconds of inactivity after changes)
   useEffect(() => {
