@@ -512,6 +512,23 @@ export function useAnalystEngine(
   const [previousSessionInsights, setPreviousSessionInsights] = useState<InsightItem[]>([]);
   const prevActiveRef = useRef(false);
 
+  // ─── Reset state when conversation changes ──────────────────────────────
+  const prevConversationIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (activeConversationId && activeConversationId !== prevConversationIdRef.current) {
+      prevConversationIdRef.current = activeConversationId;
+      // Reset all accumulated state for the new conversation
+      setCrossSignalInsights([]);
+      setPreviousSessionInsights([]);
+      setPlatformData([]);
+      setAnomalyInsights([]);
+      lastFetchedTopicsRef.current = '';
+      processedMessageIdsRef.current = new Set();
+      hasInitialFetchedRef.current = false;
+      prevMessageCountRef.current = 0;
+    }
+  }, [activeConversationId]);
+
   // ─── Cumulative topic extraction ────────────────────────────────────────
   const topics = useMemo(() => {
     if (!isActive) return [];

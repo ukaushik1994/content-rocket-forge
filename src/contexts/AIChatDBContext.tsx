@@ -50,6 +50,7 @@ const fallbackContext: AIChatDBContextType = {
   setAnalystActive: noop as any,
   handleFeedback: noop as any,
   handlePinMessage: noopAsync as any,
+  justCreatedConversation: { current: false } as React.MutableRefObject<boolean>,
 };
 
 export const useSharedAIChatDB = (): AIChatDBContextType => {
