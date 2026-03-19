@@ -77,7 +77,7 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
   const hasWebSearch = analystState ? analystState.webSearchResults.length > 0 : false;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       {/* 10. Previous Session — placeholder, shows when session context exists */}
       {/* Future: check for persisted session context */}
 

@@ -18,10 +18,10 @@ export const EngagementMetricsSection: React.FC<Props> = ({ platformData, onSend
     <AnalystSectionWrapper
       number="07"
       label="Engagement Metrics"
-      headline={<>Audience engagement is <span className="text-blue-400">measurable</span></>}
+      headline={<>Audience engagement is <span className="text-amber-300">measurable</span></>}
       delay={0.24}
     >
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-3">
         {engageMetrics.slice(0, 4).map((metric) => (
           <AnalystDataCard
             key={metric.label}

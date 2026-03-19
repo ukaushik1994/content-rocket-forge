@@ -13,7 +13,7 @@ const dotColorForType = (type: string): 'green' | 'amber' | 'red' | 'blue' | 'pu
   switch (type) {
     case 'warning': return 'red';
     case 'opportunity': return 'green';
-    case 'trend': return 'blue';
+    case 'trend': return 'amber';
     default: return 'purple';
   }
 };
@@ -23,14 +23,14 @@ export const StrategicDivergenceSection: React.FC<Props> = ({ insights, onSendMe
   if (anomalies.length === 0) return null;
 
   const getHeadline = () => {
-    if (anomalies.length >= 3) return <>Multiple signals demand <span className="text-red-400">triage</span></>;
-    if (anomalies.some(a => a.type === 'warning')) return <>An anomaly requires <span className="text-amber-400">attention</span></>;
-    return <>Cross-signals reveal <span className="text-blue-400">divergence</span></>;
+    if (anomalies.length >= 3) return <>Multiple signals demand <span className="text-rose-300 underline decoration-2 underline-offset-4">triage</span></>;
+    if (anomalies.some(a => a.type === 'warning')) return <>An anomaly requires <span className="text-amber-300 underline decoration-2 underline-offset-4">attention</span></>;
+    return <>Cross-signals reveal <span className="text-amber-300">divergence</span></>;
   };
 
   return (
     <AnalystSectionWrapper number="03" label="Strategic Divergence" headline={getHeadline()} delay={0.15}>
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {anomalies.slice(0, 4).map((insight) => (
           <AnalystInsightCard
             key={insight.id}
