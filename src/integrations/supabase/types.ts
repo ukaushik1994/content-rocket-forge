@@ -8000,6 +8000,57 @@ export type Database = {
         }
         Relationships: []
       }
+      user_intelligence_profile: {
+        Row: {
+          avg_response_detail: string | null
+          created_at: string | null
+          editing_patterns: Json | null
+          id: string
+          last_aggregated_at: string | null
+          preferred_formats: string[] | null
+          preferred_length: string | null
+          preferred_tone: string[] | null
+          prefers_negotiation: boolean | null
+          profile_version: number | null
+          top_solutions: string[] | null
+          top_topics: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avg_response_detail?: string | null
+          created_at?: string | null
+          editing_patterns?: Json | null
+          id?: string
+          last_aggregated_at?: string | null
+          preferred_formats?: string[] | null
+          preferred_length?: string | null
+          preferred_tone?: string[] | null
+          prefers_negotiation?: boolean | null
+          profile_version?: number | null
+          top_solutions?: string[] | null
+          top_topics?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avg_response_detail?: string | null
+          created_at?: string | null
+          editing_patterns?: Json | null
+          id?: string
+          last_aggregated_at?: string | null
+          preferred_formats?: string[] | null
+          preferred_length?: string | null
+          preferred_tone?: string[] | null
+          prefers_negotiation?: boolean | null
+          profile_version?: number | null
+          top_solutions?: string[] | null
+          top_topics?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_llm_keys: {
         Row: {
           api_key: string
