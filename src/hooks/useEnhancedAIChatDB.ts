@@ -1467,6 +1467,50 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [user, toast]);
 
+  // Feedback on AI messages (thumbs up/down)
+  const handleFeedback = useCallback(async (messageId: string, helpful: boolean) => {
+    if (!user) return;
+    try {
+      // Toggle: if same value, clear it
+      const msg = messages.find(m => m.id === messageId);
+      const currentVal = (msg as any)?.feedbackHelpful;
+      const newVal = currentVal === helpful ? null : helpful;
+
+      await supabase
+        .from('ai_messages')
+        .update({ feedback_helpful: newVal } as any)
+        .eq('id', messageId);
+
+      setMessages(prev => prev.map(m => 
+        m.id === messageId ? { ...m, feedbackHelpful: newVal } : m
+      ));
+    } catch (error) {
+      console.error('Error setting feedback:', error);
+    }
+  }, [user, messages]);
+
+  // Pin/Unpin message
+  const handlePinMessage = useCallback(async (messageId: string) => {
+    if (!user) return;
+    try {
+      const msg = messages.find(m => m.id === messageId);
+      const newPinned = !((msg as any)?.isPinned);
+
+      await supabase
+        .from('ai_messages')
+        .update({ is_pinned: newPinned } as any)
+        .eq('id', messageId);
+
+      setMessages(prev => prev.map(m =>
+        m.id === messageId ? { ...m, isPinned: newPinned } : m
+      ));
+
+      toast({ title: newPinned ? 'Message pinned' : 'Message unpinned' });
+    } catch (error) {
+      console.error('Error pinning message:', error);
+    }
+  }, [user, messages, toast]);
+
   // Load conversations on user change
   useEffect(() => {
     if (user) {
