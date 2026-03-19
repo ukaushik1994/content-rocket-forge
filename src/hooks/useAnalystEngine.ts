@@ -603,6 +603,34 @@ function computeCrossSignals(
       console.warn('Cross-signal analysis failed:', err);
     }
 
+    // ─── Fix 7: Accountability Loop ──────────────────────────────────────
+    if (userMessages && userMessages.length >= 3) {
+      try {
+        const simplified = userMessages.map(m => 
+          m.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).slice(0, 4).join(' ')
+        );
+        const queryCount = new Map<string, number>();
+        for (const q of simplified) {
+          if (q.length < 8) continue; // skip very short queries
+          queryCount.set(q, (queryCount.get(q) || 0) + 1);
+        }
+        let accountabilityAdded = false;
+        for (const [query, count] of queryCount) {
+          if (count >= 3 && !accountabilityAdded) {
+            signals.push({
+              id: `cross-accountability-${now.getTime()}`,
+              content: `🔄 You've asked about "${query}" ${count} times this session. Want to take action instead of analyzing further? Let me create a concrete plan.`,
+              type: 'opportunity',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'medium',
+            });
+            accountabilityAdded = true;
+          }
+        }
+      } catch { /* fail silently */ }
+    }
+
     resolve(signals);
   });
 }
