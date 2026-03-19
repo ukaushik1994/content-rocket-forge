@@ -1086,7 +1086,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               </Button>
             )}
             {activeConnectionProvider && (
-              <Button size="sm" variant="outline" onClick={publishExternal} disabled={isPublishingExternal} className="text-xs gap-1.5 w-full justify-start h-8">
+              <Button size="sm" variant="outline" onClick={publishExternal} disabled={isPublishingExternal} className="text-xs gap-1.5 w-full justify-start h-8 border-white/[0.06] hover:bg-white/[0.04]">
                 {isPublishingExternal ? <Loader2 className="w-3 h-3 animate-spin" /> : <Globe className="w-3 h-3" />}
                 Publish to {activeConnectionProvider === 'wordpress' ? 'WordPress' : 'Wix'}
               </Button>
