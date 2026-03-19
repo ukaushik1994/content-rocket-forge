@@ -202,15 +202,18 @@ Return ONLY the JSON array.`;
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-medium text-foreground">Content Outline</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Content Outline</span>
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">Drag to reorder, click to edit</p>
         </div>
         <div className="flex gap-1.5">
-          <Button variant="outline" size="sm" onClick={generateOutline} className="text-xs h-7 gap-1">
-            <Sparkles className="w-3 h-3" /> Regenerate
+          <Button variant="ghost" size="sm" onClick={generateOutline} className="text-xs h-7 gap-1 border border-white/[0.06] hover:bg-white/[0.04]">
+            <Sparkles className="w-3 h-3 text-amber-300/70" /> Regenerate
           </Button>
-          <Button variant="outline" size="sm" onClick={addSection} className="text-xs h-7 gap-1">
-            <Plus className="w-3 h-3" /> Add
+          <Button variant="ghost" size="sm" onClick={addSection} className="text-xs h-7 gap-1 border border-white/[0.06] hover:bg-white/[0.04]">
+            <Plus className="w-3 h-3 text-amber-300/70" /> Add
           </Button>
         </div>
       </div>
