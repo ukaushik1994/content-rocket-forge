@@ -318,7 +318,10 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Additional Instructions */}
       <div className="space-y-1">
-        <h3 className="text-sm font-medium text-foreground">Additional Instructions (optional)</h3>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Additional Instructions</span>
+        </div>
         <Textarea
           value={additionalInstructions}
           onChange={(e) => onAdditionalInstructionsChange(e.target.value)}
