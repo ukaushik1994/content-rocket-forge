@@ -1395,7 +1395,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                         <span className="text-muted-foreground">{dim.label} <span className="opacity-60">({dim.weight})</span></span>
                         <span className={cn(
                           "font-medium",
-                          dim.score >= 70 ? "text-primary" : dim.score >= 40 ? "text-yellow-400" : "text-destructive"
+                          dim.score >= 70 ? "text-emerald-400" : dim.score >= 40 ? "text-yellow-400" : "text-destructive"
                         )}>{dim.score}</span>
                       </div>
                       <Progress value={dim.score} className="h-1" />
