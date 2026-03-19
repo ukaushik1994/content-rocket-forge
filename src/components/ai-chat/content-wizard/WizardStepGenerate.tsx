@@ -1031,8 +1031,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   if (saved && savedId) {
     return (
       <div className="flex flex-col items-center py-8 gap-4 text-center">
-        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-          <CheckCircle2 className="w-7 h-7 text-primary" />
+        <div className="w-14 h-14 rounded-full bg-emerald-400/15 flex items-center justify-center border border-emerald-400/20">
+          <CheckCircle2 className="w-7 h-7 text-emerald-400" />
         </div>
         <div>
           <p className="text-sm font-medium text-foreground">
