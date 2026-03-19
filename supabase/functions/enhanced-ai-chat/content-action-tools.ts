@@ -685,9 +685,36 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         } catch (_) { /* non-blocking */ }
 
         const wordCount = generatedContent.split(/\s+/).length;
+        // Auto-suggest keywords from headings (E2)
+        let keywordSuggestions = '';
+        try {
+          const headingMatches = generatedContent.match(/^#{1,3}\s+(.+)$/gm) || [];
+          if (headingMatches.length > 0) {
+            const extractedPhrases = headingMatches
+              .map((h: string) => h.replace(/^#+\s+/, '').trim().toLowerCase())
+              .filter((p: string) => p.length > 3 && p.length < 60)
+              .slice(0, 5);
+            
+            if (extractedPhrases.length > 0) {
+              // Check which ones are NOT already tracked
+              const { data: existingKw } = await supabase
+                .from('keywords')
+                .select('keyword')
+                .eq('user_id', userId)
+                .in('keyword', extractedPhrases);
+              const existingSet = new Set((existingKw || []).map((k: any) => k.keyword.toLowerCase()));
+              const newPhrases = extractedPhrases.filter((p: string) => !existingSet.has(p));
+              if (newPhrases.length > 0) {
+                keywordSuggestions = `\n\n💡 **Keyword suggestions** from headings: ${newPhrases.map((p: string) => `"${p}"`).join(', ')}. Say "add these keywords" to start tracking them.`;
+              }
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
+        const seoContext = seoScore < 40 ? ' (basic check — full SEO analysis available in the Content Wizard)' : '';
         return {
           success: true,
-          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100) as draft${factCheckWarning}${linkSuggestions}`,
+          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${factCheckWarning}${linkSuggestions}${keywordSuggestions}`,
           item: { ...saved, seo_score: seoScore, meta_title: autoMetaTitle, meta_description: autoMetaDesc },
           wordCount,
           actions: [

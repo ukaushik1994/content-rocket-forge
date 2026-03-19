@@ -519,7 +519,34 @@ export async function executeEngageActionTool(
           }
         } catch (_) { /* non-blocking */ }
 
-        return { success: true, message: `Created email campaign "${data.name}" (draft)${workspaceNotice}${toneHint}`, item: data };
+        // Email template suggestions from past campaigns (E4)
+        let emailTip = '';
+        try {
+          const { data: pastCampaigns } = await supabase.from('email_campaigns')
+            .select('subject')
+            .eq('workspace_id', workspaceId)
+            .in('status', ['sent', 'completed'])
+            .order('created_at', { ascending: false })
+            .limit(10);
+          
+          if (pastCampaigns && pastCampaigns.length >= 3) {
+            const subjects = pastCampaigns.map((c: any) => c.subject || '').filter(Boolean);
+            const questionStyle = subjects.filter((s: string) => s.includes('?')).length;
+            const shortStyle = subjects.filter((s: string) => s.length < 40).length;
+            const emojiStyle = subjects.filter((s: string) => /[\u{1F300}-\u{1FAFF}]/u.test(s)).length;
+            
+            const patterns: string[] = [];
+            if (questionStyle > subjects.length / 2) patterns.push('question-style subjects work well for you');
+            if (shortStyle > subjects.length / 2) patterns.push('shorter subjects (<40 chars) are your pattern');
+            if (emojiStyle > subjects.length / 3) patterns.push('you often use emoji in subjects');
+            
+            if (patterns.length > 0) {
+              emailTip = ` 📊 Pattern insight: ${patterns.join('; ')}.`;
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
+        return { success: true, message: `Created email campaign "${data.name}" (draft)${workspaceNotice}${toneHint}${emailTip}`, item: data };
       }
 
       case 'send_email_campaign': {
