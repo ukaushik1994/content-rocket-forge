@@ -304,8 +304,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     const wasEmpty = prevMessageCountRef.current === 0;
     prevMessageCountRef.current = messages.length;
 
-    // Auto-open analyst panel on first message (0 → 1+)
-    if (wasEmpty && messages.length > 0) {
+    // Auto-open analyst panel on first message ONLY for brand-new conversations
+    if (wasEmpty && messages.length > 0 && justCreatedConversation.current) {
+      justCreatedConversation.current = false;
       setVisualizationData({
         visualData: { type: 'analyst' },
         chartConfig: null,
@@ -315,6 +316,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       setShowVisualizationSidebar(true);
       setSidebarInteracted(true);
       setAnalystActive(true);
+      // Save open state for this conversation
+      if (activeConversation) saveAnalystOpenState(activeConversation, true);
       return;
     }
 
