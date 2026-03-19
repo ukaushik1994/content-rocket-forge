@@ -2740,7 +2740,41 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     }
     systemPrompt += userIntelligenceContext;
 
-    // ===== ENHANCEMENT 4: AI Negotiation Before Generation =====
+    // ===== PHASE 4 FIX 10: Service Status Injection =====
+    try {
+      const configuredServices = new Set<string>();
+      if (apiKeysResult.status === 'fulfilled' && apiKeysResult.value.data) {
+        for (const key of apiKeysResult.value.data) {
+          configuredServices.add(key.service);
+        }
+      }
+      const connectedPlatforms = new Set<string>();
+      if (websiteConnsResult.status === 'fulfilled' && websiteConnsResult.value.data) {
+        for (const conn of websiteConnsResult.value.data) {
+          if (conn.status === 'active' || conn.status === 'connected') connectedPlatforms.add(conn.platform);
+        }
+      }
+      const unconfigured: string[] = [];
+      if (!configuredServices.has('serp') && !configuredServices.has('serpstack') && !configuredServices.has('serpapi')) {
+        unconfigured.push('SERP API (needed for keyword research, web search, and content gap analysis)');
+      }
+      if (!configuredServices.has('resend')) {
+        unconfigured.push('Resend (needed for sending emails)');
+      }
+      if (!connectedPlatforms.has('wordpress') && !connectedPlatforms.has('wp')) {
+        unconfigured.push('WordPress (needed for publish_to_website)');
+      }
+      if (unconfigured.length > 0) {
+        systemPrompt += `\n\n## ⚠️ SERVICE STATUS — UNCONFIGURED
+The following services are NOT configured for this user. Do NOT promise these capabilities:
+${unconfigured.map(s => `- ${s}`).join('\n')}
+If the user asks for a feature that requires an unconfigured service, inform them: "This requires [service] to be configured. You can set it up in Settings → API Keys."`;
+        console.log(`🔒 Service status: ${unconfigured.length} unconfigured service(s) flagged`);
+      }
+    } catch (svcErr) {
+      console.warn('[SERVICE-STATUS] Failed to check (non-blocking):', svcErr);
+    }
+
     const isContentCreation = /write|create|generate|draft|blog|article|post/i.test(userQuery) && queryIntent.categories?.includes('content');
     const skipNegotiation = /just write|skip questions|don't ask|no questions|quick generate/i.test(userQuery);
     
