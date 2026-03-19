@@ -6,6 +6,7 @@ interface AnalystInsightCardProps {
   title: string;
   description?: string;
   dotColor?: 'green' | 'amber' | 'red' | 'blue' | 'purple';
+  urgency?: 'critical' | 'high' | 'medium' | 'low';
   onExplore?: () => void;
 }
 
