@@ -3,6 +3,7 @@
  * Write/Create/Delete operations for keywords and SERP analysis
  */
 import { getApiKey } from '../shared/apiKeyService.ts';
+import { callAiProxyWithRetry } from '../shared/aiProxyRetry.ts';
 
 export const KEYWORD_ACTION_TOOL_DEFINITIONS = [
   {
