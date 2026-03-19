@@ -98,6 +98,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('30d');
   const [isChartLoading, setIsChartLoading] = useState(false);
+  const [showAllSessionCharts, setShowAllSessionCharts] = useState(false);
+  const [expandedChartIndex, setExpandedChartIndex] = useState<number | null>(null);
   
   const { user } = useAuth();
 
