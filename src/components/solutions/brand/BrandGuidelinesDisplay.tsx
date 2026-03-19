@@ -27,7 +27,77 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isExtracting, setIsExtracting] = React.useState(false);
+  const [isDetectingVoice, setIsDetectingVoice] = React.useState(false);
+  const [canDetectBrandVoice, setCanDetectBrandVoice] = React.useState(false);
   const { user } = useAuth();
+
+  React.useEffect(() => {
+    if (!user || !companyId) return;
+    const check = async () => {
+      try {
+        const { count } = await supabase
+          .from('content_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'published');
+        setCanDetectBrandVoice((count ?? 0) >= 2);
+      } catch (_) { /* non-blocking */ }
+    };
+    check();
+  }, [user, companyId]);
+
+  const handleDetectBrandVoice = async () => {
+    if (!user) return;
+    try {
+      setIsDetectingVoice(true);
+      toast.info('Analyzing your published content to detect brand voice...');
+      const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+        body: {
+          action: 'executeToolAction',
+          toolName: 'auto_detect_brand_voice',
+          toolArgs: {},
+          userId: user.id,
+        },
+      });
+      if (error) throw error;
+      toast.success('Brand voice detected! Refreshing guidelines...');
+      // Reload brand guidelines
+      const { data: bg } = await supabase
+        .from('brand_guidelines')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (bg) {
+        onSave({
+          id: bg.id,
+          companyId: bg.company_id || '',
+          primaryColor: bg.primary_color,
+          secondaryColor: bg.secondary_color,
+          accentColor: bg.accent_color || '',
+          neutralColor: bg.neutral_color || '',
+          fontFamily: bg.font_family,
+          secondaryFontFamily: bg.secondary_font_family || '',
+          tone: Array.isArray(bg.tone) ? bg.tone as string[] : [],
+          keywords: Array.isArray(bg.keywords) ? bg.keywords as string[] : [],
+          brandPersonality: bg.brand_personality || '',
+          missionStatement: bg.mission_statement || '',
+          doUse: Array.isArray(bg.do_use) ? bg.do_use as string[] : [],
+          dontUse: Array.isArray(bg.dont_use) ? bg.dont_use as string[] : [],
+          logoUsageNotes: bg.logo_usage_notes || '',
+          imageryGuidelines: bg.imagery_guidelines || '',
+          targetAudience: bg.target_audience || '',
+          brandStory: bg.brand_story || '',
+          brandValues: bg.brand_values || '',
+          brandAssetsUrl: bg.brand_assets_url || '',
+        });
+      }
+    } catch (error) {
+      console.error('Brand voice detection error:', error);
+      toast.error('Failed to detect brand voice');
+    } finally {
+      setIsDetectingVoice(false);
+    }
+  };
   
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
