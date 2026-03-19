@@ -12,6 +12,7 @@ interface AISummaryCardProps {
   dataSource?: string;
   onFeedback?: (helpful: boolean) => void;
   className?: string;
+  embedded?: boolean;
 }
 
 export const AISummaryCard: React.FC<AISummaryCardProps> = ({
@@ -21,7 +22,8 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
   timeframe = 'Last 30 days',
   dataSource,
   onFeedback,
-  className
+  className,
+  embedded = false
 }) => {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean | null>(null);
   
@@ -60,25 +62,29 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
   if (!summary) return null;
 
   return (
-    <div
-      className={cn("glass-card p-5 relative overflow-hidden", className)}
-      style={{
-        borderLeft: '2px solid rgba(139,92,246,0.3)',
-      }}
+    <div className={cn(
+      embedded ? "pt-4 mt-4 border-t border-border/10" : "glass-card p-5 relative overflow-hidden",
+      className
+    )}
+      style={!embedded ? { borderLeft: '2px solid rgba(139,92,246,0.3)' } : undefined}
     >
-      {/* Subtle ambient glow */}
-      <div
-        className="absolute top-0 right-0 w-24 h-24 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)',
-        }}
-      />
+      {!embedded && (
+        <div
+          className="absolute top-0 right-0 w-24 h-24 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)',
+          }}
+        />
+      )}
       <div className="flex items-start gap-3 relative">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(139,92,246,0.1)' }}>
           <Sparkles className="w-3.5 h-3.5 text-primary" />
         </div>
         <div className="flex-1">
-          <p className="text-sm leading-relaxed text-foreground/75">{summary}</p>
+          <p className={cn(
+            "leading-relaxed text-foreground/75",
+            embedded ? "text-base" : "text-sm"
+          )}>{summary}</p>
         </div>
       </div>
 
