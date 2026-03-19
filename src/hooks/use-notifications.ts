@@ -157,6 +157,7 @@ export const useNotifications = (options: UseNotificationsOptions = {}) => {
 
   return {
     notifications,
+    groupedNotifications,
     loading,
     error,
     unreadCount,
