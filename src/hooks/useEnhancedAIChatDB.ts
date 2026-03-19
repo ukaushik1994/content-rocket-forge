@@ -49,6 +49,7 @@ export const useEnhancedAIChatDB = () => {
   } | null>(null);
   const analystActiveRef = useRef(false);
   const freshConversationRef = useRef<string | null>(null);
+  const justCreatedConversationRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const messagesRef = useRef<EnhancedChatMessage[]>([]);
   const isSendingRef = useRef(false);
