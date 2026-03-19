@@ -366,6 +366,32 @@ export async function executeContentActionTool(
         if (toolArgs.meta_description !== undefined) updates.meta_description = toolArgs.meta_description;
         updates.updated_at = new Date().toISOString();
 
+        // Snapshot current version before updating (E1)
+        try {
+          const { data: current } = await supabase.from('content_items')
+            .select('id, title, content, meta_title, meta_description, seo_score')
+            .eq('id', toolArgs.content_id).eq('user_id', userId).single();
+          if (current && current.content) {
+            const { data: latestVersion } = await supabase.from('content_versions')
+              .select('version_number')
+              .eq('content_id', toolArgs.content_id)
+              .order('version_number', { ascending: false }).limit(1).maybeSingle();
+            const nextVersion = (latestVersion?.version_number || 0) + 1;
+            await supabase.from('content_versions').insert({
+              content_id: toolArgs.content_id,
+              user_id: userId,
+              content: current.content,
+              title: current.title,
+              meta_title: current.meta_title,
+              meta_description: current.meta_description,
+              seo_score: current.seo_score,
+              version_number: nextVersion,
+              change_source: 'pre_update_snapshot',
+              change_description: `Snapshot before update`
+            });
+          }
+        } catch (_) { /* non-blocking versioning */ }
+
         const { data, error } = await supabase.from('content_items')
           .update(updates)
           .eq('id', toolArgs.content_id)
