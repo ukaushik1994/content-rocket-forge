@@ -76,7 +76,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
     }
 
     return items.slice(0, 6);
-  }, [recommendations, contentCount, publishedCount, draftCount]);
+  }, [contentCount, publishedCount, draftCount]);
 
   const handleClick = (item: typeof actions[0]) => {
     if (item.directWizard && onSetVisualization) {
