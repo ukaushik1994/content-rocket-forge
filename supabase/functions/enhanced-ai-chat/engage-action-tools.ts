@@ -377,10 +377,14 @@ export async function executeEngageActionTool(
   console.log(`[ENGAGE-ACTION] ${toolName} | user: ${userId}`);
 
   try {
-    const workspaceId = await ensureWorkspace(supabase, userId);
+    const workspace = await ensureWorkspace(supabase, userId);
+    const workspaceId = workspace.id;
     if (!workspaceId) {
       return { success: false, message: 'Could not find or create Engage workspace.' };
     }
+    
+    // Notify user if workspace was just created
+    const workspaceNotice = workspace.isNew ? '\n\n✅ I\'ve set up your Engage workspace automatically.' : '';
 
     switch (toolName) {
       case 'create_contact': {
