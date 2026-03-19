@@ -74,6 +74,15 @@ export const EmailDashboard = () => {
     { icon: Target, label: 'Campaigns', value: activeCampaigns },
   ];
 
+  // SB-7: Check if Resend/email service is configured
+  const { data: hasEmailKey } = useQuery({
+    queryKey: ['email-service-configured'],
+    queryFn: async () => {
+      const { data } = await supabase.from('api_keys').select('id').eq('service', 'resend').eq('is_active', true).maybeSingle();
+      return !!data;
+    },
+  });
+
   return (
     <div className="w-full relative">
       <Helmet>
@@ -219,6 +228,29 @@ export const EmailDashboard = () => {
           })}
         </div>
       </motion.div>
+
+      {/* SB-7: Resend onboarding guidance */}
+      {hasEmailKey === false && (
+        <motion.div
+          className="max-w-7xl mx-auto mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+        >
+          <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div className="text-sm space-y-1">
+            <p className="font-medium text-foreground">Set up email delivery</p>
+            <p className="text-muted-foreground">
+              To send emails to real recipients, you need a <strong>Resend</strong> API key. Go to{' '}
+              <strong>Settings → API Keys</strong> and add your Resend key. 
+              Get a free key at <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">resend.com</a>.
+            </p>
+            <p className="text-muted-foreground text-xs mt-1">
+              Without this, emails will be composed and saved but won't be delivered.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* ─── Tab Content (open, no border wrapper) ─── */}
       <motion.div
