@@ -8,6 +8,7 @@ import { PremiumChartTypeSelect, ChartType } from './PremiumChartTypeSelect';
 import { PremiumMetricCard } from './PremiumMetricCard';
 import { ExportDropdown } from './ExportDropdown';
 import { AISummaryCard } from './AISummaryCard';
+import { AnalystNarrativeTimeline } from './analyst-sections/AnalystNarrativeTimeline';
 import { getMetricContext } from '@/hooks/useAnalystEngine';
 import { MiniSparkline } from './MiniSparkline';
 import { Progress } from '@/components/ui/progress';
