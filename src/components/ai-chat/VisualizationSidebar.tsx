@@ -900,7 +900,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         {analystState.platformData.map((dp, idx) => {
                           const context = getMetricContext(dp.label, dp.value, analystState.platformData);
                           return (
-                            <Card key={dp.label} className="p-3 bg-muted/10 border-border/20">
+                            <div key={dp.label} className="glass-card p-3">
                               <div className="flex items-start justify-between">
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
                                 {dp.trendData && dp.trendData.some(v => v > 0) && (
