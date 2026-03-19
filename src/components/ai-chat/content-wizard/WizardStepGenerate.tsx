@@ -1318,7 +1318,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                       setEditableContent(e.target.value);
                       onContentGenerated(e.target.value);
                     }}
-                    className="text-xs min-h-[300px] font-mono resize-none"
+                    className="text-xs min-h-[300px] font-mono resize-none bg-white/[0.04] border-white/[0.06]"
                     placeholder="Edit your content here..."
                   />
                 </TabsContent>
