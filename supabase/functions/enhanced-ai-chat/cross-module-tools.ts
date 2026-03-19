@@ -269,11 +269,20 @@ ${content.content || ''}
           workspaceId = newWsId;
         }
 
+        // Wrap content in email-safe HTML template (matching content_to_email pattern)
+        const wrappedHtml = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; line-height: 1.6;">
+${topContent.content || ''}
+</body>
+</html>`;
+
         const { data: emailCampaign, error: emailError } = await supabase.from('engage_email_campaigns').insert({
           workspace_id: workspaceId,
           name: `Campaign Digest: ${topContent.title}`,
           subject: toolArgs.subject || topContent.title,
-          body_html: topContent.content,
+          body_html: wrappedHtml,
           segment_id: toolArgs.segment_id || null,
           status: 'draft'
         }).select('id, name, subject, status').single();
