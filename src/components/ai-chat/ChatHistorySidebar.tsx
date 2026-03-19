@@ -93,6 +93,14 @@ const TAG_COLORS: Record<string, string> = {
   'follow-up': 'bg-warning/20 text-warning border-warning/30',
 };
 
+function getDateGroup(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isToday(date)) return 'Today';
+  if (isYesterday(date)) return 'Yesterday';
+  if (differenceInDays(new Date(), date) <= 7) return 'Previous 7 Days';
+  return 'Older';
+}
+
 // Sidebar nav item — premium style with active indicator
 const SidebarNavItem: React.FC<{
   icon: React.ReactNode;
