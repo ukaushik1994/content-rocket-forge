@@ -82,9 +82,10 @@ export interface AnalystState {
   lastUpdated: Date | null;
   isEnriching: boolean;
   messageCount: number;
-  healthScore: HealthScore | null;       // Enhancement A
-  crossSignalInsights: InsightItem[];    // Enhancement C
-  goalProgress: GoalProgress | null;     // Enhancement E
+  healthScore: HealthScore | null;
+  crossSignalInsights: InsightItem[];
+  goalProgress: GoalProgress | null;
+  strategicRecommendation: StrategicRecommendation | null;
 }
 
 // ─── Topic Detection ────────────────────────────────────────────────────────
