@@ -1363,7 +1363,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                   ].map(dim => (
                     <div key={dim.label} className="flex items-center gap-2 text-[10px]">
                       <span className="text-muted-foreground w-28 flex-shrink-0">{dim.label}</span>
-                      <Progress value={dim.score} className="h-1.5 flex-1" />
+                      <Progress value={dim.score} className="h-1.5 flex-1 bg-white/[0.06]" />
                       <span className="text-foreground font-medium w-7 text-right">{dim.score}</span>
                     </div>
                   ))}
