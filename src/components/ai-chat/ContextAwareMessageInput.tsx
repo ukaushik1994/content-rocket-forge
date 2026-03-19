@@ -150,7 +150,13 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const handleSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
     const trimmed = message.trim();
-    if (!trimmed || isLoading) return;
+    if (!trimmed) return;
+    if (isLoading) {
+      // Rapid-fire queue feedback: inform user instead of silently dropping
+      const { toast } = await import('sonner').then(m => ({ toast: m.toast }));
+      toast.info('Please wait for the current response to finish');
+      return;
+    }
     
     if (webSearchMode) {
       onSendMessage(`[web-search] ${trimmed}`);
