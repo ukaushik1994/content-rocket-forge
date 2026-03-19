@@ -571,6 +571,58 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
 
+                    {/* Proactive Insights */}
+                    {proactiveInsights.length > 0 && (
+                      <motion.div 
+                        className="flex flex-wrap gap-2 justify-center max-w-md"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                      >
+                        {proactiveInsights.map((insight) => (
+                          <button
+                            key={insight.type}
+                            onClick={() => {
+                              const prompts: Record<string, string> = {
+                                stale: 'Show me my stale drafts that need attention',
+                                failed: 'What content generation tasks failed?',
+                                empty_cal: 'Help me plan content for this week',
+                                approvals: 'Show me content pending my review'
+                              };
+                              sendMessage(prompts[insight.type] || '');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors"
+                          >
+                            {insight.icon}
+                            {insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+
+                    {/* Workflow Templates */}
+                    {workflowTemplates.length > 0 && (
+                      <motion.div
+                        className="flex flex-col items-center gap-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                      >
+                        <span className="text-xs text-muted-foreground">Your workflows</span>
+                        <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+                          {workflowTemplates.map((tpl, i) => (
+                            <button
+                              key={i}
+                              onClick={() => sendMessage(tpl)}
+                              className="px-3 py-1.5 rounded-full text-xs bg-muted/50 hover:bg-muted border border-border/30 hover:border-border/60 transition-colors text-foreground/80"
+                            >
+                              {tpl}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
                     {/* Pill suggestions */}
                     <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
                   </motion.div>}
