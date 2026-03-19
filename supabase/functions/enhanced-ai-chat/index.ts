@@ -745,7 +745,15 @@ These are DIFFERENT datasets. Don't mix them.
 {proactiveInsights}
 `;
 
-// Platform Knowledge module - comprehensive understanding of the entire platform
+// Lightweight platform basics (~200 tokens) - used by default
+const PLATFORM_BASICS = `
+You are the AI brain of **Creaiter** — an AI-powered content marketing platform.
+Key routes: /repository (content), /campaigns, /keywords, /analytics, /ai-proposals, /calendar, /offerings, /content-approval.
+Engage: /engage/email, /engage/contacts, /engage/segments, /engage/journeys, /engage/automations, /engage/social, /engage/activity.
+Sidebar panels: Content Wizard, Research Intelligence, Analyst, Repository, Approvals.
+Tools: 29 read tools + write tools for content, engage, campaigns, keywords, offerings, and cross-module actions.`;
+
+// Platform Knowledge module - comprehensive understanding of the entire platform (full version)
 const PLATFORM_KNOWLEDGE_MODULE = `
 🏗️ PLATFORM ARCHITECTURE & COMPLETE MODULE KNOWLEDGE:
 
