@@ -1081,7 +1081,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               <PenLine className="w-3 h-3" /> Continue Editing
             </Button>
             {savedStatus === 'draft' && (
-              <Button size="sm" variant="outline" onClick={() => { if (savedId) { saveContent('published'); } }} disabled={isSaving} className="text-xs gap-1.5 w-full justify-start h-8">
+              <Button size="sm" variant="outline" onClick={() => { if (savedId) { saveContent('published'); } }} disabled={isSaving} className="text-xs gap-1.5 w-full justify-start h-8 border-white/[0.06] hover:bg-white/[0.04]">
                 <Send className="w-3 h-3" /> Publish Now
               </Button>
             )}
