@@ -1404,7 +1404,8 @@ export function useAnalystEngine(
   useEffect(() => {
     if (!isActive || !userId || platformData.length === 0) return;
 
-    computeCrossSignals(userId, platformData).then(signals => {
+    const userMsgs = messages.filter(m => m.role === 'user').map(m => m.content);
+    computeCrossSignals(userId, platformData, userMsgs).then(signals => {
       if (signals.length > 0) setCrossSignalInsights(signals);
     });
   }, [isActive, userId, platformData]);
