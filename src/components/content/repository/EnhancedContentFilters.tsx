@@ -82,6 +82,7 @@ export const EnhancedContentFilters: React.FC<EnhancedContentFiltersProps> = ({
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="draft">Drafts</SelectItem>
+              <SelectItem value="ready_to_publish">Ready to Publish (SEO ≥ 60)</SelectItem>
               <SelectItem value="published">Published</SelectItem>
               <SelectItem value="archived">Archived</SelectItem>
             </SelectContent>

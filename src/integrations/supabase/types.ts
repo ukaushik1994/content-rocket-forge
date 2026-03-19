@@ -2616,6 +2616,7 @@ export type Database = {
           campaign_id: string | null
           content: string | null
           content_type: Database["public"]["Enums"]["content_type_enum"] | null
+          conversation_id: string | null
           created_at: string
           generated_images: Json | null
           generated_videos: Json | null
@@ -2643,6 +2644,7 @@ export type Database = {
           campaign_id?: string | null
           content?: string | null
           content_type?: Database["public"]["Enums"]["content_type_enum"] | null
+          conversation_id?: string | null
           created_at?: string
           generated_images?: Json | null
           generated_videos?: Json | null
@@ -2670,6 +2672,7 @@ export type Database = {
           campaign_id?: string | null
           content?: string | null
           content_type?: Database["public"]["Enums"]["content_type_enum"] | null
+          conversation_id?: string | null
           created_at?: string
           generated_images?: Json | null
           generated_videos?: Json | null
@@ -2698,6 +2701,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
             referencedColumns: ["id"]
           },
           {
