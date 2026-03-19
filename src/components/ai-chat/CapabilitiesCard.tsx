@@ -127,7 +127,7 @@ export const CapabilitiesCard: React.FC<CapabilitiesCardProps> = ({ onTryExample
                         <button
                           key={ex}
                           onClick={() => onTryExample?.(ex)}
-                          className="text-[10px] px-2.5 py-1 rounded-full border border-amber-300/20 text-amber-300/70 hover:bg-amber-300/10 hover:text-amber-200 transition-colors duration-150"
+                          className="text-[10px] px-2.5 py-1 rounded-full border border-primary/20 text-primary/70 hover:bg-primary/10 hover:text-primary transition-colors duration-150"
                         >
                           {ex}
                         </button>
