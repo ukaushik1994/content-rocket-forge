@@ -1498,6 +1498,55 @@ export const useEnhancedAIChatDB = () => {
     analystActiveRef.current = active;
   }, []);
 
+  // Cross-tab synchronization via Supabase Realtime
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('ai-chat-sync')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'ai_messages', filter: `conversation_id=eq.${activeConversation}` },
+        (payload) => {
+          const newMsg = payload.new as any;
+          // Skip if message already exists in local state (own write)
+          setMessages(prev => {
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, {
+              id: newMsg.id,
+              role: newMsg.type === 'user' ? 'user' as const : 'assistant' as const,
+              content: newMsg.content,
+              timestamp: new Date(newMsg.created_at),
+              status: newMsg.status as any,
+              visualData: newMsg.visual_data,
+              actions: [],
+            }];
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'ai_messages' },
+        (payload) => {
+          const deletedId = (payload.old as any).id;
+          setMessages(prev => prev.filter(m => m.id !== deletedId));
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ai_conversations', filter: `user_id=eq.${user.id}` },
+        () => {
+          // Refresh conversation list on any change from other tabs
+          loadConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, activeConversation, loadConversations]);
+
   return {
     conversations,
     activeConversation,

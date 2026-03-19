@@ -212,7 +212,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 </div>
               </div>
               
-              {/* Message Actions (Edit/Delete/Copy) */}
+              {/* Message Actions (Edit/Delete/Copy/Regenerate) */}
               <div className="absolute top-2 right-2">
                 <MessageActions
                   messageId={message.id}
@@ -221,6 +221,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   timestamp={message.timestamp}
                   onEdit={onEditMessage}
                   onDelete={onDeleteMessage}
+                  onRegenerate={!isUser ? onRetry : undefined}
                 />
               </div>
             </Card>

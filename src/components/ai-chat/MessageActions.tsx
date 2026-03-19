@@ -14,7 +14,8 @@ import {
   Trash2, 
   Copy, 
   Check,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { MessageEditDialog } from './MessageEditDialog';
@@ -26,6 +27,7 @@ interface MessageActionsProps {
   timestamp: Date;
   onEdit?: (messageId: string, newContent: string) => Promise<void>;
   onDelete?: (messageId: string) => Promise<void>;
+  onRegenerate?: () => void;
 }
 
 const EDIT_WINDOW_MINUTES = 5;
@@ -36,13 +38,13 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
   isUser,
   timestamp,
   onEdit,
-  onDelete
+  onDelete,
+  onRegenerate
 }) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Check if within edit window (5 minutes)
   const isWithinEditWindow = () => {
     const now = new Date();
     const diffMs = now.getTime() - timestamp.getTime();
@@ -87,47 +89,72 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
   };
 
   const canEdit = isUser && isWithinEditWindow() && onEdit;
-  const canDelete = onDelete; // Allow delete for both user and assistant messages
+  const canDelete = onDelete;
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      {/* Always-visible quick actions for mobile + desktop */}
+      <div className="flex items-center gap-0.5">
+        {/* Copy — always visible */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleCopy}
+          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity"
+          aria-label="Copy message"
+        >
+          <Copy className="h-3 w-3 text-muted-foreground" />
+        </Button>
+
+        {/* Regenerate — AI messages only */}
+        {!isUser && onRegenerate && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={onRegenerate}
+            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity"
+            aria-label="Regenerate response"
           >
-            <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+            <RefreshCw className="h-3 w-3 text-muted-foreground" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={handleCopy}>
-            <Copy className="h-3.5 w-3.5 mr-2" />
-            Copy
-          </DropdownMenuItem>
-          
-          {canEdit && (
-            <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-              <Edit2 className="h-3.5 w-3.5 mr-2" />
-              Edit
-            </DropdownMenuItem>
-          )}
-          
-          {canDelete && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => setShowDeleteConfirm(true)}
-                className="text-destructive focus:text-destructive"
+        )}
+
+        {/* More menu for Edit/Delete */}
+        {(canEdit || canDelete) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity"
               >
-                <Trash2 className="h-3.5 w-3.5 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+                <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              {canEdit && (
+                <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                  <Edit2 className="h-3.5 w-3.5 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              
+              {canDelete && (
+                <>
+                  {canEdit && <DropdownMenuSeparator />}
+                  <DropdownMenuItem 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
 
       {/* Delete Confirmation */}
       <AnimatePresence>

@@ -8,6 +8,7 @@ import { PlusMenuDropdown } from './PlusMenuDropdown';
 import { FileUploadHandler } from './FileUploadHandler';
 import { cn } from '@/lib/utils';
 import { VoiceInputHandler } from './VoiceInputHandler';
+import { toast } from 'sonner';
 
 interface Solution {
   id: string;
@@ -150,7 +151,11 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const handleSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
     const trimmed = message.trim();
-    if (!trimmed || isLoading) return;
+    if (!trimmed) return;
+    if (isLoading) {
+      toast.info('Please wait for the current response to finish');
+      return;
+    }
     
     if (webSearchMode) {
       onSendMessage(`[web-search] ${trimmed}`);
@@ -229,7 +234,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      textarea.style.height = Math.min(textarea.scrollHeight, 160) + 'px';
     }
   }, [message]);
 
@@ -365,7 +370,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             }}
             placeholder={activePlaceholder}
             disabled={isLoading}
-            className="flex-1 min-h-[24px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-[15px] leading-relaxed"
+            className="flex-1 min-h-[24px] max-h-[160px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-[15px] leading-relaxed"
             rows={1}
           />
 
