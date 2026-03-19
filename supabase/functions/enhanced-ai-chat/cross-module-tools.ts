@@ -407,6 +407,16 @@ ${topContent.content || ''}
           posts = { posts: [], raw: rawContent };
         }
 
+        // Track performance signal: social_repurpose
+        try {
+          await supabase.from('content_performance_signals').insert({
+            content_id: toolArgs.content_id,
+            user_id: userId,
+            signal_type: 'social_repurpose',
+            metadata: { platforms: toolArgs.platforms, post_count: posts.posts?.length || 0 }
+          });
+        } catch (_) { /* non-blocking */ }
+
         return {
           success: true,
           message: `Generated ${posts.posts?.length || 0} social posts from "${content.title}". Note: Direct social publishing is coming soon — your posts are saved as drafts. Copy and post manually for now.`,
