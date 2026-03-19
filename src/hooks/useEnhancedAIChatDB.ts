@@ -1673,6 +1673,7 @@ export const useEnhancedAIChatDB = () => {
     handleCancelAction,
     setAnalystActive,
     handleFeedback,
-    handlePinMessage
+    handlePinMessage,
+    justCreatedConversation: justCreatedConversationRef,
   };
 };
