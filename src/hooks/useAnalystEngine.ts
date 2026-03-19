@@ -191,6 +191,7 @@ function computeCrossSignals(
             type: 'warning',
             source: 'cross-signal',
             timestamp: now,
+            urgency: 'critical',
           });
         } else if (avgFirst > avgLast + 10) {
           signals.push({
