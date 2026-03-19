@@ -10,15 +10,15 @@
 | SB-19 | ✅ | Keyword difficulty warning in `keyword-action-tools.ts` — warns when difficulty > 60 and user has < 20 published articles |
 | SB-20 | ✅ | Cannibalization prevention in `content-action-tools.ts` — pre-generation check for duplicate keyword targeting |
 
-## Phase 2: Honest Messaging + Discovery (NEXT)
+## Phase 2: Honest Messaging + Discovery ✅ COMPLETE
 
-| Item | What | Where |
-|------|------|-------|
-| SB-6 | Social posting stub banner | Social dashboard + tool response |
-| SB-7 | Email Resend onboarding guidance | Engage email first-visit |
-| SB-11 | Proactive tool suggestion in system prompt | `enhanced-ai-chat` system prompt |
+| Item | Status | What was done |
+|------|--------|---------------|
+| SB-6 | ✅ | Social dashboard honesty banner — "Posts are saved as drafts, direct publishing coming soon" always visible |
+| SB-7 | ✅ | Email Resend onboarding — guidance card shown when no Resend API key configured, with link to resend.com |
+| SB-11 | ✅ | Tool discovery in system prompt — AI now proactively suggests relevant tools based on conversation context |
 
-## Phase 3: Content Lifecycle Fixes
+## Phase 3: Content Lifecycle Fixes (NEXT)
 
 | Item | What | Where |
 |------|------|-------|
