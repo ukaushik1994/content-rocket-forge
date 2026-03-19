@@ -4,6 +4,7 @@
  */
 
 import { getApiKey } from '../shared/apiKeyService.ts';
+import { callAiProxyWithRetry } from '../shared/aiProxyRetry.ts';
 
 export const CROSS_MODULE_TOOL_DEFINITIONS = [
   {
