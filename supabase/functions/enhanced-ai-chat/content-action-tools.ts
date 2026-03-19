@@ -723,7 +723,30 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         }).select('id, title, scheduled_date, status, priority, content_type, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Scheduled "${data.title}" for ${data.scheduled_date}`, item: data };
+
+        // Calendar topic diversity check (Fix 15)
+        let diversityNote = '';
+        try {
+          const scheduledMonth = toolArgs.scheduled_date?.substring(0, 7); // YYYY-MM
+          if (scheduledMonth) {
+            const { data: monthItems } = await supabase.from('content_calendar')
+              .select('content_type')
+              .eq('user_id', userId)
+              .gte('scheduled_date', `${scheduledMonth}-01`)
+              .lt('scheduled_date', `${scheduledMonth}-32`);
+
+            if (monthItems && monthItems.length >= 3) {
+              const typeCounts: Record<string, number> = {};
+              monthItems.forEach((item: any) => { typeCounts[item.content_type] = (typeCounts[item.content_type] || 0) + 1; });
+              const maxType = Object.entries(typeCounts).sort(([,a]: any, [,b]: any) => b - a)[0];
+              if (maxType && (maxType[1] as number) / monthItems.length > 0.7) {
+                diversityNote = ` 💡 Tip: ${Math.round((maxType[1] as number) / monthItems.length * 100)}% of your ${scheduledMonth} content is "${maxType[0]}" — consider mixing in different formats for better engagement.`;
+              }
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
+        return { success: true, message: `Scheduled "${data.title}" for ${data.scheduled_date}${diversityNote}`, item: data };
       }
 
       case 'update_calendar_item': {
