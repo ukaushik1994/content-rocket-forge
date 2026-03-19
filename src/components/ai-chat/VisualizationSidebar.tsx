@@ -959,7 +959,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                   );
                                 })()}
                               </div>
-                            </Card>
+                            </div>
                           ))}
                           {analystState.accumulatedCharts.length > 4 && !showAllSessionCharts && (
                             <button onClick={() => setShowAllSessionCharts(true)} className="col-span-2 text-[10px] text-primary/60 hover:text-primary transition-colors py-1">
