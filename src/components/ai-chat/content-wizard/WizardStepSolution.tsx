@@ -105,7 +105,10 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
 
       {/* Solution Selection */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Choose Your Solution</h3>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">2. Solution</span>
+        </div>
         <p className="text-xs text-muted-foreground mt-0.5">Select the solution to create content for</p>
       </div>
 
