@@ -900,6 +900,87 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
 
       // Glossary write removed — feature deprecated
 
+      case 'get_content_versions': {
+        const { data, error } = await supabase.from('content_versions')
+          .select('id, version_number, title, seo_score, change_source, change_description, created_at')
+          .eq('content_id', toolArgs.content_id)
+          .eq('user_id', userId)
+          .order('version_number', { ascending: false })
+          .limit(toolArgs.limit || 10);
+
+        if (error) throw error;
+
+        return {
+          success: true,
+          versions: data || [],
+          count: data?.length || 0,
+          message: data?.length
+            ? `Found ${data.length} version(s). Latest: v${data[0].version_number} (${data[0].change_source}).`
+            : 'No version history found for this content.'
+        };
+      }
+
+      case 'restore_content_version': {
+        // Find the target version
+        const { data: targetVersion, error: findError } = await supabase.from('content_versions')
+          .select('*')
+          .eq('content_id', toolArgs.content_id)
+          .eq('user_id', userId)
+          .eq('version_number', toolArgs.version_number)
+          .single();
+
+        if (findError || !targetVersion) {
+          return { success: false, message: `Version ${toolArgs.version_number} not found.` };
+        }
+
+        // Snapshot current state first
+        const { data: current } = await supabase.from('content_items')
+          .select('title, content, meta_title, meta_description, seo_score')
+          .eq('id', toolArgs.content_id).eq('user_id', userId).single();
+
+        if (current) {
+          const { data: latestVersion } = await supabase.from('content_versions')
+            .select('version_number')
+            .eq('content_id', toolArgs.content_id)
+            .order('version_number', { ascending: false }).limit(1).maybeSingle();
+          const nextVersion = (latestVersion?.version_number || 0) + 1;
+          await supabase.from('content_versions').insert({
+            content_id: toolArgs.content_id,
+            user_id: userId,
+            content: current.content,
+            title: current.title,
+            meta_title: current.meta_title,
+            meta_description: current.meta_description,
+            seo_score: current.seo_score,
+            version_number: nextVersion,
+            change_source: 'pre_restore_snapshot',
+            change_description: `Snapshot before restoring to v${toolArgs.version_number}`
+          });
+        }
+
+        // Restore the target version
+        const restoreUpdates: any = { updated_at: new Date().toISOString() };
+        if (targetVersion.content) restoreUpdates.content = targetVersion.content;
+        if (targetVersion.title) restoreUpdates.title = targetVersion.title;
+        if (targetVersion.meta_title) restoreUpdates.meta_title = targetVersion.meta_title;
+        if (targetVersion.meta_description) restoreUpdates.meta_description = targetVersion.meta_description;
+
+        const { data: restored, error: restoreError } = await supabase.from('content_items')
+          .update(restoreUpdates)
+          .eq('id', toolArgs.content_id)
+          .eq('user_id', userId)
+          .select('id, title, status')
+          .single();
+
+        if (restoreError) throw restoreError;
+
+        return {
+          success: true,
+          message: `Restored "${restored.title}" to version ${toolArgs.version_number}. Previous state saved as a new version.`,
+          item: restored
+        };
+      }
+
       default:
         return { error: `Unknown content action tool: ${toolName}` };
     }
