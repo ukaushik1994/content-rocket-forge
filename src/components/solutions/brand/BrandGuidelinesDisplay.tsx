@@ -478,7 +478,27 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
             </motion.div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {canDetectBrandVoice && (
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button 
+                  onClick={handleDetectBrandVoice}
+                  variant="outline"
+                  className="gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                  disabled={isDetectingVoice || !companyId}
+                >
+                  {isDetectingVoice ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  Detect Brand Voice
+                </Button>
+              </motion.div>
+            )}
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
