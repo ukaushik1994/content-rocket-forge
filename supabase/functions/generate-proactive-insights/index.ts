@@ -113,7 +113,8 @@ Deno.serve(async (req) => {
           title: `${needsRefresh.length} competitor(s) need fresh analysis`,
           description: `${needsRefresh.map((c: any) => c.name).join(', ')} haven't been analyzed in 30+ days.`,
           action: `Analyze my competitors and show me what's changed recently`,
-          priority: 4
+          priority: 4,
+          priority_score: 60
         });
       }
 
