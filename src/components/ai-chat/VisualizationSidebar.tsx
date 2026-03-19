@@ -1166,7 +1166,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           }
 
                           return dynamicPrompts.slice(0, 5).map((prompt) => (
-                            <button key={prompt.id} onClick={() => onSendMessage?.(prompt.action)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                            <button key={prompt.id} onClick={() => onSendMessage?.(prompt.action)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
                               {prompt.label}
                             </button>
                           ));
