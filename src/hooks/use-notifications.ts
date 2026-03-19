@@ -132,6 +132,29 @@ export const useNotifications = (options: UseNotificationsOptions = {}) => {
   const categories = Array.from(new Set(notifications.map(n => n.module).filter(Boolean)));
   const hasNotifications = notifications.length > 0;
 
+  // Phase 4: Group notifications by title + hour to reduce clutter
+  const groupedNotifications = React.useMemo(() => {
+    const groups = new Map<string, EnhancedDashboardAlert & { groupCount: number }>();
+    
+    for (const n of notifications) {
+      const hourKey = new Date(n.created_at).toISOString().slice(0, 13); // YYYY-MM-DDTHH
+      const groupKey = `${n.title || n.message.slice(0, 30)}_${hourKey}`;
+      
+      const existing = groups.get(groupKey);
+      if (existing) {
+        existing.groupCount += 1;
+        // Keep the most recent one's data
+        if (new Date(n.created_at) > new Date(existing.created_at)) {
+          groups.set(groupKey, { ...n, groupCount: existing.groupCount });
+        }
+      } else {
+        groups.set(groupKey, { ...n, groupCount: 1 });
+      }
+    }
+    
+    return Array.from(groups.values());
+  }, [notifications]);
+
   return {
     notifications,
     loading,
