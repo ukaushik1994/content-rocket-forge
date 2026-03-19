@@ -47,7 +47,15 @@ export const AnalystInsightCard: React.FC<AnalystInsightCardProps> = ({
         <Icon className={cn('w-4.5 h-4.5', iconColorMap[dotColor])} />
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
-        <p className="text-xs font-medium text-foreground/80 leading-relaxed">{title}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-xs font-medium text-foreground/80 leading-relaxed flex-1">{title}</p>
+          {urgency === 'critical' && (
+            <span className="text-[8px] font-bold text-rose-400 uppercase tracking-wider flex-shrink-0">Urgent</span>
+          )}
+          {urgency === 'high' && (
+            <span className="text-[8px] font-bold text-amber-400 uppercase tracking-wider flex-shrink-0">High</span>
+          )}
+        </div>
         {description && (
           <p className="text-[10px] text-muted-foreground/50 mt-1 line-clamp-2">{description}</p>
         )}
