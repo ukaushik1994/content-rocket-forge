@@ -1210,6 +1210,19 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       </div>
                     </div>
                   )}
+
+                  {/* 9. SESSION SUMMARY COUNTER */}
+                  {analystState && (analystState.accumulatedCharts.length > 0 || mergedInsightsFeed.length > 0 || analystState.webSearchResults.length > 0) && (
+                    <div className="border-t border-border/10 pt-3">
+                      <p className="text-[9px] text-center text-muted-foreground/40">
+                        {[
+                          analystState.accumulatedCharts.length > 0 && `${analystState.accumulatedCharts.length} chart${analystState.accumulatedCharts.length > 1 ? 's' : ''}`,
+                          mergedInsightsFeed.length > 0 && `${mergedInsightsFeed.length} insight${mergedInsightsFeed.length > 1 ? 's' : ''}`,
+                          analystState.webSearchResults.length > 0 && `${analystState.webSearchResults.length} web search${analystState.webSearchResults.length > 1 ? 'es' : ''}`,
+                        ].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </motion.div>
