@@ -80,6 +80,22 @@ export const useEnhancedAIChatDB = () => {
     if (!user) return;
     
     try {
+      // Auto-cleanup empty conversations on full load (no search active)
+      if (!options?.search) {
+        const activeId = activeConversationRef.current;
+        let cleanupQuery = supabase
+          .from('ai_conversations')
+          .delete()
+          .eq('user_id', user.id)
+          .not('id', 'in', `(SELECT DISTINCT conversation_id FROM ai_messages)`);
+        
+        if (activeId) {
+          cleanupQuery = cleanupQuery.neq('id', activeId);
+        }
+        
+        await cleanupQuery;
+      }
+
       let query = supabase
         .from('ai_conversations')
         .select('*')
