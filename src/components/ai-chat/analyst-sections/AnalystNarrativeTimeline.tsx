@@ -128,40 +128,47 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
       fixed: true,
       render: () => <HealthAssessmentSection analystState={analystState!} onSendMessage={onSendMessage} />,
     },
-    // Adaptive sections (reordered by interaction frequency)
+    // Adaptive sections (reordered by topic relevance + interaction frequency)
     {
       id: 'performance-trajectory',
       visible: hasChartData && !!analystState,
+      category: 'analytics',
       render: () => <PerformanceTrajectorySection analystState={analystState!} chartData={chartData} dataKeys={dataKeys} onSendMessage={onSendMessage} />,
     },
     {
       id: 'strategic-divergence',
       visible: hasAnomalies && !!analystState,
+      category: 'analytics',
       render: () => <StrategicDivergenceSection insights={analystState!.insightsFeed} onSendMessage={onSendMessage} />,
     },
     {
       id: 'content-intelligence',
       visible: hasContentTopics && !!analystState,
+      category: 'content',
       render: () => <ContentIntelligenceSection platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
     },
     {
       id: 'keyword-landscape',
       visible: hasKeywordTopics && !!analystState,
+      category: 'keywords',
       render: () => <KeywordLandscapeSection topics={analystState!.topics} platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
     },
     {
       id: 'campaign-pulse',
       visible: hasCampaigns && !!analystState,
+      category: 'campaigns',
       render: () => <CampaignPulseSection platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
     },
     {
       id: 'engagement-metrics',
       visible: hasEngagement && !!analystState,
+      category: 'analytics',
       render: () => <EngagementMetricsSection platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
     },
     {
       id: 'competitive-position',
       visible: hasCompetitors && !!analystState,
+      category: 'competitors',
       render: () => <CompetitivePositionSection topics={analystState!.topics} onSendMessage={onSendMessage} />,
     },
     {
@@ -180,12 +187,15 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
   const fixedSections = sections.filter(s => s.fixed && s.visible);
   const adaptiveSections = sections.filter(s => !s.fixed && s.visible);
 
-  // Sort adaptive sections by interaction count (most-clicked first)
+  // Topic-aware relevance scoring + interaction frequency
+  const activeCategories = analystState?.topics?.map(t => t.category) || [];
   const interactions = getSectionInteractions();
   adaptiveSections.sort((a, b) => {
+    const aRelevance = a.category && activeCategories.includes(a.category as any) ? 10 : 0;
+    const bRelevance = b.category && activeCategories.includes(b.category as any) ? 10 : 0;
     const aCount = interactions[a.id] || 0;
     const bCount = interactions[b.id] || 0;
-    return bCount - aCount;
+    return (bRelevance + bCount) - (aRelevance + aCount);
   });
 
   const orderedSections = [...fixedSections, ...adaptiveSections];

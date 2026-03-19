@@ -1069,6 +1069,50 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         };
       }
 
+      case 'compare_content': {
+        const ids = toolArgs.content_ids;
+        if (!ids || ids.length < 2) return { error: 'Need at least 2 content IDs to compare' };
+        if (ids.length > 5) return { error: 'Maximum 5 items for comparison' };
+        
+        const { data: items, error: fetchErr } = await supabase.from('content_items')
+          .select('id, title, content, status, content_type, seo_score, main_keyword, meta_title, meta_description, created_at, updated_at')
+          .eq('user_id', userId)
+          .in('id', ids);
+        
+        if (fetchErr) throw fetchErr;
+        if (!items || items.length < 2) return { error: 'Could not find enough matching content items' };
+        
+        const comparison = items.map(item => {
+          const wordCount = item.content ? item.content.split(/\s+/).length : 0;
+          const h2Count = (item.content?.match(/<h2/gi) || []).length + (item.content?.match(/^##\s/gm) || []).length;
+          const h3Count = (item.content?.match(/<h3/gi) || []).length + (item.content?.match(/^###\s/gm) || []).length;
+          const hasFAQ = /faq|frequently asked/i.test(item.content || '');
+          const listCount = (item.content?.match(/<li/gi) || []).length + (item.content?.match(/^[-*]\s/gm) || []).length;
+          const seoScore = item.seo_score || calculateBasicSeoScore(item.content || '', item.main_keyword || '', item.meta_title, item.meta_description);
+          const ageInDays = Math.floor((Date.now() - new Date(item.created_at).getTime()) / 86400000);
+          
+          return {
+            id: item.id,
+            title: item.title,
+            status: item.status,
+            type: item.content_type,
+            wordCount,
+            seoScore,
+            headings: { h2: h2Count, h3: h3Count },
+            hasFAQ,
+            listItems: listCount,
+            ageInDays,
+            keyword: item.main_keyword || 'none',
+          };
+        });
+        
+        return {
+          success: true,
+          comparison,
+          summary: `Compared ${comparison.length} items. Highest SEO: "${comparison.sort((a, b) => b.seoScore - a.seoScore)[0].title}" (${comparison[0].seoScore}/100).`
+        };
+      }
+
       default:
         return { error: `Unknown content action tool: ${toolName}` };
     }
