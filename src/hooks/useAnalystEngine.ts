@@ -903,7 +903,6 @@ export function useAnalystEngine(
   }, [messages.length, isActive, fetchPlatformData]);
 
   // ─── Proactive anomaly detection ────────────────────────────────────────
-  // ─── Proactive anomaly detection ────────────────────────────────────────
   useEffect(() => {
     if (!isActive || !userId || platformData.length === 0) return;
 
