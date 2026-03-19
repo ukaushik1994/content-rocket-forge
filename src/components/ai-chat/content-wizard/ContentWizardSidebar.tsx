@@ -85,35 +85,70 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
   contentType = 'blog',
   extractedContext,
 }) => {
+  // Phase 5c: Check for saved wizard progress on mount
+  const WIZARD_DRAFT_KEY = 'wizard_draft_state';
+  const WIZARD_PRESET_KEY = 'wizard_last_preset';
+  const DRAFT_EXPIRY_MS = 60 * 60 * 1000; // 60 minutes
+
+  const loadSavedDraft = (): WizardState | null => {
+    try {
+      const raw = localStorage.getItem(WIZARD_DRAFT_KEY);
+      if (!raw) return null;
+      const { state, savedAt } = JSON.parse(raw);
+      if (Date.now() - savedAt > DRAFT_EXPIRY_MS) {
+        localStorage.removeItem(WIZARD_DRAFT_KEY);
+        return null;
+      }
+      return state as WizardState;
+    } catch { return null; }
+  };
+
+  // Phase 5a: Load last-used preset (writing style, expertise, word count, etc.)
+  const loadPreset = (): Partial<WizardState> => {
+    try {
+      const raw = localStorage.getItem(WIZARD_PRESET_KEY);
+      if (!raw) return {};
+      return JSON.parse(raw);
+    } catch { return {}; }
+  };
+
+  const savedDraft = loadSavedDraft();
+  const savedPreset = loadPreset();
+
+  const [showResumePrompt, setShowResumePrompt] = useState(!!savedDraft);
   const [currentStep, setCurrentStep] = useState(0);
-  const [wizardState, setWizardState] = useState<WizardState>({
-    keyword,
-    contentType: extractedContext?.content_type || contentType,
-    title: '',
-    selectedSolution: null,
-    researchSelections: { faqs: [], contentGaps: [], relatedKeywords: [], serpHeadings: [] },
-    serpData: null,
-    outline: [],
-    wordCount: null,
-    wordCountMode: 'ai',
-    writingStyle: (extractedContext?.writing_style as WizardState['writingStyle']) || 'conversational',
-    expertiseLevel: 'intermediate',
-    contentArticleType: 'comprehensive',
-    includeStats: false,
-    includeCaseStudies: false,
-    includeFAQs: true,
-    metaTitle: '',
-    metaDescription: '',
-    generatedContent: '',
-    contentBrief: {
-      targetAudience: extractedContext?.target_audience || '',
-      contentGoal: extractedContext?.content_goal || '',
-      tone: extractedContext?.tone || '',
-      specificPoints: Array.isArray(extractedContext?.specific_points) 
-        ? extractedContext.specific_points.join(', ') 
-        : '',
-    },
-    additionalInstructions: extractedContext?.additional_instructions || '',
+  const [wizardState, setWizardState] = useState<WizardState>(() => {
+    // If extractedContext is provided, build from that + preset defaults
+    const preset = savedPreset;
+    return {
+      keyword,
+      contentType: extractedContext?.content_type || contentType,
+      title: '',
+      selectedSolution: null,
+      researchSelections: { faqs: [], contentGaps: [], relatedKeywords: [], serpHeadings: [] },
+      serpData: null,
+      outline: [],
+      wordCount: (preset.wordCount as number) || null,
+      wordCountMode: (preset.wordCountMode as WizardState['wordCountMode']) || 'ai',
+      writingStyle: (extractedContext?.writing_style as WizardState['writingStyle']) || (preset.writingStyle as WizardState['writingStyle']) || 'conversational',
+      expertiseLevel: (preset.expertiseLevel as WizardState['expertiseLevel']) || 'intermediate',
+      contentArticleType: (preset.contentArticleType as WizardState['contentArticleType']) || 'comprehensive',
+      includeStats: preset.includeStats ?? false,
+      includeCaseStudies: preset.includeCaseStudies ?? false,
+      includeFAQs: preset.includeFAQs ?? true,
+      metaTitle: '',
+      metaDescription: '',
+      generatedContent: '',
+      contentBrief: {
+        targetAudience: extractedContext?.target_audience || '',
+        contentGoal: extractedContext?.content_goal || '',
+        tone: extractedContext?.tone || '',
+        specificPoints: Array.isArray(extractedContext?.specific_points) 
+          ? extractedContext.specific_points.join(', ') 
+          : '',
+      },
+      additionalInstructions: extractedContext?.additional_instructions || '',
+    };
   });
 
   // Apply extracted context on mount if provided (handles late prop updates)
@@ -151,6 +186,56 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
       }
       return next;
     });
+  }, []);
+
+  // Phase 5c: Auto-save wizard state to localStorage on step change
+  useEffect(() => {
+    if (wizardState.keyword.trim().length >= 2 && currentStep > 0) {
+      try {
+        localStorage.setItem(WIZARD_DRAFT_KEY, JSON.stringify({
+          state: wizardState,
+          savedAt: Date.now(),
+        }));
+      } catch { /* storage full, non-critical */ }
+    }
+  }, [currentStep, wizardState]);
+
+  // Phase 5a: Save preset on content generation
+  useEffect(() => {
+    if (wizardState.generatedContent) {
+      try {
+        localStorage.setItem(WIZARD_PRESET_KEY, JSON.stringify({
+          writingStyle: wizardState.writingStyle,
+          expertiseLevel: wizardState.expertiseLevel,
+          contentArticleType: wizardState.contentArticleType,
+          wordCount: wizardState.wordCount,
+          wordCountMode: wizardState.wordCountMode,
+          includeStats: wizardState.includeStats,
+          includeCaseStudies: wizardState.includeCaseStudies,
+          includeFAQs: wizardState.includeFAQs,
+        }));
+      } catch { /* non-critical */ }
+    }
+  }, [wizardState.generatedContent]);
+
+  // Phase 5c: Resume draft handler
+  const resumeDraft = useCallback(() => {
+    const draft = loadSavedDraft();
+    if (draft) {
+      setWizardState(draft);
+      // Determine which step to resume at based on progress
+      if (draft.generatedContent) setCurrentStep(quick ? 1 : 4);
+      else if (draft.outline.length > 0 && !quick) setCurrentStep(3);
+      else if ((draft.researchSelections.faqs.length + draft.researchSelections.contentGaps.length) > 0 && !quick) setCurrentStep(2);
+      else if (draft.selectedSolution) setCurrentStep(quick ? 1 : 1);
+      toast.success('Draft resumed!');
+    }
+    setShowResumePrompt(false);
+  }, [quick]);
+
+  const dismissDraft = useCallback(() => {
+    localStorage.removeItem(WIZARD_DRAFT_KEY);
+    setShowResumePrompt(false);
   }, []);
 
   // Clamp step when switching between quick/blog
@@ -290,6 +375,26 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
             {/* Content */}
             <ScrollArea className="flex-1 min-h-0">
               <div className="p-5">
+                {/* Phase 5c: Resume draft prompt */}
+                {showResumePrompt && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2"
+                  >
+                    <p className="text-xs font-medium text-foreground">Resume your previous draft?</p>
+                    <p className="text-[10px] text-muted-foreground">You have an unsaved wizard session from earlier.</p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="default" onClick={resumeDraft} className="text-xs h-7 gap-1">
+                        <Check className="w-3 h-3" /> Resume
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={dismissDraft} className="text-xs h-7">
+                        Start Fresh
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentStep}

@@ -1201,8 +1201,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       </motion.div>
                     )}
 
-                    {/* Smart Suggestions */}
-                    {analystState && analystState.suggestedActions.length > 0 && (
+                    {/* Phase 6c: Context-aware suggested prompts */}
+                    {analystState && onSendMessage && (
                       <motion.div
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1213,15 +1213,61 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           Explore Next
                         </span>
                         <div className="flex flex-wrap gap-2">
-                          {analystState.suggestedActions.map((action) => (
-                            <button
-                              key={action.id}
-                              onClick={() => onSendMessage?.(action.action || action.title)}
-                              className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
-                            >
-                              {action.title}
-                            </button>
-                          ))}
+                          {/* Dynamic prompts based on topics + insights */}
+                          {(() => {
+                            const dynamicPrompts: { id: string; label: string; action: string }[] = [];
+                            
+                            // Generate prompts from detected topics
+                            for (const topic of analystState.topics.slice(0, 2)) {
+                              dynamicPrompts.push({
+                                id: `topic-${topic.name}`,
+                                label: `Deep dive: ${topic.name}`,
+                                action: `Give me a detailed analysis of my ${topic.name.toLowerCase()} performance`,
+                              });
+                            }
+
+                            // Generate prompts from warnings in insights
+                            const warnings = analystState.insightsFeed.filter(i => i.type === 'warning').slice(0, 1);
+                            for (const warning of warnings) {
+                              dynamicPrompts.push({
+                                id: `warn-${warning.id}`,
+                                label: 'Address warning',
+                                action: `How can I fix this: ${warning.content}`,
+                              });
+                            }
+
+                            // Add from suggested actions
+                            for (const action of analystState.suggestedActions.slice(0, 2)) {
+                              dynamicPrompts.push({
+                                id: action.id,
+                                label: action.title,
+                                action: action.action || action.title,
+                              });
+                            }
+
+                            // Fallback static prompts if nothing dynamic
+                            if (dynamicPrompts.length === 0) {
+                              return ['Show content performance', 'Campaign health overview', 'Keyword rankings analysis'].map((prompt, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => onSendMessage?.(prompt)}
+                                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
+                                >
+                                  {prompt}
+                                </button>
+                              ));
+                            }
+
+                            return dynamicPrompts.slice(0, 4).map((prompt) => (
+                              <button
+                                key={prompt.id}
+                                onClick={() => onSendMessage?.(prompt.action)}
+                                className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
+                              >
+                                {prompt.label}
+                              </button>
+                            ));
+                          })()}
                         </div>
                       </motion.div>
                     )}
@@ -1239,6 +1285,12 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                               I'll accumulate insights, metrics, and charts as we chat — building a live intelligence feed.
                             </p>
                           </div>
+                          {analystState?.isEnriching && (
+                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              Loading platform data...
+                            </div>
+                          )}
                           <div className="flex flex-wrap justify-center gap-2">
                             {['Show content performance', 'Campaign health overview', 'Keyword rankings analysis', 'Content pipeline status'].map((prompt, idx) => (
                               <button
