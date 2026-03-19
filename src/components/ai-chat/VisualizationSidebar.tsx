@@ -933,11 +933,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           {analystState.accumulatedCharts
                             .slice(0, showAllSessionCharts ? undefined : 4)
                             .map((chart, idx) => (
-                            <Card 
+                            <div 
                               key={`session-chart-${idx}`}
                               className={cn(
-                                "p-2 bg-muted/5 border-border/15 cursor-pointer transition-all hover:border-primary/30 hover:bg-primary/5",
-                                expandedChartIndex === idx && "border-primary/40 bg-primary/10"
+                                "glass-card glass-card-hover p-2 cursor-pointer",
+                                expandedChartIndex === idx && "!border-primary/40 !bg-primary/10"
                               )}
                               onClick={() => setExpandedChartIndex(expandedChartIndex === idx ? null : idx)}
                             >
