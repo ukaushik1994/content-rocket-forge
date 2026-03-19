@@ -338,7 +338,9 @@ export function useAnalystEngine(
     const now = new Date();
 
     try {
-      const coveredCategories = new Set(topics.map(t => t.category));
+      const coveredCategories = forceAllCategories 
+        ? new Set<string>(['content', 'analytics', 'campaigns', 'keywords', 'competitors', 'email'])
+        : new Set(topics.map(t => t.category));
 
       // Parallel fetch based on detected topics
       const fetches: Promise<void>[] = [];
