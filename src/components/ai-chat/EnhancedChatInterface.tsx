@@ -633,18 +633,38 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
 
-                    {/* 3-Column Content Grid */}
-                    <motion.div
-                      className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full max-w-5xl"
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.35, duration: 0.5 }}
-                    >
-                      {/* Column 1: Recommended for you */}
-                      <div className="flex flex-col gap-2.5 p-4 rounded-xl border border-border/15 bg-card/20">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Recommended</span>
-                        {aiRecommendations.length > 0 ? (
-                          aiRecommendations.map((rec) => (
+                    {/* Quick Actions */}
+                    <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
+
+                    {/* Insights & Recommendations — inline rows */}
+                    {(proactiveInsights.length > 0 || aiRecommendations.length > 0) && (
+                      <motion.div
+                        className="flex flex-col items-center gap-3 w-full max-w-md"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5, duration: 0.4 }}
+                      >
+                        <div className="w-full h-px bg-border/10" />
+                        <div className="flex flex-col gap-1 w-full">
+                          {proactiveInsights.map((insight) => (
+                            <button
+                              key={insight.type}
+                              onClick={() => {
+                                const prompts: Record<string, string> = {
+                                  stale: 'Show me my stale drafts that need attention',
+                                  failed: 'What content generation tasks failed?',
+                                  empty_cal: 'Help me plan content for this week',
+                                  approvals: 'Show me content pending my review'
+                                };
+                                sendMessage(prompts[insight.type] || '');
+                              }}
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors text-left"
+                            >
+                              <span className="shrink-0">{insight.icon}</span>
+                              <span>{insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}</span>
+                            </button>
+                          ))}
+                          {aiRecommendations.map((rec) => (
                             <button
                               key={rec.id}
                               onClick={() => {
@@ -654,69 +674,15 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                                   .eq('id', rec.id).then(() => {});
                                 setAiRecommendations(prev => prev.filter(r => r.id !== rec.id));
                               }}
-                              className="text-left px-3 py-2.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors group"
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-colors text-left"
                             >
-                              <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{rec.title}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.description}</p>
+                              <span className="shrink-0 text-primary">✦</span>
+                              <span>{rec.title}</span>
                             </button>
-                          ))
-                        ) : (
-                          <p className="text-xs text-muted-foreground/60 italic">No recommendations yet</p>
-                        )}
-                      </div>
-
-                      {/* Column 2: Insights & Workflows */}
-                      <div className="flex flex-col gap-3 p-4 rounded-xl border border-border/15 bg-card/20">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Insights & Workflows</span>
-                        {proactiveInsights.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {proactiveInsights.map((insight) => (
-                              <button
-                                key={insight.type}
-                                onClick={() => {
-                                  const prompts: Record<string, string> = {
-                                    stale: 'Show me my stale drafts that need attention',
-                                    failed: 'What content generation tasks failed?',
-                                    empty_cal: 'Help me plan content for this week',
-                                    approvals: 'Show me content pending my review'
-                                  };
-                                  sendMessage(prompts[insight.type] || '');
-                                }}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors"
-                              >
-                                {insight.icon}
-                                {insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        {workflowTemplates.length > 0 && (
-                          <div className="flex flex-col gap-1.5">
-                            <span className="text-xs text-muted-foreground/70">Your workflows</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {workflowTemplates.map((tpl, i) => (
-                                <button
-                                  key={i}
-                                  onClick={() => sendMessage(tpl)}
-                                  className="px-2.5 py-1.5 rounded-full text-xs bg-muted/50 hover:bg-muted border border-border/30 hover:border-border/60 transition-colors text-foreground/80"
-                                >
-                                  {tpl}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {proactiveInsights.length === 0 && workflowTemplates.length === 0 && (
-                          <p className="text-xs text-muted-foreground/60 italic">No insights available</p>
-                        )}
-                      </div>
-
-                      {/* Column 3: Quick Actions */}
-                      <div className="flex flex-col gap-2.5 p-4 rounded-xl border border-border/15 bg-card/20">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Quick Actions</span>
-                        <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
-                      </div>
-                    </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
                   </motion.div>}
               </AnimatePresence>
 
