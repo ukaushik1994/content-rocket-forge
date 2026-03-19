@@ -105,9 +105,10 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
       {/* Content Brief Section */}
       <div className="space-y-3">
         <div>
-          <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-            <ListChecks className="w-3.5 h-3.5 text-primary" /> Content Brief
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Content Brief</span>
+          </div>
           <p className="text-[10px] text-muted-foreground mt-0.5">Help tailor the content to your needs</p>
         </div>
 
