@@ -1,0 +1,56 @@
+import React from 'react';
+import { AnalystSectionWrapper } from './AnalystSectionWrapper';
+import { AnalystInsightCard } from './AnalystInsightCard';
+import { NarrativePromptCard } from './NarrativePromptCard';
+import { InsightItem } from '@/hooks/useAnalystEngine';
+
+interface Props {
+  insights: InsightItem[];
+  onSendMessage: (message: string) => void;
+}
+
+const dotColorForType = (type: string): 'green' | 'amber' | 'red' | 'blue' | 'purple' => {
+  switch (type) {
+    case 'warning': return 'red';
+    case 'opportunity': return 'green';
+    case 'trend': return 'blue';
+    default: return 'purple';
+  }
+};
+
+export const StrategicDivergenceSection: React.FC<Props> = ({ insights, onSendMessage }) => {
+  const anomalies = insights.filter(i => i.type === 'warning' || i.source === 'cross-signal');
+  if (anomalies.length === 0) return null;
+
+  const getHeadline = () => {
+    if (anomalies.length >= 3) return <>Multiple signals demand <span className="text-red-400">triage</span></>;
+    if (anomalies.some(a => a.type === 'warning')) return <>An anomaly requires <span className="text-amber-400">attention</span></>;
+    return <>Cross-signals reveal <span className="text-blue-400">divergence</span></>;
+  };
+
+  return (
+    <AnalystSectionWrapper number="03" label="Strategic Divergence" headline={getHeadline()} delay={0.15}>
+      <div className="space-y-2">
+        {anomalies.slice(0, 4).map((insight) => (
+          <AnalystInsightCard
+            key={insight.id}
+            title={insight.content}
+            dotColor={dotColorForType(insight.type)}
+            onExplore={() => onSendMessage(`Tell me more about: ${insight.content}`)}
+          />
+        ))}
+      </div>
+
+      {anomalies.some(a => a.type === 'warning') && (
+        <NarrativePromptCard
+          question="These anomalies may impact your strategy. Want me to prioritize fixes?"
+          primaryLabel="Prioritize Fixes"
+          primaryAction="Prioritize the most critical issues and suggest fixes for each"
+          secondaryLabel="Dismiss"
+          secondaryAction="Acknowledge the warnings and continue monitoring"
+          onSendMessage={onSendMessage}
+        />
+      )}
+    </AnalystSectionWrapper>
+  );
+};
