@@ -95,6 +95,21 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
           </div>
         )}
 
+        {/* SB-21: Conversation link */}
+        {(item as any).conversation_id && (
+          <div className="mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => navigate(`/ai-chat?conversation=${(item as any).conversation_id}`)}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              View Source Conversation
+            </Button>
+          </div>
+        )}
+
         {/* Performance Prediction Card */}
         {item.status === 'draft' && canPredict && (
           <div className="mb-4 p-3 rounded-lg border border-border/40 bg-muted/20">
