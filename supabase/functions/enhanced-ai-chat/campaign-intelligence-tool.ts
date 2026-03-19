@@ -257,6 +257,9 @@ export async function executeCampaignIntelligenceTool(
       
       case 'retry_failed_content':
         return await retryFailedContent(supabase, userId, toolArgs);
+
+      case 'run_campaign_pipeline':
+        return await runCampaignPipeline(supabase, userId, toolArgs);
       
       default:
         console.error(`[CAMPAIGN-TOOL] Unknown tool: ${toolName}`);
@@ -267,6 +270,69 @@ export async function executeCampaignIntelligenceTool(
     console.error(`[CAMPAIGN-TOOL] ${toolName} | FAILED | time: ${duration}ms | error:`, error);
     return { error: String(error) };
   }
+}
+
+/**
+ * Run full campaign pipeline: create campaign → generate strategy keywords → queue content
+ */
+async function runCampaignPipeline(supabase: any, userId: string, args: any): Promise<any> {
+  const contentCount = Math.min(args.content_count || 3, 5);
+
+  // Step 1: Create campaign
+  const { data: campaign, error: campaignError } = await supabase.from('campaigns').insert({
+    user_id: userId,
+    name: args.name,
+    original_idea: args.idea,
+    target_audience: args.target_audience || null,
+    status: 'active'
+  }).select('id, name, status, created_at').single();
+
+  if (campaignError) throw campaignError;
+
+  // Step 2: Create strategy proposals from the idea
+  const proposals: any[] = [];
+  const baseKeywords = args.idea.split(/[\s,]+/).filter((w: string) => w.length > 3).slice(0, contentCount);
+  
+  for (let i = 0; i < contentCount; i++) {
+    const keyword = baseKeywords[i] || `${args.idea} part ${i + 1}`;
+    const { data: proposal, error: propError } = await supabase.from('ai_strategy_proposals').insert({
+      user_id: userId,
+      title: `${args.name}: ${keyword}`,
+      primary_keyword: keyword,
+      status: 'available',
+      content_type: 'blog'
+    }).select('id, title, primary_keyword').single();
+
+    if (!propError && proposal) proposals.push(proposal);
+  }
+
+  // Step 3: Queue content generation items
+  const queueItems = proposals.map((p: any) => ({
+    user_id: userId,
+    campaign_id: campaign.id,
+    proposal_id: p.id,
+    content_type: 'blog_post',
+    title: p.title,
+    keyword: p.primary_keyword,
+    status: 'pending'
+  }));
+
+  if (queueItems.length > 0) {
+    await supabase.from('content_generation_queue').insert(queueItems);
+  }
+
+  return {
+    success: true,
+    message: `🚀 Campaign pipeline complete! Created "${campaign.name}" with ${proposals.length} content pieces queued for generation. Say "generate content for campaign" to start producing.`,
+    campaign,
+    proposals,
+    queuedCount: queueItems.length,
+    actions: [
+      { id: 'view_campaign', label: '📊 View Campaign', type: 'navigate', route: `/campaigns` },
+      { id: 'generate_now', label: '⚡ Generate Content Now', type: 'send_message', message: `Generate content for campaign "${campaign.name}" (ID: ${campaign.id})` },
+      { id: 'view_queue', label: '📋 View Queue', type: 'send_message', message: `Show queue status for campaign "${campaign.name}" (ID: ${campaign.id})` }
+    ]
+  };
 }
 
 /**
