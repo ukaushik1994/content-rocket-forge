@@ -1244,14 +1244,24 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                   {/* Empty state — only when nothing at all */}
                   {!hasCurrentResponseData && !hasAnalystData && (
-                    <div className="flex-1 flex items-center justify-center py-16">
-                      <div className="text-center max-w-xs space-y-6">
-                        <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/30 border border-border/20 flex items-center justify-center">
-                          <BarChart3 className="w-8 h-8 text-muted-foreground/60" />
+                    <div className="flex-1 flex items-center justify-center py-20">
+                      <div className="text-center max-w-xs space-y-8">
+                        <div className="relative mx-auto w-20 h-20">
+                          {/* Animated gradient orb */}
+                          <div
+                            className="absolute inset-0 rounded-2xl animate-pulse"
+                            style={{
+                              background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(6,182,212,0.08) 50%, transparent 70%)',
+                              filter: 'blur(8px)',
+                            }}
+                          />
+                          <div className="relative w-full h-full rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <BarChart3 className="w-9 h-9 text-muted-foreground/50" />
+                          </div>
                         </div>
                         <div className="space-y-2">
-                          <h3 className="text-lg font-medium text-foreground">Ask about your data</h3>
-                          <p className="text-sm text-muted-foreground">
+                          <h3 className="text-lg font-semibold text-foreground">Ask about your data</h3>
+                          <p className="text-sm text-muted-foreground/70">
                             I'll accumulate insights, metrics, and charts as we chat — building a live intelligence feed.
                           </p>
                         </div>
@@ -1263,7 +1273,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         )}
                         <div className="flex flex-wrap justify-center gap-2">
                           {['Show content performance', 'Campaign health overview', 'Keyword rankings analysis', 'Content pipeline status'].map((prompt, idx) => (
-                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-4 py-2 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all duration-200">
                               {prompt}
                             </button>
                           ))}
