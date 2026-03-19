@@ -50,20 +50,17 @@ const SharedConversation: React.FC = () => {
       }
 
       try {
-        // Look up conversation by share_token (RLS allows SELECT when is_shared=true)
-        const { data: convData, error: convError } = await supabase
-          .from('ai_conversations')
-          .select('*')
-          .eq('share_token', shareToken)
-          .eq('is_shared', true)
-          .single();
+        // Use secure RPC to fetch shared conversation by token
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('get_shared_conversation', { p_share_token: shareToken });
 
-        if (convError) {
-          if (convError.code === 'PGRST116') {
-            setError('Conversation not found or is no longer shared');
-          } else {
-            throw convError;
-          }
+        if (rpcError) {
+          throw rpcError;
+        }
+
+        const convData = rpcData?.[0];
+        if (!convData) {
+          setError('Conversation not found or is no longer shared');
           setIsLoading(false);
           return;
         }
