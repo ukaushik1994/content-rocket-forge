@@ -8,7 +8,7 @@ export interface InsightItem {
   id: string;
   content: string;
   type: 'trend' | 'warning' | 'opportunity' | 'stat' | 'search';
-  source: 'ai' | 'platform' | 'web';
+  source: 'ai' | 'platform' | 'web' | 'cross-signal' | 'memory';
   timestamp: Date;
   messageId?: string;
 }
@@ -25,6 +25,32 @@ export interface PlatformDataPoint {
   value: number;
   category: string;
   fetchedAt: Date;
+  trendData?: number[]; // Enhancement B: weekly trend data
+}
+
+// Enhancement A: Health Score
+export interface HealthFactor {
+  name: string;
+  score: number;
+  maxScore: number;
+  status: 'good' | 'warning' | 'critical';
+  detail: string;
+}
+
+export interface HealthScore {
+  total: number;
+  trend: 'improving' | 'declining' | 'stable';
+  factors: HealthFactor[];
+  topCritical: string | null;
+}
+
+// Enhancement E: Goal Progress
+export interface GoalProgress {
+  goalName: string;
+  percentage: number;
+  status: 'not_started' | 'in_progress' | 'nearly_done' | 'completed';
+  nextStep: string;
+  milestones: { label: string; done: boolean }[];
 }
 
 export interface AnalystState {
@@ -38,6 +64,9 @@ export interface AnalystState {
   lastUpdated: Date | null;
   isEnriching: boolean;
   messageCount: number;
+  healthScore: HealthScore | null;       // Enhancement A
+  crossSignalInsights: InsightItem[];    // Enhancement C
+  goalProgress: GoalProgress | null;     // Enhancement E
 }
 
 // ─── Topic Detection ────────────────────────────────────────────────────────
@@ -70,17 +99,417 @@ function classifyInsight(content: string): InsightItem['type'] {
   return 'trend';
 }
 
+// ─── Enhancement F: Metric Context ──────────────────────────────────────────
+export function getMetricContext(label: string, value: number, allData: PlatformDataPoint[]): string {
+  const totalContent = allData.find(d => d.label === 'Total Content')?.value || 0;
+  const published = allData.find(d => d.label === 'Published')?.value || 0;
+
+  switch (label) {
+    case 'Total Content': {
+      if (value === 0) return 'Start creating content to build your library';
+      if (value < 5) return 'Early stage — aim for 10+ pieces for SEO traction';
+      if (value < 20) return 'Growing library — consistency will compound';
+      return 'Strong library — focus on quality and updates';
+    }
+    case 'Published': {
+      if (totalContent === 0) return 'No content yet to publish';
+      const ratio = value / totalContent;
+      if (ratio < 0.3) return `Only ${Math.round(ratio * 100)}% published — many drafts waiting`;
+      if (ratio < 0.7) return 'Good publish rate — keep the pipeline flowing';
+      return 'Most content is live — great execution';
+    }
+    case 'Active Campaigns': {
+      if (value === 0) return 'No active campaigns — consider launching one';
+      if (value > 5) return 'Multiple campaigns running — monitor closely';
+      return `${value} campaign${value > 1 ? 's' : ''} active — track performance`;
+    }
+    case 'Tracked Competitors': {
+      if (value === 0) return 'Add competitors to unlock market intelligence';
+      if (value < 3) return 'Add more for a complete competitive picture';
+      return 'Good coverage — review insights regularly';
+    }
+    case 'Keyword Proposals': {
+      if (value === 0) return 'Generate proposals to find content opportunities';
+      if (published > 0 && value > published * 3) return 'Many untargeted keywords — prioritize execution';
+      return `${value} proposals ready for content creation`;
+    }
+    default:
+      return '';
+  }
+}
+
+// ─── Enhancement C: Cross-Signal Analysis ──────────────────────────────────
+function computeCrossSignals(
+  userId: string,
+  platformData: PlatformDataPoint[]
+): Promise<InsightItem[]> {
+  return new Promise(async (resolve) => {
+    const signals: InsightItem[] = [];
+    const now = new Date();
+    const totalContent = platformData.find(d => d.label === 'Total Content')?.value || 0;
+    const published = platformData.find(d => d.label === 'Published')?.value || 0;
+    const proposals = platformData.find(d => d.label === 'Keyword Proposals')?.value || 0;
+
+    try {
+      // 1. SEO trend detection (last 5 published articles)
+      const { data: recentArticles } = await supabase
+        .from('content_items')
+        .select('title, seo_score, created_at')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .not('seo_score', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (recentArticles && recentArticles.length >= 3) {
+        const scores = recentArticles.map(a => a.seo_score as number);
+        const avgFirst = (scores[0] + scores[1]) / 2;
+        const avgLast = (scores[scores.length - 2] + scores[scores.length - 1]) / 2;
+        if (avgFirst < avgLast - 10) {
+          signals.push({
+            id: `cross-seo-declining-${now.getTime()}`,
+            content: `📉 SEO scores trending down in recent articles (avg ${Math.round(avgFirst)} vs ${Math.round(avgLast)} earlier) — review optimization checklist`,
+            type: 'warning',
+            source: 'cross-signal',
+            timestamp: now,
+          });
+        } else if (avgFirst > avgLast + 10) {
+          signals.push({
+            id: `cross-seo-improving-${now.getTime()}`,
+            content: `📈 SEO scores improving in recent articles (avg ${Math.round(avgFirst)} vs ${Math.round(avgLast)} earlier) — keep this momentum`,
+            type: 'opportunity',
+            source: 'cross-signal',
+            timestamp: now,
+          });
+        }
+      }
+
+      // 2. Topic concentration — check if 50%+ content targets one keyword
+      const { data: proposalKeywords } = await supabase
+        .from('ai_strategy_proposals')
+        .select('primary_keyword')
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .limit(20);
+
+      if (proposalKeywords && proposalKeywords.length >= 4) {
+        const keywordCounts = new Map<string, number>();
+        for (const p of proposalKeywords) {
+          const kw = p.primary_keyword.toLowerCase();
+          keywordCounts.set(kw, (keywordCounts.get(kw) || 0) + 1);
+        }
+        for (const [kw, count] of keywordCounts) {
+          if (count / proposalKeywords.length >= 0.5) {
+            signals.push({
+              id: `cross-topic-concentration-${now.getTime()}`,
+              content: `🎯 ${Math.round((count / proposalKeywords.length) * 100)}% of completed proposals target "${kw}" — consider diversifying topics`,
+              type: 'warning',
+              source: 'cross-signal',
+              timestamp: now,
+            });
+            break;
+          }
+        }
+      }
+
+      // 3. Publishing consistency gap
+      const { data: lastPublished } = await supabase
+        .from('content_items')
+        .select('created_at')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (lastPublished && lastPublished.length > 0) {
+        const daysSinceLast = Math.floor((now.getTime() - new Date(lastPublished[0].created_at).getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSinceLast > 14) {
+          signals.push({
+            id: `cross-publish-gap-${now.getTime()}`,
+            content: `⏰ ${daysSinceLast} days since last published content — consistency drives SEO growth`,
+            type: 'warning',
+            source: 'cross-signal',
+            timestamp: now,
+          });
+        }
+      }
+
+      // 4. Content-to-keyword ratio (untargeted proposals)
+      if (proposals > 0 && published > 0 && proposals > published * 3) {
+        signals.push({
+          id: `cross-keyword-ratio-${now.getTime()}`,
+          content: `📊 ${proposals} keyword proposals but only ${published} published articles — ${proposals - published} opportunities waiting for content`,
+          type: 'opportunity',
+          source: 'cross-signal',
+          timestamp: now,
+        });
+      }
+
+      // 5. Draft-to-publish ratio
+      const drafts = totalContent - published;
+      if (totalContent > 3 && drafts > published * 2) {
+        signals.push({
+          id: `cross-draft-ratio-${now.getTime()}`,
+          content: `✏️ ${drafts} drafts vs ${published} published — consider a publish sprint to clear the backlog`,
+          type: 'opportunity',
+          source: 'cross-signal',
+          timestamp: now,
+        });
+      }
+    } catch (err) {
+      console.warn('Cross-signal analysis failed:', err);
+    }
+
+    resolve(signals);
+  });
+}
+
+// ─── Enhancement A: Health Score Computation ────────────────────────────────
+function computeHealthScore(
+  platformData: PlatformDataPoint[],
+  anomalyInsights: InsightItem[],
+  crossSignalInsights: InsightItem[]
+): HealthScore {
+  const factors: HealthFactor[] = [];
+  const totalContent = platformData.find(d => d.label === 'Total Content')?.value || 0;
+  const published = platformData.find(d => d.label === 'Published')?.value || 0;
+  const campaigns = platformData.find(d => d.label === 'Active Campaigns')?.value || 0;
+  const competitors = platformData.find(d => d.label === 'Tracked Competitors')?.value || 0;
+  const proposals = platformData.find(d => d.label === 'Keyword Proposals')?.value || 0;
+
+  // 1. Content Volume (20 pts)
+  const volumeScore = Math.min(20, Math.round((totalContent / 15) * 20));
+  factors.push({
+    name: 'Content Volume',
+    score: volumeScore,
+    maxScore: 20,
+    status: volumeScore >= 14 ? 'good' : volumeScore >= 8 ? 'warning' : 'critical',
+    detail: `${totalContent} total pieces (target: 15+)`,
+  });
+
+  // 2. Publish Velocity (25 pts)
+  const publishRatio = totalContent > 0 ? published / totalContent : 0;
+  const velocityScore = Math.min(25, Math.round(publishRatio * 25));
+  factors.push({
+    name: 'Publish Rate',
+    score: velocityScore,
+    maxScore: 25,
+    status: velocityScore >= 18 ? 'good' : velocityScore >= 10 ? 'warning' : 'critical',
+    detail: `${Math.round(publishRatio * 100)}% of content published`,
+  });
+
+  // 3. SEO Quality (20 pts) — based on anomaly warnings
+  const seoWarnings = anomalyInsights.filter(i => i.content.includes('SEO score')).length;
+  const seoScore = Math.max(0, 20 - seoWarnings * 7);
+  factors.push({
+    name: 'SEO Quality',
+    score: seoScore,
+    maxScore: 20,
+    status: seoScore >= 14 ? 'good' : seoScore >= 8 ? 'warning' : 'critical',
+    detail: seoWarnings === 0 ? 'No SEO issues detected' : `${seoWarnings} SEO warning${seoWarnings > 1 ? 's' : ''} found`,
+  });
+
+  // 4. Strategic Completeness (20 pts)
+  let stratScore = 0;
+  if (competitors > 0) stratScore += 5;
+  if (proposals > 0) stratScore += 5;
+  if (campaigns > 0) stratScore += 5;
+  if (competitors >= 3 && proposals >= 5) stratScore += 5;
+  factors.push({
+    name: 'Strategic Setup',
+    score: stratScore,
+    maxScore: 20,
+    status: stratScore >= 15 ? 'good' : stratScore >= 8 ? 'warning' : 'critical',
+    detail: `Competitors: ${competitors}, Proposals: ${proposals}, Campaigns: ${campaigns}`,
+  });
+
+  // 5. Anomaly Penalty (15 pts — start at 15, deduct per warning)
+  const totalWarnings = anomalyInsights.filter(i => i.type === 'warning').length + crossSignalInsights.filter(i => i.type === 'warning').length;
+  const anomalyScore = Math.max(0, 15 - totalWarnings * 3);
+  factors.push({
+    name: 'Health Alerts',
+    score: anomalyScore,
+    maxScore: 15,
+    status: anomalyScore >= 12 ? 'good' : anomalyScore >= 6 ? 'warning' : 'critical',
+    detail: totalWarnings === 0 ? 'No active warnings' : `${totalWarnings} warning${totalWarnings > 1 ? 's' : ''} to address`,
+  });
+
+  const total = factors.reduce((sum, f) => sum + f.score, 0);
+  const criticalFactors = factors.filter(f => f.status === 'critical');
+  const warningCount = crossSignalInsights.filter(i => i.type === 'warning').length;
+
+  return {
+    total,
+    trend: warningCount > 2 ? 'declining' : total >= 60 ? 'improving' : 'stable',
+    factors,
+    topCritical: criticalFactors.length > 0 ? criticalFactors[0].name : null,
+  };
+}
+
+// ─── Enhancement E: Goal Progress ──────────────────────────────────────────
+function assessGoalProgress(
+  goal: string | null | undefined,
+  messages: EnhancedChatMessage[]
+): GoalProgress | null {
+  if (!goal) return null;
+
+  const assistantMessages = messages.filter(m => m.role === 'assistant');
+  const allContent = messages.map(m => m.content.toLowerCase()).join(' ');
+  const msgCount = assistantMessages.length;
+
+  const goalLower = goal.toLowerCase();
+  let goalName = goal;
+  let milestones: { label: string; done: boolean }[] = [];
+  let percentage = 0;
+
+  if (/content|article|blog|writing/.test(goalLower)) {
+    goalName = 'Content Creation';
+    milestones = [
+      { label: 'Topic discussed', done: /topic|keyword|subject|idea/.test(allContent) },
+      { label: 'Outline created', done: /outline|structure|heading/.test(allContent) },
+      { label: 'Draft generated', done: /draft|generated|created|written/.test(allContent) },
+      { label: 'SEO optimized', done: /seo|optimiz|score|meta/.test(allContent) },
+    ];
+  } else if (/seo|keyword|search|ranking/.test(goalLower)) {
+    goalName = 'SEO Research';
+    milestones = [
+      { label: 'Keywords identified', done: /keyword|term|query/.test(allContent) },
+      { label: 'Competition analyzed', done: /competi|rival|serp|difficulty/.test(allContent) },
+      { label: 'Opportunities found', done: /opportunit|gap|potential/.test(allContent) },
+      { label: 'Strategy defined', done: /strategy|plan|proposal|recommend/.test(allContent) },
+    ];
+  } else if (/email|newsletter|campaign/.test(goalLower)) {
+    goalName = 'Email Campaign';
+    milestones = [
+      { label: 'Audience defined', done: /audience|segment|target|subscriber/.test(allContent) },
+      { label: 'Content planned', done: /subject|content|template|copy/.test(allContent) },
+      { label: 'Campaign created', done: /created|set up|launched|configured/.test(allContent) },
+    ];
+  } else if (/performance|analytics|metrics|report/.test(goalLower)) {
+    goalName = 'Performance Analysis';
+    milestones = [
+      { label: 'Metrics gathered', done: /metric|data|stat|number/.test(allContent) },
+      { label: 'Trends identified', done: /trend|pattern|change|growth/.test(allContent) },
+      { label: 'Recommendations made', done: /recommend|suggest|action|improve/.test(allContent) },
+    ];
+  } else if (/competitor|competitive|market/.test(goalLower)) {
+    goalName = 'Competitive Analysis';
+    milestones = [
+      { label: 'Competitors listed', done: /competitor|rival|company/.test(allContent) },
+      { label: 'Strengths/weaknesses', done: /strength|weakness|swot|advantage/.test(allContent) },
+      { label: 'Strategy comparison', done: /compar|differentiat|position|gap/.test(allContent) },
+    ];
+  } else if (/strategy|plan/.test(goalLower)) {
+    goalName = 'Strategy Planning';
+    milestones = [
+      { label: 'Goals defined', done: /goal|objective|target|kpi/.test(allContent) },
+      { label: 'Research done', done: /research|analyz|data|insight/.test(allContent) },
+      { label: 'Plan created', done: /plan|strategy|roadmap|timeline/.test(allContent) },
+      { label: 'Actions assigned', done: /action|task|assign|next step/.test(allContent) },
+    ];
+  } else {
+    // Generic
+    milestones = [
+      { label: 'Discussion started', done: msgCount >= 1 },
+      { label: 'Details explored', done: msgCount >= 3 },
+      { label: 'Insights gathered', done: msgCount >= 5 },
+    ];
+  }
+
+  const doneMilestones = milestones.filter(m => m.done).length;
+  percentage = milestones.length > 0 ? Math.round((doneMilestones / milestones.length) * 100) : 0;
+
+  // Boost slightly based on message count
+  if (msgCount > 0 && percentage === 0) percentage = Math.min(15, msgCount * 5);
+
+  let status: GoalProgress['status'] = 'not_started';
+  if (percentage >= 100) status = 'completed';
+  else if (percentage >= 75) status = 'nearly_done';
+  else if (percentage > 0) status = 'in_progress';
+
+  const nextMilestone = milestones.find(m => !m.done);
+
+  return {
+    goalName,
+    percentage: Math.min(100, percentage),
+    status,
+    nextStep: nextMilestone?.label || 'All milestones complete!',
+    milestones,
+  };
+}
+
+// ─── Enhancement D: Session Memory ─────────────────────────────────────────
+const SESSION_MEMORY_KEY = 'analyst_last_summary';
+const SESSION_MEMORY_TTL = 72 * 60 * 60 * 1000; // 72 hours
+
+interface SessionMemory {
+  timestamp: number;
+  insights: InsightItem[];
+  healthTotal: number | null;
+  topics: string[];
+}
+
+function saveSessionMemory(
+  insights: InsightItem[],
+  healthTotal: number | null,
+  topics: AnalystTopic[]
+): void {
+  try {
+    const memory: SessionMemory = {
+      timestamp: Date.now(),
+      insights: insights
+        .filter(i => i.type === 'warning' || i.type === 'opportunity')
+        .slice(0, 5)
+        .map(i => ({ ...i, timestamp: new Date() })),
+      healthTotal,
+      topics: topics.slice(0, 5).map(t => t.name),
+    };
+    localStorage.setItem(SESSION_MEMORY_KEY, JSON.stringify(memory));
+  } catch {
+    // localStorage quota — fail silently
+  }
+}
+
+function loadSessionMemory(): InsightItem[] {
+  try {
+    const raw = localStorage.getItem(SESSION_MEMORY_KEY);
+    if (!raw) return [];
+    const memory: SessionMemory = JSON.parse(raw);
+    if (Date.now() - memory.timestamp > SESSION_MEMORY_TTL) {
+      localStorage.removeItem(SESSION_MEMORY_KEY);
+      return [];
+    }
+    return memory.insights.map(i => ({
+      ...i,
+      id: `prev-${i.id}`,
+      content: `Previous session: ${i.content}`,
+      source: 'memory' as const,
+      timestamp: new Date(memory.timestamp),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // ─── Hook ───────────────────────────────────────────────────────────────────
 
 export function useAnalystEngine(
   messages: EnhancedChatMessage[],
   userId: string | null,
-  isActive: boolean
+  isActive: boolean,
+  conversationGoal?: string | null
 ): AnalystState {
   const [platformData, setPlatformData] = useState<PlatformDataPoint[]>([]);
   const [isEnriching, setIsEnriching] = useState(false);
   const lastFetchedTopicsRef = useRef<string>('');
   const processedMessageIdsRef = useRef<Set<string>>(new Set());
+
+  // Enhancement C: Cross-signal state
+  const [crossSignalInsights, setCrossSignalInsights] = useState<InsightItem[]>([]);
+
+  // Enhancement D: Session memory state
+  const [previousSessionInsights, setPreviousSessionInsights] = useState<InsightItem[]>([]);
+  const prevActiveRef = useRef(false);
 
   // ─── Cumulative topic extraction ────────────────────────────────────────
   const topics = useMemo(() => {
@@ -176,7 +605,6 @@ export function useAnalystEngine(
       // Extract web search results as search-type insights
       if (msg.analystContext?.webSearchResults) {
         const ws = msg.analystContext.webSearchResults;
-        // Add query-level insight
         feed.push({
           id: `ws-query-${msg.id}`,
           content: `Web search: "${ws.query}" — ${ws.results.length} results found`,
@@ -185,7 +613,6 @@ export function useAnalystEngine(
           timestamp: msg.timestamp,
           messageId: msg.id,
         });
-        // Add top 3 results as individual insights
         for (const result of ws.results.slice(0, 3)) {
           feed.push({
             id: `ws-${msg.id}-${feed.length}`,
@@ -221,7 +648,6 @@ export function useAnalystEngine(
     for (const msg of messages) {
       if (msg.role !== 'assistant') continue;
 
-      // From visualData metricCards
       const cards: any[] = msg.visualData?.summaryInsights?.metricCards || msg.visualData?.metrics || [];
       for (const card of cards) {
         const key = card.title || card.id || card.label;
@@ -237,7 +663,6 @@ export function useAnalystEngine(
         }
       }
 
-      // From analystContext metrics
       if (msg.analystContext?.metrics) {
         for (const m of msg.analystContext.metrics) {
           metricsMap.set(m.title, m);
@@ -255,16 +680,10 @@ export function useAnalystEngine(
 
     for (const msg of messages) {
       if (msg.role !== 'assistant') continue;
-
-      if (msg.visualData?.chartConfig) {
-        charts.push(msg.visualData.chartConfig);
-      }
-      if (msg.visualData?.charts) {
-        charts.push(...msg.visualData.charts);
-      }
+      if (msg.visualData?.chartConfig) charts.push(msg.visualData.chartConfig);
+      if (msg.visualData?.charts) charts.push(...msg.visualData.charts);
     }
 
-    // Keep last 6 charts to avoid UI overload
     return charts.slice(-6);
   }, [messages, isActive]);
 
@@ -342,7 +761,6 @@ export function useAnalystEngine(
         ? new Set<string>(['content', 'analytics', 'campaigns', 'keywords', 'competitors', 'email'])
         : new Set(topics.map(t => t.category));
 
-      // Parallel fetch based on detected topics
       const fetches: Promise<void>[] = [];
 
       if (coveredCategories.has('content') || coveredCategories.has('analytics')) {
@@ -360,6 +778,35 @@ export function useAnalystEngine(
             .eq('user_id', userId)
             .eq('status', 'published');
           if (count !== null) newData.push({ label: 'Published', value: count, category: 'content', fetchedAt: now });
+        })());
+
+        // Enhancement B: Fetch trend data (last 28 days, bucketed by week)
+        fetches.push((async () => {
+          const fourWeeksAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString();
+          const { data: recentContent } = await supabase
+            .from('content_items')
+            .select('created_at, status')
+            .eq('user_id', userId)
+            .gte('created_at', fourWeeksAgo)
+            .order('created_at', { ascending: true });
+
+          if (recentContent && recentContent.length > 0) {
+            const weekBuckets = [0, 0, 0, 0];
+            const publishBuckets = [0, 0, 0, 0];
+            const nowMs = Date.now();
+            for (const item of recentContent) {
+              const daysAgo = Math.floor((nowMs - new Date(item.created_at).getTime()) / (1000 * 60 * 60 * 24));
+              const weekIdx = Math.min(3, Math.floor(daysAgo / 7));
+              const reverseIdx = 3 - weekIdx; // oldest first
+              weekBuckets[reverseIdx]++;
+              if (item.status === 'published') publishBuckets[reverseIdx]++;
+            }
+            // Attach trend data to matching platform data points
+            const totalPoint = newData.find(d => d.label === 'Total Content');
+            if (totalPoint) totalPoint.trendData = weekBuckets;
+            const publishPoint = newData.find(d => d.label === 'Published');
+            if (publishPoint) publishPoint.trendData = publishBuckets;
+          }
         })());
       }
 
@@ -396,7 +843,6 @@ export function useAnalystEngine(
       await Promise.all(fetches);
       if (newData.length > 0) {
         setPlatformData(prev => {
-          // Merge: replace existing by label, add new
           const map = new Map(prev.map(d => [d.label, d]));
           for (const d of newData) map.set(d.label, d);
           return Array.from(map.values());
@@ -409,12 +855,12 @@ export function useAnalystEngine(
     }
   }, [userId, isActive, topics]);
 
-  // Phase 6b: Auto-fetch ALL platform data on activation (even with no topics)
+  // Auto-fetch ALL platform data on activation
   const hasInitialFetchedRef = useRef(false);
   useEffect(() => {
     if (isActive && !hasInitialFetchedRef.current) {
       hasInitialFetchedRef.current = true;
-      fetchPlatformData(true); // Force-fetch all categories on activation
+      fetchPlatformData(true);
     } else if (isActive && topics.length > 0) {
       fetchPlatformData();
     }
@@ -423,7 +869,7 @@ export function useAnalystEngine(
     }
   }, [isActive, topics, fetchPlatformData]);
 
-  // Phase 6d: Proactive anomaly detection after platform data loads
+  // ─── Proactive anomaly detection ────────────────────────────────────────
   const [anomalyInsights, setAnomalyInsights] = useState<InsightItem[]>([]);
   useEffect(() => {
     if (!isActive || !userId || platformData.length === 0) return;
@@ -433,7 +879,6 @@ export function useAnalystEngine(
       const now = new Date();
       
       try {
-        // Check for low SEO scores
         const { data: lowSeo } = await supabase
           .from('content_items')
           .select('id, title, seo_score')
@@ -452,7 +897,6 @@ export function useAnalystEngine(
           });
         }
 
-        // Check for stale drafts (>14 days)
         const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
         const { count: staleDrafts } = await supabase
           .from('content_items')
@@ -470,7 +914,6 @@ export function useAnalystEngine(
           });
         }
 
-        // Check for empty calendar (next 7 days)
         const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         const today = new Date().toISOString().split('T')[0];
         const { count: scheduledItems } = await supabase
@@ -500,6 +943,51 @@ export function useAnalystEngine(
     detectAnomalies();
   }, [isActive, userId, platformData]);
 
+  // ─── Enhancement C: Cross-signal detection ──────────────────────────────
+  useEffect(() => {
+    if (!isActive || !userId || platformData.length === 0) return;
+
+    computeCrossSignals(userId, platformData).then(signals => {
+      if (signals.length > 0) setCrossSignalInsights(signals);
+    });
+  }, [isActive, userId, platformData]);
+
+  // ─── Enhancement D: Load session memory on activation ───────────────────
+  useEffect(() => {
+    if (isActive && !prevActiveRef.current && messages.length === 0) {
+      const memoryInsights = loadSessionMemory();
+      if (memoryInsights.length > 0) {
+        setPreviousSessionInsights(memoryInsights);
+      }
+    }
+    prevActiveRef.current = isActive;
+  }, [isActive, messages.length]);
+
+  // ─── Enhancement D: Save session memory on deactivation ─────────────────
+  useEffect(() => {
+    return () => {
+      // Cleanup: save when component unmounts while active
+      if (prevActiveRef.current && insightsFeed.length > 0) {
+        saveSessionMemory(
+          [...anomalyInsights, ...crossSignalInsights, ...insightsFeed],
+          healthScore?.total ?? null,
+          topics
+        );
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save on deactivation
+  useEffect(() => {
+    if (!isActive && prevActiveRef.current) {
+      saveSessionMemory(
+        [...anomalyInsights, ...crossSignalInsights, ...insightsFeed],
+        healthScore?.total ?? null,
+        topics
+      );
+    }
+  }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Accumulated web search results ──────────────────────────────────
   const webSearchResults = useMemo(() => {
     if (!isActive) return [];
@@ -512,10 +1000,22 @@ export function useAnalystEngine(
     return results;
   }, [messages, isActive]);
 
-  // Phase 6d: Merge anomaly insights into the feed (at top)
+  // ─── Merge all insights (anomaly + cross-signal + memory + base) ────────
   const enrichedInsightsFeed = useMemo(() => {
-    return [...anomalyInsights, ...insightsFeed];
-  }, [anomalyInsights, insightsFeed]);
+    return [...previousSessionInsights, ...crossSignalInsights, ...anomalyInsights, ...insightsFeed];
+  }, [previousSessionInsights, crossSignalInsights, anomalyInsights, insightsFeed]);
+
+  // ─── Enhancement A: Health score ────────────────────────────────────────
+  const healthScore = useMemo<HealthScore | null>(() => {
+    if (!isActive || platformData.length === 0) return null;
+    return computeHealthScore(platformData, anomalyInsights, crossSignalInsights);
+  }, [isActive, platformData, anomalyInsights, crossSignalInsights]);
+
+  // ─── Enhancement E: Goal progress ──────────────────────────────────────
+  const goalProgress = useMemo<GoalProgress | null>(() => {
+    if (!isActive) return null;
+    return assessGoalProgress(conversationGoal, messages);
+  }, [isActive, conversationGoal, messages]);
 
   return {
     topics,
@@ -528,5 +1028,8 @@ export function useAnalystEngine(
     lastUpdated: messages.length > 0 ? messages[messages.length - 1].timestamp : null,
     isEnriching,
     messageCount: messages.filter(m => m.role === 'assistant').length,
+    healthScore,
+    crossSignalInsights,
+    goalProgress,
   };
 }
