@@ -30,6 +30,7 @@ export const AnalystInsightCard: React.FC<AnalystInsightCardProps> = ({
   title,
   description,
   dotColor = 'purple',
+  urgency,
   onExplore,
 }) => {
   const Icon = iconMap[dotColor];
