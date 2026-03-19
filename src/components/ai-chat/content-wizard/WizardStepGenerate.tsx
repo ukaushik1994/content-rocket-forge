@@ -1052,7 +1052,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               <ChevronDown className="w-3 h-3" />
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2 text-left w-full max-w-[280px]">
-              <div className="space-y-1.5 p-2.5 rounded-lg border border-border/20 bg-muted/10">
+              <div className="space-y-1.5 p-2.5 glass-card">
                 {[
                   { label: 'Keyword in intro', passed: (editableContent || '').toLowerCase().substring(0, 200).includes(wizardState.keyword.toLowerCase()) },
                   { label: 'FAQ section present', passed: /##.*faq|frequently\s+asked/i.test(editableContent || '') },
