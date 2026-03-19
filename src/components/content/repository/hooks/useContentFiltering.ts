@@ -86,7 +86,7 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
     filtered.sort((a, b) => {
       if (effectiveSortBy === 'date') {
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-      } else if (sortBy === 'title') {
+      } else if (effectiveSortBy === 'title') {
         return a.title.localeCompare(b.title);
       } else if (sortBy === 'score') {
         return (b.seo_score || 0) - (a.seo_score || 0);
