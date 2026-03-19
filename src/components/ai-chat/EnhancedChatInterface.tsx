@@ -285,6 +285,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   useEffect(() => {
     // If user explicitly closed sidebar, don't auto-open
     if (userClosedSidebar) {
+      prevMessageCountRef.current = messages.length;
       return;
     }
 
@@ -293,24 +294,35 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       if (!sidebarInteracted) {
         setShowVisualizationSidebar(false);
       }
+      prevMessageCountRef.current = 0;
+      return;
+    }
+
+    // Phase 1 Fix: Only auto-open when a genuinely NEW message arrives
+    // (not when loading conversation history)
+    const isNewMessage = messages.length > prevMessageCountRef.current && prevMessageCountRef.current > 0;
+    prevMessageCountRef.current = messages.length;
+
+    if (!isNewMessage) {
+      // Loading history - don't auto-open unless user interacted
+      if (!sidebarInteracted) {
+        setShowVisualizationSidebar(false);
+      }
       return;
     }
 
     // Find the most recent assistant message with visual data
-    // (excluding SERP analysis which renders inline)
     const messagesWithVisualData = messages.filter((msg) =>
     msg.role === 'assistant' &&
     msg.visualData &&
     msg.visualData.type !== 'serp_analysis' &&
-    msg.visualData.type !== 'content_creation_choice' // Choice card renders inline, not in sidebar
+    msg.visualData.type !== 'content_creation_choice'
     );
 
     const latestVisualization = messagesWithVisualData[messagesWithVisualData.length - 1];
 
     if (latestVisualization?.visualData) {
-      // Has visual data - open sidebar with the most recent visualization
       const chartConfig = latestVisualization.visualData?.chartConfig || null;
-
       setVisualizationData({
         visualData: latestVisualization.visualData,
         chartConfig,
@@ -318,18 +330,23 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         description: latestVisualization.visualData?.description
       });
       setShowVisualizationSidebar(true);
-    } else {
-      // No visualization data in entire conversation
-      // Close sidebar if user hasn't interacted with it
-      if (!sidebarInteracted) {
-        setShowVisualizationSidebar(false);
-      }
+    } else if (!sidebarInteracted) {
+      setShowVisualizationSidebar(false);
     }
   }, [messages, sidebarInteracted, userClosedSidebar]);
 
-  // Reset close intent when starting a new conversation
+  // Phase 1 Fix: Reset ALL sidebar state when switching conversations
   useEffect(() => {
     setUserClosedSidebar(false);
+    setIsAnalystPanelActive(false);
+    setShowVisualizationSidebar(false);
+    setSidebarInteracted(false);
+    setVisualizationData(null);
+    prevMessageCountRef.current = 0;
+    setIsLoadingConversation(true);
+    // Clear loading after messages arrive (with fallback timeout)
+    const timeout = setTimeout(() => setIsLoadingConversation(false), 300);
+    return () => clearTimeout(timeout);
   }, [activeConversation]);
 
   // Track user interaction with sidebar (for smart persistence)
