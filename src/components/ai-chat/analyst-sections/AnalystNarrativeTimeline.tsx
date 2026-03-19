@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 
 // Section components
 import { PreviousSessionSection } from './PreviousSessionSection';
+import { StrategicStanceSection } from './StrategicStanceSection';
 import { HealthAssessmentSection } from './HealthAssessmentSection';
 import { PerformanceTrajectorySection } from './PerformanceTrajectorySection';
 import { StrategicDivergenceSection } from './StrategicDivergenceSection';
