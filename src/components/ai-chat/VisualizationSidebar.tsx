@@ -44,6 +44,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Globe, ExternalLink, ChevronRight } from 'lucide-react';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebarTrendData, TimeframeOption } from '@/hooks/useSidebarTrendData';

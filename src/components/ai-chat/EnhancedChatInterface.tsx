@@ -812,12 +812,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             });
           }}
           onOpenAnalyst={() => {
-            setAnalystActive(true);
-            handleSetVisualization({
-              type: 'analyst',
-              title: 'Intelligence Panel',
-              description: 'Charts & insights companion'
-            });
+            // Toggle behavior: if sidebar showing analyst, close it; otherwise open
+            if (showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst') {
+              handleCloseSidebar();
+            } else {
+              setAnalystActive(true);
+              handleSetVisualization({
+                type: 'analyst',
+                title: 'Intelligence Panel',
+                description: 'Charts & insights companion'
+              });
+              // Trigger fresh data fetch by resetting analyst engine state
+            }
           }}
           onWebSearch={() => {
 

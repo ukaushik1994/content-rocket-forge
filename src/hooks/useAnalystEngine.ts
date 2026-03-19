@@ -857,6 +857,7 @@ export function useAnalystEngine(
 
   // Auto-fetch ALL platform data on activation
   const hasInitialFetchedRef = useRef(false);
+  const prevMessageCountRef = useRef(0);
   useEffect(() => {
     if (isActive && !hasInitialFetchedRef.current) {
       hasInitialFetchedRef.current = true;
@@ -868,6 +869,16 @@ export function useAnalystEngine(
       hasInitialFetchedRef.current = false;
     }
   }, [isActive, topics, fetchPlatformData]);
+
+  // Phase 1: Re-fetch when first message arrives (0 → 1)
+  useEffect(() => {
+    if (isActive && prevMessageCountRef.current === 0 && messages.length > 0) {
+      // Force a fresh fetch so data is current for this session
+      lastFetchedTopicsRef.current = '';
+      fetchPlatformData(true);
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages.length, isActive, fetchPlatformData]);
 
   // ─── Proactive anomaly detection ────────────────────────────────────────
   const [anomalyInsights, setAnomalyInsights] = useState<InsightItem[]>([]);
