@@ -78,6 +78,20 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
   {
     type: "function",
     function: {
+      name: "compare_content",
+      description: "Compare two or more content items side-by-side on SEO score, word count, headings, FAQ presence, and age. Use when user says 'compare my articles', 'which article is better', or 'compare content'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_ids: { type: "array", items: { type: "string" }, description: "Array of content item UUIDs to compare (2-5 items)" }
+        },
+        required: ["content_ids"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "create_content_item",
       description: "Create a new content draft in the repository. Use when user says 'create content', 'write an article', 'draft a post', or 'add new content'.",
       parameters: {
