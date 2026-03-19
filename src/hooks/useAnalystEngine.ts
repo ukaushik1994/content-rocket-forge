@@ -273,7 +273,41 @@ function computeCrossSignals(
           type: 'opportunity',
           source: 'cross-signal',
           timestamp: now,
+          urgency: 'medium',
         });
+      }
+
+      // 6. Positive reinforcement: Publishing streak (2+ articles this week)
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: thisWeekPublished } = await supabase
+        .from('content_items')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .gte('created_at', oneWeekAgo);
+
+      if (thisWeekPublished && thisWeekPublished.length >= 2) {
+        signals.push({
+          id: `cross-publish-streak-${now.getTime()}`,
+          content: `🔥 ${thisWeekPublished.length} articles published this week — great momentum! Consistency compounds SEO results.`,
+          type: 'opportunity',
+          source: 'cross-signal',
+          timestamp: now,
+        });
+      }
+
+      // 7. Positive reinforcement: SEO improvement trend
+      if (recentArticles && recentArticles.length >= 4) {
+        const scores = recentArticles.map(a => a.seo_score as number);
+        if (scores[0] > scores[2] && scores[0] >= 60) {
+          signals.push({
+            id: `cross-seo-win-${now.getTime()}`,
+            content: `🏆 Your latest articles score ${scores[0]}/100 SEO — up from ${scores[2]} in earlier pieces. Your optimization skills are improving!`,
+            type: 'opportunity',
+            source: 'cross-signal',
+            timestamp: now,
+          });
+        }
       }
     } catch (err) {
       console.warn('Cross-signal analysis failed:', err);
