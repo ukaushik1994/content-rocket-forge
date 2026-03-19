@@ -86,21 +86,21 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const messageSearchResults = React.useMemo(() => {
     if (!messageSearchQuery.trim()) return [];
     const q = messageSearchQuery.toLowerCase();
-    return messages.filter(m => m.content.toLowerCase().includes(q)).map(m => m.id);
+    return messages.filter((m) => m.content.toLowerCase().includes(q)).map((m) => m.id);
   }, [messages, messageSearchQuery]);
 
 
   // Handle search navigation
   const handleNavigateMatch = (direction: 'prev' | 'next') => {
     if (messageSearchResults.length === 0) return;
-    
+
     if (direction === 'next') {
-      setCurrentMatchIndex(prev => 
-        prev >= messageSearchResults.length - 1 ? 0 : prev + 1
+      setCurrentMatchIndex((prev) =>
+      prev >= messageSearchResults.length - 1 ? 0 : prev + 1
       );
     } else {
-      setCurrentMatchIndex(prev => 
-        prev <= 0 ? messageSearchResults.length - 1 : prev - 1
+      setCurrentMatchIndex((prev) =>
+      prev <= 0 ? messageSearchResults.length - 1 : prev - 1
       );
     }
   };
@@ -128,10 +128,10 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     title?: string;
     description?: string;
   } | null>(null);
-  
+
   // Smart persistence: track if user has interacted with sidebar
   const [sidebarInteracted, setSidebarInteracted] = useState(false);
-  
+
   // Issue #4 Fix: Track explicit user close intent
   const [userClosedSidebar, setUserClosedSidebar] = useState(false);
 
@@ -179,7 +179,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     if (userClosedSidebar) {
       return;
     }
-    
+
     if (messages.length === 0) {
       // No messages - close sidebar if user hasn't interacted
       if (!sidebarInteracted) {
@@ -187,22 +187,22 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       }
       return;
     }
-    
+
     // Find the most recent assistant message with visual data
     // (excluding SERP analysis which renders inline)
-    const messagesWithVisualData = messages.filter(msg => 
-      msg.role === 'assistant' && 
-      msg.visualData && 
-      msg.visualData.type !== 'serp_analysis' &&
-      msg.visualData.type !== 'content_creation_choice' // Choice card renders inline, not in sidebar
+    const messagesWithVisualData = messages.filter((msg) =>
+    msg.role === 'assistant' &&
+    msg.visualData &&
+    msg.visualData.type !== 'serp_analysis' &&
+    msg.visualData.type !== 'content_creation_choice' // Choice card renders inline, not in sidebar
     );
-    
+
     const latestVisualization = messagesWithVisualData[messagesWithVisualData.length - 1];
-    
+
     if (latestVisualization?.visualData) {
       // Has visual data - open sidebar with the most recent visualization
       const chartConfig = latestVisualization.visualData?.chartConfig || null;
-      
+
       setVisualizationData({
         visualData: latestVisualization.visualData,
         chartConfig,
@@ -218,7 +218,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       }
     }
   }, [messages, sidebarInteracted, userClosedSidebar]);
-  
+
   // Reset close intent when starting a new conversation
   useEffect(() => {
     setUserClosedSidebar(false);
@@ -237,7 +237,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setAnalystActive(false);
     setIsAnalystPanelActive(false);
   };
-  
+
   // Handle manual open (resets close intent)
   const handleOpenSidebar = () => {
     setShowVisualizationSidebar(true);
@@ -266,12 +266,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   useEffect(() => {
     // Immediate scroll attempt
     scrollToBottom();
-    
+
     // Delayed scroll to catch late-rendering content (charts, markdown, etc.)
     const timeoutId = setTimeout(() => {
       scrollToBottom();
     }, 100);
-    
+
     return () => clearTimeout(timeoutId);
   }, [messages, isTyping, scrollToBottom]);
 
@@ -284,31 +284,31 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   // Handle wizard launch with AI context extraction
   const [isExtractingContext, setIsExtractingContext] = useState(false);
-  
+
   const handleLaunchWizard = useCallback(async (userPrompt: string) => {
     setIsExtractingContext(true);
     try {
       // Get user's solutions for matching
       const { data: { user } } = await supabase.auth.getUser();
-      let solutions: { id: string; name: string }[] = [];
-      
+      let solutions: {id: string;name: string;}[] = [];
+
       if (user) {
         try {
-          const { data: solutionData } = await supabase
-            .from('solutions' as any)
-            .select('id, name')
-            .eq('user_id', user.id)
-            .limit(50);
-          solutions = (solutionData || []) as unknown as { id: string; name: string }[];
+          const { data: solutionData } = await supabase.
+          from('solutions' as any).
+          select('id, name').
+          eq('user_id', user.id).
+          limit(50);
+          solutions = (solutionData || []) as unknown as {id: string;name: string;}[];
         } catch (e) {
           console.warn('Solutions table query failed, continuing without solutions:', e);
         }
       }
 
       // Build conversation history from current messages
-      const conversationHistory = messages.slice(-10).map(m => ({
+      const conversationHistory = messages.slice(-10).map((m) => ({
         role: m.role,
-        content: m.content,
+        content: m.content
       }));
 
       // Extract context via AI
@@ -321,12 +321,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         solution_id: extracted.solution_id,
         content_type: extracted.content_type || 'blog',
         // Pass extraction data for pre-filling
-        extractedContext: extracted,
+        extractedContext: extracted
       });
 
       toast.success('Content Wizard ready', {
         description: `Topic: "${extracted.keyword}"${extracted.tone ? ` · Tone: ${extracted.tone}` : ''}`,
-        duration: 3000,
+        duration: 3000
       });
     } catch (err) {
       console.error('Wizard context extraction failed:', err);
@@ -334,7 +334,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       handleSetVisualization({
         type: 'content_wizard',
         keyword: userPrompt,
-        content_type: 'blog',
+        content_type: 'blog'
       });
     } finally {
       setIsExtractingContext(false);
@@ -383,84 +383,84 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       {/* Visualization Sidebar (Right) - positioned within chat area */}
       <VisualizationSidebar
-        isOpen={showVisualizationSidebar}
-        onClose={handleCloseSidebar}
-        visualData={visualizationData?.visualData}
-        chartConfig={visualizationData?.chartConfig || null}
-        title={visualizationData?.title}
-        description={visualizationData?.description}
-        onSendMessage={sendMessage}
-        onInteract={handleSidebarInteraction}
-        analystState={isAnalystPanelActive ? analystState : null}
-      />
+      isOpen={showVisualizationSidebar}
+      onClose={handleCloseSidebar}
+      visualData={visualizationData?.visualData}
+      chartConfig={visualizationData?.chartConfig || null}
+      title={visualizationData?.title}
+      description={visualizationData?.description}
+      onSendMessage={sendMessage}
+      onInteract={handleSidebarInteraction}
+      analystState={isAnalystPanelActive ? analystState : null} />
+    
 
       {/* Main Content Area - Chat and Visualization side by side */}
       <div className={cn(
-        "flex-1 flex transition-all duration-300 ease-out pt-4 pb-24 overflow-hidden"
-      )}>
+      "flex-1 flex transition-all duration-300 ease-out pt-4 pb-24 overflow-hidden"
+    )}>
         {/* Chat Messages Area - shrinks when visualization sidebar is open */}
-        <motion.div 
-          className={cn(
-            "flex-1 flex flex-col min-h-0 transition-all duration-300 ease-out",
-            // Right margin for visualization - only on xl screens (overlays on smaller)
-            showVisualizationSidebar && "xl:mr-[600px]"
-          )}
-          initial="hidden" 
-          animate="visible" 
-          variants={containerVariants}
-        >
+        <motion.div
+        className={cn(
+          "flex-1 flex flex-col min-h-0 transition-all duration-300 ease-out",
+          // Right margin for visualization - only on xl screens (overlays on smaller)
+          showVisualizationSidebar && "xl:mr-[600px]"
+        )}
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}>
+        
           {/* Breadcrumb */}
-          <div className="mx-6 mt-2">
-            <PageBreadcrumb section="Chats" page="AI Chat" />
-          </div>
+          
+
+        
           {/* Rate Limit Banner */}
-          <RateLimitBanner 
-            className="mx-6 mt-2" 
-            onRetry={() => {
-              const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-              if (lastUserMsg) sendMessage(lastUserMsg.content);
-            }}
-          />
+          <RateLimitBanner
+          className="mx-6 mt-2"
+          onRetry={() => {
+            const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+            if (lastUserMsg) sendMessage(lastUserMsg.content);
+          }} />
+        
 
           {/* Message Search Bar (toggleable) */}
-          {messages.length > 0 && (
-            <div className="mx-6 mt-2">
+          {messages.length > 0 &&
+        <div className="mx-6 mt-2">
               <div className="flex items-center gap-2">
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowMessageSearch(!showMessageSearch)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowMessageSearch(!showMessageSearch)}
+              className="text-muted-foreground hover:text-foreground">
+              
                   <Search className="h-4 w-4 mr-1" />
                   Search
                 </Button>
               </div>
               
               <AnimatePresence>
-                {showMessageSearch && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-2"
-                  >
+                {showMessageSearch &&
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-2">
+              
                     <MessageSearchBar
-                      searchQuery={messageSearchQuery}
-                      onSearchChange={setMessageSearchQuery}
-                      onExportConversation={(format) => activeConversation && exportConversation(activeConversation, format as 'json' | 'markdown' | 'txt')}
-                      onShowAnalytics={() => setShowAnalyticsModal(true)}
-                      messageCount={messages.length}
-                      filteredCount={messageSearchResults.length}
-                      onNavigateMatch={handleNavigateMatch}
-                      currentMatch={currentMatchIndex + 1}
-                      totalMatches={messageSearchResults.length}
-                    />
+                searchQuery={messageSearchQuery}
+                onSearchChange={setMessageSearchQuery}
+                onExportConversation={(format) => activeConversation && exportConversation(activeConversation, format as 'json' | 'markdown' | 'txt')}
+                onShowAnalytics={() => setShowAnalyticsModal(true)}
+                messageCount={messages.length}
+                filteredCount={messageSearchResults.length}
+                onNavigateMatch={handleNavigateMatch}
+                currentMatch={currentMatchIndex + 1}
+                totalMatches={messageSearchResults.length} />
+              
                   </motion.div>
-                )}
+            }
               </AnimatePresence>
             </div>
-          )}
+        }
           
           {/* Messages Area - with ref for proper scrolling (Issue #1 fix) */}
           <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
@@ -470,11 +470,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[60vh] py-12 sm:py-16 lg:py-24 space-y-8">
                     {/* Hero Badge Pill */}
                     <motion.div
-                      className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-background/60 backdrop-blur-xl rounded-full border border-border/50"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, type: "spring" }}
-                    >
+                  className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-background/60 backdrop-blur-xl rounded-full border border-border/50"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, type: "spring" }}>
+                  
                       <Brain className="h-4 w-4 text-primary" />
                       <span className="text-sm font-medium">AI Command Centre</span>
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -494,59 +494,59 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               {/* Messages */}
               {messages.length > 0 && <div className="space-y-6">
                   {messages.map((message, index) => {
-                    const isMatch = messageSearchQuery && message.content.toLowerCase().includes(messageSearchQuery.toLowerCase());
-                    const isCurrentMatch = messageSearchResults[currentMatchIndex] === message.id;
+                const isMatch = messageSearchQuery && message.content.toLowerCase().includes(messageSearchQuery.toLowerCase());
+                const isCurrentMatch = messageSearchResults[currentMatchIndex] === message.id;
+
+                return (
+                  <div
+                    key={message.id}
+                    id={`message-${message.id}`}
+                    className={cn(
+                      "transition-all duration-200",
+                      isMatch && "search-highlight",
+                      isCurrentMatch && "ring-2 ring-primary/50 rounded-lg"
+                    )}>
                     
-                    return (
-                      <div 
-                        key={message.id} 
-                        id={`message-${message.id}`}
-                        className={cn(
-                          "transition-all duration-200",
-                          isMatch && "search-highlight",
-                          isCurrentMatch && "ring-2 ring-primary/50 rounded-lg"
-                        )}
-                      >
-                        <EnhancedMessageBubble 
-                          message={message} 
-                          isLatest={index === messages.length - 1} 
-                          onAction={handleAction} 
-                          onSendMessage={sendMessage}
-                          onExpandVisualization={handleExpandVisualization}
-                          onEditMessage={editMessage}
-                          onDeleteMessage={deleteMessage}
-                          onConfirmAction={handleConfirmAction}
-                          onCancelAction={handleCancelAction}
-                          onSetVisualization={handleSetVisualization}
-                          onRetry={() => {
-                            const idx = messages.findIndex(m => m.id === message.id);
-                            const lastUserMsg = messages.slice(0, idx).reverse().find(m => m.role === 'user');
-                            if (lastUserMsg) sendMessage(lastUserMsg.content);
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
+                        <EnhancedMessageBubble
+                      message={message}
+                      isLatest={index === messages.length - 1}
+                      onAction={handleAction}
+                      onSendMessage={sendMessage}
+                      onExpandVisualization={handleExpandVisualization}
+                      onEditMessage={editMessage}
+                      onDeleteMessage={deleteMessage}
+                      onConfirmAction={handleConfirmAction}
+                      onCancelAction={handleCancelAction}
+                      onSetVisualization={handleSetVisualization}
+                      onRetry={() => {
+                        const idx = messages.findIndex((m) => m.id === message.id);
+                        const lastUserMsg = messages.slice(0, idx).reverse().find((m) => m.role === 'user');
+                        if (lastUserMsg) sendMessage(lastUserMsg.content);
+                      }} />
+                    
+                      </div>);
+
+              })}
                 </div>}
 
               {/* Typing Indicator - Rotating Thinking Text with Stop button */}
               <AnimatePresence>
-                {isTyping && (
-                  <div className="flex items-center gap-2">
+                {isTyping &&
+              <div className="flex items-center gap-2">
                     <ThinkingTextRotator progressText={progressText} />
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        // Access abort controller from the hook via a stop mechanism
-                        window.dispatchEvent(new CustomEvent('abortAIRequest'));
-                      }}
-                      className="text-xs text-muted-foreground hover:text-destructive shrink-0"
-                    >
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    // Access abort controller from the hook via a stop mechanism
+                    window.dispatchEvent(new CustomEvent('abortAIRequest'));
+                  }}
+                  className="text-xs text-muted-foreground hover:text-destructive shrink-0">
+                  
                       Stop
                     </Button>
                   </div>
-                )}
+              }
               </AnimatePresence>
 
               <div ref={messagesEndRef} />
@@ -557,74 +557,74 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       {/* Input Area - ALWAYS full width, respects left sidebar only on desktop */}
       <div className={cn(
-        "fixed bottom-0 left-0 right-0 z-40",
-        "border-t border-white/5 bg-background/80 backdrop-blur-md",
-        "transition-all duration-300 ease-out",
-        !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
-      )}>
+      "fixed bottom-0 left-0 right-0 z-40",
+      "border-t border-white/5 bg-background/80 backdrop-blur-md",
+      "transition-all duration-300 ease-out",
+      !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
+    )}>
         <div className="max-w-6xl mx-auto px-4 py-3">
           {/* Context Indicator removed — was showing hardcoded data */}
           
-          <ContextAwareMessageInput 
-            onSendMessage={handleSendMessage} 
-            isLoading={isLoading || isExtractingContext} 
-            placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask Creaiter anything..." : "Continue the conversation..."} 
-            onOpenProposals={() => {
-              handleSetVisualization({
-                type: 'proposal_browser',
-                title: 'AI Proposals',
-                description: 'Browse AI-generated content proposals',
-                step: 'solution_selection'
-              });
-            }}
-            onLaunchWizard={handleLaunchWizard}
-            onOpenResearch={() => {
-              handleSetVisualization({
-                type: 'research_intelligence',
-                title: 'Research Intelligence',
-                description: 'Plan content strategy & identify gaps',
-              });
-            }}
-            onOpenAnalyst={() => {
-              setAnalystActive(true);
-              setIsAnalystPanelActive(true);
-              handleSetVisualization({
-                type: 'analyst',
-                title: 'Analyst',
-                description: 'Charts & insights companion',
-              });
-            }}
-            onWebSearch={() => {
-              // Web search mode is handled in ContextAwareMessageInput
-              // The [web-search] prefix is detected by the backend
-            }}
-          />
+          <ContextAwareMessageInput
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading || isExtractingContext}
+          placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask Creaiter anything..." : "Continue the conversation..."}
+          onOpenProposals={() => {
+            handleSetVisualization({
+              type: 'proposal_browser',
+              title: 'AI Proposals',
+              description: 'Browse AI-generated content proposals',
+              step: 'solution_selection'
+            });
+          }}
+          onLaunchWizard={handleLaunchWizard}
+          onOpenResearch={() => {
+            handleSetVisualization({
+              type: 'research_intelligence',
+              title: 'Research Intelligence',
+              description: 'Plan content strategy & identify gaps'
+            });
+          }}
+          onOpenAnalyst={() => {
+            setAnalystActive(true);
+            setIsAnalystPanelActive(true);
+            handleSetVisualization({
+              type: 'analyst',
+              title: 'Analyst',
+              description: 'Charts & insights companion'
+            });
+          }}
+          onWebSearch={() => {
+
+
+            // Web search mode is handled in ContextAwareMessageInput
+            // The [web-search] prefix is detected by the backend
+          }} />
         </div>
       </div>
 
       {/* Conversation Analytics Modal */}
-      <ConversationAnalyticsModal
-        isOpen={showAnalyticsModal}
-        onClose={() => setShowAnalyticsModal(false)}
-        onGetAnalytics={async () => {
-          const userMsgs = messages.filter(m => m.role === 'user');
-          const assistantMsgs = messages.filter(m => m.role === 'assistant');
-          const allLens = messages.map(m => m.content.length);
-          const avgLen = allLens.length > 0 ? Math.round(allLens.reduce((a, b) => a + b, 0) / allLens.length) : 0;
-          const duration = messages.length >= 2
-            ? Math.round((new Date(messages[messages.length - 1].timestamp).getTime() - new Date(messages[0].timestamp).getTime()) / 60000)
-            : 0;
-          return {
-            totalMessages: messages.length,
-            userMessages: userMsgs.length,
-            assistantMessages: assistantMsgs.length,
-            averageMessageLength: avgLen,
-            conversationDuration: duration,
-            actionsTriggered: messages.filter(m => m.actions && m.actions.length > 0).length,
-            hasVisualData: messages.some(m => !!m.visualData),
-            hasWorkflowData: messages.some(m => !!m.workflowContext),
-          };
-        }}
-      />
+      <ConversationAnalyticsModal isOpen={showAnalyticsModal}
+    onClose={() => setShowAnalyticsModal(false)}
+    onGetAnalytics={async () => {
+      const userMsgs = messages.filter((m) => m.role === 'user');
+      const assistantMsgs = messages.filter((m) => m.role === 'assistant');
+      const allLens = messages.map((m) => m.content.length);
+      const avgLen = allLens.length > 0 ? Math.round(allLens.reduce((a, b) => a + b, 0) / allLens.length) : 0;
+      const duration = messages.length >= 2 ?
+      Math.round((new Date(messages[messages.length - 1].timestamp).getTime() - new Date(messages[0].timestamp).getTime()) / 60000) :
+      0;
+      return {
+        totalMessages: messages.length,
+        userMessages: userMsgs.length,
+        assistantMessages: assistantMsgs.length,
+        averageMessageLength: avgLen,
+        conversationDuration: duration,
+        actionsTriggered: messages.filter((m) => m.actions && m.actions.length > 0).length,
+        hasVisualData: messages.some((m) => !!m.visualData),
+        hasWorkflowData: messages.some((m) => !!m.workflowContext)
+      };
+    }} />
+    
     </div>;
 };
