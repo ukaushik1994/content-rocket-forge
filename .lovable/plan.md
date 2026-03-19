@@ -1,57 +1,35 @@
 
 
-# Apply Analyst Theme to Remaining Content Wizard Elements
+# Fix Chat Input: Focus Outline, Alignment, and Scrollbar
 
-## What's Left
+## Problems Identified
 
-After reviewing all 6 files, the gold labels and glass-card containers were applied in the previous round, but **WizardStepGenerate.tsx** (1592 lines) still has many elements using old `primary`, `bg-muted`, `border-border` styles instead of the analyst glassmorphism palette. The other 5 files are fully themed.
+1. **White focus outline**: The base `Textarea` component applies `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`. The chat input overrides `focus:ring-0` but not the `focus-visible:` variants, so clicking the textarea shows a white ring.
 
-## Changes — `WizardStepGenerate.tsx` only
+2. **Placeholder not vertically centered**: The container uses `items-end` (for multi-line expansion), but the textarea's internal padding and min-height cause the single-line placeholder text to sit misaligned relative to the flanking buttons.
 
-### 1. Inputs & Textareas (lines 1139, 1155, 1165, 1304, 1314, 1321, 1431)
-- Add `bg-white/[0.04] border-white/[0.06]` to Title, Meta Title, Meta Description inputs, refinement input, and editor textarea
+3. **White scrollbar inside textarea**: The textarea can scroll (max-h-[160px]) and shows the browser's default white scrollbar, which clashes with the dark theme.
 
-### 2. Generate / Regenerate Buttons (lines 1179, 1585)
-- Primary "Generate Content" button: `bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30`
-- "Regenerate" outline button: add `border-white/[0.06] hover:bg-white/[0.04]`
+## Changes
 
-### 3. Save / Publish Buttons (lines 1510, 1516)
-- "Save as Draft": amber accent style instead of default primary
-- "Publish" secondary button: glass-card outline style
+### File 1: `src/components/ai-chat/ContextAwareMessageInput.tsx`
 
-### 4. Tabs (TabsList/TabsTrigger, lines 1218-1224)
-- TabsList: `bg-white/[0.04] border border-white/[0.06]`
-- Active TabsTrigger: `data-[state=active]:bg-white/[0.08] data-[state=active]:text-amber-300`
+**Textarea className** (line 373): Add `focus-visible:ring-0 focus-visible:ring-offset-0` to fully suppress the focus ring, and add custom scrollbar classes to hide/darken the scrollbar.
 
-### 5. Collapsible Triggers (lines 1049, 1378, 1453)
-- Quality Report, Compliance, SEO Checklist triggers: wrap in `glass-card` pill style `bg-white/[0.04] border border-white/[0.06] rounded-2xl px-3 py-2`
+Change the container `items-end` to `items-center` (line 328) so the placeholder and buttons align vertically when the textarea is a single line. Keep the textarea's auto-grow behavior so it still expands.
 
-### 6. AI Quality Grade Badge (lines 1336-1343)
-- Replace `bg-primary/15 text-primary border-primary/30` grades with:
-  - A: `bg-emerald-400/15 text-emerald-400 border-emerald-400/30`
-  - B: `bg-amber-300/15 text-amber-300 border-amber-300/30`
-  - C/D: keep yellow/destructive
+Also update the focus border style (line 334) from purple (`border-primary/40`) to a subtler `border-white/[0.15]` to match the glassmorphism aesthetic.
 
-### 7. Progress bars (lines 1190, 1367, 1401)
-- Already partially themed (generation progress uses amber). Quality/Compliance progress bars: style track as `bg-white/[0.06]`
+### File 2: `src/index.css` (or global styles)
 
-### 8. Repurpose Buttons (lines 1108-1116)
-- Replace `border-border/30 bg-muted/30 hover:bg-primary/5 hover:border-primary/30` with `bg-white/[0.04] border-white/[0.06] hover:bg-white/[0.08] hover:border-amber-300/30`
-
-### 9. Success Screen (lines 1032-1123)
-- "What's next?" buttons: add `border-white/[0.06]` outline style
-- "Continue Editing" default button: amber accent
-- Loading spinners: replace `text-primary` with `text-amber-300`
-
-### 10. Badges (lines 1227-1263)
-- Word count Badge: `bg-white/[0.04] border-white/[0.06] text-muted-foreground/70`
-- Reading time Badge: same glass micro-pill style
-
-### 11. SEO Check icons (lines 1064, 1465)
-- Replace `text-primary` checkmarks with `text-emerald-400`
+Add a utility for transparent/dark scrollbar styling on the textarea:
+```css
+.scrollbar-thin-dark::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin-dark::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin-dark::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+```
 
 ## Scope
-- 1 file modified: `WizardStepGenerate.tsx`
-- Purely cosmetic — no logic changes
-- ~25 class string replacements across the file
+- 2 files, purely cosmetic
+- No logic changes
 
