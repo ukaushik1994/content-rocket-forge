@@ -313,6 +313,31 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
   }, [pendingPanel, setPendingPanel]);
 
+  // SB-1: Auto-open wizard when navigated with selectedProposal from Proposals page
+  useEffect(() => {
+    const state = location.state as { selectedProposal?: any } | null;
+    if (state?.selectedProposal) {
+      const p = state.selectedProposal;
+      handleSetVisualization({
+        type: 'content_wizard',
+        keyword: typeof p.primary_keyword === 'string' ? p.primary_keyword : p.primary_keyword?.keyword || '',
+        solution_id: p.solution_id,
+        content_type: p.content_type || 'blog',
+        extractedContext: {
+          keyword: typeof p.primary_keyword === 'string' ? p.primary_keyword : p.primary_keyword?.keyword || '',
+          title: p.title,
+          description: p.description,
+          related_keywords: p.related_keywords,
+          solution_id: p.solution_id,
+          content_type: p.content_type || 'blog',
+        }
+      });
+      // Clear navigation state to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state]);
+
+
   // AUTO-OPEN sidebar when AI response contains visual data OR first message sent
   // Respects user's explicit close intent (Issue #4 fix)
   useEffect(() => {
