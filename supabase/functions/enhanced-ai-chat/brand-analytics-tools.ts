@@ -75,6 +75,17 @@ export const BRAND_ANALYTICS_TOOL_DEFINITIONS = [
         required: ["period"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "generate_weekly_briefing",
+      description: "Generate a comprehensive weekly content strategy briefing covering content performance, upcoming calendar, proposals pipeline, competitor updates, and action recommendations. Use when user asks for 'weekly briefing', 'content summary', 'what should I focus on', 'weekly report', or 'strategy update'.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
   }
 ];
 
@@ -83,7 +94,8 @@ export const BRAND_ANALYTICS_TOOL_NAMES = [
   'update_brand_voice',
   'get_content_performance',
   'auto_detect_brand_voice',
-  'get_performance_comparison'
+  'get_performance_comparison',
+  'generate_weekly_briefing'
 ];
 
 export async function executeBrandAnalyticsTool(
