@@ -1061,7 +1061,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                   { label: `SEO Score: ${seoScore}`, passed: seoScore >= 60 },
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-[10px]">
-                    {item.passed ? <Check className="w-3 h-3 text-primary flex-shrink-0" /> : <X className="w-3 h-3 text-destructive flex-shrink-0" />}
+                    {item.passed ? <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" /> : <X className="w-3 h-3 text-destructive flex-shrink-0" />}
                     <span className={item.passed ? 'text-foreground' : 'text-destructive'}>{item.label}</span>
                   </div>
                 ))}
