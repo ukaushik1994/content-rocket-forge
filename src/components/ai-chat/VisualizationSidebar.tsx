@@ -12,6 +12,7 @@ import { getMetricContext } from '@/hooks/useAnalystEngine';
 import { MiniSparkline } from './MiniSparkline';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ContentWizardSidebar } from './content-wizard/ContentWizardSidebar';
 import { ProposalBrowserSidebar } from './proposal-browser/ProposalBrowserSidebar';
 import { RepositoryPanel } from './panels/RepositoryPanel';
