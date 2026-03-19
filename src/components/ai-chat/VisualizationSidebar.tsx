@@ -1056,7 +1056,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         ))}
                       </div>
                       {onSendMessage && (
-                        <button onClick={() => onSendMessage('[web-search] Search for more relevant information')} className="w-full text-[10px] text-cyan-500/60 hover:text-cyan-500 transition-colors py-1.5 border border-dashed border-cyan-500/15 hover:border-cyan-500/30 rounded-lg">
+                        <button onClick={() => onSendMessage('[web-search] Search for more relevant information')} className="w-full text-[10px] text-cyan-500/60 hover:text-cyan-500 transition-colors py-1.5 glass-card rounded-lg text-center">
                           Search more →
                         </button>
                       )}
