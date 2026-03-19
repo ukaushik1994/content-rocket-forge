@@ -223,6 +223,16 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {/* Normal Message Content - Premium Minimal Styling */}
           {!message.confirmationData && message.content !== '__CAPABILITIES_CARD__' && (
             <>
+              {/* Phase 4 Fix: Data source label for tool-backed responses */}
+              {!isUser && (message.visualData || actionResults.length > 0) && (
+                <div className="flex items-center gap-1.5 mb-1.5 ml-1">
+                  <div className={`w-1.5 h-1.5 rounded-full ${message.visualData ? 'bg-primary' : 'bg-accent'}`} />
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {message.visualData ? 'Data Analysis' : 'Action Result'}
+                  </span>
+                </div>
+              )}
+
               <Card className={`relative ${
                  isUser 
                    ? 'bg-primary/15 text-foreground border border-primary/25 ml-4' 
