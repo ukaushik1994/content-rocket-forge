@@ -224,7 +224,19 @@ Make every item specific and actionable, not templated. Return ONLY valid JSON.`
                     onCheckedChange={() => toggleItem(key, item.text)}
                     className="mt-0.5"
                   />
-                  <span className="text-xs text-foreground/80 leading-relaxed flex-1">{item.text}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs text-foreground/80 leading-relaxed block">{item.text}</span>
+                    {/* Phase 5b: Competitive context badges */}
+                    {item.source === 'serp' && key === 'contentGaps' && (
+                      <span className="text-[9px] text-amber-400/80 mt-0.5 block">⚡ Gap: competitors don't cover this well</span>
+                    )}
+                    {item.source === 'serp' && key === 'relatedKeywords' && (
+                      <span className="text-[9px] text-emerald-400/80 mt-0.5 block">📊 Competitors rank for this term</span>
+                    )}
+                    {item.source === 'serp' && key === 'serpHeadings' && (
+                      <span className="text-[9px] text-blue-400/80 mt-0.5 block">🏆 Used by top-ranking pages</span>
+                    )}
+                  </div>
                   <Badge 
                     variant="outline" 
                     className={cn(

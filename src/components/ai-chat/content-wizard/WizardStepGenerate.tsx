@@ -991,7 +991,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
   if (saved && savedId) {
     return (
-      <div className="flex flex-col items-center py-12 gap-4 text-center">
+      <div className="flex flex-col items-center py-8 gap-4 text-center">
         <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
           <CheckCircle2 className="w-7 h-7 text-primary" />
         </div>
@@ -1003,20 +1003,62 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             {savedStatus === 'published' ? 'Your content is live' : 'Your draft is in the Repository'}
           </p>
         </div>
-        <div className="flex flex-col gap-2 w-full max-w-[200px]">
-          <Button size="sm" variant="outline" onClick={() => { navigate('/repository'); onClose(); }} className="text-xs gap-1 w-full">
-            <ExternalLink className="w-3 h-3" /> View in Repository
-          </Button>
-          <Button size="sm" variant="default" onClick={handleContinueEditing} className="text-xs gap-1 w-full">
-            <PenLine className="w-3 h-3" /> Continue Editing
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onClose} className="text-xs w-full">Close</Button>
+
+        {/* Phase 5d: Post-generation quality report */}
+        {!quick && seoScore !== null && (
+          <Collapsible>
+            <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>Quality Report</span>
+              <ChevronDown className="w-3 h-3" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 text-left w-full max-w-[280px]">
+              <div className="space-y-1.5 p-2.5 rounded-lg border border-border/20 bg-muted/10">
+                {[
+                  { label: 'Keyword in intro', passed: (editableContent || '').toLowerCase().substring(0, 200).includes(wizardState.keyword.toLowerCase()) },
+                  { label: 'FAQ section present', passed: /##.*faq|frequently\s+asked/i.test(editableContent || '') },
+                  { label: `Word count (${wordCountNum})`, passed: wizardState.wordCount ? wordCountNum >= wizardState.wordCount * 0.85 : wordCountNum > 800 },
+                  { label: `H2 headings`, passed: /^## /m.test(editableContent || '') },
+                  { label: `SEO Score: ${seoScore}`, passed: seoScore >= 60 },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-[10px]">
+                    {item.passed ? <Check className="w-3 h-3 text-primary flex-shrink-0" /> : <X className="w-3 h-3 text-destructive flex-shrink-0" />}
+                    <span className={item.passed ? 'text-foreground' : 'text-destructive'}>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {/* Phase 5e: Distribution flow — "What's next?" */}
+        <div className="w-full max-w-[280px] mt-1">
+          <p className="text-[10px] text-muted-foreground mb-2 font-medium uppercase tracking-wider">What's next?</p>
+          <div className="flex flex-col gap-1.5 w-full">
+            <Button size="sm" variant="outline" onClick={() => { navigate('/repository'); onClose(); }} className="text-xs gap-1.5 w-full justify-start h-8">
+              <ExternalLink className="w-3 h-3" /> View in Repository
+            </Button>
+            <Button size="sm" variant="default" onClick={handleContinueEditing} className="text-xs gap-1.5 w-full justify-start h-8">
+              <PenLine className="w-3 h-3" /> Continue Editing
+            </Button>
+            {savedStatus === 'draft' && (
+              <Button size="sm" variant="outline" onClick={() => { if (savedId) { saveContent('published'); } }} disabled={isSaving} className="text-xs gap-1.5 w-full justify-start h-8">
+                <Send className="w-3 h-3" /> Publish Now
+              </Button>
+            )}
+            {activeConnectionProvider && (
+              <Button size="sm" variant="outline" onClick={publishExternal} disabled={isPublishingExternal} className="text-xs gap-1.5 w-full justify-start h-8">
+                {isPublishingExternal ? <Loader2 className="w-3 h-3 animate-spin" /> : <Globe className="w-3 h-3" />}
+                Publish to {activeConnectionProvider === 'wordpress' ? 'WordPress' : 'Wix'}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Phase 2C: Repurpose Quick Actions */}
         {onRepurpose && (
-          <div className="w-full max-w-[280px] mt-2">
-            <p className="text-[10px] text-muted-foreground mb-2 font-medium">Repurpose this content</p>
+          <div className="w-full max-w-[280px] mt-1">
+            <p className="text-[10px] text-muted-foreground mb-2 font-medium uppercase tracking-wider">Repurpose</p>
             <div className="flex flex-wrap gap-1.5 justify-center">
               {[
                 { type: 'social-twitter', label: 'Social Post', icon: Twitter },
@@ -1036,6 +1078,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             </div>
           </div>
         )}
+
+        <Button size="sm" variant="ghost" onClick={onClose} className="text-xs mt-1">Close Wizard</Button>
       </div>
     );
   }

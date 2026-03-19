@@ -512,9 +512,14 @@ export function useAnalystEngine(
     return results;
   }, [messages, isActive]);
 
+  // Phase 6d: Merge anomaly insights into the feed (at top)
+  const enrichedInsightsFeed = useMemo(() => {
+    return [...anomalyInsights, ...insightsFeed];
+  }, [anomalyInsights, insightsFeed]);
+
   return {
     topics,
-    insightsFeed,
+    insightsFeed: enrichedInsightsFeed,
     cumulativeMetrics,
     suggestedActions,
     accumulatedCharts,

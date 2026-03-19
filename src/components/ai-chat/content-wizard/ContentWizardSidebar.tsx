@@ -375,6 +375,26 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
             {/* Content */}
             <ScrollArea className="flex-1 min-h-0">
               <div className="p-5">
+                {/* Phase 5c: Resume draft prompt */}
+                {showResumePrompt && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2"
+                  >
+                    <p className="text-xs font-medium text-foreground">Resume your previous draft?</p>
+                    <p className="text-[10px] text-muted-foreground">You have an unsaved wizard session from earlier.</p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="default" onClick={resumeDraft} className="text-xs h-7 gap-1">
+                        <Check className="w-3 h-3" /> Resume
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={dismissDraft} className="text-xs h-7">
+                        Start Fresh
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentStep}
