@@ -183,20 +183,23 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Writing Style */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Writing Style</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Writing Style</span>
+        </div>
         <div className="grid grid-cols-2 gap-2 mt-2">
           {WRITING_STYLES.map(s => (
             <button
               key={s.value}
               onClick={() => onWritingStyleChange(s.value)}
               className={cn(
-                "flex items-center gap-2 p-2.5 rounded-lg border transition-all text-left cursor-pointer",
+                "flex items-center gap-2 p-2.5 rounded-2xl border transition-all text-left cursor-pointer backdrop-blur-md",
                 writingStyle === s.value
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border/30 hover:border-border/50 bg-muted/20"
+                  ? "bg-white/[0.08] border-amber-300/30"
+                  : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
               )}
             >
-              <s.icon className={cn("w-4 h-4 flex-shrink-0", writingStyle === s.value ? "text-primary" : "text-muted-foreground")} />
+              <s.icon className={cn("w-4 h-4 flex-shrink-0", writingStyle === s.value ? "text-amber-300" : "text-muted-foreground")} />
               <div className="min-w-0">
                 <p className="text-xs font-medium text-foreground truncate">{s.label}</p>
                 <p className="text-[10px] text-muted-foreground truncate">{s.desc}</p>
