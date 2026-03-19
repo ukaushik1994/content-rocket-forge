@@ -751,15 +751,24 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                 {/* Goal Progress */}
                 {analystState?.goalProgress && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 glass-card p-2.5 space-y-1.5">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 glass-card p-4 space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{analystState.goalProgress.goalName}</span>
-                      <span className="text-[10px] font-semibold text-primary">{analystState.goalProgress.percentage}%</span>
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{analystState.goalProgress.goalName}</span>
+                      <span className="text-sm font-bold text-primary">{analystState.goalProgress.percentage}%</span>
                     </div>
-                    <Progress value={analystState.goalProgress.percentage} className="h-1.5" />
+                    <div className="h-2.5 bg-muted/20 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700 ease-out"
+                        style={{
+                          width: `${analystState.goalProgress.percentage}%`,
+                          background: 'linear-gradient(90deg, hsl(var(--primary)), rgba(139,92,246,0.6))',
+                          boxShadow: '0 0 12px rgba(139,92,246,0.3)',
+                        }}
+                      />
+                    </div>
                     <div className="flex items-center gap-1.5">
                       <span className={cn(
-                        "text-[9px] px-1.5 py-0.5 rounded-full",
+                        "text-[9px] px-2 py-0.5 rounded-full font-medium",
                         analystState.goalProgress.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
                         analystState.goalProgress.status === 'nearly_done' ? 'bg-blue-500/10 text-blue-500' :
                         analystState.goalProgress.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500' :
@@ -767,7 +776,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       )}>
                         {analystState.goalProgress.status.replace('_', ' ')}
                       </span>
-                      <span className="text-[9px] text-muted-foreground/60">Next: {analystState.goalProgress.nextStep}</span>
+                      <span className="text-[9px] text-muted-foreground/50">Next: {analystState.goalProgress.nextStep}</span>
                     </div>
                   </motion.div>
                 )}
