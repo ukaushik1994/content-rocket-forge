@@ -420,6 +420,108 @@ export async function executeBrandAnalyticsTool(
       };
     }
 
+    case 'generate_weekly_briefing': {
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
+      const sevenDaysFromNow = new Date(now.getTime() + 7 * 86400000).toISOString();
+      const today = now.toISOString().split('T')[0];
+
+      const [contentResult, proposalsResult, calendarResult, competitorsResult, signalsResult, draftsResult] = await Promise.allSettled([
+        // Content created this week
+        supabase.from('content_items')
+          .select('id, title, status, seo_score, content_type, created_at')
+          .eq('user_id', userId).gte('created_at', sevenDaysAgo)
+          .order('created_at', { ascending: false }).limit(20),
+        // Active proposals
+        supabase.from('ai_strategy_proposals')
+          .select('id, title, status, primary_keyword, priority_tag')
+          .eq('user_id', userId).in('status', ['available', 'scheduled'])
+          .order('created_at', { ascending: false }).limit(10),
+        // Upcoming calendar items
+        supabase.from('content_calendar')
+          .select('id, title, scheduled_date, status, content_type, priority')
+          .eq('user_id', userId).gte('scheduled_date', today).lte('scheduled_date', sevenDaysFromNow)
+          .order('scheduled_date', { ascending: true }).limit(10),
+        // Competitors
+        supabase.from('company_competitors')
+          .select('id, name, last_analyzed_at')
+          .eq('user_id', userId).limit(5),
+        // Performance signals this week
+        supabase.from('content_performance_signals')
+          .select('signal_type, content_id')
+          .eq('user_id', userId).gte('created_at', sevenDaysAgo),
+        // Stale drafts
+        supabase.from('content_items')
+          .select('id, title, seo_score, updated_at')
+          .eq('user_id', userId).eq('status', 'draft')
+          .lt('updated_at', sevenDaysAgo)
+          .order('seo_score', { ascending: false }).limit(5)
+      ]);
+
+      // Build briefing sections
+      const sections: string[] = [];
+
+      // Content created
+      const content = contentResult.status === 'fulfilled' ? contentResult.value.data || [] : [];
+      const published = content.filter((c: any) => c.status === 'published');
+      const drafts = content.filter((c: any) => c.status === 'draft');
+      sections.push(`## 📝 Content This Week\n- **${content.length}** pieces created (${published.length} published, ${drafts.length} drafts)\n${content.slice(0, 5).map((c: any) => `- "${c.title}" — ${c.status} ${c.seo_score ? `(SEO: ${c.seo_score})` : ''}`).join('\n')}`);
+
+      // Calendar
+      const calendar = calendarResult.status === 'fulfilled' ? calendarResult.value.data || [] : [];
+      if (calendar.length > 0) {
+        sections.push(`## 📅 Upcoming This Week\n${calendar.map((c: any) => `- **${c.scheduled_date}**: "${c.title}" (${c.status}, ${c.priority} priority)`).join('\n')}`);
+      } else {
+        sections.push(`## 📅 Upcoming This Week\n⚠️ **No content scheduled this week.** Consider filling your calendar from available proposals.`);
+      }
+
+      // Proposals pipeline
+      const proposals = proposalsResult.status === 'fulfilled' ? proposalsResult.value.data || [] : [];
+      if (proposals.length > 0) {
+        sections.push(`## 🎯 Proposals Pipeline\n${proposals.slice(0, 5).map((p: any) => `- "${p.title}" — ${p.status} ${p.priority_tag ? `[${p.priority_tag}]` : ''} (keyword: ${p.primary_keyword})`).join('\n')}`);
+      }
+
+      // Stale drafts
+      const stale = draftsResult.status === 'fulfilled' ? draftsResult.value.data || [] : [];
+      if (stale.length > 0) {
+        sections.push(`## ⏰ Drafts Needing Attention\nThese high-potential drafts haven't been touched in 7+ days:\n${stale.map((d: any) => `- "${d.title}" ${d.seo_score ? `(SEO: ${d.seo_score})` : ''}`).join('\n')}`);
+      }
+
+      // Competitor check
+      const competitors = competitorsResult.status === 'fulfilled' ? competitorsResult.value.data || [] : [];
+      const staleCompetitors = competitors.filter((c: any) => {
+        if (!c.last_analyzed_at) return true;
+        return new Date(c.last_analyzed_at).getTime() < now.getTime() - 30 * 86400000;
+      });
+      if (staleCompetitors.length > 0) {
+        sections.push(`## 🔍 Competitor Intelligence\n${staleCompetitors.length} competitor(s) haven't been analyzed in 30+ days: ${staleCompetitors.map((c: any) => c.name).join(', ')}`);
+      }
+
+      // Performance signals
+      const signals = signalsResult.status === 'fulfilled' ? signalsResult.value.data || [] : [];
+      if (signals.length > 0) {
+        const signalCounts: Record<string, number> = {};
+        for (const s of signals) { signalCounts[s.signal_type] = (signalCounts[s.signal_type] || 0) + 1; }
+        sections.push(`## 📊 Content Engagement\n${Object.entries(signalCounts).map(([type, count]) => `- ${type}: ${count} actions`).join('\n')}`);
+      }
+
+      const briefing = `# 📋 Weekly Content Strategy Briefing\n*${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}*\n\n${sections.join('\n\n')}`;
+
+      return {
+        success: true,
+        briefing,
+        message: briefing,
+        stats: {
+          contentCreated: content.length,
+          published: published.length,
+          calendarItems: calendar.length,
+          activeProposals: proposals.length,
+          staleDrafts: stale.length,
+          staleCompetitors: staleCompetitors.length
+        }
+      };
+    }
+
     default:
       throw new Error(`Unknown brand/analytics tool: ${toolName}`);
   }

@@ -97,6 +97,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   // 4b: Proactive insights on welcome screen
   const [proactiveInsights, setProactiveInsights] = useState<Array<{type: string; label: string; count: number; icon: React.ReactNode}>>([]);
+  // Sprint 3: AI-generated proactive recommendations
+  const [aiRecommendations, setAiRecommendations] = useState<Array<{id: string; type: string; title: string; description: string; action: string; priority: number}>>([]);
   // 4e: Conversation templates from patterns
   const [workflowTemplates, setWorkflowTemplates] = useState<string[]>([]);
   // E6: Brand voice detection moved to offerings page
