@@ -187,7 +187,8 @@ export function getMetricContext(label: string, value: number, allData: Platform
 // ─── Enhancement C: Cross-Signal Analysis ──────────────────────────────────
 function computeCrossSignals(
   userId: string,
-  platformData: PlatformDataPoint[]
+  platformData: PlatformDataPoint[],
+  userMessages?: string[]
 ): Promise<InsightItem[]> {
   return new Promise(async (resolve) => {
     const signals: InsightItem[] = [];
