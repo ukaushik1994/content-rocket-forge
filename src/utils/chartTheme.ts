@@ -89,4 +89,3 @@ export const DOT_STYLE = (color: string) => ({
   strokeWidth: 1.5,
 });
 
-import React from 'react';
