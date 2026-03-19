@@ -909,7 +909,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                               </div>
                               <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
                               {context && <p className="text-[9px] text-muted-foreground/60 mt-1 leading-relaxed">{context}</p>}
-                            </Card>
+                            </div>
                           );
                         })}
                       </div>
