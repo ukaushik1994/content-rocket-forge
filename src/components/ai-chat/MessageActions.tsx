@@ -94,16 +94,16 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
   return (
     <>
       {/* Always-visible quick actions for mobile + desktop */}
-      <div className="flex items-center gap-0.5">
-        {/* Copy — always visible */}
+      <div className="flex items-center gap-1">
+        {/* Copy */}
         <Button
           variant="ghost"
           size="sm"
           onClick={handleCopy}
-          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Copy message"
         >
-          <Copy className="h-3 w-3 text-muted-foreground" />
+          <Copy className="h-3.5 w-3.5" />
         </Button>
 
         {/* Regenerate — AI messages only */}
@@ -112,10 +112,10 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
             variant="ghost"
             size="sm"
             onClick={onRegenerate}
-            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity"
+            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Regenerate response"
           >
-            <RefreshCw className="h-3 w-3 text-muted-foreground" />
+            <RefreshCw className="h-3.5 w-3.5" />
           </Button>
         )}
 
@@ -126,9 +126,9 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground transition-colors"
               >
-                <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+                <MoreHorizontal className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
