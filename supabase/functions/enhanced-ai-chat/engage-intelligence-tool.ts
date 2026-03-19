@@ -179,8 +179,8 @@ export async function executeEngageIntelligenceTool(
       const journeysWithDetails = await Promise.all(
         (data || []).map(async (journey: any) => {
           const [stepsResult, enrollmentResult] = await Promise.all([
-            supabase.from('engage_journey_steps').select('*', { count: 'exact', head: true }).eq('journey_id', journey.id),
-            supabase.from('engage_journey_enrollments').select('*', { count: 'exact', head: true }).eq('journey_id', journey.id)
+            supabase.from('journey_steps').select('*', { count: 'exact', head: true }).eq('journey_id', journey.id),
+            supabase.from('journey_enrollments').select('*', { count: 'exact', head: true }).eq('journey_id', journey.id)
           ]);
           return {
             ...journey,
