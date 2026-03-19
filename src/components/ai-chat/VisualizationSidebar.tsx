@@ -963,7 +963,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         })}
                       </div>
                     </motion.div>
-                    </motion.div>
                   )}
 
                   {/* ─── Section Divider ─── */}
