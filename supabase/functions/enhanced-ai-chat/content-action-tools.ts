@@ -804,8 +804,9 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
           status: 'draft',
           meta_title: autoMetaTitle,
           meta_description: autoMetaDesc,
-          metadata: { generated_via: 'ai_chat', keyword: toolArgs.keyword, tone: toolArgs.tone, length: toolArgs.length },
-          solution_id: toolArgs.solution_id || null
+          metadata: { generated_via: 'ai_chat', keyword: toolArgs.keyword, tone: toolArgs.tone, length: toolArgs.length, conversation_id: conversationId || null },
+          solution_id: toolArgs.solution_id || null,
+          conversation_id: conversationId || null
         }).select('id, title, status, content_type, created_at').single();
 
         if (saveError) throw saveError;
