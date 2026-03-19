@@ -635,6 +635,24 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       </motion.div>
                     )}
 
+                    {/* Brand Voice Detection */}
+                    {canDetectBrandVoice && (
+                      <motion.div
+                        className="flex justify-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.7 }}
+                      >
+                        <button
+                          onClick={() => sendMessage('Detect my brand voice from my published content')}
+                          className="px-4 py-2 rounded-lg text-xs bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 transition-colors text-primary flex items-center gap-2"
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Detect my brand voice
+                        </button>
+                      </motion.div>
+                    )}
+
                     {/* Pill suggestions */}
                     <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
                   </motion.div>}
