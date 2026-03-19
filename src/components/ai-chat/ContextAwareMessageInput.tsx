@@ -8,6 +8,7 @@ import { PlusMenuDropdown } from './PlusMenuDropdown';
 import { FileUploadHandler } from './FileUploadHandler';
 import { cn } from '@/lib/utils';
 import { VoiceInputHandler } from './VoiceInputHandler';
+import { toast } from 'sonner';
 
 interface Solution {
   id: string;
