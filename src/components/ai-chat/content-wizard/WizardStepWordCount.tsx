@@ -94,8 +94,8 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
   return (
     <div className="space-y-5">
       {selectedSolutionName && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
-          <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+        <div className="flex items-center gap-2 px-3 py-2 glass-card border-amber-300/20">
+          <Sparkles className="w-3.5 h-3.5 text-amber-300/70 flex-shrink-0" />
           <p className="text-[11px] text-muted-foreground">
             Defaults set from <span className="font-medium text-foreground">{selectedSolutionName}</span>'s audience profile — feel free to adjust
           </p>
