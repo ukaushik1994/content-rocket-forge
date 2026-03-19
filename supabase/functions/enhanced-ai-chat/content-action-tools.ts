@@ -708,6 +708,22 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
           await saveAutoSeoScore(supabase, userId, saved.id, seoScore, toolArgs.keyword);
         }
 
+        // Create version 1 (E1)
+        try {
+          await supabase.from('content_versions').insert({
+            content_id: saved.id,
+            user_id: userId,
+            content: generatedContent,
+            title: saved.title,
+            meta_title: autoMetaTitle,
+            meta_description: autoMetaDesc,
+            seo_score: seoScore,
+            version_number: 1,
+            change_source: 'ai_generation',
+            change_description: `Initial generation via AI Chat`
+          });
+        } catch (_) { /* non-blocking */ }
+
         // Fact-checking flags (Fix 18)
         let factCheckWarning = '';
         try {
