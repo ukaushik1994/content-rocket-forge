@@ -701,7 +701,7 @@ export async function executeContentActionTool(
 - Target length: ~${targetWords} words
 - Output clean HTML with proper headings (h2, h3), paragraphs, lists, and occasional <strong> for emphasis
 - Do NOT include meta information or JSON — just the article content
-${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorContext}${structureGuidance}${editPatternHint}`;
+${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorContext}${structureGuidance}${editPatternHint}${performanceContext}${businessOutcomeContext}`;
 
         // Generate content via ai-proxy with retry
         const proxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
