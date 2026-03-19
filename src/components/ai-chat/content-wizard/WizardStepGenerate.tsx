@@ -1507,7 +1507,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
 
           {/* Save as Draft + Publish dropdown */}
           <div className="flex gap-2">
-            <Button onClick={() => saveContent('draft')} disabled={isSaving || !wizardState.title.trim()} className="flex-1 gap-2">
+            <Button onClick={() => saveContent('draft')} disabled={isSaving || !wizardState.title.trim()} className="flex-1 gap-2 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save as Draft
             </Button>
