@@ -326,8 +326,8 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
             className={cn(
               "fixed top-20 right-0 bottom-24 z-[35]",
               "w-full sm:w-[400px] lg:w-[520px] xl:w-[600px]",
-              "bg-background/95 backdrop-blur-xl",
-              "border-l border-border/10",
+              "bg-[rgba(12,12,18,0.95)] backdrop-blur-xl",
+              "border-l border-white/[0.06]",
               "flex flex-col overflow-hidden"
             )}
           >
