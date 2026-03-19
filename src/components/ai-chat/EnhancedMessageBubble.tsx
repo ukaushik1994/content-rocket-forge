@@ -212,8 +212,11 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 </div>
               </div>
               
-              {/* Message Actions (Edit/Delete/Copy/Regenerate) */}
-              <div className="absolute top-2 right-2">
+            </Card>
+            
+            {/* Message Actions below AI bubble, bottom-left */}
+            {!isUser && (
+              <div className="flex items-center gap-1 mt-1 ml-1">
                 <MessageActions
                   messageId={message.id}
                   content={message.content}
@@ -221,10 +224,10 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   timestamp={message.timestamp}
                   onEdit={onEditMessage}
                   onDelete={onDeleteMessage}
-                  onRegenerate={!isUser ? onRetry : undefined}
+                  onRegenerate={onRetry}
                 />
               </div>
-            </Card>
+            )}
           )}
 
           {/* Action Result Cards - structured success/failure rendering */}
