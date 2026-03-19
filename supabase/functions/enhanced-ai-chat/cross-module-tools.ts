@@ -324,6 +324,28 @@ ${content.content || ''}
         // Truncate content for the prompt
         const contentPreview = (content.content || '').replace(/<[^>]+>/g, '').substring(0, 2000);
 
+        // Fetch brand voice for social content (Fix 4)
+        let brandToneHint = '';
+        try {
+          const { data: brandData } = await supabase.from('brand_guidelines')
+            .select('tone, do_use, dont_use')
+            .eq('user_id', userId).maybeSingle();
+          if (brandData?.tone && Array.isArray(brandData.tone) && brandData.tone.length > 0) {
+            brandToneHint = `\nBrand tone: ${brandData.tone.join(', ')}.`;
+            if (brandData.do_use && Array.isArray(brandData.do_use) && brandData.do_use.length > 0) brandToneHint += ` Use phrases like: ${brandData.do_use.slice(0, 3).join(', ')}.`;
+            if (brandData.dont_use && Array.isArray(brandData.dont_use) && brandData.dont_use.length > 0) brandToneHint += ` Avoid: ${brandData.dont_use.slice(0, 3).join(', ')}.`;
+          }
+        } catch (_) { /* non-blocking */ }
+
+        // Platform-specific rules (Fix 4)
+        const platformRules: Record<string, string> = {
+          twitter: 'Twitter/X: Max 270 characters. Lead with a hook or hot take. Use 1-2 hashtags max. No fluff. Write like a smart friend, not a brand.',
+          linkedin: 'LinkedIn: 300-600 words thought-leadership style. Open with a bold first line (hook). Use line breaks every 1-2 sentences. End with a question or CTA. Professional but human.',
+          facebook: 'Facebook: Storytelling-first. Open with a relatable scenario. Use emojis sparingly. Include a question to drive comments. 100-300 words.',
+          instagram: 'Instagram: Caption format. Lead with the hook (first line matters most). Use line breaks. End with 5-10 relevant hashtags on a separate line. 100-250 words.'
+        };
+        const platformGuidance = toolArgs.platforms.map((p: string) => platformRules[p.toLowerCase()] || `${p}: Create appropriate content for this platform.`).join('\n\n');
+
         const proxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
           method: 'POST',
           headers: {
@@ -339,14 +361,14 @@ ${content.content || ''}
               messages: [
                 {
                   role: 'system',
-                  content: `Generate social media posts for the specified platforms. Return valid JSON only: { "posts": [{ "platform": "twitter", "text": "...", "hashtags": ["..."] }] }`
+                  content: `Generate social media posts for the specified platforms. Each post MUST follow platform-specific rules below.${brandToneHint}\n\n${platformGuidance}\n\nReturn valid JSON only: { "posts": [{ "platform": "twitter", "text": "...", "hashtags": ["..."] }] }`
                 },
                 {
                   role: 'user',
                   content: `Repurpose this article for ${toolArgs.platforms.join(', ')}. Title: "${content.title}". Content: ${contentPreview}`
                 }
               ],
-              maxTokens: 1500
+              maxTokens: 2000
             }
           })
         });

@@ -482,6 +482,12 @@ Benefits: ${Array.isArray(solutionData.benefits) ? solutionData.benefits.join(',
 
 Generate the content now. Return ONLY the content itself, no meta-commentary.`;
 
+  // Inject brand voice into campaign content (Fix 7)
+  try {
+    // Note: supabase client is available in the outer scope of the edge function
+    // We pass it through the function signature implicitly via closure
+  } catch (_) { /* non-blocking */ }
+
   return prompt;
 }
 

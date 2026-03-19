@@ -2549,7 +2549,26 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       systemPrompt += `\n\n## ⚠️ DISAMBIGUATION REQUIRED:\n${queryIntent.disambiguationHint}`;
     }
     
-    // Inject real data context
+    // Inject brand voice into main chat (Fix 2)
+    let brandVoiceContext = '';
+    try {
+      const { data: brandData } = await supabase.from('brand_guidelines')
+        .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use')
+        .eq('user_id', userId).maybeSingle();
+      if (brandData) {
+        const bParts: string[] = [];
+        if (brandData.tone && Array.isArray(brandData.tone) && brandData.tone.length > 0) bParts.push(`Tone: ${brandData.tone.join(', ')}`);
+        if (brandData.brand_personality) bParts.push(`Personality: ${brandData.brand_personality}`);
+        if (brandData.do_use && Array.isArray(brandData.do_use) && brandData.do_use.length > 0) bParts.push(`Preferred phrases: ${brandData.do_use.slice(0, 5).join(', ')}`);
+        if (brandData.dont_use && Array.isArray(brandData.dont_use) && brandData.dont_use.length > 0) bParts.push(`Avoid phrases: ${brandData.dont_use.slice(0, 5).join(', ')}`);
+        if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE\nWhen generating any content, writing suggestions, or creative output, follow these guidelines:\n${bParts.join('\n')}`;
+      }
+    } catch (bvErr) {
+      console.warn('[BRAND-VOICE] Failed to fetch brand guidelines (non-blocking):', bvErr);
+    }
+
+    // Inject real data context + brand voice
+    systemPrompt += brandVoiceContext;
     systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;
     
     console.log(`✅ Dynamic system prompt built:

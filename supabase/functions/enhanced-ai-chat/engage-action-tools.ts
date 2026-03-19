@@ -497,7 +497,29 @@ export async function executeEngageActionTool(
           .select('id, name, subject, status, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created email campaign "${data.name}" (draft)${workspaceNotice}`, item: data };
+
+        // Audience-aware email tone hint (Fix 13)
+        let toneHint = '';
+        try {
+          if (toolArgs.segment_id) {
+            const { data: segment } = await supabase.from('engage_segments')
+              .select('name, description')
+              .eq('id', toolArgs.segment_id).single();
+            if (segment) {
+              const segName = (segment.name || '').toLowerCase();
+              const segDesc = (segment.description || '').toLowerCase();
+              if (/vip|premium|loyal|high.?value/i.test(segName + segDesc)) {
+                toneHint = ' 💡 Tip: This targets VIP/loyal contacts — use exclusive, appreciative language.';
+              } else if (/new|lead|prospect|signup/i.test(segName + segDesc)) {
+                toneHint = ' 💡 Tip: This targets new leads — focus on welcome, value proposition, and building trust.';
+              } else if (/inactive|churned|dormant|lapsed/i.test(segName + segDesc)) {
+                toneHint = ' 💡 Tip: This targets inactive contacts — use re-engagement hooks, "we miss you", or new feature announcements.';
+              }
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
+        return { success: true, message: `Created email campaign "${data.name}" (draft)${workspaceNotice}${toneHint}`, item: data };
       }
 
       case 'send_email_campaign': {
