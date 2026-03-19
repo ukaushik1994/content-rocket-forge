@@ -172,10 +172,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     
   }, [user, messages.length]);
 
-  // Analyst engine: track if analyst is active and provide cumulative state
-  const [isAnalystPanelActive, setIsAnalystPanelActive] = useState(false);
+  // Analyst engine: always-on — lightweight memo scanning of messages
   const activeConvObj = conversations.find(c => c.id === activeConversation);
-  const analystState = useAnalystEngine(messages, user?.id || null, isAnalystPanelActive, activeConvObj?.title || null);
+  const analystState = useAnalystEngine(messages, user?.id || null, true, activeConvObj?.title || null);
 
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
