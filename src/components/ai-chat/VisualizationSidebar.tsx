@@ -910,9 +910,12 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       : metricCards;
                     if (metricsToShow.length === 0) return null;
                     return (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-3">
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Key Metrics</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                            <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">Key Metrics</span>
+                          </div>
                           <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">{dataInfo.timeframe}</Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">
