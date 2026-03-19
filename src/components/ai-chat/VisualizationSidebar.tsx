@@ -783,7 +783,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           <PremiumChartTypeSelect value={chartType} onChange={setChartType} className="flex-shrink-0" />
                         )}
                       </div>
-                      <div className="rounded-xl bg-transparent border border-border/20 p-5">
+                      <div className="glass-card p-5">
                         <AnimatePresence mode="wait">
                           {activeView === 'chart' ? (
                             <motion.div key="chart" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
