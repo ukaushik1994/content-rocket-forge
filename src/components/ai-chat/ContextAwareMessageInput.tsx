@@ -153,8 +153,6 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     const trimmed = message.trim();
     if (!trimmed) return;
     if (isLoading) {
-      // Rapid-fire queue feedback: inform user instead of silently dropping
-      const { toast } = await import('sonner').then(m => ({ toast: m.toast }));
       toast.info('Please wait for the current response to finish');
       return;
     }
