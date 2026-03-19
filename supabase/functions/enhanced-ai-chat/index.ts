@@ -2595,7 +2595,16 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
 
     // Inject real data context + brand voice
     systemPrompt += brandVoiceContext;
-    systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;
+    
+    // PE Fix 4: Compress data context for simple/summary queries
+    if (queryIntent.scope === 'summary' && realDataContext.length > 500) {
+      // For summary queries, inject only a compact snapshot
+      const snapshotLines = realDataContext.split('\n').filter((l: string) => l.includes(':') || l.includes('—')).slice(0, 10);
+      systemPrompt += `\n\n## DATA SNAPSHOT:\n${snapshotLines.join('\n')}`;
+      console.log(`📦 Compressed data context: ${realDataContext.length} → ${snapshotLines.join('\n').length} chars`);
+    } else {
+      systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;
+    }
     
     console.log(`✅ Dynamic system prompt built:
   - Scope: ${queryIntent.scope}
