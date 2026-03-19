@@ -101,6 +101,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const [isChartLoading, setIsChartLoading] = useState(false);
   const [showAllSessionCharts, setShowAllSessionCharts] = useState(false);
   const [expandedChartIndex, setExpandedChartIndex] = useState<number | null>(null);
+  const [intelligenceTab, setIntelligenceTab] = useState<'charts' | 'platform'>('charts');
+  const [showAllInsights, setShowAllInsights] = useState(false);
   
   const { user } = useAuth();
 
