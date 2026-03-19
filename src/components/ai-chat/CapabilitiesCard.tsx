@@ -63,8 +63,8 @@ export const CapabilitiesCard: React.FC<CapabilitiesCardProps> = ({ onTryExample
       animate={{ opacity: 1, y: 0 }}
       className="space-y-2 max-w-md"
     >
-      <p className="text-[10px] uppercase tracking-widest text-amber-300/70 flex items-center gap-1.5 pl-1">
-        <span className="w-1 h-1 rounded-full bg-amber-300/70" />
+      <p className="text-[10px] uppercase tracking-widest text-primary/70 flex items-center gap-1.5 pl-1">
+        <span className="w-1 h-1 rounded-full bg-primary/70" />
         I can help with
       </p>
 
