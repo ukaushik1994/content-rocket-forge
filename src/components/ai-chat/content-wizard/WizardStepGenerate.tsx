@@ -1046,7 +1046,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         {/* Phase 5d: Post-generation quality report */}
         {!quick && seoScore !== null && (
           <Collapsible>
-            <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors bg-white/[0.04] border border-white/[0.06] rounded-2xl px-3 py-2">
               <GraduationCap className="w-3.5 h-3.5" />
               <span>Quality Report</span>
               <ChevronDown className="w-3 h-3" />
