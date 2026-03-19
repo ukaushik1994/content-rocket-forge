@@ -593,9 +593,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           {/* Messages Area - with ref for proper scrolling (Issue #1 fix) */}
           <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
             <div className="max-w-6xl mx-auto py-6 space-y-8">
+              {/* Phase 1 Fix: Loading skeleton during conversation transitions */}
+              {isLoadingConversation && messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center min-h-[60vh] py-12 space-y-4">
+                  <Skeleton className="h-4 w-3/4 max-w-md" />
+                  <Skeleton className="h-4 w-1/2 max-w-sm" />
+                  <Skeleton className="h-4 w-2/3 max-w-md" />
+                </div>
+              )}
+
               {/* Welcome State - Premium Minimal */}
               <AnimatePresence>
-              {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[60vh] py-12 sm:py-16 lg:py-24 space-y-8">
+              {messages.length === 0 && !isLoadingConversation && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[60vh] py-12 sm:py-16 lg:py-24 space-y-8">
                     {/* Hero Badge Pill */}
                     <motion.div
                   className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-background/60 backdrop-blur-xl rounded-full border border-border/50"
