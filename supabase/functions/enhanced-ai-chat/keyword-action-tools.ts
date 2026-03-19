@@ -121,9 +121,26 @@ export async function executeKeywordActionTool(
           .select('keyword, volume, difficulty');
 
         if (error) throw error;
+
+        // SB-19: Keyword difficulty context warnings
+        const warnings: string[] = [];
+        const highDiffKeywords = (data || []).filter((kw: any) => kw.difficulty && kw.difficulty > 60);
+        if (highDiffKeywords.length > 0) {
+          // Check how many published articles the user has
+          const { count: articleCount } = await supabase.from('content_items')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId).eq('status', 'published');
+          
+          if ((articleCount || 0) < 20) {
+            const kwNames = highDiffKeywords.map((kw: any) => `"${kw.keyword}" (difficulty: ${kw.difficulty})`).join(', ');
+            warnings.push(`⚠️ **Difficulty warning**: ${kwNames} ${highDiffKeywords.length === 1 ? 'has' : 'have'} high difficulty (>60). With ${articleCount || 0} published articles, ranking for these will be very challenging. Consider targeting lower-difficulty long-tail variations first to build domain authority.`);
+          }
+        }
+
+        const warningText = warnings.length > 0 ? `\n\n${warnings.join('\n')}` : '';
         return {
           success: true,
-          message: `Added ${data?.length || keywordsToInsert.length} keyword(s) to your library`,
+          message: `Added ${data?.length || keywordsToInsert.length} keyword(s) to your library${warningText}`,
           keywords: data || keywordsToInsert.map((k: any) => k.keyword)
         };
       }
