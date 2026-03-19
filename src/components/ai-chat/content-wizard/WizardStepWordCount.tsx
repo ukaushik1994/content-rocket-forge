@@ -236,20 +236,23 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Content Type */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Article Type</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Article Type</span>
+        </div>
         <div className="grid grid-cols-2 gap-2 mt-2">
           {CONTENT_TYPES.map(t => (
             <button
               key={t.value}
               onClick={() => onContentArticleTypeChange(t.value)}
               className={cn(
-                "flex items-center gap-2 p-2.5 rounded-lg border transition-all text-left cursor-pointer",
+                "flex items-center gap-2 p-2.5 rounded-2xl border transition-all text-left cursor-pointer backdrop-blur-md",
                 contentArticleType === t.value
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border/30 hover:border-border/50 bg-muted/20"
+                  ? "bg-white/[0.08] border-amber-300/30"
+                  : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
               )}
             >
-              <t.icon className={cn("w-4 h-4 flex-shrink-0", contentArticleType === t.value ? "text-primary" : "text-muted-foreground")} />
+              <t.icon className={cn("w-4 h-4 flex-shrink-0", contentArticleType === t.value ? "text-amber-300" : "text-muted-foreground")} />
               <div className="min-w-0">
                 <p className="text-xs font-medium text-foreground truncate">{t.label}</p>
                 <p className="text-[10px] text-muted-foreground truncate">{t.desc}</p>
