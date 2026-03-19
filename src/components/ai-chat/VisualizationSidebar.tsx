@@ -829,49 +829,71 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                   {/* 3. WORKSPACE HEALTH (from analyst engine) */}
                   {analystState?.healthScore && (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-3">
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Workspace Health</span>
-                      <div className="glass-card p-6 flex items-center gap-6">
-                        <div className="relative w-24 h-24 flex-shrink-0">
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">Workspace Health</span>
+                      </div>
+                      <div className="glass-card p-8 flex items-center gap-8">
+                        <div
+                          className="relative w-32 h-32 flex-shrink-0"
+                          style={{
+                            filter: `drop-shadow(0 0 30px ${analystState.healthScore.total >= 70 ? 'rgba(16,185,129,0.15)' : analystState.healthScore.total >= 40 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'})`,
+                          }}
+                        >
                           <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" opacity={0.2} />
+                            <defs>
+                              <linearGradient id="healthRingGradient" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stopColor={analystState.healthScore.total >= 70 ? '#10b981' : analystState.healthScore.total >= 40 ? '#f59e0b' : '#ef4444'} />
+                                <stop offset="100%" stopColor={analystState.healthScore.total >= 70 ? '#06d6a0' : analystState.healthScore.total >= 40 ? '#fbbf24' : '#f87171'} />
+                              </linearGradient>
+                            </defs>
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2" opacity={0.15} />
                             <circle cx="18" cy="18" r="15.5" fill="none"
-                              stroke={analystState.healthScore.total >= 70 ? 'hsl(142 71% 45%)' : analystState.healthScore.total >= 40 ? 'hsl(38 92% 50%)' : 'hsl(0 84% 60%)'}
+                              stroke="url(#healthRingGradient)"
                               strokeWidth="2.5" strokeLinecap="round"
                               strokeDasharray={`${analystState.healthScore.total * 0.974} 100`}
-                              className="transition-all duration-700 ease-out"
+                              className="transition-all duration-1000 ease-out"
                             />
                           </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-xl font-bold text-foreground">{analystState.healthScore.total}</span>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-2xl font-bold text-foreground">{analystState.healthScore.total}</span>
+                            <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">score</span>
                           </div>
                         </div>
-                        <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex-1 min-w-0 space-y-2">
                           <div className="flex items-center gap-1.5">
-                            {analystState.healthScore.trend === 'improving' && <TrendIcon className="w-3 h-3 text-emerald-500" />}
-                            {analystState.healthScore.trend === 'declining' && <TrendIcon className="w-3 h-3 text-red-500 rotate-180" />}
-                            {analystState.healthScore.trend === 'stable' && <Activity className="w-3 h-3 text-muted-foreground" />}
-                            <span className="text-xs text-muted-foreground capitalize">{analystState.healthScore.trend}</span>
+                            {analystState.healthScore.trend === 'improving' && <TrendIcon className="w-3.5 h-3.5 text-emerald-500" />}
+                            {analystState.healthScore.trend === 'declining' && <TrendIcon className="w-3.5 h-3.5 text-red-500 rotate-180" />}
+                            {analystState.healthScore.trend === 'stable' && <Activity className="w-3.5 h-3.5 text-muted-foreground" />}
+                            <span className="text-sm text-muted-foreground capitalize font-medium">{analystState.healthScore.trend}</span>
                           </div>
                           {analystState.healthScore.topCritical && (
-                            <p className="text-[10px] text-amber-500">⚡ {analystState.healthScore.topCritical} needs attention</p>
+                            <p className="text-[11px] text-amber-500/80">⚡ {analystState.healthScore.topCritical} needs attention</p>
                           )}
                         </div>
                       </div>
                       <Collapsible>
-                        <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                        <CollapsibleTrigger className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
                           <ChevronDown className="w-3 h-3" />Score breakdown
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="mt-2 space-y-1.5">
+                          <div className="mt-3 glass-card p-4 space-y-2.5">
                             {analystState.healthScore.factors.map((factor) => (
-                              <div key={factor.name} className="flex items-center justify-between gap-2">
-                                <span className="text-[10px] text-muted-foreground truncate">{factor.name}</span>
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-16 h-1 bg-muted/30 rounded-full overflow-hidden">
-                                    <div className={cn("h-full rounded-full transition-all", factor.status === 'good' ? 'bg-emerald-500' : factor.status === 'warning' ? 'bg-amber-500' : 'bg-red-500')} style={{ width: `${(factor.score / factor.maxScore) * 100}%` }} />
+                              <div key={factor.name} className="flex items-center justify-between gap-3">
+                                <span className="text-[11px] text-muted-foreground/70 truncate">{factor.name}</span>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-20 h-1.5 bg-muted/20 rounded-full overflow-hidden">
+                                    <div
+                                      className={cn("h-full rounded-full transition-all duration-500")}
+                                      style={{
+                                        width: `${(factor.score / factor.maxScore) * 100}%`,
+                                        background: factor.status === 'good' ? 'linear-gradient(90deg, #10b981, #06d6a0)' : factor.status === 'warning' ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #ef4444, #f87171)',
+                                        boxShadow: `0 0 6px ${factor.status === 'good' ? 'rgba(16,185,129,0.3)' : factor.status === 'warning' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                                      }}
+                                    />
                                   </div>
-                                  <span className="text-[9px] text-muted-foreground/60 w-7 text-right">{factor.score}/{factor.maxScore}</span>
+                                  <span className="text-[9px] text-muted-foreground/50 w-8 text-right font-mono">{factor.score}/{factor.maxScore}</span>
                                 </div>
                               </div>
                             ))}
