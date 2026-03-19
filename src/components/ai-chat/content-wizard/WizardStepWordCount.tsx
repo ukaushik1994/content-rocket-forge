@@ -264,35 +264,38 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Word Count */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Target Word Count</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Target Word Count</span>
+        </div>
         <div className="grid grid-cols-2 gap-2 mt-2">
           <button
             onClick={() => onModeChange('ai')}
             className={cn(
-              "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all cursor-pointer",
+              "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all cursor-pointer backdrop-blur-md",
               wordCountMode === 'ai'
-                ? "border-primary bg-primary/5 shadow-sm"
-                : "border-border/30 hover:border-border/50 bg-muted/20"
+                ? "bg-white/[0.08] border-amber-300/30"
+                : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
             )}
           >
-            <Sparkles className={cn("w-4 h-4", wordCountMode === 'ai' ? "text-primary" : "text-muted-foreground")} />
+            <Sparkles className={cn("w-4 h-4", wordCountMode === 'ai' ? "text-amber-300" : "text-muted-foreground")} />
             <div className="text-center">
               <p className="text-xs font-medium text-foreground">AI Recommended</p>
               {wordCountMode === 'ai' && (
-                <Badge variant="secondary" className="text-[10px] mt-1">~{aiEstimate.toLocaleString()}</Badge>
+                <Badge variant="outline" className="text-[10px] mt-1 bg-white/[0.04] border-white/[0.06] text-muted-foreground/70">~{aiEstimate.toLocaleString()}</Badge>
               )}
             </div>
           </button>
           <button
             onClick={() => onModeChange('custom')}
             className={cn(
-              "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all cursor-pointer",
+              "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all cursor-pointer backdrop-blur-md",
               wordCountMode === 'custom'
-                ? "border-primary bg-primary/5 shadow-sm"
-                : "border-border/30 hover:border-border/50 bg-muted/20"
+                ? "bg-white/[0.08] border-amber-300/30"
+                : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
             )}
           >
-            <PenLine className={cn("w-4 h-4", wordCountMode === 'custom' ? "text-primary" : "text-muted-foreground")} />
+            <PenLine className={cn("w-4 h-4", wordCountMode === 'custom' ? "text-amber-300" : "text-muted-foreground")} />
             <p className="text-xs font-medium text-foreground">Custom</p>
           </button>
         </div>
