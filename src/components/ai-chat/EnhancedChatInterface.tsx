@@ -799,10 +799,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           }}
           onOpenAnalyst={() => {
             setAnalystActive(true);
-            setIsAnalystPanelActive(true);
             handleSetVisualization({
               type: 'analyst',
-              title: 'Analyst',
+              title: 'Intelligence Panel',
               description: 'Charts & insights companion'
             });
           }}
