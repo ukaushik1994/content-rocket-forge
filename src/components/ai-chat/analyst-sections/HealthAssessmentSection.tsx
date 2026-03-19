@@ -21,6 +21,8 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
   };
 
   const trendLabel = health.trend === 'improving' ? 'Improving' : health.trend === 'declining' ? 'Declining' : 'Stable';
+  const stage = analystState.userStage;
+  const bench = analystState.benchmarks;
 
   return (
     <AnalystSectionWrapper number="01" label="Health Assessment" headline={getHeadline()} delay={0.05}>
@@ -39,6 +41,16 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
           subtitle={health.topCritical ? `⚡ ${health.topCritical}` : 'All clear'}
         />
       </div>
+
+      {/* Stage & benchmark info */}
+      {stage && bench && (
+        <div className="glass-card px-4 py-2.5">
+          <p className="text-[10px] text-muted-foreground/50">
+            Stage: <span className="text-foreground/60 font-medium capitalize">{stage}</span>
+            {' · '}Benchmark: {bench.avgSeo} SEO, {bench.weeklyArticles} articles/week
+          </p>
+        </div>
+      )}
 
       {/* Factor breakdown */}
       <div className="glass-card p-4 space-y-2.5">

@@ -11,6 +11,24 @@ export interface InsightItem {
   source: 'ai' | 'platform' | 'web' | 'cross-signal' | 'memory';
   timestamp: Date;
   messageId?: string;
+  urgency?: 'critical' | 'high' | 'medium' | 'low';
+}
+
+// ─── Strategic Recommendation ──────────────────────────────────────────────
+export type StrategicStance = 'stop-creating' | 'fix-quality' | 'accelerate' | 'build-foundation';
+
+export interface StrategicAction {
+  label: string;
+  prompt: string;
+  effort: 'low' | 'medium' | 'high';
+  impact: 'low' | 'medium' | 'high';
+}
+
+export interface StrategicRecommendation {
+  stance: StrategicStance;
+  reasoning: string;
+  promptQuestion: string;
+  actions: StrategicAction[];
 }
 
 export interface AnalystTopic {
@@ -53,6 +71,30 @@ export interface GoalProgress {
   milestones: { label: string; done: boolean }[];
 }
 
+// ─── User Stage & Benchmarks ───────────────────────────────────────────────
+export type UserStage = 'starter' | 'growing' | 'established' | 'scaling';
+
+export interface StageBenchmarks {
+  publishRate: number;
+  avgSeo: number;
+  weeklyArticles: number;
+  minCompetitors: number;
+}
+
+const BENCHMARKS: Record<UserStage, StageBenchmarks> = {
+  starter: { publishRate: 30, avgSeo: 30, weeklyArticles: 0.5, minCompetitors: 0 },
+  growing: { publishRate: 50, avgSeo: 45, weeklyArticles: 1.5, minCompetitors: 2 },
+  established: { publishRate: 65, avgSeo: 60, weeklyArticles: 2, minCompetitors: 3 },
+  scaling: { publishRate: 75, avgSeo: 70, weeklyArticles: 3, minCompetitors: 5 },
+};
+
+function getUserStage(totalContent: number, published: number): UserStage {
+  if (published >= 30) return 'scaling';
+  if (published >= 10) return 'established';
+  if (totalContent >= 3) return 'growing';
+  return 'starter';
+}
+
 export interface AnalystState {
   topics: AnalystTopic[];
   insightsFeed: InsightItem[];
@@ -64,9 +106,12 @@ export interface AnalystState {
   lastUpdated: Date | null;
   isEnriching: boolean;
   messageCount: number;
-  healthScore: HealthScore | null;       // Enhancement A
-  crossSignalInsights: InsightItem[];    // Enhancement C
-  goalProgress: GoalProgress | null;     // Enhancement E
+  healthScore: HealthScore | null;
+  crossSignalInsights: InsightItem[];
+  goalProgress: GoalProgress | null;
+  strategicRecommendation: StrategicRecommendation | null;
+  userStage: UserStage | null;
+  benchmarks: StageBenchmarks | null;
 }
 
 // ─── Topic Detection ────────────────────────────────────────────────────────
@@ -99,10 +144,11 @@ function classifyInsight(content: string): InsightItem['type'] {
   return 'trend';
 }
 
-// ─── Enhancement F: Metric Context ──────────────────────────────────────────
-export function getMetricContext(label: string, value: number, allData: PlatformDataPoint[]): string {
+// ─── Enhancement F: Metric Context (stage-aware) ────────────────────────────
+export function getMetricContext(label: string, value: number, allData: PlatformDataPoint[], stage?: UserStage | null): string {
   const totalContent = allData.find(d => d.label === 'Total Content')?.value || 0;
   const published = allData.find(d => d.label === 'Published')?.value || 0;
+  const bench = stage ? BENCHMARKS[stage] : null;
 
   switch (label) {
     case 'Total Content': {
@@ -141,7 +187,8 @@ export function getMetricContext(label: string, value: number, allData: Platform
 // ─── Enhancement C: Cross-Signal Analysis ──────────────────────────────────
 function computeCrossSignals(
   userId: string,
-  platformData: PlatformDataPoint[]
+  platformData: PlatformDataPoint[],
+  userMessages?: string[]
 ): Promise<InsightItem[]> {
   return new Promise(async (resolve) => {
     const signals: InsightItem[] = [];
@@ -172,6 +219,7 @@ function computeCrossSignals(
             type: 'warning',
             source: 'cross-signal',
             timestamp: now,
+            urgency: 'critical',
           });
         } else if (avgFirst > avgLast + 10) {
           signals.push({
@@ -206,6 +254,7 @@ function computeCrossSignals(
               type: 'warning',
               source: 'cross-signal',
               timestamp: now,
+              urgency: 'low',
             });
             break;
           }
@@ -230,6 +279,7 @@ function computeCrossSignals(
             type: 'warning',
             source: 'cross-signal',
             timestamp: now,
+            urgency: 'high',
           });
         }
       }
@@ -254,10 +304,331 @@ function computeCrossSignals(
           type: 'opportunity',
           source: 'cross-signal',
           timestamp: now,
+          urgency: 'medium',
         });
       }
+
+      // 6. Positive reinforcement: Publishing streak (2+ articles this week)
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: thisWeekPublished } = await supabase
+        .from('content_items')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .gte('created_at', oneWeekAgo);
+
+      if (thisWeekPublished && thisWeekPublished.length >= 2) {
+        signals.push({
+          id: `cross-publish-streak-${now.getTime()}`,
+          content: `🔥 ${thisWeekPublished.length} articles published this week — great momentum! Consistency compounds SEO results.`,
+          type: 'opportunity',
+          source: 'cross-signal',
+          timestamp: now,
+        });
+      }
+
+      // 7. Positive reinforcement: SEO improvement trend
+      if (recentArticles && recentArticles.length >= 4) {
+        const scores = recentArticles.map(a => a.seo_score as number);
+        if (scores[0] > scores[2] && scores[0] >= 60) {
+          signals.push({
+            id: `cross-seo-win-${now.getTime()}`,
+            content: `🏆 Your latest articles score ${scores[0]}/100 SEO — up from ${scores[2]} in earlier pieces. Your optimization skills are improving!`,
+            type: 'opportunity',
+            source: 'cross-signal',
+            timestamp: now,
+          });
+        }
+      }
+
+      // ─── Fix 1: Cross-Data Pattern Engine ────────────────────────────────
+
+      // 8. Keyword cannibalization: multiple articles targeting same meta_title pattern
+      const { data: contentKeywords } = await supabase
+        .from('content_items')
+        .select('title, keywords, meta_title')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .limit(50);
+
+      if (contentKeywords && contentKeywords.length >= 2) {
+        const kwMap = new Map<string, string[]>();
+        for (const item of contentKeywords) {
+          // Extract primary keyword from keywords JSON or meta_title
+          const kwArr = Array.isArray(item.keywords) ? item.keywords : [];
+          const kw = (kwArr[0] as string || item.meta_title || '').toLowerCase().trim();
+          if (!kw) continue;
+          const existing = kwMap.get(kw) || [];
+          existing.push(item.title);
+          kwMap.set(kw, existing);
+        }
+        for (const [kw, titles] of kwMap) {
+          if (titles.length >= 2) {
+            signals.push({
+              id: `cross-cannibalization-${kw}-${now.getTime()}`,
+              content: `⚠️ Keyword cannibalization: ${titles.length} articles target "${kw}" — they may compete against each other in search. Consider consolidating or differentiating.`,
+              type: 'warning',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'high',
+            });
+            break;
+          }
+        }
+      }
+
+      // 9. WHY SEO is declining — analyze recent low-score articles
+      if (recentArticles && recentArticles.length >= 3) {
+        const scores2 = recentArticles.map(a => a.seo_score as number);
+        const avgF = (scores2[0] + scores2[1]) / 2;
+        const avgL = (scores2[scores2.length - 2] + scores2[scores2.length - 1]) / 2;
+        if (avgF < avgL - 10) {
+          const { data: diagArticles } = await supabase
+            .from('content_items')
+            .select('title, seo_score, content')
+            .eq('user_id', userId)
+            .eq('status', 'published')
+            .not('seo_score', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+          if (diagArticles) {
+            const issues: string[] = [];
+            for (const article of diagArticles) {
+              const contentStr = article.content || '';
+              if (contentStr.length < 2000) issues.push('short content');
+              if (!contentStr.includes('?')) issues.push('no FAQ section');
+              const headingCount = (contentStr.match(/#{2,3}\s/g) || []).length;
+              if (headingCount < 3) issues.push('too few headings');
+            }
+            const uniqueIssues = [...new Set(issues)];
+            if (uniqueIssues.length > 0) {
+              signals.push({
+                id: `cross-seo-diagnosis-${now.getTime()}`,
+                content: `🔍 Why SEO is declining: Recent articles show ${uniqueIssues.slice(0, 3).join(', ')}. These are the most common causes of low scores.`,
+                type: 'warning',
+                source: 'cross-signal',
+                timestamp: now,
+                urgency: 'high',
+              });
+            }
+          }
+        }
+      }
+
+      // ─── Fix 4: Predictive Intelligence ──────────────────────────────────
+
+      // 10. Draft depletion forecast
+      if (published >= 3) {
+        const { data: publishDates } = await supabase
+          .from('content_items')
+          .select('created_at')
+          .eq('user_id', userId)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (publishDates && publishDates.length >= 2) {
+          const dates = publishDates.map(d => new Date(d.created_at).getTime());
+          const gaps: number[] = [];
+          for (let i = 0; i < dates.length - 1; i++) {
+            gaps.push((dates[i] - dates[i + 1]) / (1000 * 60 * 60 * 24));
+          }
+          const avgDaysBetween = gaps.reduce((s, g) => s + g, 0) / gaps.length;
+          const currentDrafts = totalContent - published;
+          if (avgDaysBetween > 0 && currentDrafts > 0) {
+            const daysOfRunway = Math.round(currentDrafts * avgDaysBetween);
+            if (daysOfRunway < 14) {
+              signals.push({
+                id: `cross-draft-depletion-${now.getTime()}`,
+                content: `⏳ At your current pace (1 article every ${Math.round(avgDaysBetween)} days), your ${currentDrafts} drafts will run out in ~${daysOfRunway} days. Start creating new content now.`,
+                type: 'warning',
+                source: 'cross-signal',
+                timestamp: now,
+                urgency: 'high',
+              });
+            }
+          }
+        }
+      }
+
+      // 11. Topic saturation: 4+ articles with same 2-word prefix
+      if (contentKeywords && contentKeywords.length >= 4) {
+        const prefixMap = new Map<string, number>();
+        for (const item of contentKeywords) {
+          const kwArr = Array.isArray(item.keywords) ? item.keywords : [];
+          const kw = (kwArr[0] as string || item.meta_title || '').toLowerCase().trim();
+          const words = kw.split(/\s+/);
+          if (words.length >= 2) {
+            const prefix = words.slice(0, 2).join(' ');
+            prefixMap.set(prefix, (prefixMap.get(prefix) || 0) + 1);
+          }
+        }
+        for (const [prefix, count] of prefixMap) {
+          if (count >= 4) {
+            signals.push({
+              id: `cross-topic-saturation-${prefix}-${now.getTime()}`,
+              content: `📊 Topic saturation: ${count} articles target "${prefix}..." — diminishing returns likely. Expand into adjacent topics for better coverage.`,
+              type: 'warning',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'low',
+            });
+            break;
+          }
+        }
+      }
+
+      // ─── Fix 5: Temporal/Seasonal Awareness ─────────────────────────────
+
+      // 12. Content aging: published articles older than 180 days
+      const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: oldArticles } = await supabase
+        .from('content_items')
+        .select('title, created_at')
+        .eq('user_id', userId)
+        .eq('status', 'published')
+        .lt('created_at', sixMonthsAgo)
+        .order('created_at', { ascending: true })
+        .limit(3);
+
+      if (oldArticles && oldArticles.length > 0) {
+        const oldestTitle = oldArticles[0].title;
+        const daysSince = Math.floor((now.getTime() - new Date(oldArticles[0].created_at).getTime()) / (1000 * 60 * 60 * 24));
+        signals.push({
+          id: `cross-content-aging-${now.getTime()}`,
+          content: `📅 "${oldestTitle}" is ${daysSince} days old. ${oldArticles.length > 1 ? `${oldArticles.length} articles` : 'This article'} may need refreshing to maintain rankings.`,
+          type: 'opportunity',
+          source: 'cross-signal',
+          timestamp: now,
+          urgency: 'medium',
+        });
+      }
+
+      // 13. Seasonal gap awareness
+      const currentMonth = now.getMonth();
+      const seasonalTopics: Record<number, string[]> = {
+        0: ['new year', 'resolutions', 'planning', 'goals'],
+        1: ['valentine', 'engagement', 'relationship'],
+        2: ['spring', 'renewal', 'launch', 'q1 review'],
+        3: ['spring', 'tax', 'q2 planning'],
+        4: ['summer', 'midyear', 'review'],
+        5: ['midyear', 'summer', 'half-year'],
+        6: ['summer', 'back to school'],
+        7: ['back to school', 'fall prep', 'q3'],
+        8: ['fall', 'autumn', 'q4 planning', 'holiday prep'],
+        9: ['halloween', 'black friday prep', 'holiday'],
+        10: ['thanksgiving', 'black friday', 'cyber monday'],
+        11: ['christmas', 'holiday', 'year-end', 'gift'],
+      };
+
+      if (totalContent >= 5 && contentKeywords) {
+        const currentSeasonalTopics = seasonalTopics[currentMonth] || [];
+        if (currentSeasonalTopics.length > 0) {
+          const allKws = contentKeywords.map(c => {
+            const kwArr = Array.isArray(c.keywords) ? c.keywords : [];
+            return (kwArr[0] as string || c.meta_title || '').toLowerCase();
+          });
+          const hasSeasonalContent = currentSeasonalTopics.some(st => 
+            allKws.some(kw => kw.includes(st))
+          );
+          if (!hasSeasonalContent) {
+            signals.push({
+              id: `cross-seasonal-gap-${now.getTime()}`,
+              content: `🗓️ No content targeting seasonal trends (${currentSeasonalTopics.slice(0, 3).join(', ')}). Seasonal content can capture trending search volume.`,
+              type: 'opportunity',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'low',
+            });
+          }
+        }
+      }
+
+      // ─── Fix 6: Content-to-Business Attribution ─────────────────────────
+
+      // 14. Solution-content gaps: solutions with no articles
+      try {
+        const { data: solutions } = await supabase
+          .from('solutions')
+          .select('name')
+          .eq('user_id', userId)
+          .limit(20);
+
+        if (solutions && solutions.length > 0 && contentKeywords) {
+          const allTitles = contentKeywords.map(c => c.title.toLowerCase());
+          const uncoveredSolutions = solutions.filter(s => 
+            !allTitles.some(t => t.includes(s.name.toLowerCase()))
+          );
+          if (uncoveredSolutions.length > 0) {
+            signals.push({
+              id: `cross-solution-gap-${now.getTime()}`,
+              content: `🏢 ${uncoveredSolutions.length} of your ${solutions.length} solutions have no dedicated content — "${uncoveredSolutions[0].name}" could use an article to support sales.`,
+              type: 'opportunity',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'medium',
+            });
+          }
+        }
+      } catch { /* solutions table may not exist */ }
+
+      // 15. Pareto proposals: top 3 proposals capturing 50%+ estimated impressions
+      try {
+        const { data: topProposals } = await supabase
+          .from('ai_strategy_proposals')
+          .select('title, estimated_impressions')
+          .eq('user_id', userId)
+          .not('estimated_impressions', 'is', null)
+          .order('estimated_impressions', { ascending: false })
+          .limit(20);
+
+        if (topProposals && topProposals.length >= 5) {
+          const totalImpressions = topProposals.reduce((s, p) => s + (p.estimated_impressions || 0), 0);
+          const top3Impressions = topProposals.slice(0, 3).reduce((s, p) => s + (p.estimated_impressions || 0), 0);
+          if (totalImpressions > 0 && top3Impressions / totalImpressions >= 0.5) {
+            signals.push({
+              id: `cross-pareto-proposals-${now.getTime()}`,
+              content: `🎯 Top 3 proposals capture ${Math.round((top3Impressions / totalImpressions) * 100)}% of estimated impressions. Focus on "${topProposals[0].title}" first for maximum impact.`,
+              type: 'opportunity',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'medium',
+            });
+          }
+        }
+      } catch { /* query may fail */ }
+
     } catch (err) {
       console.warn('Cross-signal analysis failed:', err);
+    }
+
+    // ─── Fix 7: Accountability Loop ──────────────────────────────────────
+    if (userMessages && userMessages.length >= 3) {
+      try {
+        const simplified = userMessages.map(m => 
+          m.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).slice(0, 4).join(' ')
+        );
+        const queryCount = new Map<string, number>();
+        for (const q of simplified) {
+          if (q.length < 8) continue; // skip very short queries
+          queryCount.set(q, (queryCount.get(q) || 0) + 1);
+        }
+        let accountabilityAdded = false;
+        for (const [query, count] of queryCount) {
+          if (count >= 3 && !accountabilityAdded) {
+            signals.push({
+              id: `cross-accountability-${now.getTime()}`,
+              content: `🔄 You've asked about "${query}" ${count} times this session. Want to take action instead of analyzing further? Let me create a concrete plan.`,
+              type: 'opportunity',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'medium',
+            });
+            accountabilityAdded = true;
+          }
+        }
+      } catch { /* fail silently */ }
     }
 
     resolve(signals);
@@ -918,6 +1289,34 @@ export function useAnalystEngine(
         })());
       }
 
+      // Fix 12: Traffic proxy — most engaged content from performance signals
+      fetches.push((async () => {
+        try {
+          const { data: perfSignals } = await supabase
+            .from('content_performance_signals' as any)
+            .select('content_id, signal_type')
+            .limit(100);
+          if (perfSignals && perfSignals.length > 0) {
+            const countMap = new Map<string, number>();
+            for (const s of perfSignals as any[]) {
+              countMap.set(s.content_id, (countMap.get(s.content_id) || 0) + 1);
+            }
+            const sorted = [...countMap.entries()].sort((a, b) => b[1] - a[1]);
+            if (sorted.length > 0) {
+              const [topId, topCount] = sorted[0];
+              const { data: topArticle } = await supabase
+                .from('content_items')
+                .select('title')
+                .eq('id', topId)
+                .single();
+              if (topArticle) {
+                newData.push({ label: 'Most Engaged', value: topCount, category: 'content_detail', fetchedAt: now });
+              }
+            }
+          }
+        } catch { /* table may not exist */ }
+      })());
+
       await Promise.all(fetches);
       if (newData.length > 0) {
         setPlatformData(prev => {
@@ -1033,7 +1432,8 @@ export function useAnalystEngine(
   useEffect(() => {
     if (!isActive || !userId || platformData.length === 0) return;
 
-    computeCrossSignals(userId, platformData).then(signals => {
+    const userMsgs = messages.filter(m => m.role === 'user').map(m => m.content);
+    computeCrossSignals(userId, platformData, userMsgs).then(signals => {
       if (signals.length > 0) setCrossSignalInsights(signals);
     });
   }, [isActive, userId, platformData]);
@@ -1086,9 +1486,32 @@ export function useAnalystEngine(
     return results;
   }, [messages, isActive]);
 
-  // ─── Merge all insights (anomaly + cross-signal + memory + base) ────────
+  // ─── Merge all insights with urgency scoring + sorting ────────────────
   const enrichedInsightsFeed = useMemo(() => {
-    return [...previousSessionInsights, ...crossSignalInsights, ...anomalyInsights, ...insightsFeed];
+    const allInsights = [...previousSessionInsights, ...crossSignalInsights, ...anomalyInsights, ...insightsFeed];
+    
+    // Assign urgency based on content patterns
+    for (const insight of allInsights) {
+      if (insight.urgency) continue; // already assigned
+      const lower = insight.content.toLowerCase();
+      if (/seo.*declin|scores.*trending.*down|critical/.test(lower)) {
+        insight.urgency = 'critical';
+      } else if (/no.*scheduled|empty.*calendar|0 days|haven't.*updated/.test(lower)) {
+        insight.urgency = 'high';
+      } else if (/stale.*draft|draft.*waiting|backlog/.test(lower)) {
+        insight.urgency = 'medium';
+      } else if (/concentration|diversif|consider/.test(lower)) {
+        insight.urgency = 'low';
+      }
+    }
+
+    // Sort: critical → high → medium → low → undefined
+    const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+    return allInsights.sort((a, b) => {
+      const aOrder = a.urgency ? urgencyOrder[a.urgency] : 4;
+      const bOrder = b.urgency ? urgencyOrder[b.urgency] : 4;
+      return aOrder - bOrder;
+    });
   }, [previousSessionInsights, crossSignalInsights, anomalyInsights, insightsFeed]);
 
   // ─── Enhancement A: Health score ────────────────────────────────────────
@@ -1102,6 +1525,78 @@ export function useAnalystEngine(
     if (!isActive) return null;
     return assessGoalProgress(conversationGoal, messages);
   }, [isActive, conversationGoal, messages]);
+
+  // ─── Strategic Recommendation ──────────────────────────────────────────
+  const strategicRecommendation = useMemo<StrategicRecommendation | null>(() => {
+    if (!isActive || platformData.length === 0) return null;
+
+    const totalContent = platformData.find(d => d.label === 'Total Content')?.value || 0;
+    const published = platformData.find(d => d.label === 'Published')?.value || 0;
+    const drafts = platformData.find(d => d.label === 'Drafts')?.value || 0;
+    const avgSeo = platformData.find(d => d.label === 'Avg SEO Score')?.value || 0;
+
+    // Rule 1: Too many drafts piling up
+    if (drafts > 5 && drafts > published) {
+      return {
+        stance: 'stop-creating',
+        reasoning: `You have ${drafts} drafts sitting unpublished vs ${published} live articles. Creating more content without publishing dilutes your effort. Focus on editing and shipping what you already have.`,
+        promptQuestion: `${drafts} drafts are gathering dust. Should I help you triage and publish the best ones?`,
+        actions: [
+          { label: 'Triage My Drafts', prompt: `I have ${drafts} unpublished drafts. Help me prioritize which to publish first based on SEO potential and topic relevance.`, effort: 'low', impact: 'high' },
+          { label: 'Create Publish Plan', prompt: `Create a 2-week publishing plan to clear my ${drafts} draft backlog, prioritized by impact.`, effort: 'medium', impact: 'high' },
+        ],
+      };
+    }
+
+    // Rule 2: Bad SEO quality
+    if (avgSeo > 0 && avgSeo < 45 && published >= 3) {
+      return {
+        stance: 'fix-quality',
+        reasoning: `Your average SEO score is ${avgSeo}/100 across ${published} articles. Publishing more low-quality content won't help — each article needs to compete. Fix what you have before creating more.`,
+        promptQuestion: `Average SEO is ${avgSeo}. Want me to identify the quickest wins to boost your scores?`,
+        actions: [
+          { label: 'Find Quick Wins', prompt: `My average SEO score is ${avgSeo}. Identify the 3 published articles with the most SEO improvement potential and tell me exactly what to fix.`, effort: 'low', impact: 'high' },
+          { label: 'SEO Audit All Content', prompt: `Run a full SEO audit across all my published content and create a prioritized optimization plan.`, effort: 'high', impact: 'high' },
+        ],
+      };
+    }
+
+    // Rule 3: Everything is working well
+    if (published >= 5 && avgSeo >= 60 && drafts <= 3) {
+      return {
+        stance: 'accelerate',
+        reasoning: `${published} articles live with ${avgSeo} avg SEO and a clean pipeline (${drafts} drafts). Your foundation is solid — this is the time to scale output and capture more keywords.`,
+        promptQuestion: 'Your content engine is running well. Ready to scale up?',
+        actions: [
+          { label: 'Find New Keywords', prompt: 'My content pipeline is healthy. Find untapped keyword opportunities I should target next to expand my reach.', effort: 'medium', impact: 'high' },
+          { label: 'Scale Content Plan', prompt: `I have ${published} articles performing well. Create an aggressive content scaling plan for the next month.`, effort: 'medium', impact: 'high' },
+        ],
+      };
+    }
+
+    // Rule 4: Just starting out
+    return {
+      stance: 'build-foundation',
+      reasoning: `You're early in your content journey with ${totalContent} total pieces. Focus on creating your first ${Math.max(0, 5 - published)} articles with strong SEO fundamentals before worrying about strategy.`,
+      promptQuestion: totalContent === 0 ? 'Ready to create your first piece of content?' : `You have ${totalContent} pieces started. Want help getting to 5 published articles?`,
+      actions: [
+        { label: 'Create First Article', prompt: 'Help me create my first high-quality SEO-optimized article. Guide me through topic selection and outline.', effort: 'medium', impact: 'high' },
+        { label: 'Content Strategy 101', prompt: 'I\'m just starting out. Give me a simple content strategy to build my first 5 articles with maximum impact.', effort: 'low', impact: 'medium' },
+      ],
+    };
+  }, [isActive, platformData]);
+
+  // ─── User Stage & Benchmarks ────────────────────────────────────────────
+  const userStage = useMemo<UserStage | null>(() => {
+    if (!isActive || platformData.length === 0) return null;
+    const totalContent = platformData.find(d => d.label === 'Total Content')?.value || 0;
+    const published = platformData.find(d => d.label === 'Published')?.value || 0;
+    return getUserStage(totalContent, published);
+  }, [isActive, platformData]);
+
+  const benchmarks = useMemo<StageBenchmarks | null>(() => {
+    return userStage ? BENCHMARKS[userStage] : null;
+  }, [userStage]);
 
   return {
     topics,
@@ -1117,5 +1612,8 @@ export function useAnalystEngine(
     healthScore,
     crossSignalInsights,
     goalProgress,
+    strategicRecommendation,
+    userStage,
+    benchmarks,
   };
 }

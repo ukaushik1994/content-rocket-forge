@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { AnalystState } from '@/hooks/useAnalystEngine';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { Loader2 } from 'lucide-react';
 
 // Section components
 import { PreviousSessionSection } from './PreviousSessionSection';
+import { StrategicStanceSection } from './StrategicStanceSection';
 import { HealthAssessmentSection } from './HealthAssessmentSection';
 import { PerformanceTrajectorySection } from './PerformanceTrajectorySection';
 import { StrategicDivergenceSection } from './StrategicDivergenceSection';
@@ -17,12 +18,37 @@ import { GoalProgressSection } from './GoalProgressSection';
 import { WebIntelligenceSection } from './WebIntelligenceSection';
 import { ExploreSection } from './ExploreSection';
 
+// ─── Adaptive Section Ordering (Fix 9) ─────────────────────────────────────
+const SECTION_INTERACTION_KEY = 'analyst_section_interactions';
+
+function getSectionInteractions(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(SECTION_INTERACTION_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function recordSectionInteraction(sectionId: string): void {
+  try {
+    const interactions = getSectionInteractions();
+    interactions[sectionId] = (interactions[sectionId] || 0) + 1;
+    localStorage.setItem(SECTION_INTERACTION_KEY, JSON.stringify(interactions));
+  } catch { /* quota */ }
+}
+
 interface Props {
   analystState: AnalystState | null;
   chartData: any[];
   dataKeys: string[];
   deepDivePrompts: string[];
   onSendMessage: (message: string) => void;
+}
+
+interface SectionDef {
+  id: string;
+  visible: boolean;
+  render: () => React.ReactNode;
+  fixed?: boolean; // fixed sections don't get reordered
 }
 
 export const AnalystNarrativeTimeline: React.FC<Props> = ({
@@ -38,6 +64,10 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
     analystState.insightsFeed.length > 0 ||
     analystState.accumulatedCharts.length > 0
   );
+
+  const handleSectionClick = useCallback((sectionId: string) => {
+    recordSectionInteraction(sectionId);
+  }, []);
 
   // Empty state
   if (!hasAnalystData && chartData.length === 0) {
@@ -76,60 +106,96 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
   const hasGoal = analystState?.goalProgress != null;
   const hasWebSearch = analystState ? analystState.webSearchResults.length > 0 : false;
 
+  // Build section definitions for adaptive ordering
+  const sections: SectionDef[] = [
+    // Fixed sections (always at top)
+    {
+      id: 'previous-session',
+      visible: !!(analystState && analystState.insightsFeed.some(i => i.source === 'memory')),
+      fixed: true,
+      render: () => <PreviousSessionSection onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'strategic-stance',
+      visible: !!analystState?.strategicRecommendation,
+      fixed: true,
+      render: () => <StrategicStanceSection analystState={analystState!} onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'health-assessment',
+      visible: !!analystState,
+      fixed: true,
+      render: () => <HealthAssessmentSection analystState={analystState!} onSendMessage={onSendMessage} />,
+    },
+    // Adaptive sections (reordered by interaction frequency)
+    {
+      id: 'performance-trajectory',
+      visible: hasChartData && !!analystState,
+      render: () => <PerformanceTrajectorySection analystState={analystState!} chartData={chartData} dataKeys={dataKeys} onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'strategic-divergence',
+      visible: hasAnomalies && !!analystState,
+      render: () => <StrategicDivergenceSection insights={analystState!.insightsFeed} onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'content-intelligence',
+      visible: hasContentTopics && !!analystState,
+      render: () => <ContentIntelligenceSection platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'keyword-landscape',
+      visible: hasKeywordTopics && !!analystState,
+      render: () => <KeywordLandscapeSection topics={analystState!.topics} platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'campaign-pulse',
+      visible: hasCampaigns && !!analystState,
+      render: () => <CampaignPulseSection platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'engagement-metrics',
+      visible: hasEngagement && !!analystState,
+      render: () => <EngagementMetricsSection platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'competitive-position',
+      visible: hasCompetitors && !!analystState,
+      render: () => <CompetitivePositionSection topics={analystState!.topics} onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'goal-progress',
+      visible: hasGoal && !!analystState?.goalProgress,
+      render: () => <GoalProgressSection goalProgress={analystState!.goalProgress!} onSendMessage={onSendMessage} />,
+    },
+    {
+      id: 'web-intelligence',
+      visible: hasWebSearch && !!analystState,
+      render: () => <WebIntelligenceSection webSearchResults={analystState!.webSearchResults} onSendMessage={onSendMessage} />,
+    },
+  ];
+
+  // Separate fixed and adaptive sections
+  const fixedSections = sections.filter(s => s.fixed && s.visible);
+  const adaptiveSections = sections.filter(s => !s.fixed && s.visible);
+
+  // Sort adaptive sections by interaction count (most-clicked first)
+  const interactions = getSectionInteractions();
+  adaptiveSections.sort((a, b) => {
+    const aCount = interactions[a.id] || 0;
+    const bCount = interactions[b.id] || 0;
+    return bCount - aCount;
+  });
+
+  const orderedSections = [...fixedSections, ...adaptiveSections];
+
   return (
     <div className="space-y-12">
-      {/* 10. Previous Session — shows when memory insights exist */}
-      {analystState && analystState.insightsFeed.some(i => i.source === 'memory') && (
-        <PreviousSessionSection onSendMessage={onSendMessage} />
-      )}
-
-      {/* 01. Health Assessment */}
-      {analystState && <HealthAssessmentSection analystState={analystState} onSendMessage={onSendMessage} />}
-
-      {/* 02. Performance Trajectory */}
-      {hasChartData && analystState && (
-        <PerformanceTrajectorySection analystState={analystState} chartData={chartData} dataKeys={dataKeys} onSendMessage={onSendMessage} />
-      )}
-
-      {/* 03. Strategic Divergence */}
-      {hasAnomalies && analystState && (
-        <StrategicDivergenceSection insights={analystState.insightsFeed} onSendMessage={onSendMessage} />
-      )}
-
-      {/* 04. Content Intelligence */}
-      {hasContentTopics && analystState && (
-        <ContentIntelligenceSection platformData={analystState.platformData} onSendMessage={onSendMessage} />
-      )}
-
-      {/* 05. Keyword Landscape */}
-      {hasKeywordTopics && analystState && (
-        <KeywordLandscapeSection topics={analystState.topics} platformData={analystState.platformData} onSendMessage={onSendMessage} />
-      )}
-
-      {/* 06. Campaign Pulse */}
-      {hasCampaigns && analystState && (
-        <CampaignPulseSection platformData={analystState.platformData} onSendMessage={onSendMessage} />
-      )}
-
-      {/* 07. Engagement Metrics */}
-      {hasEngagement && analystState && (
-        <EngagementMetricsSection platformData={analystState.platformData} onSendMessage={onSendMessage} />
-      )}
-
-      {/* 08. Competitive Position */}
-      {hasCompetitors && analystState && (
-        <CompetitivePositionSection topics={analystState.topics} onSendMessage={onSendMessage} />
-      )}
-
-      {/* 09. Goal Progress */}
-      {hasGoal && analystState?.goalProgress && (
-        <GoalProgressSection goalProgress={analystState.goalProgress} onSendMessage={onSendMessage} />
-      )}
-
-      {/* 11. Web Intelligence */}
-      {hasWebSearch && analystState && (
-        <WebIntelligenceSection webSearchResults={analystState.webSearchResults} onSendMessage={onSendMessage} />
-      )}
+      {orderedSections.map(section => (
+        <div key={section.id} onClick={() => !section.fixed && handleSectionClick(section.id)}>
+          {section.render()}
+        </div>
+      ))}
 
       {/* 12. Explore — always last */}
       <ExploreSection analystState={analystState} deepDivePrompts={deepDivePrompts} onSendMessage={onSendMessage} />
