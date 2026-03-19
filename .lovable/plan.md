@@ -1,173 +1,120 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# AI Chat: Essential Features & Functional Animations — Gap Analysis & Plan
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
+## Audit Summary
 
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
+After reviewing the codebase, here's what already exists vs what needs work:
 
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
-
----
-
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
-
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
-
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
-
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
-
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
-
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+```text
+Feature                          Status      Notes
+─────────────────────────────────────────────────────────────
+Concurrency guard (isSendingRef) ✅ EXISTS   Blocks duplicate sends
+Stop Generation button           ✅ EXISTS   Dispatches abortAIRequest event
+Tool State Feedback (pills)      ✅ EXISTS   Web Search / Wizard mode chips
+Markdown rendering               ✅ EXISTS   FormattedResponseRenderer
+Cascade delete (user→AI)         ✅ EXISTS   Documented in memory
+Branching regeneration (edit)    ✅ EXISTS   Truncates + re-generates
+Error/Retry bubbles              ✅ EXISTS   ErrorMessageBubble + retry
+Instant rename sync              ✅ EXISTS   Documented in memory
+Textarea auto-resize             ⚠️ PARTIAL  Caps at 120px (~3 lines)
+Message entry animation          ✅ EXISTS   Fade+slide via bubbleVariants
+Thinking indicator               ✅ EXISTS   ThinkingTextRotator + shimmer
+Sidebar toggle animation         ✅ EXISTS   transition-all duration-300
+Hover transitions                ✅ EXISTS   transition-colors on inputs
+Distinct user/AI styling         ✅ EXISTS   User=primary pill, AI=transparent+Bot icon
+Mobile sidebar auto-collapse     ✅ EXISTS   SidebarContext < 768px
+ESC key on search bar            ✅ EXISTS   Clears and closes
+─────────────────────────────────────────────────────────────
+Rapid-fire queuing feedback      ❌ MISSING  Input locks but no visual queue indicator
+Stop button visibility           ⚠️ WEAK     Small "Stop" text link, not prominent
+Cross-tab sync                   ❌ MISSING  No Supabase realtime subscription
+ESC on PlusMenuDropdown          ❌ MISSING  No Escape handler on plus menu
+Action buttons mobile visibility ⚠️ WEAK     Hidden behind MoreHorizontal dropdown
+Textarea height cap              ⚠️ PARTIAL  120px ≈ 3 lines, spec says 5-6
+Message queue indicator          ❌ MISSING  No "queued" state shown to user
+```
 
 ---
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+## Implementation Plan
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+### Phase 1: Critical UX Fixes (High Impact, Low Effort)
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+**1A. Prominent Stop Button**
+- File: `EnhancedChatInterface.tsx` (lines 560-576)
+- Replace the ghost "Stop" text button with a visible pill: red/destructive background, square-stop icon + "Stop generating" label
+- Make it full-width within the message area so it's unmissable
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+**1B. Textarea Height Cap → 5-6 Lines**
+- File: `ContextAwareMessageInput.tsx` (line 232, 368)
+- Change `max-h-[120px]` to `max-h-[160px]` (≈6 lines at 15px font + leading)
+- Update the JS auto-resize cap from `120` to `160`
 
----
+**1C. Rapid-Fire Queue Feedback**
+- File: `ContextAwareMessageInput.tsx`
+- When `isLoading` is true, show a subtle "Message queued..." indicator if the user types and hits Enter (instead of silently blocking)
+- Add a toast or inline note: "Please wait for the current response to finish"
 
-# AI Chat Awareness Gaps — Implementation Tracker
+**1D. ESC Key on Plus Menu**
+- File: `PlusMenuDropdown.tsx`
+- The dropdown likely uses Radix DropdownMenu which handles ESC natively — verify and fix if not
 
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
+### Phase 2: Mobile & Action Visibility
 
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
+**2A. Always-Visible Action Buttons on Mobile**
+- File: `EnhancedMessageBubble.tsx` (lines 215-225)
+- Currently: `absolute top-2 right-2` with `MessageActions` (a dropdown behind MoreHorizontal)
+- Change: On mobile (`md:` breakpoint), show Copy + Delete as inline icon buttons below the message card, not hidden in a dropdown
+- Add a `MobileActionsSheet.tsx` integration or inline the key actions
 
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
+**2B. Improve Message Actions Component**
+- File: `MessageActions.tsx`
+- Add a Regenerate button for AI messages (currently missing from MessageActions)
+- Show Copy as a standalone icon button always visible (not dropdown-only)
 
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+### Phase 3: Cross-Tab Synchronization
+
+**3A. Supabase Realtime Subscription**
+- File: `useEnhancedAIChatDB.ts`
+- Subscribe to `ai_messages` and `ai_conversations` tables via Supabase realtime
+- On INSERT/DELETE events from other tabs, update local state
+- Use `channel.on('postgres_changes', ...)` pattern
+- Guard against applying own writes (check if message already exists in state)
+
+### Phase 4: Markdown Streaming Resilience
+
+**4A. Table Rendering Guard**
+- File: `FormattedResponseRenderer.tsx`
+- Wrap markdown table parsing in a try-catch
+- If a table is incomplete (streaming), render as preformatted text until the table closing marker appears
+- Use CSS `table-layout: fixed` and `overflow-x: auto` to prevent width jumps
 
 ---
 
-# AI Chat Frontend Bug Fixes — 10 Issues, 3 Phases ✅ COMPLETE
+## Technical Details
 
-## ✅ Phase 1: Critical Functional Bugs
-- **Fix 1 — Error Retry Button:** Added `onRetry` prop to `EnhancedMessageBubble` in `EnhancedChatInterface.tsx` — finds last user message before error and re-sends
-- **Fix 2 — Edit Message Duplication:** Rewrote `editMessage` in `useEnhancedAIChatDB.ts` to invoke SSE inline (no `sendMessage` call) — inserts new AI response at correct position without duplicating user message
-- **Fix 3 — SSE Timeout:** Moved `clearTimeout(timeoutId)` into `finally` block after reader loop completes (both in `sendMessage` and `editMessage`)
+### Files to Modify
+1. `src/components/ai-chat/EnhancedChatInterface.tsx` — Stop button redesign
+2. `src/components/ai-chat/ContextAwareMessageInput.tsx` — Textarea cap + queue feedback
+3. `src/components/ai-chat/EnhancedMessageBubble.tsx` — Mobile action visibility
+4. `src/components/ai-chat/MessageActions.tsx` — Always-visible Copy, Regenerate
+5. `src/hooks/useEnhancedAIChatDB.ts` — Cross-tab realtime sync
+6. `src/components/ai-chat/FormattedResponseRenderer.tsx` — Table streaming guard
+7. `src/components/ai-chat/PlusMenuDropdown.tsx` — ESC key verification
 
-## ✅ Phase 2: Medium Severity Fixes
-- **Fix 4 — open_settings Event:** Changed `{ detail: action.data?.tab }` → `{ detail: { tab: action.data?.tab } }` to match listener expectations
-- **Fix 5 — RateLimitBanner Retry:** Wired to re-send last user message instead of console.log no-op
-- **Fix 6 — setState in useMemo:** Replaced `useState` + `setMessageSearchResults` inside `useMemo` with pure derived `useMemo` value
-- **Fix 7 — Title Truncation:** Smart truncation at last word boundary before 40 chars
+### Estimated Scope
+- Phase 1: ~50 lines changed across 3 files
+- Phase 2: ~80 lines changed across 2 files  
+- Phase 3: ~40 lines added to 1 file
+- Phase 4: ~20 lines added to 1 file
 
-## ✅ Phase 3: Dead Code Cleanup & State Sync
-- **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
-- **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
-- **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed
+### What's Intentionally Skipped (Already Works)
+- Cascade delete on user message removal
+- Branching regeneration on edit
+- Error/retry handling
+- Sidebar mobile collapse
+- Tool state pills (Web Search, Wizard)
+- Thinking/shimmer indicators
+- All listed animation types (fade, slide, hover transitions)
+
