@@ -1147,12 +1147,11 @@ export const useEnhancedAIChatDB = () => {
         conversation = {
           id: convData.id,
           title: convData.title || 'Untitled',
-          updatedAt: new Date(convData.updated_at),
+          created_at: convData.created_at,
+          updated_at: convData.updated_at,
           pinned: convData.pinned ?? false,
           archived: convData.archived ?? false,
           tags: convData.tags ?? [],
-          summary: convData.summary ?? undefined,
-          goal: convData.goal ?? undefined,
         };
       }
 
