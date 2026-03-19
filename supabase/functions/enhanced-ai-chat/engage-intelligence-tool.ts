@@ -163,7 +163,7 @@ export async function executeEngageIntelligenceTool(
 
     case 'get_engage_journeys': {
       let query = supabase
-        .from('engage_journeys')
+        .from('journeys')
         .select('id, name, description, status, trigger_type, trigger_config, created_at, updated_at')
         .eq('workspace_id', workspaceId);
       
@@ -179,8 +179,8 @@ export async function executeEngageIntelligenceTool(
       const journeysWithDetails = await Promise.all(
         (data || []).map(async (journey: any) => {
           const [stepsResult, enrollmentResult] = await Promise.all([
-            supabase.from('engage_journey_steps').select('*', { count: 'exact', head: true }).eq('journey_id', journey.id),
-            supabase.from('engage_journey_enrollments').select('*', { count: 'exact', head: true }).eq('journey_id', journey.id)
+            supabase.from('journey_steps').select('*', { count: 'exact', head: true }).eq('journey_id', journey.id),
+            supabase.from('journey_enrollments').select('*', { count: 'exact', head: true }).eq('journey_id', journey.id)
           ]);
           return {
             ...journey,
@@ -211,7 +211,7 @@ export async function executeEngageIntelligenceTool(
 
     case 'get_engage_email_campaigns': {
       let query = supabase
-        .from('engage_email_campaigns')
+        .from('email_campaigns')
         .select('id, name, subject, status, scheduled_at, sent_at, created_at')
         .eq('workspace_id', workspaceId);
       

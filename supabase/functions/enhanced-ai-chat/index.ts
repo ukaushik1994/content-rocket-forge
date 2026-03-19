@@ -745,7 +745,15 @@ These are DIFFERENT datasets. Don't mix them.
 {proactiveInsights}
 `;
 
-// Platform Knowledge module - comprehensive understanding of the entire platform
+// Lightweight platform basics (~200 tokens) - used by default
+const PLATFORM_BASICS = `
+You are the AI brain of **Creaiter** — an AI-powered content marketing platform.
+Key routes: /repository (content), /campaigns, /keywords, /analytics, /ai-proposals, /calendar, /offerings, /content-approval.
+Engage: /engage/email, /engage/contacts, /engage/segments, /engage/journeys, /engage/automations, /engage/social, /engage/activity.
+Sidebar panels: Content Wizard, Research Intelligence, Analyst, Repository, Approvals.
+Tools: 29 read tools + write tools for content, engage, campaigns, keywords, offerings, and cross-module actions.`;
+
+// Platform Knowledge module - comprehensive understanding of the entire platform (full version)
 const PLATFORM_KNOWLEDGE_MODULE = `
 🏗️ PLATFORM ARCHITECTURE & COMPLETE MODULE KNOWLEDGE:
 
@@ -1648,9 +1656,9 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
         const [contactsR, segmentsR, journeysR, automationsR, emailCampaignsR] = await Promise.all([
           supabase.from('engage_contacts').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
           supabase.from('engage_segments').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
-          supabase.from('engage_journeys').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+          supabase.from('journeys').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
           supabase.from('engage_automations').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
-          supabase.from('engage_email_campaigns').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+          supabase.from('email_campaigns').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
         ]);
         engageContactCount = contactsR.count || 0;
         engageSegmentCount = segmentsR.count || 0;
@@ -1727,7 +1735,23 @@ ${engageWorkspaceId ? `
 - **Email Campaigns**: ${engageEmailCampaignCount} email campaigns
 ` : ''}
 ${recentActivitySection}
+`;
 
+    // 4d: Performance-driven topic prioritization
+    let topicPrioritization = '';
+    try {
+      const { data: topicPerf } = await supabase.from('content_items')
+        .select('main_keyword, seo_score')
+        .eq('user_id', userId).not('main_keyword', 'is', null).not('seo_score', 'is', null)
+        .order('seo_score', { ascending: false }).limit(50);
+      if (topicPerf?.length > 3) {
+        const topTopics = topicPerf.slice(0, 3).map((t: any) => `${t.main_keyword} (SEO: ${t.seo_score})`);
+        const weakTopics = topicPerf.filter((t: any) => t.seo_score < 40).slice(0, 3).map((t: any) => `${t.main_keyword} (SEO: ${t.seo_score})`);
+        topicPrioritization = `\n## Topic Performance:\n- **Top performing**: ${topTopics.join(', ')}${weakTopics.length > 0 ? `\n- **Needs improvement**: ${weakTopics.join(', ')}` : ''}`;
+      }
+    } catch (_) { /* non-blocking */ }
+
+    const contextString2 = `${topicPrioritization}
 ## How to Access Detailed Data:
 
 You have access to powerful tools to fetch exactly the data you need:
@@ -1811,7 +1835,7 @@ You have access to powerful tools to fetch exactly the data you need:
 
     // Store counts for TOOL_USAGE_MODULE replacement
     return {
-      contextString,
+      contextString: contextString + contextString2,
       counts,
       proactiveInsights: generateProactiveInsights(counts)
     };
@@ -2595,9 +2619,11 @@ serve(async (req) => {
         systemPrompt += '\n\n' + ACTION_MODULE;
       }
       
-      // Add platform knowledge only when relevant (PE Fix 3)
+      // Add platform knowledge: full when relevant, basics always (PE Fix 3)
       if (needsPlatformKnowledge) {
         systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
+      } else {
+        systemPrompt += '\n\n' + PLATFORM_BASICS;
       }
       
       console.log(`🎯 Intent-gated modules: charts=${needsCharts}, table=${needsTable}, actions=${needsActions}, platform=${needsPlatformKnowledge}, multiChart=${needsMultiChart}`);
@@ -3921,8 +3947,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
             const { data: wsData } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
             const analystWorkspaceId = wsData?.workspace_id;
             const emailQuery = analystWorkspaceId 
-              ? supabase.from('engage_email_campaigns').select('id', { count: 'exact', head: true }).eq('workspace_id', analystWorkspaceId)
-              : supabase.from('engage_email_campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+              ? supabase.from('email_campaigns').select('id', { count: 'exact', head: true }).eq('workspace_id', analystWorkspaceId)
+              : supabase.from('email_campaigns').select('id', { count: 'exact', head: true }).eq('user_id', userId);
             const { count } = await emailQuery;
             if (count !== null && count > 0) { platformStats['totalEmailCampaigns'] = count; analyticsInsights.push(`${count} email campaigns in Engage`); }
           } catch (_) { /* table may not exist */ }

@@ -492,7 +492,7 @@ export async function executeEngageActionTool(
         if (toolArgs.from_name) insertData.from_name = toolArgs.from_name;
         if (toolArgs.from_email) insertData.from_email = toolArgs.from_email;
 
-        const { data, error } = await supabase.from('engage_email_campaigns')
+        const { data, error } = await supabase.from('email_campaigns')
           .insert(insertData)
           .select('id, name, subject, status, created_at').single();
 
@@ -542,7 +542,7 @@ export async function executeEngageActionTool(
         }
         updates.updated_at = new Date().toISOString();
 
-        const { data, error } = await supabase.from('engage_email_campaigns')
+        const { data, error } = await supabase.from('email_campaigns')
           .update(updates)
           .eq('id', toolArgs.campaign_id)
           .eq('workspace_id', workspaceId)
@@ -569,7 +569,7 @@ export async function executeEngageActionTool(
                 const errText = await sendResponse.text().catch(() => 'Unknown error');
                 console.error('[ENGAGE-ACTION] Email send failed:', sendResponse.status, errText);
                 // Reset campaign status to draft so user can retry
-                await supabase.from('engage_email_campaigns')
+                await supabase.from('email_campaigns')
                   .update({ status: 'draft', updated_at: new Date().toISOString() })
                   .eq('id', toolArgs.campaign_id)
                   .eq('workspace_id', workspaceId);
@@ -581,7 +581,7 @@ export async function executeEngageActionTool(
             } catch (err) {
               console.error('[ENGAGE-ACTION] Email send trigger error:', err);
               // Reset campaign status to draft
-              await supabase.from('engage_email_campaigns')
+              await supabase.from('email_campaigns')
                 .update({ status: 'draft', updated_at: new Date().toISOString() })
                 .eq('id', toolArgs.campaign_id)
                 .eq('workspace_id', workspaceId);
@@ -602,7 +602,7 @@ export async function executeEngageActionTool(
       }
 
       case 'create_journey': {
-        const { data, error } = await supabase.from('engage_journeys').insert({
+        const { data, error } = await supabase.from('journeys').insert({
           workspace_id: workspaceId,
           name: toolArgs.name,
           description: toolArgs.description || '',
@@ -616,7 +616,7 @@ export async function executeEngageActionTool(
       }
 
       case 'activate_journey': {
-        const { data, error } = await supabase.from('engage_journeys')
+        const { data, error } = await supabase.from('journeys')
           .update({ status: 'active', updated_at: new Date().toISOString() })
           .eq('id', toolArgs.journey_id)
           .eq('workspace_id', workspaceId)
@@ -667,7 +667,7 @@ export async function executeEngageActionTool(
           return { success: false, message: 'No contact IDs provided' };
         }
 
-        const { data, error } = await supabase.from('engage_journey_enrollments')
+        const { data, error } = await supabase.from('journey_enrollments')
           .insert(enrollments)
           .select('id');
 
@@ -790,7 +790,7 @@ export async function executeEngageActionTool(
       }
 
       case 'delete_email_campaign': {
-        const { error } = await supabase.from('engage_email_campaigns')
+        const { error } = await supabase.from('email_campaigns')
           .delete()
           .eq('id', toolArgs.campaign_id)
           .eq('workspace_id', workspaceId);
@@ -799,7 +799,7 @@ export async function executeEngageActionTool(
       }
 
       case 'delete_journey': {
-        const { error } = await supabase.from('engage_journeys')
+        const { error } = await supabase.from('journeys')
           .delete()
           .eq('id', toolArgs.journey_id)
           .eq('workspace_id', workspaceId);

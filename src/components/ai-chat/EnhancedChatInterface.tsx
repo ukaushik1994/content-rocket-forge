@@ -24,7 +24,7 @@ import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicat
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { RateLimitBanner } from '@/components/common/RateLimitBanner';
 import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
-import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search, Sparkles } from 'lucide-react';
+import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search, Sparkles, AlertTriangle, Clock, CalendarX, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -94,6 +94,63 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     };
     checkKeys();
   }, [user, hasCheckedKeys]);
+
+  // 4b: Proactive insights on welcome screen
+  const [proactiveInsights, setProactiveInsights] = useState<Array<{type: string; label: string; count: number; icon: React.ReactNode}>>([]);
+  // 4e: Conversation templates from patterns
+  const [workflowTemplates, setWorkflowTemplates] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user || messages.length > 0) return;
+    const fetchInsights = async () => {
+      try {
+        const fourteenDaysAgo = new Date(Date.now() - 14 * 86400000).toISOString();
+        const sevenDaysFromNow = new Date(Date.now() + 7 * 86400000).toISOString();
+        const today = new Date().toISOString().split('T')[0];
+
+        const [staleDrafts, failedQueue, calendarItems, pendingApprovals] = await Promise.all([
+          supabase.from('content_items').select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id).eq('status', 'draft').lt('updated_at', fourteenDaysAgo),
+          supabase.from('content_generation_queue').select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id).eq('status', 'failed'),
+          supabase.from('content_calendar').select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id).gte('scheduled_date', today).lte('scheduled_date', sevenDaysFromNow),
+          supabase.from('content_approvals').select('id', { count: 'exact', head: true })
+            .eq('reviewer_id', user.id).eq('status', 'pending_review'),
+        ]);
+
+        const insights: typeof proactiveInsights = [];
+        if ((staleDrafts.count ?? 0) > 0) insights.push({ type: 'stale', label: 'Stale drafts (>14d)', count: staleDrafts.count!, icon: <Clock className="h-3.5 w-3.5" /> });
+        if ((failedQueue.count ?? 0) > 0) insights.push({ type: 'failed', label: 'Failed queue items', count: failedQueue.count!, icon: <AlertTriangle className="h-3.5 w-3.5" /> });
+        if ((calendarItems.count ?? 0) === 0) insights.push({ type: 'empty_cal', label: 'Empty calendar this week', count: 0, icon: <CalendarX className="h-3.5 w-3.5" /> });
+        if ((pendingApprovals.count ?? 0) > 0) insights.push({ type: 'approvals', label: 'Pending approvals', count: pendingApprovals.count!, icon: <CheckCircle2 className="h-3.5 w-3.5" /> });
+        setProactiveInsights(insights);
+      } catch (_) { /* non-blocking */ }
+    };
+
+    const fetchTemplates = async () => {
+      try {
+        const { data: convos } = await supabase.from('ai_conversations')
+          .select('title').eq('user_id', user.id)
+          .order('updated_at', { ascending: false }).limit(20);
+        if (!convos?.length) return;
+        const patterns: Record<string, number> = {};
+        for (const c of convos) {
+          if (!c.title) continue;
+          const match = c.title.match(/^(Write|Create|Analyze|Generate|Draft|Plan|Research|Compare|Optimize|Review)\s+.{3,}/i);
+          if (match) {
+            const key = c.title.substring(0, 40).trim();
+            patterns[key] = (patterns[key] || 0) + 1;
+          }
+        }
+        const sorted = Object.entries(patterns).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k]) => k);
+        setWorkflowTemplates(sorted);
+      } catch (_) { /* non-blocking */ }
+    };
+
+    fetchInsights();
+    fetchTemplates();
+  }, [user, messages.length]);
 
   // Analyst engine: track if analyst is active and provide cumulative state
   const [isAnalystPanelActive, setIsAnalystPanelActive] = useState(false);
@@ -513,6 +570,58 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
+
+                    {/* Proactive Insights */}
+                    {proactiveInsights.length > 0 && (
+                      <motion.div 
+                        className="flex flex-wrap gap-2 justify-center max-w-md"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                      >
+                        {proactiveInsights.map((insight) => (
+                          <button
+                            key={insight.type}
+                            onClick={() => {
+                              const prompts: Record<string, string> = {
+                                stale: 'Show me my stale drafts that need attention',
+                                failed: 'What content generation tasks failed?',
+                                empty_cal: 'Help me plan content for this week',
+                                approvals: 'Show me content pending my review'
+                              };
+                              sendMessage(prompts[insight.type] || '');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors"
+                          >
+                            {insight.icon}
+                            {insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+
+                    {/* Workflow Templates */}
+                    {workflowTemplates.length > 0 && (
+                      <motion.div
+                        className="flex flex-col items-center gap-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                      >
+                        <span className="text-xs text-muted-foreground">Your workflows</span>
+                        <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+                          {workflowTemplates.map((tpl, i) => (
+                            <button
+                              key={i}
+                              onClick={() => sendMessage(tpl)}
+                              className="px-3 py-1.5 rounded-full text-xs bg-muted/50 hover:bg-muted border border-border/30 hover:border-border/60 transition-colors text-foreground/80"
+                            >
+                              {tpl}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
 
                     {/* Pill suggestions */}
                     <EnhancedQuickActions onAction={handleLegacyAction} onSetVisualization={handleSetVisualization} />
