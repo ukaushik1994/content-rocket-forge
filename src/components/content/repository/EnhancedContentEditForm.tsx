@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { sanitizeMarkdownSync } from '@/utils/sanitize';
+import { trackContentEdit } from '@/services/contentFeedbackService';
 
 type FormValues = {
   title: string;
