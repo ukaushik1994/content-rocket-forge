@@ -1176,7 +1176,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
       {/* Generate Button */}
       {!wizardState.generatedContent ? (
         <div className="space-y-3">
-          <Button onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-2">
+          <Button onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-2 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30">
             {isGeneratingContent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {isGeneratingContent ? 'Generating...' : 'Generate Content'}
           </Button>
