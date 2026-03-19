@@ -671,7 +671,7 @@ export async function executeToolCall(
         // Route content action tools
         if (CONTENT_ACTION_TOOL_NAMES.includes(toolName)) {
           console.log(`[TOOL] ${toolName} | Routing to content action handler`);
-          const result = await executeContentActionTool(toolName, toolArgs, supabase, userId);
+          const result = await executeContentActionTool(toolName, toolArgs, supabase, userId, conversationId);
           return { data: result, error: null };
         }
 

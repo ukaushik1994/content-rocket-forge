@@ -340,7 +340,7 @@ export const CONTENT_ACTION_TOOL_NAMES = [
 ];
 
 export async function executeContentActionTool(
-  toolName: string, toolArgs: any, supabase: any, userId: string
+  toolName: string, toolArgs: any, supabase: any, userId: string, conversationId?: string
 ): Promise<any> {
   console.log(`[CONTENT-ACTION] ${toolName} | user: ${userId}`);
 
