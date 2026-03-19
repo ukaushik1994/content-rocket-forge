@@ -491,8 +491,20 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                   filteredConversations.length > 0 ? (
                     <>
               <div role="list">
-                      {displayedConversations.map((conversation) => (
-                        <div
+                      {displayedConversations.map((conversation, index) => {
+                        const group = getDateGroup(conversation.updated_at);
+                        const prevGroup = index > 0 ? getDateGroup(displayedConversations[index - 1].updated_at) : null;
+                        const showHeader = !conversation.pinned && group !== prevGroup;
+                        return (
+                          <React.Fragment key={conversation.id}>
+                            {showHeader && (
+                              <div className="sticky top-0 z-10 px-4 pt-3 pb-1">
+                                <span className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground/50">
+                                  {group}
+                                </span>
+                              </div>
+                            )}
+                            <div
                           key={conversation.id}
                           role="listitem"
                           aria-selected={activeConversation === conversation.id}
