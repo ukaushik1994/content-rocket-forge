@@ -1,35 +1,27 @@
 
 
-# Fix Chat Input: Focus Outline, Alignment, and Scrollbar
+# Redesign CapabilitiesCard — Minimal, Drillable, Glassmorphism Theme
 
-## Problems Identified
+## Design
 
-1. **White focus outline**: The base `Textarea` component applies `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`. The chat input overrides `focus:ring-0` but not the `focus-visible:` variants, so clicking the textarea shows a white ring.
+Replace the dense 2-column grid with a single-column accordion list matching the AI chat's glassmorphism aesthetic.
 
-2. **Placeholder not vertically centered**: The container uses `items-end` (for multi-line expansion), but the textarea's internal padding and min-height cause the single-line placeholder text to sit misaligned relative to the flanking buttons.
+**Collapsed row**: `bg-white/[0.04] border border-white/[0.06] backdrop-blur-md rounded-2xl` — icon in `bg-white/[0.06]` rounded square, title in `text-sm font-medium`, right-aligned chevron, subtle count label (`text-muted-foreground/50`). Hover: `bg-white/[0.08]`.
 
-3. **White scrollbar inside textarea**: The textarea can scroll (max-h-[160px]) and shows the browser's default white scrollbar, which clashes with the dark theme.
+**Expanded content**: Actions as a vertical list with `hover:bg-white/[0.06]` highlight rows (clickable, sends action text). Example prompts as horizontal amber-accent pills (`border-amber-300/20 text-amber-300/70 hover:bg-amber-300/10`).
+
+**Header**: `"I can help with"` in `text-xs uppercase tracking-widest text-amber-300/70` with dot prefix (matching analyst label style).
+
+**Animation**: `AnimatePresence` + `motion.div` for expand/collapse. Staggered row entrance (0.04s delay). One-at-a-time accordion via `expandedIndex` state.
 
 ## Changes
 
-### File 1: `src/components/ai-chat/ContextAwareMessageInput.tsx`
+### 1. `src/components/ai-chat/CapabilitiesCard.tsx` — Full rewrite
+- `useState<number | null>` for expanded index
+- Vertical accordion list with glassmorphism card rows
+- Clickable actions + amber example pills calling `onTryExample`
+- Framer Motion stagger + expand animations
 
-**Textarea className** (line 373): Add `focus-visible:ring-0 focus-visible:ring-offset-0` to fully suppress the focus ring, and add custom scrollbar classes to hide/darken the scrollbar.
-
-Change the container `items-end` to `items-center` (line 328) so the placeholder and buttons align vertically when the textarea is a single line. Keep the textarea's auto-grow behavior so it still expands.
-
-Also update the focus border style (line 334) from purple (`border-primary/40`) to a subtler `border-white/[0.15]` to match the glassmorphism aesthetic.
-
-### File 2: `src/index.css` (or global styles)
-
-Add a utility for transparent/dark scrollbar styling on the textarea:
-```css
-.scrollbar-thin-dark::-webkit-scrollbar { width: 4px; }
-.scrollbar-thin-dark::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-thin-dark::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-```
-
-## Scope
-- 2 files, purely cosmetic
-- No logic changes
+### 2. `src/components/ai-chat/EnhancedMessageBubble.tsx` (~line 218)
+- Remove any wrapping `<Card>` around `CapabilitiesCard` since the new design handles its own styling
 
