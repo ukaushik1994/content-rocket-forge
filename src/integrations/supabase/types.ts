@@ -219,6 +219,7 @@ export type Database = {
         Row: {
           archived: boolean | null
           created_at: string
+          goal: string | null
           id: string
           is_shared: boolean | null
           pinned: boolean | null
@@ -233,6 +234,7 @@ export type Database = {
         Insert: {
           archived?: boolean | null
           created_at?: string
+          goal?: string | null
           id?: string
           is_shared?: boolean | null
           pinned?: boolean | null
@@ -247,6 +249,7 @@ export type Database = {
         Update: {
           archived?: boolean | null
           created_at?: string
+          goal?: string | null
           id?: string
           is_shared?: boolean | null
           pinned?: boolean | null
@@ -357,8 +360,10 @@ export type Database = {
           created_at: string
           delivery_attempts: number | null
           error_details: string | null
+          feedback_helpful: boolean | null
           function_calls: Json | null
           id: string
+          is_pinned: boolean | null
           is_streaming: boolean | null
           message_sequence: number
           message_status: string | null
@@ -376,8 +381,10 @@ export type Database = {
           created_at?: string
           delivery_attempts?: number | null
           error_details?: string | null
+          feedback_helpful?: boolean | null
           function_calls?: Json | null
           id?: string
+          is_pinned?: boolean | null
           is_streaming?: boolean | null
           message_sequence?: number
           message_status?: string | null
@@ -395,8 +402,10 @@ export type Database = {
           created_at?: string
           delivery_attempts?: number | null
           error_details?: string | null
+          feedback_helpful?: boolean | null
           function_calls?: Json | null
           id?: string
+          is_pinned?: boolean | null
           is_streaming?: boolean | null
           message_sequence?: number
           message_status?: string | null
@@ -8625,6 +8634,7 @@ export type Database = {
         Returns: {
           archived: boolean | null
           created_at: string
+          goal: string | null
           id: string
           is_shared: boolean | null
           pinned: boolean | null
