@@ -290,6 +290,26 @@ export const EngageSettings = () => {
         </GlassCard>
       </motion.div>
 
+      {/* Journey Processing Note */}
+      <motion.div {...fadeUp(0.21)}>
+        <GlassCard className="p-5 border-amber-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-8 w-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+              <AlertCircle className="h-4 w-4 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Journey Processing</h3>
+              <p className="text-[10px] text-muted-foreground">Automated journey steps require scheduled processing</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Journeys with wait steps and scheduled actions require a cron job to process pending steps. 
+            Set up a scheduled task (e.g., every 15 minutes) to call the <code className="text-[10px] px-1 py-0.5 rounded bg-muted">process-journey-steps</code> edge function 
+            for automatic progression. Without this, journey steps will only advance on manual triggers.
+          </p>
+        </GlassCard>
+      </motion.div>
+
       {/* Danger Zone */}
       <motion.div {...fadeUp(0.21)}>
         <GlassCard className="p-5 border-destructive/30">
