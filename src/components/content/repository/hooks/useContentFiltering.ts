@@ -88,7 +88,7 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       } else if (effectiveSortBy === 'title') {
         return a.title.localeCompare(b.title);
-      } else if (sortBy === 'score') {
+      } else if (effectiveSortBy === 'score') {
         return (b.seo_score || 0) - (a.seo_score || 0);
       } else if (sortBy === 'wordCount') {
         const aWordCount = a.content ? a.content.split(/\s+/).length : 0;
