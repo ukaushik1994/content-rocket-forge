@@ -73,6 +73,26 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   } = useSharedAIChatDB();
   const { user } = useAuth();
 
+  // API Key onboarding gate
+  const [showKeyOnboarding, setShowKeyOnboarding] = useState(false);
+  const [hasCheckedKeys, setHasCheckedKeys] = useState(false);
+
+  useEffect(() => {
+    if (!user || hasCheckedKeys) return;
+    const checkKeys = async () => {
+      const { count, error } = await supabase
+        .from('api_keys')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+      if (!error && (count === null || count === 0)) {
+        setShowKeyOnboarding(true);
+      }
+      setHasCheckedKeys(true);
+    };
+    checkKeys();
+  }, [user, hasCheckedKeys]);
+
   // Analyst engine: track if analyst is active and provide cumulative state
   const [isAnalystPanelActive, setIsAnalystPanelActive] = useState(false);
   const analystState = useAnalystEngine(messages, user?.id || null, isAnalystPanelActive);
