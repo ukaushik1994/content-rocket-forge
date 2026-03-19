@@ -43,11 +43,11 @@ export const StrategicDivergenceSection: React.FC<Props> = ({ insights, onSendMe
 
       {anomalies.some(a => a.type === 'warning') && (
         <NarrativePromptCard
-          question="These anomalies may impact your strategy. Want me to prioritize fixes?"
-          primaryLabel="Prioritize Fixes"
-          primaryAction="Prioritize the most critical issues and suggest fixes for each"
+          question={`${anomalies.length} anomal${anomalies.length === 1 ? 'y' : 'ies'} detected${anomalies[0] ? ` — including "${anomalies[0].content.substring(0, 60)}..."` : ''}. Want me to prioritize fixes?`}
+          primaryLabel={`Prioritize ${anomalies.length} Issue${anomalies.length > 1 ? 's' : ''}`}
+          primaryAction={`Prioritize the ${anomalies.length} most critical issues and suggest fixes for each`}
           secondaryLabel="Dismiss"
-          secondaryAction="Acknowledge the warnings and continue monitoring"
+          secondaryAction=""
           onSendMessage={onSendMessage}
         />
       )}
