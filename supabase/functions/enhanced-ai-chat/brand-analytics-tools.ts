@@ -48,13 +48,42 @@ export const BRAND_ANALYTICS_TOOL_DEFINITIONS = [
         }
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "auto_detect_brand_voice",
+      description: "Automatically analyze the user's published content to detect brand voice patterns (tone, style, vocabulary). Requires at least 2 published articles. Use when user says 'detect my brand voice', 'analyze my writing style', or 'learn my tone'.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", default: 5, description: "Number of published articles to analyze (max 10)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_performance_comparison",
+      description: "Compare content and keyword performance between two time periods (current vs previous week/month/quarter). Use when user asks 'how did I do this week vs last week', 'compare this month', or 'show my progress'.",
+      parameters: {
+        type: "object",
+        properties: {
+          period: { type: "string", enum: ["week", "month", "quarter"], description: "Time period to compare" }
+        },
+        required: ["period"]
+      }
+    }
   }
 ];
 
 export const BRAND_ANALYTICS_TOOL_NAMES = [
   'get_brand_voice',
   'update_brand_voice',
-  'get_content_performance'
+  'get_content_performance',
+  'auto_detect_brand_voice',
+  'get_performance_comparison'
 ];
 
 export async function executeBrandAnalyticsTool(
