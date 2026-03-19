@@ -386,6 +386,7 @@ export async function executeEngageActionTool(
     // Notify user if workspace was just created
     const workspaceNotice = workspace.isNew ? '\n\n✅ I\'ve set up your Engage workspace automatically.' : '';
 
+    // Note: workspaceNotice will be appended to the first success message below
     switch (toolName) {
       case 'create_contact': {
         const { data, error } = await supabase.from('engage_contacts').insert({
