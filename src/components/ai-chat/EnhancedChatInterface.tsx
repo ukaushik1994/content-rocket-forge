@@ -382,17 +382,38 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }
   }, [messages, sidebarInteracted, userClosedSidebar]);
 
-  // Phase 1 Fix: Reset ALL sidebar state when switching conversations
+  // Phase 1 Fix: Reset sidebar state when switching conversations — restore from localStorage
   useEffect(() => {
     setUserClosedSidebar(false);
-    setShowVisualizationSidebar(false);
     setSidebarInteracted(false);
-    setVisualizationData(null);
     prevMessageCountRef.current = 0;
     setIsLoadingConversation(true);
+
+    if (activeConversation) {
+      const savedState = getAnalystOpenState(activeConversation);
+      if (savedState === true) {
+        // Restore analyst sidebar for this conversation
+        setVisualizationData({
+          visualData: { type: 'analyst' },
+          chartConfig: null,
+          title: 'Intelligence Panel',
+          description: 'Charts & insights companion'
+        });
+        setShowVisualizationSidebar(true);
+        setSidebarInteracted(true);
+        setAnalystActive(true);
+      } else {
+        setShowVisualizationSidebar(false);
+        setVisualizationData(null);
+      }
+    } else {
+      setShowVisualizationSidebar(false);
+      setVisualizationData(null);
+    }
+
     const timeout = setTimeout(() => setIsLoadingConversation(false), 300);
     return () => clearTimeout(timeout);
-  }, [activeConversation]);
+  }, [activeConversation, getAnalystOpenState, setAnalystActive]);
 
   // Track user interaction with sidebar (for smart persistence)
   const handleSidebarInteraction = () => {
@@ -405,13 +426,15 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setSidebarInteracted(false);
     setUserClosedSidebar(true);
     setAnalystActive(false);
+    if (activeConversation) saveAnalystOpenState(activeConversation, false);
   };
 
   // Handle manual open (resets close intent)
   const handleOpenSidebar = () => {
     setShowVisualizationSidebar(true);
     setSidebarInteracted(true);
-    setUserClosedSidebar(false); // User manually reopened, reset close intent
+    setUserClosedSidebar(false);
+    if (activeConversation) saveAnalystOpenState(activeConversation, true);
   };
 
   // Issue #1 Fix: Enhanced scroll using double-RAF to ensure DOM is fully rendered
