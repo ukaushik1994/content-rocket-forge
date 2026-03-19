@@ -1,102 +1,107 @@
 
 
-# Analyst Overhaul — 12 Fixes in 4 Phases
+# AI Chat Overhaul — 15 Fixes in 5 Phases
 
-The document describes 30 problems consolidated into 12 fixes that transform the Analyst from a "dashboard with labels" into an "opinionated strategist with predictions, benchmarks, and accountability."
-
-All 12 fixes primarily modify **one backend file** (`useAnalystEngine.ts`) and add **one new frontend component** (`StrategicStanceSection.tsx`). Most fixes produce cross-signal insights that flow through the existing rendering pipeline with no new UI components.
+The document identifies 40 problems consolidated into 15 fixes that transform the AI Chat from a passive tool into an adaptive, context-aware strategist. Most fixes are backend system prompt additions to the edge function. A few require frontend changes.
 
 ---
 
-## Phase 1: Strategic Stance + Positive Reinforcement + Urgency Scoring
+## Phase 1: Response Intelligence (Fixes 1, 2, 6) — Backend Only
 
-**Fixes 2, 10, 11** — The highest-impact, most visible changes.
+All three are system prompt additions in `supabase/functions/enhanced-ai-chat/index.ts`. No frontend changes.
 
-### Fix 2: Opinionated Recommendations (new section)
-- **`useAnalystEngine.ts`**: Add `StrategicRecommendation` interface and `strategicRecommendation` useMemo. Four rules: (1) too many drafts → "stop creating", (2) bad SEO → "fix quality first", (3) everything good → "accelerate", (4) just starting → "focus on first 5". Add to `AnalystState` interface and return.
-- **New file `StrategicStanceSection.tsx`**: Section "00" with stance headline, reasoning paragraph, and action buttons with effort/impact badges.
-- **`AnalystNarrativeTimeline.tsx`**: Insert `StrategicStanceSection` as first section (before Health Assessment).
+### Fix 1: Response Calibration Per Query Complexity
+Replace the simple `lengthGuidance` block (line ~2799) with a full calibration system that detects:
+- **Urgency** via keyword matching (fail/error/broken → URGENT mode, under 100 words)
+- **Rapid-fire mode** when avg user message < 50 chars and 3+ messages → EXECUTION mode
+- **Conversational** scope → BRIEF mode (1-3 sentences, no charts)
+- **Summary** scope → COMPACT mode (under 150 words, chart only if 3+ data points)
+- **Detailed/Full** scope → THOROUGH mode (charts, metrics, 300-600 words)
 
-### Fix 10: Positive Reinforcement
-- **`useAnalystEngine.ts`** in `computeCrossSignals`: Add two win-detection signals — publishing streak (2+ articles this week) and SEO improvement (latest > 3rd-latest and >= 60). These appear as green `opportunity` insights in existing UI.
+### Fix 2: Strategic Pushback Before Execution
+Append `PUSHBACK_PROTOCOL` to system prompt — 5 mandatory checks before any write tool: prerequisites, brand relevance, ambiguity clarification, browse-vs-execute distinction, exploration-vs-decision detection. Bypass when user says "just do it."
 
-### Fix 11: Urgency Scoring
-- **`useAnalystEngine.ts`**: Add `urgency?: 'critical' | 'high' | 'medium' | 'low'` to `InsightItem`. Assign urgency when creating signals (SEO declining = critical, empty calendar = high, stale drafts = medium, topic concentration = low). Sort `enrichedInsightsFeed` by urgency order.
-- **`AnalystInsightCard.tsx`**: Show `<span className="text-[8px] text-rose-400 uppercase">Urgent</span>` when `urgency === 'critical'`.
+### Fix 6: Task-Adaptive Persona
+After query intent detection, inject a persona string based on regex matching: Creative Strategist (content writing), Technical Diagnostician (errors), Data Analyst (metrics), Strategy Consultant (campaigns), Marketing Operator (email/social).
 
-**Files**: `useAnalystEngine.ts`, `AnalystInsightCard.tsx`, `AnalystNarrativeTimeline.tsx`, new `StrategicStanceSection.tsx`
-
----
-
-## Phase 2: Cross-Data Patterns + Predictions + Temporal Awareness
-
-**Fixes 1, 4, 5** — All backend-only additions to `computeCrossSignals` in `useAnalystEngine.ts`. No new UI components needed — insights flow into existing Strategic Divergence section.
-
-### Fix 1: Cross-Data Pattern Engine
-Add 3 new signal detections after existing 5:
-- **Keyword cannibalization**: Query `content_items` for duplicate `main_keyword` values, warn when 2+ articles target same keyword.
-- **Content-to-contact correlation**: Compare 2-week published count vs new contacts. Signal positive correlation or warn about zero conversion.
-- **WHY SEO is declining**: When scores trend down, analyze recent articles for missing FAQ sections, too few headings, and short content.
-
-### Fix 4: Predictive Intelligence
-Add 2 prediction signals:
-- **Draft depletion forecast**: Calculate avg days between publishes, project when drafts run out. Warn if < 14 days.
-- **Topic saturation**: Detect when 4+ articles target the same 2-word topic prefix. Warn about diminishing returns.
-
-### Fix 5: Temporal/Seasonal Awareness
-Add 2 temporal signals:
-- **Seasonal gap**: Map months to trending topics. Warn if user has 5+ articles but none targeting current seasonal topics.
-- **Content aging**: Find published articles older than 180 days. Suggest refreshing the oldest one.
-
-**Files**: `useAnalystEngine.ts` only
+**Files:** `supabase/functions/enhanced-ai-chat/index.ts`
 
 ---
 
-## Phase 3: Benchmarks + Business Attribution + Narrative Depth
+## Phase 2: Conversational Intelligence (Fixes 3, 7, 12) — Backend Only
 
-**Fixes 3, 6, 8** — Stage-aware scoring and attribution signals.
+Three more system prompt additions. No frontend.
 
-### Fix 3: Benchmarks and Goal Tracking
-- **`useAnalystEngine.ts`**: Add `UserStage` type (`starter`/`growing`/`established`/`scaling`) with `getUserStage()` function. Add `BENCHMARKS` record with stage-specific targets (publishRate, avgSeo, weeklyArticles). Update `computeHealthScore` to use benchmark-relative scoring. Add `userStage` and `benchmarks` to `AnalystState`.
-- **`HealthAssessmentSection.tsx`**: Show stage and benchmark line: "Stage: growing · Benchmark: 45 SEO, 1.5 articles/week"
+### Fix 3: End-to-End Workflow Orchestration
+Append `WORKFLOW_PROTOCOL` — after any significant action, suggest the next logical step (content created → schedule/social/email). Multi-step workflows execute one step at a time with user checkpoints. Batch operations parse lists and confirm.
 
-### Fix 6: Content-to-Business Attribution
-Add 2 signal detections in `computeCrossSignals`:
-- **Pareto proposals**: Query top 20 `ai_strategy_proposals` by `estimated_impressions`. If top 3 capture 50%+ of total, surface them as priority focus.
-- **Solution-content gaps**: Cross-reference `solutions` table with `content_items`. Warn when a solution has 0 articles targeting it.
+### Fix 7: Real-Time Feedback Loop
+Detect correction patterns in last 5 user messages (shorter/longer/technical/simpler/rejected). Append `IN-SESSION CORRECTIONS` block. Also detect edit-in-place requests ("make it more technical") and inject `EDIT MODE` instruction to modify previous response surgically, not regenerate.
 
-### Fix 8: Contextual Narrative Depth
-- **`useAnalystEngine.ts`**: Expand `getMetricContext()` to accept `userStage` parameter. Return benchmark-relative context strings (e.g., "42/100 (growing benchmark: 45) — below target").
-- Update all callers to pass `userStage`.
+### Fix 12: Trade-Off Reasoning
+Append `TRADE-OFF REASONING` — when user asks "X or Y?", provide structured comparison with data. When executing tools, explain one key decision ("I chose how-to format because your how-tos average 62 SEO vs 41 for listicles").
 
-**Files**: `useAnalystEngine.ts`, `HealthAssessmentSection.tsx`
+**Files:** `supabase/functions/enhanced-ai-chat/index.ts`
 
 ---
 
-## Phase 4: Accountability + Adaptive Ordering + Traffic Proxy
+## Phase 3: Proactive Intelligence (Fixes 5, 8, 9) — Backend + Frontend
 
-**Fixes 7, 9, 12** — Behavioral intelligence and engagement tracking.
+### Fix 5: Proactive Opening With Agenda
+- **Backend** (`supabase/functions/generate-proactive-insights/index.ts`): Add `priority_score` (0-100) to each recommendation based on type (failed campaigns = 95, ready-to-publish drafts = 80, empty calendar = 75, stale competitors = 60).
+- **Frontend** (`src/components/ai-chat/EnhancedChatInterface.tsx`): Change proactive recommendations display from badges to a prioritized "Needs your attention" action list, top item highlighted with a Priority badge.
 
-### Fix 7: Accountability Loop
-- **`useAnalystEngine.ts`**: In `computeCrossSignals`, analyze user messages for repeated 4-word query patterns. If same simplified query appears 3+ times, signal "you've asked about X 3 times without acting." Limit to one loop alert per session.
+### Fix 8: Smart Quick Actions Based on User State
+- **Frontend** (`src/components/ai-chat/EnhancedQuickActions.tsx`): Replace static `suggestions` array with data-driven actions. Accept `recommendations`, `contentCount`, `publishedCount`, `draftCount` props. Show proactive recommendations first, then state-based actions (0 content → "Create first article", too many drafts → "Review N drafts"), then milestone celebrations (10/25/50 articles), then contextual defaults.
+- **Frontend** (`src/components/ai-chat/EnhancedChatInterface.tsx`): Pass content counts and recommendations to `EnhancedQuickActions`.
 
-### Fix 9: Adaptive Section Ordering
-- **`AnalystNarrativeTimeline.tsx`**: Add `getSectionPriority()`/`recordSectionInteraction()` localStorage helpers. Track which sections users click into. Before rendering, sort visible sections by interaction frequency (most-clicked first). Wrap each section in an `onClick` handler that calls `recordSectionInteraction`.
+### Fix 9: Conversation Outcome Tracking
+- **Backend** (`supabase/functions/enhanced-ai-chat/index.ts`): After successful tool execution, generate `suggestedTitle` from tool names. Every 8 messages, inject `SESSION CHECKPOINT` instruction for a 1-2 sentence progress summary.
+- **Frontend** (`src/hooks/useEnhancedAIChatDB.ts`): When response includes `suggestedTitle`, update conversation title if current title is the default truncated version.
 
-### Fix 12: Real Traffic Intelligence Proxy
-- **`useAnalystEngine.ts`** in `fetchPlatformData`: Query `content_performance_signals` grouped by `content_id`. Find top 3 most-engaged content items. Push the #1 as a `content_detail` platform data point with article title and signal count.
-- **`ContentIntelligenceSection.tsx`**: Render the "most engaged" content item alongside existing SEO data.
+**Files:** `index.ts` (edge function), `generate-proactive-insights/index.ts`, `EnhancedChatInterface.tsx`, `EnhancedQuickActions.tsx`, `useEnhancedAIChatDB.ts`
 
-**Files**: `useAnalystEngine.ts`, `AnalystNarrativeTimeline.tsx`, `ContentIntelligenceSection.tsx`
+---
+
+## Phase 4: Safety and Matching (Fixes 10, 11, 13) — Backend Only
+
+### Fix 10: Prerequisite Checking Before Promises
+In `index.ts`, before building the system prompt, query `api_keys` and `website_connections` for the user. Build a `SERVICE STATUS` block listing unconfigured services (SERP, Resend, WordPress). Inject into system prompt so the AI warns before attempting unavailable tools.
+
+### Fix 11: Fuzzy Content Matching by Name
+Append `CONTENT MATCHING` instructions to system prompt — when user references content by name, use `get_content_items` to search. 1 match → proceed, 2-3 → disambiguate, 0 → suggest browsing. Never guess with multiple matches.
+
+### Fix 13: Undo and Safety Net
+In `supabase/functions/enhanced-ai-chat/content-action-tools.ts`, update tool response messages for `delete_content_item` and `update_content_item` to include undo hints ("say 'restore [title]' to bring it back" / "say 'show version history'").
+
+**Files:** `index.ts`, `content-action-tools.ts`
+
+---
+
+## Phase 5: Memory and Advanced Tools (Fixes 4, 14, 15) — Backend + DB Migration
+
+### Fix 4: Cross-Conversation Intelligence
+- **DB migration:** Add `strategic_context JSONB DEFAULT '[]'` column to `user_intelligence_profile`.
+- **Backend** (`supabase/functions/shared/userIntelligence.ts`): In `rebuildUserProfile`, extract goals and summaries from last 5 conversations. Store as `strategic_context`. In `getUserIntelligenceContext`, include top 3 strategic context items in the prompt.
+
+### Fix 14: Workflow Resumption
+- **Backend** (`index.ts`): At conversation start, check last 3 messages for `function_calls`. If last action was content generation → inject `WORKFLOW CONTEXT` nudge. If analytical → inject analysis context. The AI asks whether to resume or start fresh.
+
+### Fix 15: Cross-Content Comparison and Computation
+- **Backend** (`content-action-tools.ts`): Add new `compare_content` tool definition accepting `content_ids` or `search_query`. Handler queries `content_items`, computes SEO scores, word counts, heading counts, FAQ presence, and age. Returns structured comparison with `visualData` bar chart for the existing `VisualDataRenderer`.
+- **Backend** (`tools.ts`): Register the new tool in the tools array.
+
+**Files:** `index.ts`, `content-action-tools.ts`, `tools.ts`, `shared/userIntelligence.ts`, DB migration
 
 ---
 
 ## Summary
 
-| Phase | Fixes | New Files | Modified Files | Complexity |
-|-------|-------|-----------|----------------|------------|
-| 1 | 2, 10, 11 | `StrategicStanceSection.tsx` | `useAnalystEngine.ts`, `AnalystInsightCard.tsx`, `AnalystNarrativeTimeline.tsx` | Medium |
-| 2 | 1, 4, 5 | None | `useAnalystEngine.ts` | Medium |
-| 3 | 3, 6, 8 | None | `useAnalystEngine.ts`, `HealthAssessmentSection.tsx` | Medium |
-| 4 | 7, 9, 12 | None | `useAnalystEngine.ts`, `AnalystNarrativeTimeline.tsx`, `ContentIntelligenceSection.tsx` | Medium |
+| Phase | Fixes | Backend | Frontend | DB | Effort |
+|-------|-------|---------|----------|----|--------|
+| 1 | 1, 2, 6 | System prompt additions | None | None | Low |
+| 2 | 3, 7, 12 | System prompt additions | None | None | Low |
+| 3 | 5, 8, 9 | Proactive insights + title suggestion | Quick actions + title update | None | Medium |
+| 4 | 10, 11, 13 | Prerequisite checks + undo hints | None | None | Low |
+| 5 | 4, 14, 15 | Intelligence profile + workflow resume + new tool | None | 1 migration | Medium |
 
