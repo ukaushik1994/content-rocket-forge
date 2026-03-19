@@ -497,7 +497,10 @@ function computeCrossSignals(
       if (totalContent >= 5 && contentKeywords) {
         const currentSeasonalTopics = seasonalTopics[currentMonth] || [];
         if (currentSeasonalTopics.length > 0) {
-          const allKws = contentKeywords.map(c => (c.main_keyword as string).toLowerCase());
+          const allKws = contentKeywords.map(c => {
+            const kwArr = Array.isArray(c.keywords) ? c.keywords : [];
+            return (kwArr[0] as string || c.meta_title || '').toLowerCase();
+          });
           const hasSeasonalContent = currentSeasonalTopics.some(st => 
             allKws.some(kw => kw.includes(st))
           );
