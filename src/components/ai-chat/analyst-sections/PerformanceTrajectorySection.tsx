@@ -40,7 +40,7 @@ export const PerformanceTrajectorySection: React.FC<Props> = ({ analystState, ch
       <div className="glass-card p-5">
         {/* Delta hero */}
         <div className="mb-4">
-          <p className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground/40 mb-1">Global Reach Growth</p>
+          <p className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground/40 mb-1">{dataKeys[0]?.replace(/_/g, ' ').toUpperCase() || 'PERFORMANCE METRIC'}</p>
           <div className="flex items-end justify-between">
             <p className="text-2xl font-bold text-foreground">
               {delta > 0 ? '+' : ''}{typeof delta === 'number' ? delta.toLocaleString() : delta} <span className="text-sm font-normal text-muted-foreground/40">Delta</span>
