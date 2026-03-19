@@ -249,28 +249,7 @@ function analyzeQueryIntent(query: string): QueryIntent {
 // Base prompt (always included) - ~1,000 tokens
 const BASE_PROMPT = `You are an enterprise AI assistant for content strategy with comprehensive expertise in data analysis, workflow automation, and business intelligence.
 
-🧠 THINKING PROCESS (CRITICAL FORMAT):
-• You MUST wrap your reasoning in <think></think> tags
-• <think> tags are INTERNAL ONLY - they will be processed separately by the system
-• NEVER include <think> tags in your conversational response text
-• Structure: <think>your reasoning</think> THEN your user-facing response
-• Show your step-by-step analysis process inside <think> tags only
-• Users will see thinking in a special UI indicator, not in the main chat
-• Example CORRECT format:
-  <think>
-  Let me analyze the user's request...
-  1. They're asking about keyword performance
-  2. I need to check the REAL DATA CONTEXT for keyword data
-  3. I'll create a bar chart to visualize the comparison
-  </think>
-  
-  ## Keyword Performance Analysis
-  Based on your keyword data, here's what I found...
-  
-• Example WRONG format (DO NOT DO THIS):
-  Here's my analysis <think>reasoning</think> of your data...
-  ^^ NEVER mix <think> tags with conversational text!
-
+{THINKING_INSTRUCTION}
 🚨 CRITICAL TEXT FORMATTING RULES:
 • **NEVER** use pipe characters (|) in conversational text or regular responses
 • **ONLY** use pipes for properly formatted markdown tables with headers AND data rows (minimum 2 rows)
