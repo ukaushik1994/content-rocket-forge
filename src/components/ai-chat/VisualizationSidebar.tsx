@@ -598,18 +598,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const qualityConfig = getQualityConfig(dataInfo.quality);
   const { isMobile, isTablet } = useResponsiveBreakpoint();
 
-  // ─── Delegate to specialized panels ───────────────────────────────────
-  if (visualData?.type === 'content_wizard') {
-    return <ContentWizardSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} solutionId={visualData.solution_id} contentType={visualData.content_type} extractedContext={visualData.extractedContext} />;
-  }
-  if (visualData?.type === 'proposal_browser') {
-    return <ProposalBrowserSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} />;
-  }
-  if (visualData?.type === 'repository') return <RepositoryPanel isOpen={isOpen} onClose={onClose} />;
-  if (visualData?.type === 'approvals') return <ApprovalsPanel isOpen={isOpen} onClose={onClose} />;
-  if (visualData?.type === 'research_intelligence') return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;
-  if (visualData?.type === 'content_repurpose') return <RepurposePanel isOpen={isOpen} onClose={onClose} contentId={visualData.contentId} />;
-
   // ─── Derived analyst data ─────────────────────────────────────────────
   const hasAnalystData = analystState && (
     analystState.insightsFeed.length > 0 || 
@@ -621,7 +609,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   // Merge analyst insights feed with current response insights
   const mergedInsightsFeed = useMemo(() => {
     const allInsights = [...(analystState?.insightsFeed || [])];
-    // Add current response insights if not already present
     for (const insight of insights) {
       const content = typeof insight === 'string' ? insight : insight.content;
       if (!allInsights.some(i => i.content === content)) {
@@ -649,6 +636,18 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     : hasAnalystData 
       ? `${analystState!.insightsFeed.length} insights · ${analystState!.topics.length} topics`
       : 'Charts & insights companion';
+
+  // ─── Delegate to specialized panels (after all hooks) ─────────────────
+  if (visualData?.type === 'content_wizard') {
+    return <ContentWizardSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} solutionId={visualData.solution_id} contentType={visualData.content_type} extractedContext={visualData.extractedContext} />;
+  }
+  if (visualData?.type === 'proposal_browser') {
+    return <ProposalBrowserSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} />;
+  }
+  if (visualData?.type === 'repository') return <RepositoryPanel isOpen={isOpen} onClose={onClose} />;
+  if (visualData?.type === 'approvals') return <ApprovalsPanel isOpen={isOpen} onClose={onClose} />;
+  if (visualData?.type === 'research_intelligence') return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;
+  if (visualData?.type === 'content_repurpose') return <RepurposePanel isOpen={isOpen} onClose={onClose} contentId={visualData.contentId} />;
 
   // ─── UNIFIED LAYOUT ──────────────────────────────────────────────────
   return (
