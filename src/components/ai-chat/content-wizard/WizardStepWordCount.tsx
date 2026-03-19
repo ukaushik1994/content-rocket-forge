@@ -94,8 +94,8 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
   return (
     <div className="space-y-5">
       {selectedSolutionName && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
-          <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+        <div className="flex items-center gap-2 px-3 py-2 glass-card border-amber-300/20">
+          <Sparkles className="w-3.5 h-3.5 text-amber-300/70 flex-shrink-0" />
           <p className="text-[11px] text-muted-foreground">
             Defaults set from <span className="font-medium text-foreground">{selectedSolutionName}</span>'s audience profile — feel free to adjust
           </p>
@@ -105,9 +105,10 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
       {/* Content Brief Section */}
       <div className="space-y-3">
         <div>
-          <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-            <ListChecks className="w-3.5 h-3.5 text-primary" /> Content Brief
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Content Brief</span>
+          </div>
           <p className="text-[10px] text-muted-foreground mt-0.5">Help tailor the content to your needs</p>
         </div>
 
@@ -182,20 +183,23 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Writing Style */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Writing Style</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Writing Style</span>
+        </div>
         <div className="grid grid-cols-2 gap-2 mt-2">
           {WRITING_STYLES.map(s => (
             <button
               key={s.value}
               onClick={() => onWritingStyleChange(s.value)}
               className={cn(
-                "flex items-center gap-2 p-2.5 rounded-lg border transition-all text-left cursor-pointer",
+                "flex items-center gap-2 p-2.5 rounded-2xl border transition-all text-left cursor-pointer backdrop-blur-md",
                 writingStyle === s.value
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border/30 hover:border-border/50 bg-muted/20"
+                  ? "bg-white/[0.08] border-amber-300/30"
+                  : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
               )}
             >
-              <s.icon className={cn("w-4 h-4 flex-shrink-0", writingStyle === s.value ? "text-primary" : "text-muted-foreground")} />
+              <s.icon className={cn("w-4 h-4 flex-shrink-0", writingStyle === s.value ? "text-amber-300" : "text-muted-foreground")} />
               <div className="min-w-0">
                 <p className="text-xs font-medium text-foreground truncate">{s.label}</p>
                 <p className="text-[10px] text-muted-foreground truncate">{s.desc}</p>
@@ -207,20 +211,23 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Expertise Level */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Expertise Level</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Expertise Level</span>
+        </div>
         <div className="grid grid-cols-3 gap-2 mt-2">
           {EXPERTISE_LEVELS.map(l => (
             <button
               key={l.value}
               onClick={() => onExpertiseLevelChange(l.value)}
               className={cn(
-                "flex flex-col items-center gap-1 p-2.5 rounded-lg border transition-all cursor-pointer",
+                "flex flex-col items-center gap-1 p-2.5 rounded-2xl border transition-all cursor-pointer backdrop-blur-md",
                 expertiseLevel === l.value
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border/30 hover:border-border/50 bg-muted/20"
+                  ? "bg-white/[0.08] border-amber-300/30"
+                  : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
               )}
             >
-              <l.icon className={cn("w-4 h-4", expertiseLevel === l.value ? "text-primary" : "text-muted-foreground")} />
+              <l.icon className={cn("w-4 h-4", expertiseLevel === l.value ? "text-amber-300" : "text-muted-foreground")} />
               <p className="text-[10px] font-medium text-foreground">{l.label}</p>
             </button>
           ))}
@@ -229,20 +236,23 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Content Type */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Article Type</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Article Type</span>
+        </div>
         <div className="grid grid-cols-2 gap-2 mt-2">
           {CONTENT_TYPES.map(t => (
             <button
               key={t.value}
               onClick={() => onContentArticleTypeChange(t.value)}
               className={cn(
-                "flex items-center gap-2 p-2.5 rounded-lg border transition-all text-left cursor-pointer",
+                "flex items-center gap-2 p-2.5 rounded-2xl border transition-all text-left cursor-pointer backdrop-blur-md",
                 contentArticleType === t.value
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border/30 hover:border-border/50 bg-muted/20"
+                  ? "bg-white/[0.08] border-amber-300/30"
+                  : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
               )}
             >
-              <t.icon className={cn("w-4 h-4 flex-shrink-0", contentArticleType === t.value ? "text-primary" : "text-muted-foreground")} />
+              <t.icon className={cn("w-4 h-4 flex-shrink-0", contentArticleType === t.value ? "text-amber-300" : "text-muted-foreground")} />
               <div className="min-w-0">
                 <p className="text-xs font-medium text-foreground truncate">{t.label}</p>
                 <p className="text-[10px] text-muted-foreground truncate">{t.desc}</p>
@@ -254,35 +264,38 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Word Count */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Target Word Count</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Target Word Count</span>
+        </div>
         <div className="grid grid-cols-2 gap-2 mt-2">
           <button
             onClick={() => onModeChange('ai')}
             className={cn(
-              "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all cursor-pointer",
+              "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all cursor-pointer backdrop-blur-md",
               wordCountMode === 'ai'
-                ? "border-primary bg-primary/5 shadow-sm"
-                : "border-border/30 hover:border-border/50 bg-muted/20"
+                ? "bg-white/[0.08] border-amber-300/30"
+                : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
             )}
           >
-            <Sparkles className={cn("w-4 h-4", wordCountMode === 'ai' ? "text-primary" : "text-muted-foreground")} />
+            <Sparkles className={cn("w-4 h-4", wordCountMode === 'ai' ? "text-amber-300" : "text-muted-foreground")} />
             <div className="text-center">
               <p className="text-xs font-medium text-foreground">AI Recommended</p>
               {wordCountMode === 'ai' && (
-                <Badge variant="secondary" className="text-[10px] mt-1">~{aiEstimate.toLocaleString()}</Badge>
+                <Badge variant="outline" className="text-[10px] mt-1 bg-white/[0.04] border-white/[0.06] text-muted-foreground/70">~{aiEstimate.toLocaleString()}</Badge>
               )}
             </div>
           </button>
           <button
             onClick={() => onModeChange('custom')}
             className={cn(
-              "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all cursor-pointer",
+              "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all cursor-pointer backdrop-blur-md",
               wordCountMode === 'custom'
-                ? "border-primary bg-primary/5 shadow-sm"
-                : "border-border/30 hover:border-border/50 bg-muted/20"
+                ? "bg-white/[0.08] border-amber-300/30"
+                : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
             )}
           >
-            <PenLine className={cn("w-4 h-4", wordCountMode === 'custom' ? "text-primary" : "text-muted-foreground")} />
+            <PenLine className={cn("w-4 h-4", wordCountMode === 'custom' ? "text-amber-300" : "text-muted-foreground")} />
             <p className="text-xs font-medium text-foreground">Custom</p>
           </button>
         </div>
@@ -305,7 +318,10 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Additional Instructions */}
       <div className="space-y-1">
-        <h3 className="text-sm font-medium text-foreground">Additional Instructions (optional)</h3>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Additional Instructions</span>
+        </div>
         <Textarea
           value={additionalInstructions}
           onChange={(e) => onAdditionalInstructionsChange(e.target.value)}

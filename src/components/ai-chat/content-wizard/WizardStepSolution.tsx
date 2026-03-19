@@ -86,13 +86,16 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
     <div className="space-y-5">
       {/* Keyword Input */}
       <div>
-        <h3 className="text-sm font-semibold text-foreground">What would you like to write about?</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">1. Topic</span>
+        </div>
         <p className="text-xs text-muted-foreground mt-1">Enter a keyword or topic for your content</p>
         <Input
           value={keyword}
           onChange={(e) => onKeywordChange(e.target.value)}
           placeholder="e.g. AI in healthcare, best running shoes..."
-          className={cn("text-sm mt-2", keywordError && "border-destructive ring-2 ring-destructive/40 animate-shake")}
+          className={cn("text-sm mt-2 bg-white/[0.04] border-white/[0.06]", keywordError && "border-destructive ring-2 ring-destructive/40 animate-shake")}
           autoFocus
         />
         {keywordError && (
@@ -102,7 +105,10 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
 
       {/* Solution Selection */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Choose Your Solution</h3>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">2. Solution</span>
+        </div>
         <p className="text-xs text-muted-foreground mt-0.5">Select the solution to create content for</p>
       </div>
 
@@ -122,13 +128,13 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="relative">
-                      <Avatar className={`h-14 w-14 border-2 transition-colors ${selectedSolution?.id === solution.id ? 'border-primary ring-2 ring-primary/30' : 'border-border/30 hover:border-primary/40'}`}>
+                      <Avatar className={`h-14 w-14 border-2 transition-colors ${selectedSolution?.id === solution.id ? 'border-amber-300/40 ring-2 ring-amber-300/20' : 'border-white/[0.06] hover:border-amber-300/30'}`}>
                         {solution.logoUrl ? <AvatarImage src={solution.logoUrl} alt={solution.name} className="object-cover" /> : (
                           <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground font-semibold text-sm">{getInitials(solution.name)}</AvatarFallback>
                         )}
                       </Avatar>
                       {selectedSolution?.id === solution.id && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 bg-primary rounded-full flex items-center justify-center border-2 border-background">
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 bg-amber-300/80 rounded-full flex items-center justify-center border-2 border-background">
                           <Check className="h-2.5 w-2.5 text-primary-foreground" />
                         </motion.div>
                       )}
@@ -153,7 +159,10 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
       {/* Content Type Picker */}
       {selectedSolution && (
         <div>
-          <h3 className="text-sm font-medium text-foreground">Content Format</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">3. Format</span>
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">What type of content are you creating?</p>
           <div className="grid grid-cols-3 gap-2 mt-2">
             {wizardFormats.map(format => {
@@ -163,13 +172,13 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
                   key={format.id}
                   onClick={() => onContentTypeChange(format.id)}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all cursor-pointer text-center",
+                    "flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition-all cursor-pointer text-center backdrop-blur-md",
                     contentType === format.id
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border/30 hover:border-border/50 bg-muted/20"
+                      ? "bg-white/[0.08] border-amber-300/30"
+                      : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
                   )}
                 >
-                  <Icon className={cn("w-4 h-4", contentType === format.id ? "text-primary" : "text-muted-foreground")} />
+                  <Icon className={cn("w-4 h-4", contentType === format.id ? "text-amber-300" : "text-muted-foreground")} />
                   <p className="text-[10px] font-medium text-foreground leading-tight">{format.name}</p>
                 </button>
               );

@@ -326,19 +326,22 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
             className={cn(
               "fixed top-20 right-0 bottom-24 z-[35]",
               "w-full sm:w-[400px] lg:w-[520px] xl:w-[600px]",
-              "bg-background/95 backdrop-blur-xl",
-              "border-l border-border/10",
+              "bg-[rgba(12,12,18,0.95)] backdrop-blur-xl",
+              "border-l border-white/[0.06]",
               "flex flex-col overflow-hidden"
             )}
           >
             {/* Header */}
-            <div className="flex-shrink-0 px-5 py-4 border-b border-border/10">
+            <div className="flex-shrink-0 px-5 py-4 border-b border-white/[0.06]">
               <div className="flex items-center justify-between mb-4">
                 <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-foreground truncate">Content Wizard</h2>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">"{wizardState.keyword}"</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Content Wizard</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">"{wizardState.keyword}"</p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-muted text-muted-foreground">
+                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/[0.04] text-muted-foreground">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -349,22 +352,22 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                   <React.Fragment key={step.id}>
                     <div className="flex flex-col items-center gap-1">
                       <div className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all",
-                        currentStep === idx && "bg-primary text-primary-foreground ring-2 ring-primary/30",
-                        currentStep > idx && "bg-primary/20 text-primary",
-                        currentStep < idx && "bg-muted text-muted-foreground"
+                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all border",
+                        currentStep === idx && "bg-amber-300/20 border-amber-300/30 text-amber-300",
+                        currentStep > idx && "bg-emerald-400/15 border-emerald-400/20 text-emerald-400",
+                        currentStep < idx && "bg-white/[0.04] border-white/[0.06] text-muted-foreground"
                       )}>
                         {currentStep > idx ? <Check className="w-3.5 h-3.5" /> : idx}
                       </div>
                       <span className={cn(
                         "text-[10px] font-medium",
-                        currentStep === idx ? "text-foreground" : "text-muted-foreground"
+                        currentStep === idx ? "text-amber-300/70" : "text-muted-foreground"
                       )}>{step.label}</span>
                     </div>
                     {idx < activeSteps.length - 1 && (
                       <div className={cn(
                         "flex-1 h-0.5 rounded-full mt-[-14px]",
-                        currentStep > idx ? "bg-primary/40" : "bg-border/30"
+                        currentStep > idx ? "bg-amber-300/30" : "bg-white/[0.06]"
                       )} />
                     )}
                   </React.Fragment>
@@ -380,15 +383,15 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-4 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2"
+                    className="mb-4 p-3 glass-card border-amber-300/20 space-y-2"
                   >
                     <p className="text-xs font-medium text-foreground">Resume your previous draft?</p>
                     <p className="text-[10px] text-muted-foreground">You have an unsaved wizard session from earlier.</p>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="default" onClick={resumeDraft} className="text-xs h-7 gap-1">
+                      <Button size="sm" onClick={resumeDraft} className="text-xs h-7 gap-1 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30">
                         <Check className="w-3 h-3" /> Resume
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={dismissDraft} className="text-xs h-7">
+                      <Button size="sm" variant="ghost" onClick={dismissDraft} className="text-xs h-7 text-muted-foreground hover:bg-white/[0.04]">
                         Start Fresh
                       </Button>
                     </div>
@@ -470,13 +473,13 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
 
             {/* Footer Navigation */}
             {currentStep < maxStep && (
-              <div className="flex-shrink-0 px-5 py-3 border-t border-border/10 flex items-center justify-between">
+              <div className="flex-shrink-0 px-5 py-3 border-t border-white/[0.06] flex items-center justify-between">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={goBack}
                   disabled={currentStep === 0}
-                  className="text-muted-foreground"
+                  className="text-muted-foreground border border-white/[0.06] hover:bg-white/[0.04]"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" /> Back
                 </Button>
@@ -484,7 +487,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                   size="sm"
                   onClick={goNext}
                   disabled={!canProceed()}
-                  className="gap-1"
+                  className="gap-1 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30"
                 >
                   Next <ChevronRight className="w-4 h-4" />
                 </Button>

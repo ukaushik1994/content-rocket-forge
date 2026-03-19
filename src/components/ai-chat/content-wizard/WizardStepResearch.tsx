@@ -192,10 +192,13 @@ Make every item specific and actionable, not templated. Return ONLY valid JSON.`
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-medium text-foreground">Research & Select</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Research & Select</span>
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">Pick items to inform your content</p>
         </div>
-        <Badge variant="secondary" className="text-xs">{totalSelected} selected</Badge>
+        <Badge variant="outline" className="text-xs bg-white/[0.04] border-white/[0.06] text-muted-foreground/70">{totalSelected} selected</Badge>
       </div>
 
       {categories.map(({ key, label, icon }) => {
@@ -205,11 +208,11 @@ Make every item specific and actionable, not templated. Return ONLY valid JSON.`
 
         return (
           <Collapsible key={key} open={expandedCategories[key]} onOpenChange={(open) => setExpandedCategories(prev => ({ ...prev, [key]: open }))}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+            <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 rounded-2xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.06] transition-colors">
               <div className="flex items-center gap-2">
                 {icon}
                 <span className="text-xs font-medium text-foreground">{label}</span>
-                <Badge variant="outline" className="text-[10px] h-4 px-1.5">{items.length}</Badge>
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5 bg-white/[0.04] border-white/[0.06] text-muted-foreground/70">{items.length}</Badge>
               </div>
               <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", expandedCategories[key] && "rotate-180")} />
             </CollapsibleTrigger>
@@ -218,7 +221,7 @@ Make every item specific and actionable, not templated. Return ONLY valid JSON.`
                 {allSelected ? 'Deselect All' : 'Select All'}
               </Button>
               {items.map((item, idx) => (
-                <label key={idx} className="flex items-start gap-2.5 px-3 py-1.5 rounded-md hover:bg-muted/30 cursor-pointer transition-colors">
+                <label key={idx} className="flex items-start gap-2.5 px-3 py-1.5 rounded-md hover:bg-white/[0.04] cursor-pointer transition-colors">
                   <Checkbox
                     checked={selections[key].includes(item.text)}
                     onCheckedChange={() => toggleItem(key, item.text)}

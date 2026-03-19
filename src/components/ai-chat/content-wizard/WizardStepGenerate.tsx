@@ -1031,8 +1031,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   if (saved && savedId) {
     return (
       <div className="flex flex-col items-center py-8 gap-4 text-center">
-        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-          <CheckCircle2 className="w-7 h-7 text-primary" />
+        <div className="w-14 h-14 rounded-full bg-emerald-400/15 flex items-center justify-center border border-emerald-400/20">
+          <CheckCircle2 className="w-7 h-7 text-emerald-400" />
         </div>
         <div>
           <p className="text-sm font-medium text-foreground">
@@ -1052,7 +1052,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               <ChevronDown className="w-3 h-3" />
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2 text-left w-full max-w-[280px]">
-              <div className="space-y-1.5 p-2.5 rounded-lg border border-border/20 bg-muted/10">
+              <div className="space-y-1.5 p-2.5 glass-card">
                 {[
                   { label: 'Keyword in intro', passed: (editableContent || '').toLowerCase().substring(0, 200).includes(wizardState.keyword.toLowerCase()) },
                   { label: 'FAQ section present', passed: /##.*faq|frequently\s+asked/i.test(editableContent || '') },
@@ -1126,7 +1126,10 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium text-foreground">Generate & Save</h3>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Generate & Save</span>
+        </div>
         <p className="text-xs text-muted-foreground mt-0.5">Set title, review meta, generate and save</p>
       </div>
 
@@ -1179,7 +1182,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
           </Button>
           {isGeneratingContent && (
             <>
-              <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-2">
+              <div className="p-3 glass-card space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-foreground">{generationStage || 'Preparing...'}</span>
                   <span className="text-xs text-muted-foreground">{generationProgress}%</span>
@@ -1193,7 +1196,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                     return (
                       <div key={phase} className={cn(
                         "flex-1 h-1 rounded-full transition-colors",
-                        isDone ? "bg-primary" : isActive ? "bg-primary/50 animate-pulse" : "bg-muted"
+                        isDone ? "bg-amber-300/60" : isActive ? "bg-amber-300/30 animate-pulse" : "bg-white/[0.06]"
                       )} />
                     );
                   })}
@@ -1265,7 +1268,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                 </div>
 
                 <TabsContent value="preview" className="mt-0">
-                  <div className="rounded-lg border border-border/20 bg-muted/20 max-h-[300px] overflow-auto p-3">
+                  <div className="glass-card max-h-[300px] overflow-auto p-3">
                     <div className="prose prose-sm prose-invert max-w-none text-xs">
                       <SafeMarkdown>{editableContent || contentToSave}</SafeMarkdown>
                     </div>
@@ -1484,7 +1487,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             });
             const totalFeatures = Array.isArray(wizardState.selectedSolution!.features) ? wizardState.selectedSolution!.features.length : 0;
             return (
-              <div className="rounded-lg border border-border/20 bg-muted/20 p-2.5 space-y-1">
+              <div className="glass-card p-2.5 space-y-1">
                 <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
                   <Package className="w-3 h-3" /> Solution Integration
                 </div>
