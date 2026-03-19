@@ -137,7 +137,7 @@ const RepositoryPanelInner: React.FC<{ isOpen: boolean; onClose: () => void }> =
                     // Track view signal (non-blocking)
                     supabase.auth.getUser().then(({ data: { user } }) => {
                       if (user) {
-                        (supabase as any).from('content_performance_signals').insert({
+                        supabase.from('content_performance_signals').insert({
                           content_id: item.id,
                           user_id: user.id,
                           signal_type: 'view',

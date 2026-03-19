@@ -8753,6 +8753,10 @@ export type Database = {
       }
     }
     Functions: {
+      avg_messages_per_conversation: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       clean_expired_serp_cache: { Args: never; Returns: undefined }
       cleanup_expired_keyword_cache: { Args: never; Returns: undefined }
       cleanup_expired_notifications: { Args: never; Returns: undefined }
