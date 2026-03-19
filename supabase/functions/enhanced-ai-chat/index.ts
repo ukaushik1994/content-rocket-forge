@@ -3420,8 +3420,32 @@ Only ask once — if they respond with a new topic, don't ask again.`;
 
     let requestPromotedVisualData: any = null;
 
+    // Tool-aware progress messages with time estimates
+    const TOOL_TIME_ESTIMATES: Record<string, string> = {
+      generate_full_content: 'Generating article (~20-30s)...',
+      create_content_item: 'Creating content item (~5s)...',
+      update_content_item: 'Updating content (~5s)...',
+      delete_content_item: 'Deleting content...',
+      get_content_items: 'Searching your content library...',
+      serp_analysis: 'Running SERP analysis (~10s)...',
+      analyze_serp: 'Running SERP analysis (~10s)...',
+      get_serp_data: 'Fetching search data (~10s)...',
+      analyze_content_gap: 'Analyzing content gaps (~15s)...',
+      launch_content_wizard: 'Opening content wizard...',
+      schedule_content: 'Scheduling content...',
+      create_calendar_item: 'Adding to calendar...',
+      send_email_campaign: 'Preparing email campaign...',
+      send_quick_email: 'Preparing email...',
+      get_strategy_proposals: 'Fetching strategy proposals...',
+      create_social_post: 'Creating social post...',
+      repurpose_content: 'Repurposing content (~15s)...',
+      compare_content: 'Comparing content items...',
+    };
+
     if (toolCalls && toolCalls.length > 0) {
-      emitProgress('tools', 'Executing actions...');
+      const firstToolName = toolCalls[0]?.function?.name || '';
+      const progressMsg = TOOL_TIME_ESTIMATES[firstToolName] || `Executing ${toolCalls.length > 1 ? toolCalls.length + ' actions' : 'action'}...`;
+      emitProgress('tools', progressMsg);
       console.log(`🔧 AI requested ${toolCalls.length} tool calls`);
       
       const toolResults = [];

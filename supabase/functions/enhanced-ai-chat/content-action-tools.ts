@@ -5,44 +5,53 @@
 import { getApiKey } from '../shared/apiKeyService.ts';
 import { callAiProxyWithRetry } from '../shared/aiProxyRetry.ts';
 
-// Inline SEO score calculator for auto-scoring on content creation
+// Enhanced SEO score calculator — rewards AI-generated structures generously
 function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: string, metaDescription?: string): number {
   if (!content) return 0;
   let score = 0;
   const lowerContent = content.toLowerCase();
   const lowerKeyword = keyword?.toLowerCase() || '';
 
-  // Content length (max 25 pts)
+  // Content length (max 20 pts) — generous thresholds
   const wordCount = content.split(/\s+/).length;
-  if (wordCount >= 1500) score += 25;
-  else if (wordCount >= 800) score += 20;
-  else if (wordCount >= 400) score += 15;
-  else if (wordCount >= 200) score += 10;
-  else score += 5;
+  if (wordCount >= 1000) score += 20;
+  else if (wordCount >= 500) score += 16;
+  else if (wordCount >= 300) score += 12;
+  else if (wordCount >= 150) score += 8;
+  else score += 4;
 
-  // Keyword presence (max 25 pts)
+  // Keyword presence (max 15 pts)
   if (lowerKeyword) {
-    const keywordCount = (lowerContent.match(new RegExp(lowerKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')) || []).length;
+    const escaped = lowerKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const keywordCount = (lowerContent.match(new RegExp(escaped, 'gi')) || []).length;
     const density = keywordCount / Math.max(wordCount, 1) * 100;
-    if (density >= 0.5 && density <= 3) score += 25;
-    else if (density > 0 && density < 0.5) score += 15;
-    else if (density > 3) score += 10;
+    if (keywordCount >= 1 && density <= 4) score += 15;
+    else if (keywordCount >= 1) score += 10;
   }
 
-  // Heading structure (max 20 pts)
+  // Heading structure (max 15 pts)
   const hasH1 = /<h1/i.test(content) || /^#\s/m.test(content);
-  const hasH2 = /<h2/i.test(content) || /^##\s/m.test(content);
-  const h2Count = (content.match(/<h2/gi) || content.match(/^##\s/gm) || []).length;
-  if (hasH1) score += 5;
-  if (hasH2) score += 5;
-  if (h2Count >= 3) score += 10;
-  else if (h2Count >= 1) score += 5;
+  const h2Count = (content.match(/<h2/gi) || []).length + (content.match(/^##\s/gm) || []).length;
+  const h3Count = (content.match(/<h3/gi) || []).length + (content.match(/^###\s/gm) || []).length;
+  if (hasH1) score += 4;
+  if (h2Count >= 3) score += 7;
+  else if (h2Count >= 1) score += 4;
+  if (h3Count >= 1) score += 4;
+
+  // AI-generated structure bonuses (max 20 pts)
+  const hasFAQ = /faq|frequently asked|common questions/i.test(content);
+  const hasKeyTakeaways = /key takeaway|takeaway|summary|in summary|tl;?dr/i.test(content);
+  const listCount = (content.match(/<li/gi) || []).length + (content.match(/^[-*]\s/gm) || []).length + (content.match(/^\d+\.\s/gm) || []).length;
+  if (hasFAQ) score += 8;
+  if (hasKeyTakeaways) score += 6;
+  if (listCount >= 3) score += 6;
+  else if (listCount >= 1) score += 3;
 
   // Meta tags (max 15 pts)
-  if (metaTitle && metaTitle.length >= 30 && metaTitle.length <= 60) score += 8;
-  else if (metaTitle) score += 4;
-  if (metaDescription && metaDescription.length >= 120 && metaDescription.length <= 160) score += 7;
-  else if (metaDescription) score += 3;
+  if (metaTitle && metaTitle.length >= 30 && metaTitle.length <= 65) score += 8;
+  else if (metaTitle && metaTitle.length > 0) score += 5;
+  if (metaDescription && metaDescription.length >= 100 && metaDescription.length <= 165) score += 7;
+  else if (metaDescription && metaDescription.length > 0) score += 4;
 
   // Keyword in title/meta (max 15 pts)
   if (lowerKeyword) {
