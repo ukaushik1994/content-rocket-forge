@@ -1,6 +1,7 @@
 import React from 'react';
 import { AnalystSectionWrapper } from './AnalystSectionWrapper';
 import { AnalystDataCard } from './AnalystDataCard';
+import { NarrativePromptCard } from './NarrativePromptCard';
 import { AnalystTopic, PlatformDataPoint } from '@/hooks/useAnalystEngine';
 
 interface Props {
@@ -14,8 +15,16 @@ export const KeywordLandscapeSection: React.FC<Props> = ({ topics, platformData,
   const keywordMetrics = platformData.filter(d => d.category === 'keywords');
   if (keywordTopics.length === 0 && keywordMetrics.length === 0) return null;
 
+  const kwCount = keywordMetrics.find(m => m.label === 'Keyword Proposals')?.value || 0;
+
+  const getHeadline = () => {
+    if (kwCount === 0) return <>Keyword presence is a <span className="text-rose-300">blind spot</span></>;
+    if (kwCount < 10) return <>Your keyword presence is <span className="text-amber-300">emerging</span></>;
+    return <><span className="text-emerald-400/80">{kwCount} targets</span> tracked</>;
+  };
+
   return (
-    <AnalystSectionWrapper number="05" label="Keyword Landscape" headline={<>Your keyword presence is <span className="text-amber-300">evolving</span></>} delay={0.2}>
+    <AnalystSectionWrapper number="05" label="Keyword Landscape" headline={getHeadline()} delay={0.2}>
       {keywordMetrics.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
           {keywordMetrics.slice(0, 2).map((metric) => (
@@ -35,6 +44,16 @@ export const KeywordLandscapeSection: React.FC<Props> = ({ topics, platformData,
             </button>
           ))}
         </div>
+      )}
+      {kwCount === 0 && (
+        <NarrativePromptCard
+          question="No keyword targets detected yet. Want me to auto-detect keywords from your content?"
+          primaryLabel="Auto-Detect Keywords"
+          primaryAction="Analyze my existing content and auto-detect keyword targets"
+          secondaryLabel="I'll Add Manually"
+          secondaryAction=""
+          onSendMessage={onSendMessage}
+        />
       )}
     </AnalystSectionWrapper>
   );

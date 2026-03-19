@@ -14,11 +14,20 @@ export const EngagementMetricsSection: React.FC<Props> = ({ platformData, onSend
   );
   if (engageMetrics.length === 0) return null;
 
+  const contacts = platformData.find(d => d.label === 'Contacts')?.value || 0;
+  const emailCampaigns = platformData.find(d => d.label === 'Email Campaigns')?.value || 0;
+
+  const getHeadline = () => {
+    if (contacts === 0 && emailCampaigns === 0) return <>Engagement channels are <span className="text-muted-foreground/60">dormant</span></>;
+    if (contacts > 0 && emailCampaigns > 0) return <>Engagement is <span className="text-emerald-400/80">active</span></>;
+    return <>Engagement is <span className="text-amber-300">partially online</span></>;
+  };
+
   return (
     <AnalystSectionWrapper
       number="07"
       label="Engagement Metrics"
-      headline={<>Audience engagement is <span className="text-amber-300">measurable</span></>}
+      headline={getHeadline()}
       delay={0.24}
     >
       <div className="grid grid-cols-2 gap-3">
