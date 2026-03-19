@@ -960,7 +960,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                               {context && <p className="text-[9px] text-muted-foreground/50 mt-1.5 leading-relaxed">{context}</p>}
                             </div>
                           );
+                        })}
                       </div>
+                    </motion.div>
                     </motion.div>
                   )}
 
