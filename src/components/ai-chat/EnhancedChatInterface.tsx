@@ -172,10 +172,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     
   }, [user, messages.length]);
 
-  // Analyst engine: track if analyst is active and provide cumulative state
-  const [isAnalystPanelActive, setIsAnalystPanelActive] = useState(false);
+  // Analyst engine: always-on — lightweight memo scanning of messages
   const activeConvObj = conversations.find(c => c.id === activeConversation);
-  const analystState = useAnalystEngine(messages, user?.id || null, isAnalystPanelActive, activeConvObj?.title || null);
+  const analystState = useAnalystEngine(messages, user?.id || null, true, activeConvObj?.title || null);
 
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
@@ -338,13 +337,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Phase 1 Fix: Reset ALL sidebar state when switching conversations
   useEffect(() => {
     setUserClosedSidebar(false);
-    setIsAnalystPanelActive(false);
     setShowVisualizationSidebar(false);
     setSidebarInteracted(false);
     setVisualizationData(null);
     prevMessageCountRef.current = 0;
     setIsLoadingConversation(true);
-    // Clear loading after messages arrive (with fallback timeout)
     const timeout = setTimeout(() => setIsLoadingConversation(false), 300);
     return () => clearTimeout(timeout);
   }, [activeConversation]);
@@ -360,7 +357,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setSidebarInteracted(false);
     setUserClosedSidebar(true);
     setAnalystActive(false);
-    setIsAnalystPanelActive(false);
   };
 
   // Handle manual open (resets close intent)
@@ -519,7 +515,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       description={visualizationData?.description}
       onSendMessage={sendMessage}
       onInteract={handleSidebarInteraction}
-      analystState={isAnalystPanelActive ? analystState : null} />
+      analystState={analystState} />
     
 
       {/* Main Content Area - Chat and Visualization side by side */}
@@ -803,10 +799,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           }}
           onOpenAnalyst={() => {
             setAnalystActive(true);
-            setIsAnalystPanelActive(true);
             handleSetVisualization({
               type: 'analyst',
-              title: 'Analyst',
+              title: 'Intelligence Panel',
               description: 'Charts & insights companion'
             });
           }}

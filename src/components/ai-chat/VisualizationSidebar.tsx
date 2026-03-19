@@ -42,8 +42,6 @@ import {
   Search,
   Clock,
   Loader2,
-  Globe,
-  ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
@@ -60,18 +58,12 @@ import {
 // Helper function to classify insight type based on content keywords
 const classifyInsightType = (content: string): 'trend' | 'warning' | 'opportunity' => {
   const lower = content.toLowerCase();
-  
-  // Warning indicators
   if (/failed|error|issue|risk|problem|critical|urgent|alert|warning|down|decrease|declining|dropped/.test(lower)) {
     return 'warning';
   }
-  
-  // Opportunity indicators  
   if (/opportunity|potential|improve|recommend|action|ready|suggest|could|boost|increase|growth|rising|trending up/.test(lower)) {
     return 'opportunity';
   }
-  
-  // Default to trend for data observations
   return 'trend';
 };
 
@@ -83,7 +75,7 @@ interface VisualizationSidebarProps {
   title?: string;
   description?: string;
   onSendMessage?: (message: string) => void;
-  onInteract?: () => void; // Track user interaction for smart persistence
+  onInteract?: () => void;
   analystState?: import('@/hooks/useAnalystEngine').AnalystState | null;
 }
 
@@ -102,72 +94,32 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const [chartType, setChartType] = useState<ChartType>(
     (chartConfig?.type as ChartType) || 'bar'
   );
-  const [secondaryChartType, setSecondaryChartType] = useState<ChartType>('pie');
   const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('30d');
   const [isChartLoading, setIsChartLoading] = useState(false);
   
-  // Get user for trend data fetching
   const { user } = useAuth();
-
-  // Smart secondary chart type selection based on primary
-  const getComplementaryChartType = useCallback((primary: ChartType): ChartType => {
-    switch (primary) {
-      case 'bar':
-      case 'line':
-      case 'area':
-        return 'pie';
-      case 'pie':
-        return 'bar';
-      case 'radar':
-        return 'bar';
-      case 'radial':
-        return 'pie';
-      default:
-        return 'pie';
-    }
-  }, []);
-
-  // Update secondary chart type when primary changes
-  useEffect(() => {
-    setSecondaryChartType(getComplementaryChartType(chartType));
-  }, [chartType, getComplementaryChartType]);
 
   // Keyboard shortcuts
   useEffect(() => {
     if (!isOpen) return;
-    
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
-      } else if (e.key === 'c' && (e.metaKey || e.ctrlKey)) {
-        // Copy is handled by ExportDropdown
       } else if (e.key === 'Tab' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         setActiveView(prev => prev === 'chart' ? 'table' : 'chart');
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Issue #2 Fix: Extract data with fallback chain
+  // Extract data with fallback chain
   const chartData = useMemo(() => {
-    // Primary source: chartConfig.data
-    if (chartConfig?.data && chartConfig.data.length > 0) {
-      return chartConfig.data;
-    }
-    
-    // Fallback 1: visualData.data
-    if (visualData?.data && Array.isArray(visualData.data) && visualData.data.length > 0) {
-      console.log('📊 Chart data fallback 1: using visualData.data');
-      return visualData.data;
-    }
-    
-    // Fallback 2: visualData.tableData (convert to chart format)
+    if (chartConfig?.data && chartConfig.data.length > 0) return chartConfig.data;
+    if (visualData?.data && Array.isArray(visualData.data) && visualData.data.length > 0) return visualData.data;
     if (visualData?.tableData?.rows && visualData.tableData.rows.length > 0) {
-      console.log('📊 Chart data fallback 2: converting tableData to chart format');
       const headers = visualData.tableData.headers || [];
       return visualData.tableData.rows.map((row: any[], idx: number) => {
         const item: any = { name: row[0] || `Item ${idx + 1}` };
@@ -178,39 +130,27 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
         return item;
       });
     }
-    
-    // Fallback 3: Comparison chart data (E5)
     if (visualData?.type === 'comparison_chart' && visualData?.metrics) {
-      console.log('📊 Chart data fallback 3: converting comparison_chart data');
       return visualData.metrics.map((metric: string, idx: number) => ({
         name: metric,
         [visualData.labels?.[0] || 'Current']: visualData.current?.[idx] || 0,
         [visualData.labels?.[1] || 'Previous']: visualData.previous?.[idx] || 0
       }));
     }
-
-    // Fallback 4: Generate from metricCards if available
     if (visualData?.summaryInsights?.metricCards && visualData.summaryInsights.metricCards.length > 0) {
-      console.log('📊 Chart data fallback 4: generating from metricCards');
       return visualData.summaryInsights.metricCards.map((card: any) => ({
         name: card.label || card.title || 'Metric',
         value: typeof card.value === 'number' ? card.value : parseFloat(card.value) || 0
       }));
     }
-    
     return [];
   }, [chartConfig, visualData]);
 
-  // Determine if we should show secondary chart
-  const hasSecondaryData = useMemo(() => {
-    // Show secondary if we have enough data points for meaningful comparison
-    return chartData.length >= 2;
-  }, [chartData]);
+  const hasChartData = chartData.length > 0;
 
-  // Get data source for trend hook
+  // Data source for trend hook
   const dataSource = useMemo(() => visualData?.dataSource || 'AI Analysis', [visualData]);
   
-  // Fetch real trend data using smart auto-detect
   const { trendData, isLoading: isTrendLoading, timeframeLabel } = useSidebarTrendData({
     userId: user?.id || null,
     dataSource,
@@ -218,10 +158,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     chartData
   });
 
-  // Extract metric cards from visualData with REAL trend calculations
+  // Metric cards from visualData with real trend calculations
   const metricCards = useMemo(() => {
     if (visualData?.summaryInsights?.metricCards) {
-      // If AI provided metrics, enrich with real trend data if available
       return visualData.summaryInsights.metricCards.map((metric: any) => {
         const key = metric.label?.toLowerCase().replace(/\s+/g, '') || '';
         const trend = trendData[key];
@@ -238,7 +177,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       });
     }
     
-    // Generate metrics from chart data with REAL trend calculations
     if (chartData.length > 0) {
       const firstItem = chartData[0];
       const numericKeys = Object.keys(firstItem).filter(
@@ -249,8 +187,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
         const values = chartData.map(item => Number(item[key]) || 0);
         const total = values.reduce((sum, val) => sum + val, 0);
         const avg = total / chartData.length;
-        
-        // Use trend data from hook if available, otherwise calculate from chart data
         const trend = trendData[key];
         
         if (trend) {
@@ -264,14 +200,10 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
           };
         }
         
-        // Fallback: Calculate from first-half vs second-half of chart data
         const midpoint = Math.floor(values.length / 2);
         const firstHalfAvg = midpoint > 0 ? values.slice(0, midpoint).reduce((a, b) => a + b, 0) / midpoint : 0;
         const secondHalfAvg = midpoint > 0 ? values.slice(midpoint).reduce((a, b) => a + b, 0) / (values.length - midpoint) : avg;
-        
-        const changePercent = firstHalfAvg > 0 
-          ? ((secondHalfAvg - firstHalfAvg) / firstHalfAvg * 100) 
-          : 0;
+        const changePercent = firstHalfAvg > 0 ? ((secondHalfAvg - firstHalfAvg) / firstHalfAvg * 100) : 0;
         
         return {
           label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
@@ -286,14 +218,12 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     return [];
   }, [visualData, chartData, trendData, timeframeLabel]);
 
-  // Extract insights with AI-DRIVEN type classification (not random)
+  // Insights from visualData
   const insights = useMemo(() => {
     const rawInsights = visualData?.insights || visualData?.actionableItems?.map((item: any) => ({
       type: 'insight',
       content: item.description || item.title
     })) || [];
-
-    // Use keyword-based classification instead of arbitrary cycling
     return rawInsights.map((insight: any) => {
       const content = insight.content || insight.description || insight;
       return {
@@ -304,7 +234,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     });
   }, [visualData]);
 
-  // Deep dive prompts with categorization
+  // Deep dive prompts
   const deepDivePrompts = useMemo(() => {
     const prompts = visualData?.deepDivePrompts || [];
     return prompts.map((prompt: string, idx: number) => ({
@@ -313,14 +243,12 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     }));
   }, [visualData]);
 
-  // Data source info with COMBINED quality assessment
+  // Data source info
   const dataInfo = useMemo(() => {
     const source = visualData?.dataSource || 'AI Analysis';
     const points = chartData.length;
     const timeframe = selectedTimeframe === '7d' ? 'Last 7 days' : 
                       selectedTimeframe === '30d' ? 'Last 30 days' : 'Custom';
-    
-    // Combined quality assessment based on completeness + volume + variation
     const hasRequiredFields = chartData.every(item => 
       item.name !== undefined && 
       Object.values(item).some(v => typeof v === 'number')
@@ -331,14 +259,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       !Object.values(item).includes(undefined)
     );
     const hasVariation = new Set(chartData.map(d => d.name)).size > 1;
-    
     const qualityScore = [hasRequiredFields, hasMinimumPoints, noNullValues, hasVariation].filter(Boolean).length;
     const quality = qualityScore >= 4 ? 'high' : qualityScore >= 2 ? 'medium' : 'low';
-    
     return { source, points, quality, timeframe };
   }, [visualData, chartData, selectedTimeframe]);
 
-  // Colors for charts
   const colors = useMemo(() => {
     return chartConfig?.colors || [
       'hsl(var(--primary))',
@@ -351,14 +276,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     ];
   }, [chartConfig]);
 
-  // Extract data keys for rendering
   const dataKeys = useMemo(() => {
-    if (chartConfig?.series?.length) {
-      return chartConfig.series.map(s => s.dataKey);
-    }
-    if (chartConfig?.categories?.length) {
-      return chartConfig.categories.filter(cat => cat !== 'name' && cat !== 'label');
-    }
+    if (chartConfig?.series?.length) return chartConfig.series.map(s => s.dataKey);
+    if (chartConfig?.categories?.length) return chartConfig.categories.filter(cat => cat !== 'name' && cat !== 'label');
     if (chartData.length > 0) {
       return Object.keys(chartData[0]).filter(
         key => key !== 'name' && key !== 'label' && key !== 'category' && typeof chartData[0][key] === 'number'
@@ -367,51 +287,36 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     return ['value'];
   }, [chartConfig, chartData]);
 
-  // Normalize pie chart data
   const normalizePieData = (data: any[]) => {
     if (!data?.length) return [];
     if (data[0].name && data[0].value !== undefined) return data;
-    
     const stringKeys = Object.keys(data[0]).filter(key => typeof data[0][key] === 'string');
     const numberKeys = Object.keys(data[0]).filter(key => typeof data[0][key] === 'number');
-    
     const nameKey = ['name', 'label', 'solution', 'category'].find(k => stringKeys.includes(k)) || stringKeys[0] || 'name';
     const valueKey = ['value', 'impressions', 'clicks', 'count'].find(k => numberKeys.includes(k)) || numberKeys[0] || 'value';
-    
     return data.map(item => ({
       name: item[nameKey] || 'Unknown',
       value: Number(item[valueKey] || 0)
     }));
   };
 
-  // ChartBlock component for consistent chart rendering
-  const ChartBlock: React.FC<{
-    title?: string;
-    children: React.ReactNode;
-    compact?: boolean;
-    controls?: React.ReactNode;
-  }> = ({ title, children, compact = false, controls }) => (
-    <div className={cn(
-      "rounded-xl bg-transparent border border-border/20",
-      compact ? "p-4" : "p-5"
-    )}>
-      {(title || controls) && (
-        <div className="flex items-center justify-between mb-3">
-          {title && (
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              {title}
-            </span>
-          )}
-          {controls}
-        </div>
-      )}
-      <div className={compact ? "h-[200px]" : "h-[260px]"}>
-        {children}
-      </div>
-    </div>
-  );
+  // Phase 2: Smart label truncation for XAxis
+  const shouldRotateLabels = chartData.length >= 5;
+  const xAxisTickFormatter = (value: string) => {
+    if (typeof value !== 'string') return value;
+    return value.length > 18 ? value.substring(0, 16) + '…' : value;
+  };
+  const xAxisProps = {
+    dataKey: "name",
+    stroke: "hsl(var(--muted-foreground))",
+    fontSize: 10,
+    tickLine: false,
+    axisLine: false,
+    tickFormatter: xAxisTickFormatter,
+    ...(shouldRotateLabels ? { angle: -35, textAnchor: "end" as const, dy: 4, height: 60 } : { dy: 8 }),
+  };
+  const chartBottomMargin = shouldRotateLabels ? 24 : 8;
 
-  // Loading skeleton for chart transitions
   const ChartLoadingSkeleton = () => (
     <div className="flex flex-col items-center justify-center h-full gap-3">
       <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -420,12 +325,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   );
 
   const renderChart = (type: ChartType = chartType, height: number = 260) => {
-    // Show loading skeleton while trend data is being fetched
-    if (isChartLoading) {
-      return <ChartLoadingSkeleton />;
-    }
+    if (isChartLoading) return <ChartLoadingSkeleton />;
     
-    // Issue #2 Fix: Actionable empty state with prompt suggestion
     if (!chartData?.length) {
       return (
         <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -436,12 +337,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               The AI didn't provide structured data for visualization.
             </p>
             {onSendMessage && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onSendMessage("Show me a chart of my content performance")}
-                className="text-xs"
-              >
+              <Button variant="outline" size="sm" onClick={() => onSendMessage("Show me a chart of my content performance")} className="text-xs">
                 <BarChart3 className="w-3 h-3 mr-1.5" />
                 Request a chart
               </Button>
@@ -452,8 +348,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     }
 
     const commonProps = { data: chartData, width: '100%', height };
-    
-    // Modern premium tooltip styling
     const tooltipStyle = { 
       backgroundColor: 'hsl(var(--popover))', 
       border: 'none', 
@@ -462,22 +356,13 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       fontSize: '11px',
       padding: '8px 12px'
     };
-
-    // Modern color palette with gradients
-    const modernColors = [
-      '#6366f1', // indigo
-      '#8b5cf6', // violet  
-      '#06b6d4', // cyan
-      '#10b981', // emerald
-      '#f59e0b', // amber
-      '#ec4899', // pink
-    ];
+    const modernColors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'];
 
     switch (type) {
       case 'line':
         return (
           <ResponsiveContainer {...commonProps}>
-            <AreaChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 16, right: 16, bottom: chartBottomMargin, left: 0 }}>
               <defs>
                 {modernColors.map((color, idx) => (
                   <linearGradient key={idx} id={`lineGradient${idx}`} x1="0" y1="0" x2="0" y2="1">
@@ -486,42 +371,12 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </linearGradient>
                 ))}
               </defs>
-              <XAxis 
-                dataKey="name" 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false}
-                dy={8}
-              />
-              <YAxis 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
-                width={32}
-                tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
-              />
-              <RechartsTooltip 
-                contentStyle={tooltipStyle} 
-                cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
-              />
+              <XAxis {...xAxisProps} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={32} tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value} />
+              <RechartsTooltip contentStyle={tooltipStyle} cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }} />
               {dataKeys.map((key, idx) => (
                 <React.Fragment key={key}>
-                  <Area 
-                    type="natural" 
-                    dataKey={key} 
-                    stroke={modernColors[idx % modernColors.length]} 
-                    strokeWidth={2.5}
-                    fill={`url(#lineGradient${idx})`}
-                    dot={false}
-                    activeDot={{ 
-                      r: 5, 
-                      strokeWidth: 2, 
-                      stroke: 'hsl(var(--background))',
-                      fill: modernColors[idx % modernColors.length]
-                    }}
-                  />
+                  <Area type="natural" dataKey={key} stroke={modernColors[idx % modernColors.length]} strokeWidth={2.5} fill={`url(#lineGradient${idx})`} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: 'hsl(var(--background))', fill: modernColors[idx % modernColors.length] }} />
                 </React.Fragment>
               ))}
             </AreaChart>
@@ -531,7 +386,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'area':
         return (
           <ResponsiveContainer {...commonProps}>
-            <AreaChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 16, right: 16, bottom: chartBottomMargin, left: 0 }}>
               <defs>
                 {modernColors.map((color, idx) => (
                   <linearGradient key={idx} id={`areaGradient${idx}`} x1="0" y1="0" x2="0" y2="1">
@@ -540,42 +395,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </linearGradient>
                 ))}
               </defs>
-              <XAxis 
-                dataKey="name" 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false}
-                dy={8}
-              />
-              <YAxis 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
-                width={32}
-                tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
-              />
-              <RechartsTooltip 
-                contentStyle={tooltipStyle}
-                cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
-              />
+              <XAxis {...xAxisProps} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={32} tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value} />
+              <RechartsTooltip contentStyle={tooltipStyle} cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }} />
               {dataKeys.map((key, idx) => (
-                <Area 
-                  key={key} 
-                  type="natural" 
-                  dataKey={key} 
-                  stroke={modernColors[idx % modernColors.length]} 
-                  strokeWidth={2}
-                  fill={`url(#areaGradient${idx})`}
-                  dot={false}
-                  activeDot={{ 
-                    r: 4, 
-                    strokeWidth: 2, 
-                    stroke: 'hsl(var(--background))',
-                    fill: modernColors[idx % modernColors.length]
-                  }}
-                />
+                <Area key={key} type="natural" dataKey={key} stroke={modernColors[idx % modernColors.length]} strokeWidth={2} fill={`url(#areaGradient${idx})`} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--background))', fill: modernColors[idx % modernColors.length] }} />
               ))}
             </AreaChart>
           </ResponsiveContainer>
@@ -584,7 +408,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'bar':
         return (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }} barCategoryGap="20%">
+            <BarChart data={chartData} margin={{ top: 16, right: 16, bottom: chartBottomMargin, left: 0 }} barCategoryGap="20%">
               <defs>
                 {modernColors.map((color, idx) => (
                   <linearGradient key={idx} id={`barGradient${idx}`} x1="0" y1="0" x2="0" y2="1">
@@ -593,34 +417,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </linearGradient>
                 ))}
               </defs>
-              <XAxis 
-                dataKey="name" 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false}
-                dy={8}
-              />
-              <YAxis 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
-                width={32}
-                tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
-              />
-              <RechartsTooltip 
-                contentStyle={tooltipStyle}
-                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3, radius: 4 }}
-              />
+              <XAxis {...xAxisProps} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={32} tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value} />
+              <RechartsTooltip contentStyle={tooltipStyle} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3, radius: 4 }} />
               {dataKeys.map((key, idx) => (
-                <Bar 
-                  key={key} 
-                  dataKey={key} 
-                  fill={`url(#barGradient${idx})`}
-                  radius={[8, 8, 0, 0]}
-                  maxBarSize={48}
-                />
+                <Bar key={key} dataKey={key} fill={`url(#barGradient${idx})`} radius={[8, 8, 0, 0]} maxBarSize={48} />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -639,31 +440,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </linearGradient>
                 ))}
               </defs>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''}
-                innerRadius={45}
-                outerRadius={75}
-                dataKey="value"
-                paddingAngle={3}
-                strokeWidth={0}
-              >
-                {pieData.map((_, idx) => (
-                  <Cell key={idx} fill={`url(#pieGradient${idx})`} />
-                ))}
+              <Pie data={pieData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''} innerRadius={45} outerRadius={75} dataKey="value" paddingAngle={3} strokeWidth={0}>
+                {pieData.map((_, idx) => (<Cell key={idx} fill={`url(#pieGradient${idx})`} />))}
               </Pie>
               <RechartsTooltip contentStyle={tooltipStyle} />
-              <Legend 
-                verticalAlign="bottom" 
-                height={48}
-                wrapperStyle={{ paddingTop: '12px' }}
-                iconType="circle"
-                iconSize={8}
-                formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
-              />
+              <Legend verticalAlign="bottom" height={48} wrapperStyle={{ paddingTop: '12px' }} iconType="circle" iconSize={8} formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>} />
             </PieChart>
           </ResponsiveContainer>
         );
@@ -681,21 +462,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 ))}
               </defs>
               <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.5} />
-              <PolarAngleAxis 
-                dataKey="name" 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10}
-                tickLine={false}
-              />
+              <PolarAngleAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} tickFormatter={xAxisTickFormatter} />
               {dataKeys.map((key, idx) => (
-                <Radar 
-                  key={key} 
-                  dataKey={key} 
-                  stroke={modernColors[idx % modernColors.length]} 
-                  strokeWidth={2}
-                  fill={`url(#radarGradient${idx})`}
-                  dot={{ r: 3, fill: modernColors[idx % modernColors.length] }}
-                />
+                <Radar key={key} dataKey={key} stroke={modernColors[idx % modernColors.length]} strokeWidth={2} fill={`url(#radarGradient${idx})`} dot={{ r: 3, fill: modernColors[idx % modernColors.length] }} />
               ))}
               <RechartsTooltip contentStyle={tooltipStyle} />
             </RadarChart>
@@ -705,15 +474,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'radial':
         return (
           <ResponsiveContainer {...commonProps}>
-            <RadialBarChart 
-              innerRadius="30%" 
-              outerRadius="90%" 
-              data={chartData} 
-              startAngle={180} 
-              endAngle={-180}
-              cx="50%"
-              cy="50%"
-            >
+            <RadialBarChart innerRadius="30%" outerRadius="90%" data={chartData} startAngle={180} endAngle={-180} cx="50%" cy="50%">
               <defs>
                 {modernColors.map((color, idx) => (
                   <linearGradient key={idx} id={`radialGradient${idx}`} x1="0" y1="0" x2="1" y2="0">
@@ -722,22 +483,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </linearGradient>
                 ))}
               </defs>
-              <RadialBar 
-                dataKey={dataKeys[0] || 'value'} 
-                background={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
-                cornerRadius={8}
-              >
-                {chartData.map((_, idx) => (
-                  <Cell key={idx} fill={`url(#radialGradient${idx})`} />
-                ))}
+              <RadialBar dataKey={dataKeys[0] || 'value'} background={{ fill: 'hsl(var(--muted))', opacity: 0.3 }} cornerRadius={8}>
+                {chartData.map((_, idx) => (<Cell key={idx} fill={`url(#radialGradient${idx})`} />))}
               </RadialBar>
               <RechartsTooltip contentStyle={tooltipStyle} />
-              <Legend 
-                verticalAlign="bottom" 
-                iconType="circle"
-                iconSize={8}
-                formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
-              />
+              <Legend verticalAlign="bottom" iconType="circle" iconSize={8} formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>} />
             </RadialBarChart>
           </ResponsiveContainer>
         );
@@ -745,30 +495,12 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'scatter':
         return (
           <ResponsiveContainer {...commonProps}>
-            <ScatterChart margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
-              <XAxis 
-                dataKey={dataKeys[0] || 'x'} 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis 
-                dataKey={dataKeys[1] || 'y'}
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10}
-                tickLine={false}
-                axisLine={false}
-                width={32}
-              />
+            <ScatterChart margin={{ top: 16, right: 16, bottom: chartBottomMargin, left: 0 }}>
+              <XAxis dataKey={dataKeys[0] || 'x'} stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} tickFormatter={xAxisTickFormatter} />
+              <YAxis dataKey={dataKeys[1] || 'y'} stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={32} />
               <RechartsTooltip contentStyle={tooltipStyle} />
-              <Scatter 
-                data={chartData} 
-                fill={modernColors[0]}
-              >
-                {chartData.map((_, idx) => (
-                  <Cell key={idx} fill={modernColors[idx % modernColors.length]} />
-                ))}
+              <Scatter data={chartData} fill={modernColors[0]}>
+                {chartData.map((_, idx) => (<Cell key={idx} fill={modernColors[idx % modernColors.length]} />))}
               </Scatter>
             </ScatterChart>
           </ResponsiveContainer>
@@ -779,20 +511,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
           <ResponsiveContainer {...commonProps}>
             <FunnelChart>
               <RechartsTooltip contentStyle={tooltipStyle} />
-              <Funnel
-                dataKey="value"
-                data={chartData}
-                isAnimationActive
-              >
-                {chartData.map((_, idx) => (
-                  <Cell key={idx} fill={modernColors[idx % modernColors.length]} />
-                ))}
-                <LabelList 
-                  position="right" 
-                  fill="hsl(var(--foreground))" 
-                  fontSize={10}
-                  dataKey="name"
-                />
+              <Funnel dataKey="value" data={chartData} isAnimationActive>
+                {chartData.map((_, idx) => (<Cell key={idx} fill={modernColors[idx % modernColors.length]} />))}
+                <LabelList position="right" fill="hsl(var(--foreground))" fontSize={10} dataKey="name" />
               </Funnel>
             </FunnelChart>
           </ResponsiveContainer>
@@ -801,48 +522,21 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'composed':
         return (
           <ResponsiveContainer {...commonProps}>
-            <ComposedChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
+            <ComposedChart data={chartData} margin={{ top: 16, right: 16, bottom: chartBottomMargin, left: 0 }}>
               <defs>
                 <linearGradient id="composedBarGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={modernColors[0]} stopOpacity={1} />
                   <stop offset="100%" stopColor={modernColors[0]} stopOpacity={0.7} />
                 </linearGradient>
               </defs>
-              <XAxis 
-                dataKey="name" 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10}
-                tickLine={false}
-                axisLine={false}
-                width={32}
-              />
+              <XAxis {...xAxisProps} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={32} />
               <RechartsTooltip contentStyle={tooltipStyle} />
-              {/* First data key as bars */}
               {dataKeys.slice(0, 1).map((key) => (
-                <Bar 
-                  key={key} 
-                  dataKey={key} 
-                  fill="url(#composedBarGradient)"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
-                />
+                <Bar key={key} dataKey={key} fill="url(#composedBarGradient)" radius={[4, 4, 0, 0]} maxBarSize={40} />
               ))}
-              {/* Second data key as line overlay */}
               {dataKeys.slice(1, 2).map((key, idx) => (
-                <Line 
-                  key={key} 
-                  type="monotone" 
-                  dataKey={key} 
-                  stroke={modernColors[idx + 1]} 
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                />
+                <Line key={key} type="monotone" dataKey={key} stroke={modernColors[idx + 1]} strokeWidth={2} dot={{ r: 3 }} />
               ))}
             </ComposedChart>
           </ResponsiveContainer>
@@ -851,7 +545,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       default:
         return (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }} barCategoryGap="20%">
+            <BarChart data={chartData} margin={{ top: 16, right: 16, bottom: chartBottomMargin, left: 0 }} barCategoryGap="20%">
               <defs>
                 {modernColors.map((color, idx) => (
                   <linearGradient key={idx} id={`defaultBarGradient${idx}`} x1="0" y1="0" x2="0" y2="1">
@@ -860,34 +554,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </linearGradient>
                 ))}
               </defs>
-              <XAxis 
-                dataKey="name" 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false}
-                dy={8}
-              />
-              <YAxis 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
-                width={32}
-                tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
-              />
-              <RechartsTooltip 
-                contentStyle={tooltipStyle}
-                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3, radius: 4 }}
-              />
+              <XAxis {...xAxisProps} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={32} tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value} />
+              <RechartsTooltip contentStyle={tooltipStyle} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3, radius: 4 }} />
               {dataKeys.map((key, idx) => (
-                <Bar 
-                  key={key} 
-                  dataKey={key} 
-                  fill={`url(#defaultBarGradient${idx})`}
-                  radius={[8, 8, 0, 0]}
-                  maxBarSize={48}
-                />
+                <Bar key={key} dataKey={key} fill={`url(#defaultBarGradient${idx})`} radius={[8, 8, 0, 0]} maxBarSize={48} />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -912,566 +583,73 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
   const getQualityConfig = (quality: string) => {
     switch (quality) {
-      case 'high':
-        return { color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', label: 'High Quality' };
-      case 'medium':
-        return { color: 'text-amber-500', bgColor: 'bg-amber-500/10', label: 'Medium' };
-      default:
-        return { color: 'text-muted-foreground', bgColor: 'bg-muted', label: 'Low' };
+      case 'high': return { color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', label: 'High Quality' };
+      case 'medium': return { color: 'text-amber-500', bgColor: 'bg-amber-500/10', label: 'Medium' };
+      default: return { color: 'text-muted-foreground', bgColor: 'bg-muted', label: 'Low' };
     }
   };
 
   const qualityConfig = getQualityConfig(dataInfo.quality);
-
   const { isMobile, isTablet } = useResponsiveBreakpoint();
 
-  // Content Wizard mode - render wizard instead of charts
+  // ─── Delegate to specialized panels ───────────────────────────────────
   if (visualData?.type === 'content_wizard') {
-    return (
-      <ContentWizardSidebar
-        isOpen={isOpen}
-        onClose={onClose}
-        keyword={visualData.keyword || ''}
-        solutionId={visualData.solution_id}
-        contentType={visualData.content_type}
-        extractedContext={visualData.extractedContext}
-      />
-    );
+    return <ContentWizardSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} solutionId={visualData.solution_id} contentType={visualData.content_type} extractedContext={visualData.extractedContext} />;
   }
-
-  // Proposal Browser mode
   if (visualData?.type === 'proposal_browser') {
-    return (
-      <ProposalBrowserSidebar
-        isOpen={isOpen}
-        onClose={onClose}
-        keyword={visualData.keyword || ''}
-      />
-    );
+    return <ProposalBrowserSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} />;
   }
+  if (visualData?.type === 'repository') return <RepositoryPanel isOpen={isOpen} onClose={onClose} />;
+  if (visualData?.type === 'approvals') return <ApprovalsPanel isOpen={isOpen} onClose={onClose} />;
+  if (visualData?.type === 'research_intelligence') return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;
+  if (visualData?.type === 'content_repurpose') return <RepurposePanel isOpen={isOpen} onClose={onClose} contentId={visualData.contentId} />;
 
-  // Panel modes — Only Repository & Approvals get sidebar panels
-  if (visualData?.type === 'repository') {
-    return <RepositoryPanel isOpen={isOpen} onClose={onClose} />;
-  }
-  if (visualData?.type === 'approvals') {
-    return <ApprovalsPanel isOpen={isOpen} onClose={onClose} />;
-  }
-  if (visualData?.type === 'research_intelligence') {
-    return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;
-  }
-  if (visualData?.type === 'content_repurpose') {
-    return <RepurposePanel isOpen={isOpen} onClose={onClose} contentId={visualData.contentId} />;
-  }
+  // ─── Derived analyst data ─────────────────────────────────────────────
+  const hasAnalystData = analystState && (
+    analystState.insightsFeed.length > 0 || 
+    analystState.cumulativeMetrics.length > 0 || 
+    analystState.accumulatedCharts.length > 0 ||
+    analystState.platformData.length > 0
+  );
 
-  if (visualData?.type === 'analyst') {
-    const hasAnalystData = analystState && (
-      analystState.insightsFeed.length > 0 || 
-      analystState.cumulativeMetrics.length > 0 || 
-      analystState.accumulatedCharts.length > 0 ||
-      analystState.platformData.length > 0
-    );
+  // Merge analyst insights feed with current response insights
+  const mergedInsightsFeed = useMemo(() => {
+    const allInsights = [...(analystState?.insightsFeed || [])];
+    // Add current response insights if not already present
+    for (const insight of insights) {
+      const content = typeof insight === 'string' ? insight : insight.content;
+      if (!allInsights.some(i => i.content === content)) {
+        allInsights.push({
+          id: `current-${Math.random().toString(36).slice(2)}`,
+          content,
+          type: insight.insightType || 'trend',
+          source: 'ai' as const,
+          timestamp: new Date(),
+        });
+      }
+    }
+    return allInsights;
+  }, [analystState?.insightsFeed, insights]);
 
-    return (
-      <AnimatePresence>
-        {isOpen && (
-          <TooltipProvider delayDuration={300}>
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed top-16 bottom-24 left-0 right-0 bg-black/40 backdrop-blur-sm z-[35] lg:hidden"
-                onClick={onClose}
-              />
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className={cn(
-                  "fixed top-20 right-0 bottom-24 z-[35]",
-                  "w-full sm:w-[400px] lg:w-[520px] xl:w-[600px]",
-                  "bg-background/90 backdrop-blur-md",
-                  "border-l border-border/10",
-                  "flex flex-col overflow-hidden"
-                )}
-              >
-                {/* Header */}
-                <div className="flex-shrink-0 px-6 py-5 border-b border-border/10">
-                  <div className="flex items-start gap-3">
-                    <div className="relative">
-                      <BarChart3 className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      {analystState?.isEnriching && (
-                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-base font-medium text-foreground">Analyst</h2>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {hasAnalystData 
-                          ? `${analystState!.insightsFeed.length} insights · ${analystState!.topics.length} topics`
-                          : 'Charts & insights companion'}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onClose}
-                      className="flex-shrink-0 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+  // Whether we have any current response data to show
+  const hasCurrentResponseData = hasChartData || (visualData && visualData.type !== 'analyst');
 
-                   {/* Topic tags */}
-                  {analystState && analystState.topics.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {analystState.topics.map((topic) => (
-                        <Badge 
-                          key={topic.name} 
-                          variant="outline" 
-                          className="text-[10px] px-2 py-0.5 bg-muted/20 border-border/30 text-muted-foreground"
-                        >
-                          {topic.name}
-                          {topic.mentionCount > 1 && (
-                            <span className="ml-1 text-primary/70">×{topic.mentionCount}</span>
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+  // Determine sidebar title
+  const sidebarTitle = hasCurrentResponseData 
+    ? (title || visualData?.title || 'Data Visualization') 
+    : 'Intelligence Panel';
+  const sidebarDescription = hasCurrentResponseData 
+    ? description 
+    : hasAnalystData 
+      ? `${analystState!.insightsFeed.length} insights · ${analystState!.topics.length} topics`
+      : 'Charts & insights companion';
 
-                  {/* Enhancement E: Goal Progress */}
-                  {analystState?.goalProgress && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-3 p-2.5 rounded-lg bg-muted/15 border border-border/15 space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                          {analystState.goalProgress.goalName}
-                        </span>
-                        <span className="text-[10px] font-semibold text-primary">
-                          {analystState.goalProgress.percentage}%
-                        </span>
-                      </div>
-                      <Progress value={analystState.goalProgress.percentage} className="h-1.5" />
-                      <div className="flex items-center gap-1.5">
-                        <span className={cn(
-                          "text-[9px] px-1.5 py-0.5 rounded-full",
-                          analystState.goalProgress.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
-                          analystState.goalProgress.status === 'nearly_done' ? 'bg-blue-500/10 text-blue-500' :
-                          analystState.goalProgress.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500' :
-                          'bg-muted text-muted-foreground'
-                        )}>
-                          {analystState.goalProgress.status.replace('_', ' ')}
-                        </span>
-                        <span className="text-[9px] text-muted-foreground/60">
-                          Next: {analystState.goalProgress.nextStep}
-                        </span>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <ScrollArea className="flex-1">
-                   <div className="p-6 pb-28 space-y-5">
-                    {/* Enhancement A: Health Score Ring */}
-                    {analystState?.healthScore && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="space-y-3"
-                      >
-                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-                          Workspace Health
-                        </span>
-                        <div className="flex items-center gap-4">
-                          {/* SVG Score Ring */}
-                          <div className="relative w-16 h-16 flex-shrink-0">
-                            <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                              <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" opacity={0.2} />
-                              <circle
-                                cx="18" cy="18" r="15.5" fill="none"
-                                stroke={
-                                  analystState.healthScore.total >= 70 ? 'hsl(142 71% 45%)' :
-                                  analystState.healthScore.total >= 40 ? 'hsl(38 92% 50%)' :
-                                  'hsl(0 84% 60%)'
-                                }
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                strokeDasharray={`${analystState.healthScore.total * 0.974} 100`}
-                                className="transition-all duration-700 ease-out"
-                              />
-                            </svg>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-sm font-bold text-foreground">{analystState.healthScore.total}</span>
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              {analystState.healthScore.trend === 'improving' && (
-                                <TrendIcon className="w-3 h-3 text-emerald-500" />
-                              )}
-                              {analystState.healthScore.trend === 'declining' && (
-                                <TrendIcon className="w-3 h-3 text-red-500 rotate-180" />
-                              )}
-                              {analystState.healthScore.trend === 'stable' && (
-                                <Activity className="w-3 h-3 text-muted-foreground" />
-                              )}
-                              <span className="text-xs text-muted-foreground capitalize">{analystState.healthScore.trend}</span>
-                            </div>
-                            {analystState.healthScore.topCritical && (
-                              <p className="text-[10px] text-amber-500">
-                                ⚡ {analystState.healthScore.topCritical} needs attention
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        {/* Expandable factors */}
-                        <Collapsible>
-                          <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-                            <ChevronDown className="w-3 h-3" />
-                            Score breakdown
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <div className="mt-2 space-y-1.5">
-                              {analystState.healthScore.factors.map((factor) => (
-                                <div key={factor.name} className="flex items-center justify-between gap-2">
-                                  <span className="text-[10px] text-muted-foreground truncate">{factor.name}</span>
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="w-16 h-1 bg-muted/30 rounded-full overflow-hidden">
-                                      <div
-                                        className={cn(
-                                          "h-full rounded-full transition-all",
-                                          factor.status === 'good' ? 'bg-emerald-500' :
-                                          factor.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
-                                        )}
-                                        style={{ width: `${(factor.score / factor.maxScore) * 100}%` }}
-                                      />
-                                    </div>
-                                    <span className="text-[9px] text-muted-foreground/60 w-7 text-right">
-                                      {factor.score}/{factor.maxScore}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </motion.div>
-                    )}
-
-                    {/* Cumulative Metrics Strip */}
-                    {analystState && analystState.cumulativeMetrics.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="space-y-2"
-                      >
-                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-                          Key Metrics
-                        </span>
-                        <div className="grid grid-cols-2 gap-2">
-                          {analystState.cumulativeMetrics.slice(0, 4).map((metric, idx) => (
-                            <PremiumMetricCard
-                              key={metric.id || idx}
-                              label={metric.title}
-                              value={metric.value}
-                              trend={metric.change?.type === 'increase' ? 'up' : metric.change?.type === 'decrease' ? 'down' : 'neutral'}
-                              trendValue={metric.change ? `${metric.change.value > 0 ? '+' : ''}${metric.change.value}%` : undefined}
-                              index={idx}
-                            />
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {/* Platform Data Cards */}
-                    {analystState && analystState.platformData.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.05 }}
-                        className="space-y-2"
-                      >
-                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-                          Platform Stats
-                        </span>
-                        <div className="grid grid-cols-2 gap-2">
-                          {analystState.platformData.map((dp, idx) => {
-                            const context = getMetricContext(dp.label, dp.value, analystState.platformData);
-                            return (
-                              <Card key={dp.label} className="p-3 bg-muted/10 border-border/20">
-                                <div className="flex items-start justify-between">
-                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
-                                  {dp.trendData && dp.trendData.some(v => v > 0) && (
-                                    <MiniSparkline
-                                      data={dp.trendData}
-                                      height={16}
-                                      width={40}
-                                      trend={
-                                        dp.trendData[dp.trendData.length - 1] > dp.trendData[0] ? 'up' :
-                                        dp.trendData[dp.trendData.length - 1] < dp.trendData[0] ? 'down' : 'neutral'
-                                      }
-                                    />
-                                  )}
-                                </div>
-                                <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
-                                {context && (
-                                  <p className="text-[9px] text-muted-foreground/60 mt-1 leading-relaxed">{context}</p>
-                                )}
-                              </Card>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {/* Web Intelligence Cards */}
-                    {analystState && analystState.webSearchResults.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.07 }}
-                        className="space-y-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Globe className="w-3.5 h-3.5 text-cyan-500" />
-                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-                            Web Intelligence
-                          </span>
-                        </div>
-                        {analystState.webSearchResults.map((ws, wsIdx) => (
-                          <div key={`ws-${wsIdx}`} className="space-y-1.5">
-                            <p className="text-[10px] text-muted-foreground italic">"{ws.query}"</p>
-                            {ws.results.slice(0, 4).map((result, rIdx) => (
-                              <Card 
-                                key={`wsr-${wsIdx}-${rIdx}`}
-                                className="p-2.5 bg-cyan-500/5 border-border/15 border-l-2 border-l-cyan-500/30 hover:bg-cyan-500/10 transition-colors cursor-pointer group"
-                                onClick={() => window.open(result.url, '_blank', 'noopener')}
-                              >
-                                <div className="flex items-start gap-2">
-                                  <Search className="w-3 h-3 mt-0.5 flex-shrink-0 text-cyan-500/70" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium text-foreground/90 line-clamp-1 group-hover:text-cyan-500 transition-colors">
-                                      {result.title}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground/60 line-clamp-2 mt-0.5">
-                                      {result.snippet}
-                                    </p>
-                                    <div className="flex items-center gap-1 mt-1">
-                                      <ExternalLink className="w-2.5 h-2.5 text-muted-foreground/30" />
-                                      <span className="text-[9px] text-muted-foreground/30 truncate">
-                                        {new URL(result.url).hostname}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </Card>
-                            ))}
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-
-                    {/* Accumulated Charts Waterfall */}
-                    {analystState && analystState.accumulatedCharts.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="space-y-3"
-                      >
-                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-                          Charts ({analystState.accumulatedCharts.length})
-                        </span>
-                        {analystState.accumulatedCharts.map((chart, idx) => (
-                          <ChartBlock key={`analyst-chart-${idx}`} title={chart.title} compact>
-                            {renderChart((chart.type as ChartType) || 'bar', 180)}
-                          </ChartBlock>
-                        ))}
-                      </motion.div>
-                    )}
-
-                    {/* Live Insights Feed */}
-                    {analystState && analystState.insightsFeed.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.15 }}
-                        className="space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-                            Insights Feed
-                          </span>
-                          <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">
-                            {analystState.insightsFeed.length} items
-                          </Badge>
-                        </div>
-                        <div className="space-y-1.5">
-                          {analystState.insightsFeed.slice(-12).reverse().map((insight) => {
-                            const config = getInsightConfig(insight.type);
-                            const InsightIcon = config.icon;
-                            return (
-                              <Card 
-                                key={insight.id}
-                                className={cn(
-                                  "p-2.5 border bg-transparent border-border/15",
-                                  "border-l-2",
-                                  config.borderColor.replace('border-', 'border-l-')
-                                )}
-                              >
-                                <div className="flex items-start gap-2">
-                                  <InsightIcon className={cn("w-3.5 h-3.5 mt-0.5 flex-shrink-0", config.textColor)} />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-foreground/80 leading-relaxed">{insight.content}</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <span className="text-[9px] text-muted-foreground/40">
-                                        {insight.source === 'platform' ? '📊 Platform' : insight.source === 'web' ? '🌐 Web' : '🤖 AI'}
-                                      </span>
-                                      {onSendMessage && (
-                                        <button
-                                          onClick={() => onSendMessage(`Tell me more about: ${insight.content}`)}
-                                          className="text-[9px] text-primary/50 hover:text-primary transition-colors"
-                                        >
-                                          Explore →
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </Card>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {/* Phase 6c: Context-aware suggested prompts */}
-                    {analystState && onSendMessage && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="space-y-2"
-                      >
-                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-                          Explore Next
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {/* Dynamic prompts based on topics + insights */}
-                          {(() => {
-                            const dynamicPrompts: { id: string; label: string; action: string }[] = [];
-                            
-                            // Generate prompts from detected topics
-                            for (const topic of analystState.topics.slice(0, 2)) {
-                              dynamicPrompts.push({
-                                id: `topic-${topic.name}`,
-                                label: `Deep dive: ${topic.name}`,
-                                action: `Give me a detailed analysis of my ${topic.name.toLowerCase()} performance`,
-                              });
-                            }
-
-                            // Generate prompts from warnings in insights
-                            const warnings = analystState.insightsFeed.filter(i => i.type === 'warning').slice(0, 1);
-                            for (const warning of warnings) {
-                              dynamicPrompts.push({
-                                id: `warn-${warning.id}`,
-                                label: 'Address warning',
-                                action: `How can I fix this: ${warning.content}`,
-                              });
-                            }
-
-                            // Add from suggested actions
-                            for (const action of analystState.suggestedActions.slice(0, 2)) {
-                              dynamicPrompts.push({
-                                id: action.id,
-                                label: action.title,
-                                action: action.action || action.title,
-                              });
-                            }
-
-                            // Fallback static prompts if nothing dynamic
-                            if (dynamicPrompts.length === 0) {
-                              return ['Show content performance', 'Campaign health overview', 'Keyword rankings analysis'].map((prompt, idx) => (
-                                <button
-                                  key={idx}
-                                  onClick={() => onSendMessage?.(prompt)}
-                                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
-                                >
-                                  {prompt}
-                                </button>
-                              ));
-                            }
-
-                            return dynamicPrompts.slice(0, 4).map((prompt) => (
-                              <button
-                                key={prompt.id}
-                                onClick={() => onSendMessage?.(prompt.action)}
-                                className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
-                              >
-                                {prompt.label}
-                              </button>
-                            ));
-                          })()}
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {/* Empty state - only when truly nothing */}
-                    {!hasAnalystData && (
-                      <div className="flex-1 flex items-center justify-center py-16">
-                        <div className="text-center max-w-xs space-y-6">
-                          <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/30 border border-border/20 flex items-center justify-center">
-                            <BarChart3 className="w-8 h-8 text-muted-foreground/60" />
-                          </div>
-                          <div className="space-y-2">
-                            <h3 className="text-lg font-medium text-foreground">Ask about your data</h3>
-                            <p className="text-sm text-muted-foreground">
-                              I'll accumulate insights, metrics, and charts as we chat — building a live intelligence feed.
-                            </p>
-                          </div>
-                          {analystState?.isEnriching && (
-                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              Loading platform data...
-                            </div>
-                          )}
-                          <div className="flex flex-wrap justify-center gap-2">
-                            {['Show content performance', 'Campaign health overview', 'Keyword rankings analysis', 'Content pipeline status'].map((prompt, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => onSendMessage?.(prompt)}
-                                className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors"
-                              >
-                                {prompt}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </motion.div>
-            </>
-          </TooltipProvider>
-        )}
-      </AnimatePresence>
-    );
-  }
-
+  // ─── UNIFIED LAYOUT ──────────────────────────────────────────────────
   return (
     <AnimatePresence>
       {isOpen && (
         <TooltipProvider delayDuration={300}>
           <>
-            {/* Backdrop for mobile & tablet - overlays content */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1479,78 +657,68 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               className="fixed top-16 bottom-24 left-0 right-0 bg-black/40 backdrop-blur-sm z-[35] lg:hidden"
               onClick={onClose}
             />
-            
-            {/* Sidebar Panel - Positioned between navbar and input bar */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              onClick={() => onInteract?.()} // Track any click as interaction
+              onClick={() => onInteract?.()}
               className={cn(
-                // Position: below navbar (top-20 = 80px), ends above input bar (bottom-24 = 96px)
                 "fixed top-20 right-0 bottom-24 z-[35]",
-                // Responsive widths: full on mobile, 400px on tablet, 520-600px on desktop
                 "w-full sm:w-[400px] lg:w-[520px] xl:w-[600px]",
                 "bg-background/90 backdrop-blur-md",
                 "border-l border-border/10",
                 "flex flex-col overflow-hidden"
               )}
             >
-              {/* Clean Header */}
-              <div className="flex-shrink-0">
-                <div className="px-6 py-5 border-b border-border/10">
-                  <div className="flex items-start gap-3">
-                    {/* Simple icon container */}
-                    <div className="flex-shrink-0">
-                       <Activity className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    
-                    {/* Title and description */}
-                    <div className="flex-1 min-w-0 pr-2">
-                      <h2 className="text-base font-medium text-foreground truncate">
-                        {title || visualData?.title || 'Data Visualization'}
-                      </h2>
-                      {description && (
-                        <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
-                      )}
-                    </div>
-                    
-                    {/* Simple close button */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={onClose}
-                          className="flex-shrink-0 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" className="text-xs">
-                        Close (Esc)
-                      </TooltipContent>
-                    </Tooltip>
+              {/* ─── Header ─────────────────────────────────────────── */}
+              <div className="flex-shrink-0 px-6 py-5 border-b border-border/10">
+                <div className="flex items-start gap-3">
+                  <div className="relative flex-shrink-0">
+                    <BarChart3 className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    {analystState?.isEnriching && (
+                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                    )}
                   </div>
-                  
-                  {/* Data context badges with timeframe selector */}
-                  <div className="flex items-center gap-2 mt-4 flex-wrap">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <h2 className="text-base font-medium text-foreground truncate">{sidebarTitle}</h2>
+                    {sidebarDescription && (
+                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{sidebarDescription}</p>
+                    )}
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={onClose} className="flex-shrink-0 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="text-xs">Close (Esc)</TooltipContent>
+                  </Tooltip>
+                </div>
+
+                {/* Topic tags from analyst engine */}
+                {analystState && analystState.topics.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {analystState.topics.map((topic) => (
+                      <Badge key={topic.name} variant="outline" className="text-[10px] px-2 py-0.5 bg-muted/20 border-border/30 text-muted-foreground">
+                        {topic.name}
+                        {topic.mentionCount > 1 && <span className="ml-1 text-primary/70">×{topic.mentionCount}</span>}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Data context badges + timeframe */}
+                {hasCurrentResponseData && (
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
                     <Badge variant="outline" className="text-xs">
                       <Database className="w-3 h-3 mr-1" />
                       {dataInfo.source}
                     </Badge>
                     {dataInfo.points > 0 && (
-                      <Badge variant="outline" className="text-xs text-muted-foreground">
-                        {dataInfo.points} pts
-                      </Badge>
+                      <Badge variant="outline" className="text-xs text-muted-foreground">{dataInfo.points} pts</Badge>
                     )}
-                    
-                    {/* User-selectable timeframe dropdown */}
-                    <Select 
-                      value={selectedTimeframe} 
-                      onValueChange={(val) => setSelectedTimeframe(val as TimeframeOption)}
-                    >
+                    <Select value={selectedTimeframe} onValueChange={(val) => setSelectedTimeframe(val as TimeframeOption)}>
                       <SelectTrigger className="h-6 text-xs border-border/50 bg-transparent w-auto gap-1 px-2">
                         <Clock className="w-3 h-3" />
                         <SelectValue />
@@ -1561,221 +729,226 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         <SelectItem value="custom" className="text-xs">Custom</SelectItem>
                       </SelectContent>
                     </Select>
-                    
-                    <Badge variant="outline" className={cn("text-xs", qualityConfig.color)}>
-                      {qualityConfig.label}
-                    </Badge>
-                    
-                    {isTrendLoading && (
-                      <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
-                    )}
+                    <Badge variant="outline" className={cn("text-xs", qualityConfig.color)}>{qualityConfig.label}</Badge>
+                    {isTrendLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                   </div>
-                </div>
-              </div>
+                )}
 
-              {/* Scrollable Content - pb-24 for input bar clearance */}
-              <ScrollArea className="flex-1">
-                <div className="p-6 pb-28 space-y-6">
-                  {/* 1. CHART/TABLE SECTION - Visuals First */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 }}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      {/* Left: View toggle */}
-                      <SegmentedControl
-                        options={[
-                          { value: 'chart', label: 'Chart', icon: BarChart3, tooltip: 'View as chart (Tab)' },
-                          { value: 'table', label: 'Table', icon: TableIcon, tooltip: 'View as table (Tab)' }
-                        ]}
-                        value={activeView}
-                        onChange={(v) => setActiveView(v as 'chart' | 'table')}
-                        className="flex-shrink-0"
-                        size="sm"
-                      />
-                      
-                      {/* Right: Type selector (only when chart view) */}
-                      {activeView === 'chart' && (
-                        <PremiumChartTypeSelect 
-                          value={chartType} 
-                          onChange={setChartType}
-                          className="flex-shrink-0"
-                        />
-                      )}
+                {/* Goal Progress */}
+                {analystState?.goalProgress && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 p-2.5 rounded-lg bg-muted/15 border border-border/15 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{analystState.goalProgress.goalName}</span>
+                      <span className="text-[10px] font-semibold text-primary">{analystState.goalProgress.percentage}%</span>
                     </div>
-
-                    {/* Premium Minimal Chart Container */}
-                    <div className="rounded-xl bg-transparent border border-border/20 p-5">
-                      <AnimatePresence mode="wait">
-                        {activeView === 'chart' ? (
-                          <motion.div
-                            key="chart"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            {renderChart()}
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="table"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                            className="max-h-[400px] overflow-auto"
-                          >
-                            <DataTable
-                              data={chartData}
-                              allowEdit={false}
-                              allowFilter={true}
-                              allowSort={true}
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                    <Progress value={analystState.goalProgress.percentage} className="h-1.5" />
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn(
+                        "text-[9px] px-1.5 py-0.5 rounded-full",
+                        analystState.goalProgress.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
+                        analystState.goalProgress.status === 'nearly_done' ? 'bg-blue-500/10 text-blue-500' :
+                        analystState.goalProgress.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500' :
+                        'bg-muted text-muted-foreground'
+                      )}>
+                        {analystState.goalProgress.status.replace('_', ' ')}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground/60">Next: {analystState.goalProgress.nextStep}</span>
                     </div>
                   </motion.div>
+                )}
+              </div>
 
-                  {/* 2. AI SUMMARY - with timeframe context and real feedback handler (Issue #3 fix) */}
-                  {chartData.length > 0 && (
-                    <AISummaryCard
-                      chartData={chartData}
-                      dataKeys={dataKeys}
-                      title={title}
-                      timeframe={dataInfo.timeframe}
-                      dataSource={dataInfo.source}
-                      onFeedback={(helpful) => {
-                        // Real feedback handler - could persist to database
-                        console.log('Visualization feedback:', { helpful, title, dataSource: dataInfo.source });
-                        // Optional: Add toast notification or persist to ai_message_reactions
-                      }}
-                    />
-                  )}
+              {/* ─── Scrollable Content ──────────────────────────────── */}
+              <ScrollArea className="flex-1">
+                <div className="p-6 pb-28 space-y-5">
 
-                  {/* 3. SECONDARY CHART - Different perspective */}
-                  {hasSecondaryData && activeView === 'chart' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 }}
-                    >
-                      <ChartBlock
-                        title={secondaryChartType === 'pie' ? 'Distribution' : 'Comparison'}
-                        compact
-                        controls={
-                          <PremiumChartTypeSelect 
-                            value={secondaryChartType} 
-                            onChange={setSecondaryChartType}
-                            className="flex-shrink-0"
-                          />
-                        }
-                      >
-                        {renderChart(secondaryChartType, 200)}
-                      </ChartBlock>
-                    </motion.div>
-                  )}
-
-                  {/* 4. KEY METRICS - Real trends with proper comparison */}
-                  {metricCards.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-                          Key Metrics
-                        </span>
-                        <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">
-                          {dataInfo.timeframe}
-                        </Badge>
+                  {/* 1. CURRENT RESPONSE: Chart/Table (only if current message has data) */}
+                  {hasCurrentResponseData && hasChartData && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <SegmentedControl
+                          options={[
+                            { value: 'chart', label: 'Chart', icon: BarChart3, tooltip: 'View as chart (Tab)' },
+                            { value: 'table', label: 'Table', icon: TableIcon, tooltip: 'View as table (Tab)' }
+                          ]}
+                          value={activeView}
+                          onChange={(v) => setActiveView(v as 'chart' | 'table')}
+                          className="flex-shrink-0"
+                          size="sm"
+                        />
+                        {activeView === 'chart' && (
+                          <PremiumChartTypeSelect value={chartType} onChange={setChartType} className="flex-shrink-0" />
+                        )}
                       </div>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {metricCards.slice(0, 4).map((metric: any, idx: number) => (
-                          <PremiumMetricCard
-                            key={idx}
-                            label={metric.label}
-                            value={metric.value}
-                            trend={metric.trend}
-                            trendValue={metric.trendValue}
-                            index={idx}
-                            comparisonValue={metric.previousValue}
-                            comparisonPeriod={metric.comparisonPeriod || timeframeLabel}
-                            target={metric.target}
-                            targetLabel={metric.targetLabel}
-                          />
-                        ))}
+                      <div className="rounded-xl bg-transparent border border-border/20 p-5">
+                        <AnimatePresence mode="wait">
+                          {activeView === 'chart' ? (
+                            <motion.div key="chart" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                              {renderChart()}
+                            </motion.div>
+                          ) : (
+                            <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="max-h-[400px] overflow-auto">
+                              <DataTable data={chartData} allowEdit={false} allowFilter={true} allowSort={true} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </motion.div>
                   )}
 
-                  {/* 5. AI INSIGHTS (collapsed) */}
-                  {insights.length > 0 && (
+                  {/* 2. AI SUMMARY */}
+                  {hasCurrentResponseData && hasChartData && (
+                    <AISummaryCard chartData={chartData} dataKeys={dataKeys} title={title} timeframe={dataInfo.timeframe} dataSource={dataInfo.source} onFeedback={(helpful) => {
+                      console.log('Visualization feedback:', { helpful, title, dataSource: dataInfo.source });
+                    }} />
+                  )}
+
+                  {/* 3. WORKSPACE HEALTH (from analyst engine) */}
+                  {analystState?.healthScore && (
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-3">
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Workspace Health</span>
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-16 h-16 flex-shrink-0">
+                          <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" opacity={0.2} />
+                            <circle cx="18" cy="18" r="15.5" fill="none"
+                              stroke={analystState.healthScore.total >= 70 ? 'hsl(142 71% 45%)' : analystState.healthScore.total >= 40 ? 'hsl(38 92% 50%)' : 'hsl(0 84% 60%)'}
+                              strokeWidth="2.5" strokeLinecap="round"
+                              strokeDasharray={`${analystState.healthScore.total * 0.974} 100`}
+                              className="transition-all duration-700 ease-out"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-sm font-bold text-foreground">{analystState.healthScore.total}</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            {analystState.healthScore.trend === 'improving' && <TrendIcon className="w-3 h-3 text-emerald-500" />}
+                            {analystState.healthScore.trend === 'declining' && <TrendIcon className="w-3 h-3 text-red-500 rotate-180" />}
+                            {analystState.healthScore.trend === 'stable' && <Activity className="w-3 h-3 text-muted-foreground" />}
+                            <span className="text-xs text-muted-foreground capitalize">{analystState.healthScore.trend}</span>
+                          </div>
+                          {analystState.healthScore.topCritical && (
+                            <p className="text-[10px] text-amber-500">⚡ {analystState.healthScore.topCritical} needs attention</p>
+                          )}
+                        </div>
+                      </div>
+                      <Collapsible>
+                        <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                          <ChevronDown className="w-3 h-3" />Score breakdown
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-2 space-y-1.5">
+                            {analystState.healthScore.factors.map((factor) => (
+                              <div key={factor.name} className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] text-muted-foreground truncate">{factor.name}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-16 h-1 bg-muted/30 rounded-full overflow-hidden">
+                                    <div className={cn("h-full rounded-full transition-all", factor.status === 'good' ? 'bg-emerald-500' : factor.status === 'warning' ? 'bg-amber-500' : 'bg-red-500')} style={{ width: `${(factor.score / factor.maxScore) * 100}%` }} />
+                                  </div>
+                                  <span className="text-[9px] text-muted-foreground/60 w-7 text-right">{factor.score}/{factor.maxScore}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </motion.div>
+                  )}
+
+                  {/* 4. KEY METRICS — prefer analyst cumulative metrics, fall back to chart-derived */}
+                  {(() => {
+                    const metricsToShow = (analystState?.cumulativeMetrics && analystState.cumulativeMetrics.length > 0)
+                      ? analystState.cumulativeMetrics.slice(0, 4)
+                      : metricCards;
+                    if (metricsToShow.length === 0) return null;
+                    return (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Key Metrics</span>
+                          <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">{dataInfo.timeframe}</Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {metricsToShow.map((metric: any, idx: number) => (
+                            <PremiumMetricCard
+                              key={metric.id || idx}
+                              label={metric.label || metric.title}
+                              value={metric.value}
+                              trend={metric.trend || (metric.change?.type === 'increase' ? 'up' : metric.change?.type === 'decrease' ? 'down' : 'neutral')}
+                              trendValue={metric.trendValue || (metric.change ? `${metric.change.value > 0 ? '+' : ''}${metric.change.value}%` : undefined)}
+                              index={idx}
+                              comparisonValue={metric.previousValue}
+                              comparisonPeriod={metric.comparisonPeriod || timeframeLabel}
+                              target={metric.target}
+                              targetLabel={metric.targetLabel}
+                            />
+                          ))}
+                        </div>
+                      </motion.div>
+                    );
+                  })()}
+
+                  {/* 5. PLATFORM STATS (from analyst engine, with sparklines) */}
+                  {analystState && analystState.platformData.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="space-y-2">
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Platform Stats</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {analystState.platformData.map((dp, idx) => {
+                          const context = getMetricContext(dp.label, dp.value, analystState.platformData);
+                          return (
+                            <Card key={dp.label} className="p-3 bg-muted/10 border-border/20">
+                              <div className="flex items-start justify-between">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
+                                {dp.trendData && dp.trendData.some(v => v > 0) && (
+                                  <MiniSparkline data={dp.trendData} height={16} width={40} trend={dp.trendData[dp.trendData.length - 1] > dp.trendData[0] ? 'up' : dp.trendData[dp.trendData.length - 1] < dp.trendData[0] ? 'down' : 'neutral'} />
+                                )}
+                              </div>
+                              <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
+                              {context && <p className="text-[9px] text-muted-foreground/60 mt-1 leading-relaxed">{context}</p>}
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* 6. INSIGHTS FEED (merged: analyst cumulative + current response) */}
+                  {mergedInsightsFeed.length > 0 && (
                     <Collapsible open={isInsightsExpanded} onOpenChange={setIsInsightsExpanded}>
                       <CollapsibleTrigger asChild>
                         <div className="flex items-center justify-between cursor-pointer group py-1">
                           <div className="flex items-center gap-2">
                             <Lightbulb className="w-4 h-4 text-muted-foreground" />
-                            <h3 className="text-sm font-medium text-foreground">AI Insights</h3>
-                            <Badge variant="outline" className="text-xs text-muted-foreground">{insights.length}</Badge>
+                            <h3 className="text-sm font-medium text-foreground">Insights Feed</h3>
+                            <Badge variant="outline" className="text-xs text-muted-foreground">{mergedInsightsFeed.length}</Badge>
                           </div>
-                          <motion.div
-                            animate={{ rotate: isInsightsExpanded ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
+                          <motion.div animate={{ rotate: isInsightsExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
                             <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
                           </motion.div>
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <motion.div 
-                          className="mt-3 space-y-2"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.1 }}
-                        >
-                          {insights.map((insight: any, idx: number) => {
-                            const config = getInsightConfig(insight.insightType);
+                        <motion.div className="mt-3 space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+                          {mergedInsightsFeed.slice(-12).reverse().map((insight: any, idx: number) => {
+                            const config = getInsightConfig(insight.insightType || insight.type);
                             const InsightIcon = config.icon;
                             return (
-                               <Card 
-                                 key={idx} 
-                                 className={cn(
-                                   "p-3 border transition-colors hover:bg-muted/20",
-                                   "bg-transparent",
-                                   "border-border/20",
-                                   "border-l-2",
-                                   config.borderColor.replace('border-', 'border-l-')
-                                 )}
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className={cn("flex-shrink-0 mt-0.5", config.textColor)}>
-                                    <InsightIcon className="w-4 h-4" />
-                                  </div>
+                              <Card key={insight.id || idx} className={cn("p-2.5 border bg-transparent border-border/15 border-l-2", config.borderColor.replace('border-', 'border-l-'))}>
+                                <div className="flex items-start gap-2">
+                                  <InsightIcon className={cn("w-3.5 h-3.5 mt-0.5 flex-shrink-0", config.textColor)} />
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Badge variant="outline" className={cn("text-xs px-1.5 py-0", config.bgColor, config.textColor, "border-transparent")}>
-                                        {config.label}
-                                      </Badge>
+                                    <p className="text-xs text-foreground/80 leading-relaxed">{insight.content}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-[9px] text-muted-foreground/40">
+                                        {insight.source === 'platform' ? '📊 Platform' : insight.source === 'web' ? '🌐 Web' : insight.source === 'cross-signal' ? '🔗 Cross-signal' : '🤖 AI'}
+                                      </span>
+                                      {onSendMessage && (
+                                        <button onClick={() => onSendMessage(`Tell me more about: ${insight.content}`)} className="text-[9px] text-primary/50 hover:text-primary transition-colors">
+                                          Explore →
+                                        </button>
+                                      )}
                                     </div>
-                                    <p className="text-sm text-foreground/80">
-                                      {insight.content}
-                                    </p>
-                                    {onSendMessage && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => onSendMessage(`Tell me more about: ${insight.content}`)}
-                                        className="mt-2 h-7 text-xs text-foreground/40 hover:text-foreground/70 hover:bg-white/5"
-                                      >
-                                        <MessageSquare className="w-3 h-3 mr-1" />
-                                        Ask AI about this
-                                      </Button>
-                                    )}
                                   </div>
                                 </div>
                               </Card>
@@ -1786,52 +959,91 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </Collapsible>
                   )}
 
-                  {/* 6. QUICK ACTIONS - Contextual module actions */}
+                  {/* 7. EXPLORE NEXT — dynamic prompts from analyst + deep dives */}
                   {onSendMessage && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                    >
-                      <SidebarActionPanel
-                        dataSource={dataInfo.source}
-                        onSendMessage={onSendMessage}
-                        onClose={onClose}
-                      />
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-2">
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Explore Next</span>
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          const dynamicPrompts: { id: string; label: string; action: string }[] = [];
+
+                          // From deep dive prompts (current response)
+                          for (const prompt of deepDivePrompts.slice(0, 2)) {
+                            dynamicPrompts.push({ id: `dd-${prompt.text.slice(0, 10)}`, label: prompt.text, action: prompt.text });
+                          }
+
+                          // From analyst topics
+                          if (analystState) {
+                            for (const topic of analystState.topics.slice(0, 2)) {
+                              if (!dynamicPrompts.some(p => p.label.includes(topic.name))) {
+                                dynamicPrompts.push({ id: `topic-${topic.name}`, label: `Deep dive: ${topic.name}`, action: `Give me a detailed analysis of my ${topic.name.toLowerCase()} performance` });
+                              }
+                            }
+                            const warnings = analystState.insightsFeed.filter(i => i.type === 'warning').slice(0, 1);
+                            for (const warning of warnings) {
+                              dynamicPrompts.push({ id: `warn-${warning.id}`, label: 'Address warning', action: `How can I fix this: ${warning.content}` });
+                            }
+                            for (const action of analystState.suggestedActions.slice(0, 2)) {
+                              dynamicPrompts.push({ id: action.id, label: action.title, action: action.action || action.title });
+                            }
+                          }
+
+                          if (dynamicPrompts.length === 0) {
+                            return ['Show content performance', 'Campaign health overview', 'Keyword rankings analysis'].map((prompt, idx) => (
+                              <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                                {prompt}
+                              </button>
+                            ));
+                          }
+
+                          return dynamicPrompts.slice(0, 5).map((prompt) => (
+                            <button key={prompt.id} onClick={() => onSendMessage?.(prompt.action)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                              {prompt.label}
+                            </button>
+                          ));
+                        })()}
+                      </div>
                     </motion.div>
                   )}
 
-                  {/* 7. Deep Dive Prompts */}
-                  {deepDivePrompts.length > 0 && onSendMessage && (
-                    <div>
-                      <h3 className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-3">
-                        Explore Further
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {deepDivePrompts.slice(0, 4).map((prompt: any, idx: number) => {
-                          const PromptIcon = prompt.icon;
-                          return (
-                            <Button
-                              key={idx}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                onSendMessage(prompt.text);
-                                onClose();
-                              }}
-                              className="text-xs h-8 gap-1.5 hover:bg-muted text-muted-foreground hover:text-foreground"
-                            >
-                              <PromptIcon className="w-3 h-3" />
-                              {prompt.text}
-                            </Button>
-                          );
-                        })}
+                  {/* 8. QUICK ACTIONS */}
+                  {onSendMessage && hasCurrentResponseData && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                      <SidebarActionPanel dataSource={dataInfo.source} onSendMessage={onSendMessage} onClose={onClose} />
+                    </motion.div>
+                  )}
+
+                  {/* Empty state — only when nothing at all */}
+                  {!hasCurrentResponseData && !hasAnalystData && (
+                    <div className="flex-1 flex items-center justify-center py-16">
+                      <div className="text-center max-w-xs space-y-6">
+                        <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/30 border border-border/20 flex items-center justify-center">
+                          <BarChart3 className="w-8 h-8 text-muted-foreground/60" />
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-lg font-medium text-foreground">Ask about your data</h3>
+                          <p className="text-sm text-muted-foreground">
+                            I'll accumulate insights, metrics, and charts as we chat — building a live intelligence feed.
+                          </p>
+                        </div>
+                        {analystState?.isEnriching && (
+                          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Loading platform data...
+                          </div>
+                        )}
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {['Show content performance', 'Campaign health overview', 'Keyword rankings analysis', 'Content pipeline status'].map((prompt, idx) => (
+                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                              {prompt}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
               </ScrollArea>
-
             </motion.div>
           </>
         </TooltipProvider>
