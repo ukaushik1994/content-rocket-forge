@@ -387,18 +387,17 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   }, []);
 
   // Auto-scroll to bottom when new messages arrive (Issue #1 enhanced fix)
-  // Uses a small delay to ensure content rendering is complete
   useEffect(() => {
-    // Immediate scroll attempt
     scrollToBottom();
-
-    // Delayed scroll to catch late-rendering content (charts, markdown, etc.)
+    // Phase 1 Fix: Clear loading state when messages arrive
+    if (isLoadingConversation && messages.length > 0) {
+      setIsLoadingConversation(false);
+    }
     const timeoutId = setTimeout(() => {
       scrollToBottom();
     }, 100);
-
     return () => clearTimeout(timeoutId);
-  }, [messages, isTyping, scrollToBottom]);
+  }, [messages, isTyping, scrollToBottom, isLoadingConversation]);
 
 
 
