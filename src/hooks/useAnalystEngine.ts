@@ -497,7 +497,8 @@ export function useAnalystEngine(
   messages: EnhancedChatMessage[],
   userId: string | null,
   isActive: boolean,
-  conversationGoal?: string | null
+  conversationGoal?: string | null,
+  activeConversationId?: string | null
 ): AnalystState {
   const [platformData, setPlatformData] = useState<PlatformDataPoint[]>([]);
   const [isEnriching, setIsEnriching] = useState(false);
