@@ -940,21 +940,27 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                   {/* 5. PLATFORM STATS (from analyst engine, with sparklines) */}
                   {analystState && analystState.platformData.length > 0 && (
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="space-y-2">
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Platform Stats</span>
-                      <div className="grid grid-cols-2 gap-2">
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                        <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">Platform Stats</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2.5">
                         {analystState.platformData.map((dp, idx) => {
                           const context = getMetricContext(dp.label, dp.value, analystState.platformData);
                           return (
-                            <div key={dp.label} className="glass-card p-3">
+                            <div key={dp.label} className="glass-card p-4">
                               <div className="flex items-start justify-between">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
+                                <p className="text-[10px] text-muted-foreground/70 uppercase tracking-wide font-medium">{dp.label}</p>
                                 {dp.trendData && dp.trendData.some(v => v > 0) && (
-                                  <MiniSparkline data={dp.trendData} height={16} width={40} trend={dp.trendData[dp.trendData.length - 1] > dp.trendData[0] ? 'up' : dp.trendData[dp.trendData.length - 1] < dp.trendData[0] ? 'down' : 'neutral'} />
+                                  <MiniSparkline data={dp.trendData} height={24} width={56} trend={dp.trendData[dp.trendData.length - 1] > dp.trendData[0] ? 'up' : dp.trendData[dp.trendData.length - 1] < dp.trendData[0] ? 'down' : 'neutral'} />
                                 )}
                               </div>
-                              <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
-                              {context && <p className="text-[9px] text-muted-foreground/60 mt-1 leading-relaxed">{context}</p>}
+                              <p className="text-xl font-bold text-foreground mt-1">{dp.value.toLocaleString()}</p>
+                              {context && <p className="text-[9px] text-muted-foreground/50 mt-1.5 leading-relaxed">{context}</p>}
+                            </div>
+                          );
+                        })}
                             </div>
                           );
                         })}
