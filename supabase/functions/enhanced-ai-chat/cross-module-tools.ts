@@ -226,7 +226,7 @@ ${content.content || ''}
 </html>`;
 
         // Create email campaign
-        const { data: emailCampaign, error: emailError } = await supabase.from('engage_email_campaigns').insert({
+        const { data: emailCampaign, error: emailError } = await supabase.from('email_campaigns').insert({
           workspace_id: workspaceId,
           name: `Email: ${content.title}`,
           subject: toolArgs.subject || content.title,
