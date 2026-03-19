@@ -2777,9 +2777,35 @@ Never try to do everything in one response. Quality over speed.`;
     } else {
       systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;
     }
+
+    // ===== Phase 2 Fix 3a: Conditional thinking instruction based on provider =====
+    const isAnthropicProvider = provider.provider === 'anthropic' || (provider.preferred_model || '').toLowerCase().includes('claude');
+    const thinkingInstruction = isAnthropicProvider
+      ? `🧠 THINKING PROCESS (CRITICAL FORMAT):
+• You MUST wrap your reasoning in <think></think> tags
+• <think> tags are INTERNAL ONLY - they will be processed separately by the system
+• NEVER include <think> tags in your conversational response text
+• Structure: <think>your reasoning</think> THEN your user-facing response
+• Show your step-by-step analysis process inside <think> tags only
+• Users will see thinking in a special UI indicator, not in the main chat
+• Example: <think>Let me analyze...</think> then your response.
+• NEVER mix <think> tags with conversational text!`
+      : `Go straight to your response. Do not use any special thinking tags.`;
     
+    systemPrompt = systemPrompt.replace('{THINKING_INSTRUCTION}', thinkingInstruction);
+
+    // ===== Phase 2 Fix 3c: Response length guidance based on query scope =====
+    const lengthGuidance: Record<string, string> = {
+      conversational: '\n\n📏 RESPONSE LENGTH: Keep under 100 words. Be concise and friendly.',
+      summary: '\n\n📏 RESPONSE LENGTH: Keep under 200 words. Provide a clear, compact summary.',
+      detailed: '\n\n📏 RESPONSE LENGTH: Target 200-500 words. Be thorough but focused.',
+      full: '' // No constraint for full-depth responses
+    };
+    systemPrompt += lengthGuidance[queryIntent.scope] || '';
+
     console.log(`✅ Dynamic system prompt built:
   - Scope: ${queryIntent.scope}
+  - Provider: ${provider.provider} (thinking: ${isAnthropicProvider ? 'enabled' : 'disabled'})
   - Modules: ${preliminaryTotal > 20000 ? 'MINIMAL' : 'BASE + conditional modules'}
   - Estimated prompt tokens: ${estimateTokens(systemPrompt)}`);
 
