@@ -315,7 +315,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
 
       <form onSubmit={handleSubmit} className="relative">
         <div 
-          className={`relative flex items-end gap-2 p-2.5 bg-background/60 backdrop-blur-xl border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
+          className={`relative flex items-end gap-2 p-2.5 glass-input rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
             webSearchMode
               ? 'border-accent/30 ring-1 ring-accent/10'
               : wizardMode
