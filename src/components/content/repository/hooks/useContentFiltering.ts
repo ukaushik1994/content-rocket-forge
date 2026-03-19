@@ -45,8 +45,10 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
       );
     }
     
-    // Apply status filter
-    if (filterStatus !== 'all') {
+    // Apply status filter (SB-2: ready_to_publish = drafts with SEO ≥ 60)
+    if (filterStatus === 'ready_to_publish') {
+      filtered = filtered.filter(item => item.status === 'draft' && (item.seo_score || 0) >= 60);
+    } else if (filterStatus !== 'all') {
       filtered = filtered.filter(item => item.status === filterStatus);
     }
     
@@ -79,15 +81,16 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
       );
     }
     
-    // Apply sorting
+    // Apply sorting (SB-2: force SEO score sort for ready_to_publish)
+    const effectiveSortBy = filterStatus === 'ready_to_publish' ? 'score' : sortBy;
     filtered.sort((a, b) => {
-      if (sortBy === 'date') {
+      if (effectiveSortBy === 'date') {
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-      } else if (sortBy === 'title') {
+      } else if (effectiveSortBy === 'title') {
         return a.title.localeCompare(b.title);
-      } else if (sortBy === 'score') {
+      } else if (effectiveSortBy === 'score') {
         return (b.seo_score || 0) - (a.seo_score || 0);
-      } else if (sortBy === 'wordCount') {
+      } else if (effectiveSortBy === 'wordCount') {
         const aWordCount = a.content ? a.content.split(/\s+/).length : 0;
         const bWordCount = b.content ? b.content.split(/\s+/).length : 0;
         return bWordCount - aWordCount;

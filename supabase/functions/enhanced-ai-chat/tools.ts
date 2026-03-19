@@ -613,7 +613,8 @@ export async function executeToolCall(
   toolArgs: any,
   supabase: any,
   userId: string,
-  cache: Map<string, { data: any; timestamp: number }>
+  cache: Map<string, { data: any; timestamp: number }>,
+  conversationId?: string
 ): Promise<any> {
   const executionStart = Date.now();
   console.log(`[TOOL] executeToolCall | tool: ${toolName} | user: ${userId}`);
@@ -670,7 +671,7 @@ export async function executeToolCall(
         // Route content action tools
         if (CONTENT_ACTION_TOOL_NAMES.includes(toolName)) {
           console.log(`[TOOL] ${toolName} | Routing to content action handler`);
-          const result = await executeContentActionTool(toolName, toolArgs, supabase, userId);
+          const result = await executeContentActionTool(toolName, toolArgs, supabase, userId, conversationId);
           return { data: result, error: null };
         }
 

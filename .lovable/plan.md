@@ -1,5 +1,6 @@
 
 
+
 # Major 80 — Phased Implementation Plan
 
 ## Phase 1: Backend Safety Nets ✅ COMPLETE
@@ -18,16 +19,16 @@
 | SB-7 | ✅ | Email Resend onboarding — guidance card shown when no Resend API key configured, with link to resend.com |
 | SB-11 | ✅ | Tool discovery in system prompt — AI now proactively suggests relevant tools based on conversation context |
 
-## Phase 3: Content Lifecycle Fixes (NEXT)
+## Phase 3: Content Lifecycle Fixes ✅ COMPLETE
 
-| Item | What | Where |
-|------|------|-------|
-| SB-4 | Rescore all existing content | New edge function + Settings UI |
-| SB-2 | Draft→Publish nudge filter | `EnhancedContentFilters.tsx` |
-| SB-21 | Content←→Conversation link | `content-action-tools.ts` + detail view |
-| SB-22 | Internal links injected into HTML | `content-action-tools.ts` |
+| Item | Status | What was done |
+|------|--------|---------------|
+| SB-4 | ✅ | `rescore-all-content` edge function + Settings → Content tab with "Rescore All Content" button |
+| SB-2 | ✅ | "Ready to Publish" filter (drafts with SEO ≥ 60), auto-sorted by SEO score descending |
+| SB-21 | ✅ | `conversation_id` column on `content_items`, wired during AI generation, "View Source Conversation" button in detail view |
+| SB-22 | ✅ | Internal links injected as actual `<a>` tags into generated HTML (matching published articles by keyword overlap) |
 
-## Phase 4: Proposal→Action Flow + Onboarding
+## Phase 4: Proposal→Action Flow + Onboarding (NEXT)
 
 | Item | What | Where |
 |------|------|-------|
