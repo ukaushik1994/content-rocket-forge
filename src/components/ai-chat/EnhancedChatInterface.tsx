@@ -337,13 +337,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Phase 1 Fix: Reset ALL sidebar state when switching conversations
   useEffect(() => {
     setUserClosedSidebar(false);
-    setIsAnalystPanelActive(false);
     setShowVisualizationSidebar(false);
     setSidebarInteracted(false);
     setVisualizationData(null);
     prevMessageCountRef.current = 0;
     setIsLoadingConversation(true);
-    // Clear loading after messages arrive (with fallback timeout)
     const timeout = setTimeout(() => setIsLoadingConversation(false), 300);
     return () => clearTimeout(timeout);
   }, [activeConversation]);
