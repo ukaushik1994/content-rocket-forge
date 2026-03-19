@@ -492,7 +492,7 @@ export async function executeEngageActionTool(
         if (toolArgs.from_name) insertData.from_name = toolArgs.from_name;
         if (toolArgs.from_email) insertData.from_email = toolArgs.from_email;
 
-        const { data, error } = await supabase.from('engage_email_campaigns')
+        const { data, error } = await supabase.from('email_campaigns')
           .insert(insertData)
           .select('id, name, subject, status, created_at').single();
 
