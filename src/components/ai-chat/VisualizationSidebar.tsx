@@ -1024,7 +1024,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </Button>
                   </div>
 
-                  {/* Topic tags */}
+                   {/* Topic tags */}
                   {analystState && analystState.topics.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-3">
                       {analystState.topics.map((topic) => (
@@ -1040,6 +1040,39 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         </Badge>
                       ))}
                     </div>
+                  )}
+
+                  {/* Enhancement E: Goal Progress */}
+                  {analystState?.goalProgress && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-3 p-2.5 rounded-lg bg-muted/15 border border-border/15 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                          {analystState.goalProgress.goalName}
+                        </span>
+                        <span className="text-[10px] font-semibold text-primary">
+                          {analystState.goalProgress.percentage}%
+                        </span>
+                      </div>
+                      <Progress value={analystState.goalProgress.percentage} className="h-1.5" />
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn(
+                          "text-[9px] px-1.5 py-0.5 rounded-full",
+                          analystState.goalProgress.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
+                          analystState.goalProgress.status === 'nearly_done' ? 'bg-blue-500/10 text-blue-500' :
+                          analystState.goalProgress.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500' :
+                          'bg-muted text-muted-foreground'
+                        )}>
+                          {analystState.goalProgress.status.replace('_', ' ')}
+                        </span>
+                        <span className="text-[9px] text-muted-foreground/60">
+                          Next: {analystState.goalProgress.nextStep}
+                        </span>
+                      </div>
+                    </motion.div>
                   )}
                 </div>
 
