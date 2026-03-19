@@ -1,3 +1,4 @@
+import React from 'react';
 // Premium Chart Theme System — Unified colors, gradients, axis config, tooltip styles
 
 export const CHART_COLORS = {
@@ -88,4 +89,3 @@ export const DOT_STYLE = (color: string) => ({
   strokeWidth: 1.5,
 });
 
-import React from 'react';
