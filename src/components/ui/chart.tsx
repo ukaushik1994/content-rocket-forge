@@ -13,6 +13,11 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { PremiumChartTooltip } from '@/components/ui/PremiumChartTooltip';
+import {
+  CHART_PALETTE, GRADIENT_PAIRS, AXIS_STYLE, GRID_STYLE,
+  ANIMATION_CONFIG, ACTIVE_DOT_STYLE, DOT_STYLE, generateGradientId
+} from '@/utils/chartTheme';
 
 interface ChartProps {
   data: any[];
@@ -20,28 +25,19 @@ interface ChartProps {
   colors?: string[];
   valueFormatter?: (value: number, name?: any) => string;
   className?: string;
-  index?: string; // for backward compatibility
+  index?: string;
 }
 
 export const LineChart: React.FC<ChartProps> = ({
   data,
   categories,
-  colors = ['#06b6d4', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
+  colors = CHART_PALETTE,
   valueFormatter = (value) => value.toString(),
   className = '',
   index = 'name'
 }) => {
-  // Handle both old and new data formats
   const processedData = Array.isArray(data) ? data : [];
   const dataKeys = categories?.length ? categories : Object.keys(processedData[0] || {}).filter(key => key !== index);
-  
-  console.log('📊 LineChart rendering:', { 
-    dataLength: processedData.length, 
-    categories, 
-    dataKeys, 
-    firstDataItem: processedData[0],
-    index 
-  });
   
   if (!processedData.length) {
     return (
@@ -55,36 +51,33 @@ export const LineChart: React.FC<ChartProps> = ({
     <div className={className}>
       <ResponsiveContainer width="100%" height="100%">
         <RechartsLineChart data={processedData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis 
-            dataKey={index} 
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
-          />
-          <YAxis 
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
-            tickFormatter={(value) => valueFormatter(value)}
-          />
-          <Tooltip 
-            contentStyle={{
-              backgroundColor: 'hsl(var(--background))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '8px',
-              color: 'hsl(var(--foreground))'
-            }}
-            formatter={(value: any, name: any) => [valueFormatter(value, name), name]}
-          />
-          {dataKeys.map((category, categoryIndex) => (
-            <Line
-              key={category}
-              type="monotone"
-              dataKey={category}
-              stroke={colors[categoryIndex % colors.length]}
-              strokeWidth={2}
-              dot={{ fill: colors[categoryIndex % colors.length], strokeWidth: 2 }}
-            />
-          ))}
+          <defs>
+            {dataKeys.map((_, i) => {
+              const [c1, c2] = GRADIENT_PAIRS[i % GRADIENT_PAIRS.length];
+              return (
+                <linearGradient key={`lg-${i}`} id={generateGradientId('chart-line', i)} x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor={c1} />
+                  <stop offset="100%" stopColor={c2} />
+                </linearGradient>
+              );
+            })}
+          </defs>
+          <CartesianGrid {...GRID_STYLE} />
+          <XAxis dataKey={index} {...AXIS_STYLE} tick={{ ...AXIS_STYLE.tick }} dy={8} />
+          <YAxis {...AXIS_STYLE} tick={{ ...AXIS_STYLE.tick }} width={40}
+            tickFormatter={(value) => valueFormatter(value)} />
+          <Tooltip content={<PremiumChartTooltip valueFormatter={valueFormatter} />} 
+            cursor={{ stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1 }} />
+          {dataKeys.map((category, i) => {
+            const color = colors[i % colors.length];
+            return (
+              <Line key={category} type="monotone" dataKey={category}
+                stroke={color} strokeWidth={2}
+                dot={DOT_STYLE(color)}
+                activeDot={ACTIVE_DOT_STYLE(color)}
+                {...ANIMATION_CONFIG} />
+            );
+          })}
         </RechartsLineChart>
       </ResponsiveContainer>
     </div>
@@ -94,22 +87,13 @@ export const LineChart: React.FC<ChartProps> = ({
 export const BarChart: React.FC<ChartProps> = ({
   data,
   categories,
-  colors = ['#06b6d4', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
+  colors = CHART_PALETTE,
   valueFormatter = (value) => value.toString(),
   className = '',
   index = 'name'
 }) => {
-  // Handle both old and new data formats
   const processedData = Array.isArray(data) ? data : [];
   const dataKeys = categories?.length ? categories : Object.keys(processedData[0] || {}).filter(key => key !== index);
-  
-  console.log('📊 BarChart rendering:', { 
-    dataLength: processedData.length, 
-    categories, 
-    dataKeys, 
-    firstDataItem: processedData[0],
-    index 
-  });
   
   if (!processedData.length) {
     return (
@@ -122,34 +106,31 @@ export const BarChart: React.FC<ChartProps> = ({
   return (
     <div className={className}>
       <ResponsiveContainer width="100%" height="100%">
-        <RechartsBarChart data={processedData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis 
-            dataKey={index} 
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
-          />
-          <YAxis 
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
-            tickFormatter={(value) => valueFormatter(value)}
-          />
-          <Tooltip 
-            contentStyle={{
-              backgroundColor: 'hsl(var(--background))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '8px',
-              color: 'hsl(var(--foreground))'
-            }}
-            formatter={(value: any, name: any) => [valueFormatter(value, name), name]}
-          />
-          {dataKeys.map((category, categoryIndex) => (
-            <Bar
-              key={category}
-              dataKey={category}
-              fill={colors[categoryIndex % colors.length]}
-              radius={[4, 4, 0, 0]}
-            />
+        <RechartsBarChart data={processedData} barCategoryGap="20%">
+          <defs>
+            {dataKeys.map((_, i) => {
+              const [c1, c2] = GRADIENT_PAIRS[i % GRADIENT_PAIRS.length];
+              return (
+                <linearGradient key={`bg-${i}`} id={generateGradientId('chart-bar', i)} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={c1} stopOpacity={0.5} />
+                  <stop offset="100%" stopColor={c2} stopOpacity={0.08} />
+                </linearGradient>
+              );
+            })}
+          </defs>
+          <CartesianGrid {...GRID_STYLE} />
+          <XAxis dataKey={index} {...AXIS_STYLE} tick={{ ...AXIS_STYLE.tick }} dy={8} />
+          <YAxis {...AXIS_STYLE} tick={{ ...AXIS_STYLE.tick }} width={40}
+            tickFormatter={(value) => valueFormatter(value)} />
+          <Tooltip content={<PremiumChartTooltip valueFormatter={valueFormatter} />}
+            cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
+          {dataKeys.map((category, i) => (
+            <Bar key={category} dataKey={category}
+              fill={`url(#${generateGradientId('chart-bar', i)})`}
+              stroke={colors[i % colors.length]}
+              strokeWidth={0}
+              radius={[6, 6, 0, 0]}
+              {...ANIMATION_CONFIG} />
           ))}
         </RechartsBarChart>
       </ResponsiveContainer>
@@ -159,33 +140,34 @@ export const BarChart: React.FC<ChartProps> = ({
 
 export const PieChartComponent: React.FC<ChartProps> = ({
   data,
-  colors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'],
+  colors = CHART_PALETTE,
   className = ''
 }) => {
   return (
     <div className={className}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            outerRadius={80}
+          <Pie data={data} cx="50%" cy="50%"
+            innerRadius={50} outerRadius={80}
+            paddingAngle={3}
             dataKey="value"
-            label={(entry) => entry.name}
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+            stroke="rgba(0,0,0,0.3)" strokeWidth={1}
+            {...ANIMATION_CONFIG}>
+            {data.map((_, index) => (
+              <Cell key={`cell-${index}`} fill={colors[index % colors.length]}
+                style={{ filter: `drop-shadow(0 0 4px ${colors[index % colors.length]}40)` }} />
             ))}
           </Pie>
-          <Tooltip 
-            contentStyle={{
-              backgroundColor: 'rgba(0,0,0,0.8)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '8px',
-              color: 'white'
-            }}
-          />
+          <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central">
+            <tspan x="50%" dy="-6" fill="rgba(255,255,255,0.9)" fontSize="18" fontWeight="700">
+              {data.reduce((s, d) => s + (d.value || 0), 0).toLocaleString()}
+            </tspan>
+            <tspan x="50%" dy="18" fill="rgba(255,255,255,0.4)" fontSize="10" fontWeight="500">
+              Total
+            </tspan>
+          </text>
+          <Tooltip content={<PremiumChartTooltip />}
+            cursor={false} />
         </PieChart>
       </ResponsiveContainer>
     </div>

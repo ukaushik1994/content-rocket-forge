@@ -116,7 +116,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   }, [chartConfig]);
 
   const effectiveConfig = normalizedConfig || chartConfig;
-  const { type: originalType, data, categories, series, colors, height = 300, valueFormatter } = effectiveConfig;
+  const { type: originalType, data, categories, series, colors, height = 300, valueFormatter } = effectiveConfig as ChartConfiguration;
   const type = chartType || originalType;
 
   const palette = colors || CHART_PALETTE;
