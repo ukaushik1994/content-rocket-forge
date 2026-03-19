@@ -544,6 +544,60 @@ function computeCrossSignals(
         }
       }
 
+      // ─── Fix 6: Content-to-Business Attribution ─────────────────────────
+
+      // 14. Solution-content gaps: solutions with no articles
+      try {
+        const { data: solutions } = await supabase
+          .from('solutions')
+          .select('name')
+          .eq('user_id', userId)
+          .limit(20);
+
+        if (solutions && solutions.length > 0 && contentKeywords) {
+          const allTitles = contentKeywords.map(c => c.title.toLowerCase());
+          const uncoveredSolutions = solutions.filter(s => 
+            !allTitles.some(t => t.includes(s.name.toLowerCase()))
+          );
+          if (uncoveredSolutions.length > 0) {
+            signals.push({
+              id: `cross-solution-gap-${now.getTime()}`,
+              content: `🏢 ${uncoveredSolutions.length} of your ${solutions.length} solutions have no dedicated content — "${uncoveredSolutions[0].name}" could use an article to support sales.`,
+              type: 'opportunity',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'medium',
+            });
+          }
+        }
+      } catch { /* solutions table may not exist */ }
+
+      // 15. Pareto proposals: top 3 proposals capturing 50%+ estimated impressions
+      try {
+        const { data: topProposals } = await supabase
+          .from('ai_strategy_proposals')
+          .select('title, estimated_impressions')
+          .eq('user_id', userId)
+          .not('estimated_impressions', 'is', null)
+          .order('estimated_impressions', { ascending: false })
+          .limit(20);
+
+        if (topProposals && topProposals.length >= 5) {
+          const totalImpressions = topProposals.reduce((s, p) => s + (p.estimated_impressions || 0), 0);
+          const top3Impressions = topProposals.slice(0, 3).reduce((s, p) => s + (p.estimated_impressions || 0), 0);
+          if (totalImpressions > 0 && top3Impressions / totalImpressions >= 0.5) {
+            signals.push({
+              id: `cross-pareto-proposals-${now.getTime()}`,
+              content: `🎯 Top 3 proposals capture ${Math.round((top3Impressions / totalImpressions) * 100)}% of estimated impressions. Focus on "${topProposals[0].title}" first for maximum impact.`,
+              type: 'opportunity',
+              source: 'cross-signal',
+              timestamp: now,
+              urgency: 'medium',
+            });
+          }
+        }
+      } catch { /* query may fail */ }
+
     } catch (err) {
       console.warn('Cross-signal analysis failed:', err);
     }
