@@ -1120,7 +1120,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                     </div>
                                   </div>
                                 </div>
-                              </Card>
+                              </div>
                             );
                           })}
                         </motion.div>
