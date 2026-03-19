@@ -70,7 +70,8 @@ Deno.serve(async (req) => {
           title: 'Empty content calendar this week',
           description: 'You have nothing scheduled for the next 7 days. Fill your calendar from available proposals or create new content.',
           action: 'Help me plan content for this week based on my available proposals',
-          priority: 2
+          priority: 2,
+          priority_score: 75
         });
       }
 
