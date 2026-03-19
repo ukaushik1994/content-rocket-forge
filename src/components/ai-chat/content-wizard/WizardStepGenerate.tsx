@@ -1335,9 +1335,9 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
               >
                 <div className={cn(
                   "flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold border",
-                  isAnalyzingQuality ? "border-border animate-pulse bg-muted" :
-                  aiQualityResult?.overall.grade === 'A' ? "bg-primary/15 text-primary border-primary/30" :
-                  aiQualityResult?.overall.grade === 'B' ? "bg-primary/10 text-primary border-primary/20" :
+                  isAnalyzingQuality ? "border-white/[0.06] animate-pulse bg-white/[0.04]" :
+                  aiQualityResult?.overall.grade === 'A' ? "bg-emerald-400/15 text-emerald-400 border-emerald-400/30" :
+                  aiQualityResult?.overall.grade === 'B' ? "bg-amber-300/15 text-amber-300 border-amber-300/30" :
                   aiQualityResult?.overall.grade === 'C' ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" :
                   "bg-destructive/15 text-destructive border-destructive/30"
                 )}>
