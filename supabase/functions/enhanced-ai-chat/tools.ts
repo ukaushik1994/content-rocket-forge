@@ -613,7 +613,8 @@ export async function executeToolCall(
   toolArgs: any,
   supabase: any,
   userId: string,
-  cache: Map<string, { data: any; timestamp: number }>
+  cache: Map<string, { data: any; timestamp: number }>,
+  conversationId?: string
 ): Promise<any> {
   const executionStart = Date.now();
   console.log(`[TOOL] executeToolCall | tool: ${toolName} | user: ${userId}`);
