@@ -1102,7 +1102,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             const config = getInsightConfig(insight.insightType || insight.type);
                             const InsightIcon = config.icon;
                             return (
-                              <Card key={insight.id || idx} className={cn("p-2.5 border bg-transparent border-border/15 border-l-2", config.borderColor.replace('border-', 'border-l-'))}>
+                              <div key={insight.id || idx} className="glass-card p-2.5">
                                 <div className="flex items-start gap-2">
                                   <InsightIcon className={cn("w-3.5 h-3.5 mt-0.5 flex-shrink-0", config.textColor)} />
                                   <div className="flex-1 min-w-0">
