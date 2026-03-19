@@ -1,25 +1,57 @@
 
 
-# Fix: VisualizationSidebar Hooks Ordering Error
+# Apply Analyst Theme to Remaining Content Wizard Elements
 
-## Problem
-In `VisualizationSidebar.tsx`, early returns for specialized panels (content_wizard, proposal_browser, etc.) at lines 600-609 occur **between** hooks:
-- Hooks at lines 95-292 run first (useState, useEffect, useMemo, useAuth, useSidebarTrendData)
-- Early returns at lines 600-609 exit before reaching:
-  - `useResponsiveBreakpoint()` at line 597
-  - `useMemo` (mergedInsightsFeed) at line 620
+## What's Left
 
-When `visualData.type` changes (e.g., from `'analyst'` to `'content_wizard'`), React sees fewer hooks on re-render, causing the crash.
+After reviewing all 6 files, the gold labels and glass-card containers were applied in the previous round, but **WizardStepGenerate.tsx** (1592 lines) still has many elements using old `primary`, `bg-muted`, `border-border` styles instead of the analyst glassmorphism palette. The other 5 files are fully themed.
 
-## Fix
-**File:** `src/components/ai-chat/VisualizationSidebar.tsx`
+## Changes — `WizardStepGenerate.tsx` only
 
-Move the two late hooks (`useResponsiveBreakpoint` at line 597 and `mergedInsightsFeed` useMemo at line 620) to **before** the early return block (before line 600). This ensures all hooks always execute regardless of which panel type is rendered.
+### 1. Inputs & Textareas (lines 1139, 1155, 1165, 1304, 1314, 1321, 1431)
+- Add `bg-white/[0.04] border-white/[0.06]` to Title, Meta Title, Meta Description inputs, refinement input, and editor textarea
 
-Specifically:
-1. Move `const { isMobile, isTablet } = useResponsiveBreakpoint();` from line 597 up to ~line 294 (after the last existing hook block)
-2. Move the `mergedInsightsFeed` useMemo (lines 620-636) up to right after it
-3. Keep the early returns at their current position (they'll now be after all hooks)
+### 2. Generate / Regenerate Buttons (lines 1179, 1585)
+- Primary "Generate Content" button: `bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30`
+- "Regenerate" outline button: add `border-white/[0.06] hover:bg-white/[0.04]`
 
-No logic changes -- just reordering to satisfy React's rules of hooks.
+### 3. Save / Publish Buttons (lines 1510, 1516)
+- "Save as Draft": amber accent style instead of default primary
+- "Publish" secondary button: glass-card outline style
+
+### 4. Tabs (TabsList/TabsTrigger, lines 1218-1224)
+- TabsList: `bg-white/[0.04] border border-white/[0.06]`
+- Active TabsTrigger: `data-[state=active]:bg-white/[0.08] data-[state=active]:text-amber-300`
+
+### 5. Collapsible Triggers (lines 1049, 1378, 1453)
+- Quality Report, Compliance, SEO Checklist triggers: wrap in `glass-card` pill style `bg-white/[0.04] border border-white/[0.06] rounded-2xl px-3 py-2`
+
+### 6. AI Quality Grade Badge (lines 1336-1343)
+- Replace `bg-primary/15 text-primary border-primary/30` grades with:
+  - A: `bg-emerald-400/15 text-emerald-400 border-emerald-400/30`
+  - B: `bg-amber-300/15 text-amber-300 border-amber-300/30`
+  - C/D: keep yellow/destructive
+
+### 7. Progress bars (lines 1190, 1367, 1401)
+- Already partially themed (generation progress uses amber). Quality/Compliance progress bars: style track as `bg-white/[0.06]`
+
+### 8. Repurpose Buttons (lines 1108-1116)
+- Replace `border-border/30 bg-muted/30 hover:bg-primary/5 hover:border-primary/30` with `bg-white/[0.04] border-white/[0.06] hover:bg-white/[0.08] hover:border-amber-300/30`
+
+### 9. Success Screen (lines 1032-1123)
+- "What's next?" buttons: add `border-white/[0.06]` outline style
+- "Continue Editing" default button: amber accent
+- Loading spinners: replace `text-primary` with `text-amber-300`
+
+### 10. Badges (lines 1227-1263)
+- Word count Badge: `bg-white/[0.04] border-white/[0.06] text-muted-foreground/70`
+- Reading time Badge: same glass micro-pill style
+
+### 11. SEO Check icons (lines 1064, 1465)
+- Replace `text-primary` checkmarks with `text-emerald-400`
+
+## Scope
+- 1 file modified: `WizardStepGenerate.tsx`
+- Purely cosmetic — no logic changes
+- ~25 class string replacements across the file
 
