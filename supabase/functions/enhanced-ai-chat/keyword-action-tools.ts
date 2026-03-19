@@ -3,6 +3,7 @@
  * Write/Create/Delete operations for keywords and SERP analysis
  */
 import { getApiKey } from '../shared/apiKeyService.ts';
+import { callAiProxyWithRetry } from '../shared/aiProxyRetry.ts';
 
 export const KEYWORD_ACTION_TOOL_DEFINITIONS = [
   {
@@ -258,7 +259,7 @@ export async function executeKeywordActionTool(
 
         const count = toolArgs.subtopic_count || 8;
 
-        const proxyResponse = await fetch(`${supabaseUrl}/functions/v1/ai-proxy`, {
+        const proxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${supabaseKey}`,

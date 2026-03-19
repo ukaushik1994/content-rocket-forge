@@ -3,6 +3,7 @@
  * Write/Create/Update/Delete operations for content items
  */
 import { getApiKey } from '../shared/apiKeyService.ts';
+import { callAiProxyWithRetry } from '../shared/aiProxyRetry.ts';
 
 // Inline SEO score calculator for auto-scoring on content creation
 function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: string, metaDescription?: string): number {
@@ -441,8 +442,8 @@ export async function executeContentActionTool(
           return { success: false, message: 'API key not found. Please re-enter your API key in Settings.' };
         }
 
-        // Generate content via ai-proxy
-        const proxyResponse = await fetch(`${supabaseUrl}/functions/v1/ai-proxy`, {
+        // Generate content via ai-proxy with retry
+        const proxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${supabaseKey}`,

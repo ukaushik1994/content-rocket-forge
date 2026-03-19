@@ -4,6 +4,7 @@
  */
 
 import { getApiKey } from '../shared/apiKeyService.ts';
+import { callAiProxyWithRetry } from '../shared/aiProxyRetry.ts';
 
 export const CROSS_MODULE_TOOL_DEFINITIONS = [
   {
@@ -314,7 +315,7 @@ export async function executeCrossModuleTool(
         // Truncate content for the prompt
         const contentPreview = (content.content || '').replace(/<[^>]+>/g, '').substring(0, 2000);
 
-        const proxyResponse = await fetch(`${supabaseUrl}/functions/v1/ai-proxy`, {
+        const proxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${supabaseKey}`,
@@ -385,7 +386,17 @@ export async function executeCrossModuleTool(
           .single();
 
         if (!connection) {
-          return { success: false, message: 'No active website connection found. Go to Settings > Publishing to connect WordPress or Wix.' };
+          // Mark content as ready_to_publish so it's easy to find later
+          await supabase.from('content_items')
+            .update({ status: 'ready_to_publish' })
+            .eq('id', toolArgs.content_id)
+            .eq('user_id', userId);
+
+          return { 
+            success: false, 
+            message: `No active website connection found. Your content "${content.title}" has been marked as **Ready to Publish**.\n\nTo publish directly:\n1. Go to **Settings → Publishing**\n2. Connect your WordPress or Wix site\n3. Then ask me to publish again\n\nAlternatively, you can copy the content and publish manually.`,
+            settingsAction: { tab: 'publishing', label: 'Connect Website' }
+          };
         }
 
         // 3. Call the appropriate publish edge function

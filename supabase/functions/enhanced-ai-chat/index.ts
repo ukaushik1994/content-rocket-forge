@@ -1883,8 +1883,99 @@ serve(async (req) => {
     }
 
     const { messages, context, useCampaignStrategyTool, stream: streamMode } = validationResult.data;
-    const use_case = context?.use_case; // Extract use_case from context
+    const use_case = context?.use_case;
+    const conversationId = context?.conversation_id;
     console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
+
+    // ── CONVERSATION SUMMARIZATION ──
+    // If conversation has 10+ messages, generate/load a summary to keep token usage low
+    if (conversationId && messages.length > 10) {
+      try {
+        const { data: convo } = await supabase.from('ai_conversations')
+          .select('summary, summary_message_count')
+          .eq('id', conversationId)
+          .single();
+
+        const currentCount = messages.length;
+        const lastSummarizedAt = convo?.summary_message_count || 0;
+        const needsNewSummary = !convo?.summary || (currentCount - lastSummarizedAt >= 10);
+
+        if (needsNewSummary) {
+          // Build a condensed version of older messages for summarization
+          const olderMessages = messages.slice(0, -5).map((m: any) => 
+            `${m.role}: ${(m.content || '').substring(0, 200)}`
+          ).join('\n');
+
+          if (olderMessages.length > 100) {
+            // Get user's AI provider for the summary call
+            const { data: sumProvider } = await supabase.from('ai_service_providers')
+              .select('provider, preferred_model')
+              .eq('user_id', user.id)
+              .eq('status', 'active')
+              .order('priority', { ascending: true })
+              .limit(1).single();
+
+            if (sumProvider) {
+              const { getApiKey } = await import('../shared/apiKeyService.ts');
+              const sumKey = await getApiKey(sumProvider.provider, user.id);
+              
+              if (sumKey) {
+                const { callAiProxyWithRetry } = await import('../shared/aiProxyRetry.ts');
+                const sumResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    service: sumProvider.provider,
+                    endpoint: 'chat',
+                    apiKey: sumKey,
+                    params: {
+                      model: sumProvider.preferred_model || 'gpt-4',
+                      messages: [
+                        { role: 'system', content: 'Summarize this conversation concisely in 2-3 sentences. Focus on key topics discussed, decisions made, and any pending actions. Be factual.' },
+                        { role: 'user', content: olderMessages }
+                      ],
+                      maxTokens: 300
+                    }
+                  })
+                }, { maxRetries: 1, baseDelay: 1000 });
+
+                if (sumResponse.ok) {
+                  const sumResult = await sumResponse.json();
+                  const summary = sumResult.content || sumResult.choices?.[0]?.message?.content || '';
+                  
+                  if (summary) {
+                    // Save summary back to DB
+                    await supabase.from('ai_conversations')
+                      .update({ summary, summary_message_count: currentCount })
+                      .eq('id', conversationId);
+
+                    // Prepend summary as system message, keep only last 5 messages
+                    const recentMessages = messages.slice(-5);
+                    messages.length = 0;
+                    messages.push({ role: 'system', content: `[Previous conversation summary]: ${summary}` });
+                    messages.push(...recentMessages);
+                    
+                    console.log(`📝 Conversation summarized (${currentCount} msgs → summary + last 5)`);
+                  }
+                }
+              }
+            }
+          }
+        } else if (convo?.summary) {
+          // Use existing summary — keep only last 5 messages
+          const recentMessages = messages.slice(-5);
+          messages.length = 0;
+          messages.push({ role: 'system', content: `[Previous conversation summary]: ${convo.summary}` });
+          messages.push(...recentMessages);
+          console.log(`📝 Using cached conversation summary (summarized at ${lastSummarizedAt} msgs)`);
+        }
+      } catch (sumError: any) {
+        console.warn('⚠️ Conversation summarization failed (non-blocking):', sumError?.message);
+      }
+    }
 
     // ✅ NEW: Analyze query intent BEFORE fetching context (with runtime-safe fallback)
     let userQuery = messages[messages.length - 1]?.content || '';
