@@ -1474,6 +1474,18 @@ export function useAnalystEngine(
     };
   }, [isActive, platformData]);
 
+  // ─── User Stage & Benchmarks ────────────────────────────────────────────
+  const userStage = useMemo<UserStage | null>(() => {
+    if (!isActive || platformData.length === 0) return null;
+    const totalContent = platformData.find(d => d.label === 'Total Content')?.value || 0;
+    const published = platformData.find(d => d.label === 'Published')?.value || 0;
+    return getUserStage(totalContent, published);
+  }, [isActive, platformData]);
+
+  const benchmarks = useMemo<StageBenchmarks | null>(() => {
+    return userStage ? BENCHMARKS[userStage] : null;
+  }, [userStage]);
+
   return {
     topics,
     insightsFeed: enrichedInsightsFeed,
@@ -1489,5 +1501,7 @@ export function useAnalystEngine(
     crossSignalInsights,
     goalProgress,
     strategicRecommendation,
+    userStage,
+    benchmarks,
   };
 }
