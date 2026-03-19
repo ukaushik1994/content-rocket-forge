@@ -229,7 +229,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      textarea.style.height = Math.min(textarea.scrollHeight, 160) + 'px';
     }
   }, [message]);
 
