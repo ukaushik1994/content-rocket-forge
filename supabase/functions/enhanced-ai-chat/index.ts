@@ -640,7 +640,13 @@ MANDATORY RESPONSE STRUCTURE:
 
 5. **Data Limitations** (If applicable)
    - State missing data clearly
-   - Explain what's needed for complete insights`;
+   - Explain what's needed for complete insights
+
+6. **EMPTY DATA RULE** (CRITICAL):
+   - If a tool returns 0 items or empty results, do NOT generate a chart or table with fake/placeholder data.
+   - Instead, tell the user what data is missing and suggest the specific action to create it.
+   - Example: If get_content_items returns 0 → "You don't have any content yet. Would you like me to help you create your first article?"
+   - NEVER fabricate numbers or show empty charts.`;
 
 // Tool usage module with dynamic counts - ~600 tokens
 const TOOL_USAGE_MODULE = `
