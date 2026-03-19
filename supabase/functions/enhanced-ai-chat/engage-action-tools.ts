@@ -616,7 +616,7 @@ export async function executeEngageActionTool(
       }
 
       case 'activate_journey': {
-        const { data, error } = await supabase.from('engage_journeys')
+        const { data, error } = await supabase.from('journeys')
           .update({ status: 'active', updated_at: new Date().toISOString() })
           .eq('id', toolArgs.journey_id)
           .eq('workspace_id', workspaceId)
