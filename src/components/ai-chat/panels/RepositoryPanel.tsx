@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 const typeIcon: Record<string, React.ElementType> = {
   blog: BookOpen,
