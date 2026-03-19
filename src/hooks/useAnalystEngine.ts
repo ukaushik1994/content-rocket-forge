@@ -357,7 +357,7 @@ function computeCrossSignals(
         if (avgF < avgL - 10) {
           const { data: diagArticles } = await supabase
             .from('content_items')
-            .select('title, seo_score, word_count, content')
+            .select('title, seo_score, content')
             .eq('user_id', userId)
             .eq('status', 'published')
             .not('seo_score', 'is', null)
@@ -367,12 +367,11 @@ function computeCrossSignals(
           if (diagArticles) {
             const issues: string[] = [];
             for (const article of diagArticles) {
-              if (article.word_count && article.word_count < 500) issues.push('short content (<500 words)');
-              if (article.content && !article.content.includes('?')) issues.push('no FAQ section');
-              if (article.content) {
-                const headingCount = (article.content.match(/#{2,3}\s/g) || []).length;
-                if (headingCount < 3) issues.push('too few headings');
-              }
+              const contentStr = article.content || '';
+              if (contentStr.length < 2000) issues.push('short content');
+              if (!contentStr.includes('?')) issues.push('no FAQ section');
+              const headingCount = (contentStr.match(/#{2,3}\s/g) || []).length;
+              if (headingCount < 3) issues.push('too few headings');
             }
             const uniqueIssues = [...new Set(issues)];
             if (uniqueIssues.length > 0) {
