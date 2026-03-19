@@ -1196,7 +1196,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                     return (
                       <div key={phase} className={cn(
                         "flex-1 h-1 rounded-full transition-colors",
-                        isDone ? "bg-primary" : isActive ? "bg-primary/50 animate-pulse" : "bg-muted"
+                        isDone ? "bg-amber-300/60" : isActive ? "bg-amber-300/30 animate-pulse" : "bg-white/[0.06]"
                       )} />
                     );
                   })}
