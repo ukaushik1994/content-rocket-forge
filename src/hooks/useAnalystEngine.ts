@@ -325,10 +325,11 @@ export function useAnalystEngine(
   }, [topics, isActive]);
 
   // ─── Platform data enrichment ───────────────────────────────────────────
-  const fetchPlatformData = useCallback(async () => {
-    if (!userId || !isActive || topics.length === 0) return;
+  const fetchPlatformData = useCallback(async (forceAllCategories = false) => {
+    if (!userId || !isActive) return;
+    if (!forceAllCategories && topics.length === 0) return;
 
-    const topicKey = topics.map(t => t.name).join(',');
+    const topicKey = forceAllCategories ? '__ALL__' : topics.map(t => t.name).join(',');
     if (topicKey === lastFetchedTopicsRef.current) return;
     lastFetchedTopicsRef.current = topicKey;
 
