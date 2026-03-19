@@ -682,18 +682,20 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 }}
               />
               {/* ─── Header ─────────────────────────────────────────── */}
-              <div className="flex-shrink-0 px-6 py-5 border-b border-border/10">
+              <div className="flex-shrink-0 px-6 py-5 border-b border-border/10 relative z-10">
                 <div className="flex items-start gap-3">
                   <div className="relative flex-shrink-0">
-                    <BarChart3 className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(139,92,246,0.1)' }}>
+                      <BarChart3 className="w-4.5 h-4.5 text-primary" />
+                    </div>
                     {analystState?.isEnriching && (
-                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                      <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 pr-2">
-                    <h2 className="text-base font-medium text-foreground truncate">{sidebarTitle}</h2>
+                    <h2 className="text-lg font-semibold text-foreground truncate">{sidebarTitle}</h2>
                     {sidebarDescription && (
-                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{sidebarDescription}</p>
+                      <p className="text-sm text-muted-foreground/70 mt-0.5 line-clamp-2">{sidebarDescription}</p>
                     )}
                   </div>
                   <Tooltip>
@@ -705,6 +707,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     <TooltipContent side="left" className="text-xs">Close (Esc)</TooltipContent>
                   </Tooltip>
                 </div>
+
+                {/* Gradient accent line below header */}
+                <div className="mt-4 h-[2px] rounded-full" style={{ background: 'linear-gradient(90deg, hsl(var(--primary)), rgba(139,92,246,0.1), transparent)' }} />
 
                 {/* Topic tags from analyst engine */}
                 {analystState && analystState.topics.length > 0 && (
