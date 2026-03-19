@@ -512,12 +512,18 @@ export function useAnalystEngine(
   const [previousSessionInsights, setPreviousSessionInsights] = useState<InsightItem[]>([]);
   const prevActiveRef = useRef(false);
 
+  // Anomaly state (declared early so reset effect can reference it)
+  const [anomalyInsights, setAnomalyInsights] = useState<InsightItem[]>([]);
+
+  // Refs for fetch tracking (declared early so reset effect can reference them)
+  const hasInitialFetchedRef = useRef(false);
+  const prevMessageCountRef = useRef(0);
+
   // ─── Reset state when conversation changes ──────────────────────────────
   const prevConversationIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (activeConversationId && activeConversationId !== prevConversationIdRef.current) {
       prevConversationIdRef.current = activeConversationId;
-      // Reset all accumulated state for the new conversation
       setCrossSignalInsights([]);
       setPreviousSessionInsights([]);
       setPlatformData([]);
