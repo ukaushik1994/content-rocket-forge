@@ -56,10 +56,27 @@ serve(async (req) => {
 
     // Determine which API key to use
     let apiKey = providedApiKey || userApiKey;
+    let resolvedService = service;
+
+    // Auto-fallback: if service is 'auto', pick the first available provider
+    if (service === 'auto' && userId) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const providerPriority = ['openrouter', 'openai', 'anthropic', 'gemini', 'mistral'];
+      
+      for (const svc of providerPriority) {
+        const key = await getApiKey(svc, userId);
+        if (key) {
+          apiKey = key;
+          resolvedService = svc;
+          console.log(`🔄 Auto-fallback: resolved to ${svc}`);
+          break;
+        }
+      }
+    }
 
     if (!apiKey) {
       return createErrorResponse(
-        `No API key found for ${service}. Please configure your API key in Settings.`,
+        `No API key found for ${resolvedService}. Please configure your API key in Settings.`,
         401,
         'ai-proxy',
         endpoint
