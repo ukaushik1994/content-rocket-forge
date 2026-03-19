@@ -1462,7 +1462,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                   {getSeoChecklist(editableContent, wizardState.keyword, wizardState.metaTitle, wizardState.metaDescription).map((item, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-[10px]">
                       {item.passed ? (
-                        <Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
+                        <Check className="w-3 h-3 text-emerald-400 mt-0.5 flex-shrink-0" />
                       ) : (
                         <X className="w-3 h-3 text-destructive mt-0.5 flex-shrink-0" />
                       )}
