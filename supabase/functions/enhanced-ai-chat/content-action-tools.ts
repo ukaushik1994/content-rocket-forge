@@ -501,6 +501,26 @@ export async function executeContentActionTool(
         const lengthMap: Record<string, number> = { short: 500, medium: 1000, long: 2000 };
         const targetWords = lengthMap[toolArgs.length || 'medium'];
 
+        // SB-20: Cannibalization prevention — check for existing content targeting the same keyword
+        let cannibalizationWarning = '';
+        try {
+          const { data: existingTargeting } = await supabase.from('content_items')
+            .select('id, title, main_keyword, seo_score, status')
+            .eq('user_id', userId)
+            .neq('status', 'archived')
+            .ilike('main_keyword', toolArgs.keyword)
+            .limit(5);
+
+          if (existingTargeting && existingTargeting.length > 0) {
+            const published = existingTargeting.filter((c: any) => c.status === 'published');
+            const drafts = existingTargeting.filter((c: any) => c.status === 'draft');
+            const parts: string[] = [];
+            if (published.length > 0) parts.push(`${published.length} published article(s): ${published.map((c: any) => `"${c.title}" (SEO: ${c.seo_score || 'N/A'})`).join(', ')}`);
+            if (drafts.length > 0) parts.push(`${drafts.length} draft(s): ${drafts.map((c: any) => `"${c.title}"`).join(', ')}`);
+            cannibalizationWarning = `\n\n⚠️ **Cannibalization alert**: You already have ${parts.join(' and ')} targeting "${toolArgs.keyword}". Creating another piece on the same exact keyword can split your ranking potential. Consider a different angle or long-tail variation.`;
+          }
+        } catch (_) { /* non-blocking */ }
+
         // Call ai-proxy for content generation
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');

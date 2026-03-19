@@ -121,8 +121,29 @@ async function processQueueItem(supabase: any, item: QueueItem): Promise<void> {
     // Call campaign-content-generator with retry logic
     const content = await generateContentWithRetry(supabase, item);
 
+    // SB-18: Quality gate — check SEO score and flag low-quality content
+    const contentId = content?.id || content?.contentId;
+    if (contentId) {
+      const { data: savedContent } = await supabase
+        .from('content_items')
+        .select('id, seo_score, status')
+        .eq('id', contentId)
+        .maybeSingle();
+
+      if (savedContent && (savedContent.seo_score ?? 0) < 30) {
+        console.log(`⚠️ [Queue Item ${itemId}] SEO score ${savedContent.seo_score} < 30 — flagging as needs_review`);
+        await supabase
+          .from('content_items')
+          .update({ 
+            approval_status: 'needs_review',
+            metadata: { quality_gate_flag: 'low_seo_score', seo_score_at_generation: savedContent.seo_score }
+          })
+          .eq('id', contentId);
+      }
+    }
+
     // Mark as completed
-    await updateQueueStatus(supabase, itemId, 'completed', { content_id: content.id });
+    await updateQueueStatus(supabase, itemId, 'completed', { content_id: contentId });
     console.log(`✅ [Queue Item ${itemId}] Completed successfully`);
 
   } catch (error: any) {
