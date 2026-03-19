@@ -273,6 +273,24 @@ Deno.serve(async (req) => {
       await updateCampaignStats(supabase, cid);
     }
 
+    // Phase 3: Notify workspace owner about send results
+    if (messages.length > 0) {
+      const workspaceId = messages[0].workspace_id;
+      const ownerId = workspaceId ? await getWorkspaceOwnerId(supabase, workspaceId) : null;
+      if (ownerId) {
+        const severity = failed > 0 ? (sent > 0 ? 'warning' : 'error') : 'success';
+        notifyUser(supabase, {
+          userId: ownerId,
+          title: 'Email Campaign Sent',
+          message: `${sent} sent, ${failed} failed out of ${messages.length} emails.`,
+          module: 'engage',
+          severity,
+          linkUrl: '/engage/email',
+          metadata: { sent, failed, total: messages.length },
+        });
+      }
+    }
+
     return new Response(JSON.stringify({ processed: messages.length, sent, failed }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

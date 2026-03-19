@@ -331,6 +331,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Phase 3: Notify workspace owner
+    if (processed > 0 && steps.length > 0) {
+      const workspaceId = steps[0].journey_enrollments?.workspace_id || steps[0].workspace_id;
+      const ownerId = workspaceId ? await getWorkspaceOwnerId(supabase, workspaceId) : null;
+      if (ownerId) {
+        notifyUser(supabase, {
+          userId: ownerId,
+          title: 'Journey Steps Executed',
+          message: `${processed} journey step(s) executed, ${skipped} skipped.`,
+          module: 'engage',
+          severity: 'success',
+          linkUrl: '/engage/journeys',
+        });
+      }
+    }
+
     return new Response(JSON.stringify({ processed, skipped }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
