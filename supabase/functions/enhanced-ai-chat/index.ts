@@ -1648,9 +1648,9 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
         const [contactsR, segmentsR, journeysR, automationsR, emailCampaignsR] = await Promise.all([
           supabase.from('engage_contacts').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
           supabase.from('engage_segments').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
-          supabase.from('engage_journeys').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+          supabase.from('journeys').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
           supabase.from('engage_automations').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
-          supabase.from('engage_email_campaigns').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+          supabase.from('email_campaigns').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
         ]);
         engageContactCount = contactsR.count || 0;
         engageSegmentCount = segmentsR.count || 0;
