@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, Send, Target, BarChart3, Calendar, CheckCircle2, CalendarPlus, Eye, Image as ImageIcon, Film } from 'lucide-react';
+import { TrendingUp, PenLine, Target, BarChart3, Calendar, CheckCircle2, CalendarPlus, Eye, Image as ImageIcon, Film } from 'lucide-react';
 import { proposalManagement } from '@/services/proposalManagement';
 import { toast } from 'sonner';
 import { OpportunityDetailModal } from './OpportunityDetailModal';
