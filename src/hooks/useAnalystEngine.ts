@@ -1454,7 +1454,7 @@ export function useAnalystEngine(
     computeCrossSignals(userId, platformData, userMsgs).then(signals => {
       if (signals.length > 0) setCrossSignalInsights(signals);
     });
-  }, [isActive, userId, platformData]);
+  }, [isActive, userId, platformData, messages.length]);
 
   // ─── Enhancement D: Load session memory on activation ───────────────────
   useEffect(() => {
