@@ -71,6 +71,30 @@ export interface GoalProgress {
   milestones: { label: string; done: boolean }[];
 }
 
+// ─── User Stage & Benchmarks ───────────────────────────────────────────────
+export type UserStage = 'starter' | 'growing' | 'established' | 'scaling';
+
+export interface StageBenchmarks {
+  publishRate: number;
+  avgSeo: number;
+  weeklyArticles: number;
+  minCompetitors: number;
+}
+
+const BENCHMARKS: Record<UserStage, StageBenchmarks> = {
+  starter: { publishRate: 30, avgSeo: 30, weeklyArticles: 0.5, minCompetitors: 0 },
+  growing: { publishRate: 50, avgSeo: 45, weeklyArticles: 1.5, minCompetitors: 2 },
+  established: { publishRate: 65, avgSeo: 60, weeklyArticles: 2, minCompetitors: 3 },
+  scaling: { publishRate: 75, avgSeo: 70, weeklyArticles: 3, minCompetitors: 5 },
+};
+
+function getUserStage(totalContent: number, published: number): UserStage {
+  if (published >= 30) return 'scaling';
+  if (published >= 10) return 'established';
+  if (totalContent >= 3) return 'growing';
+  return 'starter';
+}
+
 export interface AnalystState {
   topics: AnalystTopic[];
   insightsFeed: InsightItem[];
@@ -86,6 +110,8 @@ export interface AnalystState {
   crossSignalInsights: InsightItem[];
   goalProgress: GoalProgress | null;
   strategicRecommendation: StrategicRecommendation | null;
+  userStage: UserStage | null;
+  benchmarks: StageBenchmarks | null;
 }
 
 // ─── Topic Detection ────────────────────────────────────────────────────────
