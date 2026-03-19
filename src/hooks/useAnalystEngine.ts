@@ -834,6 +834,32 @@ export function useAnalystEngine(
         })());
       }
 
+      if (coveredCategories.has('content') || coveredCategories.has('analytics')) {
+        // Avg SEO Score
+        fetches.push((async () => {
+          const { data: seoArticles } = await supabase
+            .from('content_items')
+            .select('seo_score')
+            .eq('user_id', userId)
+            .eq('status', 'published')
+            .not('seo_score', 'is', null)
+            .limit(50);
+          if (seoArticles && seoArticles.length > 0) {
+            const avg = Math.round(seoArticles.reduce((sum, a) => sum + (a.seo_score as number), 0) / seoArticles.length);
+            newData.push({ label: 'Avg SEO Score', value: avg, category: 'content', fetchedAt: now });
+          }
+        })());
+        // Drafts count
+        fetches.push((async () => {
+          const { count } = await supabase
+            .from('content_items')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('status', 'draft');
+          if (count !== null) newData.push({ label: 'Drafts', value: count, category: 'content', fetchedAt: now });
+        })());
+      }
+
       if (coveredCategories.has('campaigns')) {
         fetches.push((async () => {
           const { count } = await supabase
@@ -841,6 +867,15 @@ export function useAnalystEngine(
             .select('id', { count: 'exact', head: true })
             .eq('user_id', userId);
           if (count !== null) newData.push({ label: 'Active Campaigns', value: count, category: 'campaigns', fetchedAt: now });
+        })());
+        // Queue failed/pending
+        fetches.push((async () => {
+          const { count: failedCount } = await supabase
+            .from('content_generation_queue')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('status', 'failed');
+          if (failedCount !== null && failedCount > 0) newData.push({ label: 'Queue Failed', value: failedCount, category: 'campaigns', fetchedAt: now });
         })());
       }
 
@@ -861,6 +896,25 @@ export function useAnalystEngine(
             .select('id', { count: 'exact', head: true })
             .eq('user_id', userId);
           if (count !== null) newData.push({ label: 'Tracked Competitors', value: count, category: 'competitors', fetchedAt: now });
+        })());
+      }
+
+      if (coveredCategories.has('email') || coveredCategories.has('engage')) {
+        fetches.push((async () => {
+          try {
+            const { count } = await supabase
+              .from('engage_contacts' as any)
+              .select('id', { count: 'exact', head: true });
+            if (count !== null) newData.push({ label: 'Contacts', value: count, category: 'engage', fetchedAt: now });
+          } catch { /* table may not exist */ }
+        })());
+        fetches.push((async () => {
+          try {
+            const { count } = await supabase
+              .from('email_campaigns' as any)
+              .select('id', { count: 'exact', head: true });
+            if (count !== null) newData.push({ label: 'Email Campaigns', value: count, category: 'email', fetchedAt: now });
+          } catch { /* table may not exist */ }
         })());
       }
 
