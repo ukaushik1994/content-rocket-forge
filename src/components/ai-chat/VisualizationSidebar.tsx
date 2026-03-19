@@ -1066,7 +1066,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   {/* Web intel prompt when topics suggest it but no results yet */}
                   {analystState && analystState.webSearchResults.length === 0 && analystState.topics.some(t => t.category === 'keywords' || t.category === 'competitors') && onSendMessage && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                      <button onClick={() => onSendMessage('[web-search] Get web intelligence on current topics')} className="w-full p-3 rounded-lg bg-cyan-500/5 border border-dashed border-cyan-500/15 hover:border-cyan-500/30 hover:bg-cyan-500/10 transition-colors text-left">
+                      <button onClick={() => onSendMessage('[web-search] Get web intelligence on current topics')} className="w-full p-3 glass-card glass-card-hover text-left">
                         <div className="flex items-center gap-2">
                           <Globe className="w-3.5 h-3.5 text-cyan-500/50" />
                           <div>
