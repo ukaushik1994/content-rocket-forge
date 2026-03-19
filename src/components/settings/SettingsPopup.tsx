@@ -53,6 +53,12 @@ export const SettingsPopup = () => {
       component: <FormatPromptSettings />
     },
     {
+      id: 'content',
+      label: 'Content',
+      icon: <FileText className="h-4 w-4" />,
+      component: <ContentSettingsTab />
+    },
+    {
       id: 'engage',
       label: 'Engage',
       icon: <Send className="h-4 w-4" />,
