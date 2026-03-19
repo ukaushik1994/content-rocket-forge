@@ -2036,11 +2036,33 @@ serve(async (req) => {
     
     // ── DETECT & STRIP [web-search] PREFIX ──
     let forceWebSearch = false;
+    let forceVariation = false;
     if (userQuery.startsWith('[web-search]')) {
       forceWebSearch = true;
       userQuery = userQuery.replace(/^\[web-search\]\s*/, '').trim();
       console.log('🌐 [web-search] prefix detected — forcing web search for:', userQuery);
     }
+    // Smart retry with variation (Phase 4b)
+    if (userQuery.startsWith('[Regenerate with different approach]')) {
+      forceVariation = true;
+      userQuery = userQuery.replace(/^\[Regenerate with different approach\]\s*/, '').trim();
+      console.log('🔄 Regeneration with variation requested');
+    }
+
+    // Response format preference detection (Phase 3b)
+    let formatPreference = '';
+    if (/shorter|concise|brief|bullet|summary/i.test(userQuery)) {
+      formatPreference = '\n[User format preference]: The user prefers SHORT, concise responses. Use bullet points and keep responses under 200 words when possible.';
+    } else if (/elaborate|detail|explain|in.?depth|comprehensive/i.test(userQuery)) {
+      formatPreference = '\n[User format preference]: The user wants DETAILED, comprehensive responses. Provide thorough explanations with examples.';
+    }
+    if (formatPreference) {
+      messages.unshift({ role: 'system', content: formatPreference });
+    }
+    if (forceVariation) {
+      messages.unshift({ role: 'system', content: '[REGENERATION REQUEST]: The user wants a GENUINELY DIFFERENT response to the same query. Use a different structure, angle, examples, and writing style. Do NOT repeat the previous response pattern.' });
+    }
+
     console.log('🎯 Analyzing query intent...');
 
     let queryIntent;
