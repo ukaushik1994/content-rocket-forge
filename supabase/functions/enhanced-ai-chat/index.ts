@@ -2692,6 +2692,62 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
     // Inject real data context + brand voice
     systemPrompt += brandVoiceContext;
 
+    // ===== SPRINT 4: User Intelligence Profile Injection =====
+    let userIntelligenceContext = '';
+    try {
+      const { data: profile } = await supabase.from('user_intelligence_profile')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (profile) {
+        const parts: string[] = [];
+        if (profile.preferred_length && profile.preferred_length !== 'medium') {
+          parts.push(`Content length preference: ${profile.preferred_length} (adjust word count accordingly)`);
+        }
+        if (profile.preferred_tone && Array.isArray(profile.preferred_tone) && profile.preferred_tone.length > 0) {
+          parts.push(`Preferred tone: ${profile.preferred_tone.join(', ')}`);
+        }
+        if (profile.preferred_formats && Array.isArray(profile.preferred_formats) && profile.preferred_formats.length > 0) {
+          parts.push(`Preferred content formats: ${profile.preferred_formats.join(', ')}`);
+        }
+        if (profile.editing_patterns && typeof profile.editing_patterns === 'object') {
+          const ep = profile.editing_patterns as Record<string, any>;
+          const patternInstructions: string[] = [];
+          if (ep.splits_long_paragraphs) patternInstructions.push('Keep paragraphs to 2-3 sentences max');
+          if (ep.adds_examples) patternInstructions.push('Include concrete examples and real-world scenarios');
+          if (ep.removes_generic_filler) patternInstructions.push('Avoid filler phrases like "in today\'s digital world"');
+          if (ep.adds_data_statistics) patternInstructions.push('Include relevant numbers, percentages, and data');
+          if (ep.consolidates_headings) patternInstructions.push('Use fewer, more meaningful section headers');
+          if (ep.adds_more_structure) patternInstructions.push('Use more subheadings and clear section breaks');
+          if (ep.converts_to_lists) patternInstructions.push('Use bullet points and numbered lists where appropriate');
+          if (patternInstructions.length > 0) parts.push(`Editing patterns learned:\n- ${patternInstructions.join('\n- ')}`);
+        }
+        if (profile.top_topics && Array.isArray(profile.top_topics) && profile.top_topics.length > 0) {
+          parts.push(`User's top topics: ${profile.top_topics.slice(0, 5).join(', ')}`);
+        }
+        if (profile.top_solutions && Array.isArray(profile.top_solutions) && profile.top_solutions.length > 0) {
+          parts.push(`User's key solutions/products: ${profile.top_solutions.slice(0, 5).join(', ')}`);
+        }
+        if (!profile.prefers_negotiation) {
+          parts.push('User prefers direct content generation — minimize pre-generation questions');
+        }
+        if (profile.avg_response_detail === 'brief') {
+          parts.push('User prefers brief, concise responses');
+        } else if (profile.avg_response_detail === 'detailed') {
+          parts.push('User prefers detailed, thorough responses');
+        }
+
+        if (parts.length > 0) {
+          userIntelligenceContext = `\n\n## USER INTELLIGENCE PROFILE\nThese are learned preferences from this user's history. Apply them to ALL responses:\n${parts.join('\n')}`;
+          console.log('🧠 Injected User Intelligence Profile');
+        }
+      }
+    } catch (uipErr) {
+      console.warn('[USER-INTELLIGENCE] Failed to fetch profile (non-blocking):', uipErr);
+    }
+    systemPrompt += userIntelligenceContext;
+
     // ===== ENHANCEMENT 4: AI Negotiation Before Generation =====
     const isContentCreation = /write|create|generate|draft|blog|article|post/i.test(userQuery) && queryIntent.categories?.includes('content');
     const skipNegotiation = /just write|skip questions|don't ask|no questions|quick generate/i.test(userQuery);
