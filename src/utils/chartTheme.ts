@@ -1,3 +1,4 @@
+import React from 'react';
 // Premium Chart Theme System — Unified colors, gradients, axis config, tooltip styles
 
 export const CHART_COLORS = {
