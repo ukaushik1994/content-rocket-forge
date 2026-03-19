@@ -326,7 +326,9 @@ function computeCrossSignals(
       if (contentKeywords && contentKeywords.length >= 2) {
         const kwMap = new Map<string, string[]>();
         for (const item of contentKeywords) {
-          const kw = (item.main_keyword as string).toLowerCase().trim();
+          // Extract primary keyword from keywords JSON or meta_title
+          const kwArr = Array.isArray(item.keywords) ? item.keywords : [];
+          const kw = (kwArr[0] as string || item.meta_title || '').toLowerCase().trim();
           if (!kw) continue;
           const existing = kwMap.get(kw) || [];
           existing.push(item.title);
