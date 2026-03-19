@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     let totalRecs = 0;
 
     for (const userId of uniqueUserIds) {
-      const recommendations: Array<{ user_id: string; type: string; title: string; description: string; action: string; priority: number }> = [];
+      const recommendations: Array<{ user_id: string; type: string; title: string; description: string; action: string; priority: number; priority_score: number }> = [];
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
       const fourteenDaysAgo = new Date(now.getTime() - 14 * 86400000).toISOString();
