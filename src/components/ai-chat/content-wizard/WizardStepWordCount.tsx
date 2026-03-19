@@ -211,20 +211,23 @@ export const WizardStepWordCount: React.FC<WizardStepWordCountProps> = ({
 
       {/* Expertise Level */}
       <div>
-        <h3 className="text-sm font-medium text-foreground">Expertise Level</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Expertise Level</span>
+        </div>
         <div className="grid grid-cols-3 gap-2 mt-2">
           {EXPERTISE_LEVELS.map(l => (
             <button
               key={l.value}
               onClick={() => onExpertiseLevelChange(l.value)}
               className={cn(
-                "flex flex-col items-center gap-1 p-2.5 rounded-lg border transition-all cursor-pointer",
+                "flex flex-col items-center gap-1 p-2.5 rounded-2xl border transition-all cursor-pointer backdrop-blur-md",
                 expertiseLevel === l.value
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border/30 hover:border-border/50 bg-muted/20"
+                  ? "bg-white/[0.08] border-amber-300/30"
+                  : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
               )}
             >
-              <l.icon className={cn("w-4 h-4", expertiseLevel === l.value ? "text-primary" : "text-muted-foreground")} />
+              <l.icon className={cn("w-4 h-4", expertiseLevel === l.value ? "text-amber-300" : "text-muted-foreground")} />
               <p className="text-[10px] font-medium text-foreground">{l.label}</p>
             </button>
           ))}
