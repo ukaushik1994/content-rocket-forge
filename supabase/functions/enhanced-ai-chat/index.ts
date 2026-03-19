@@ -2961,14 +2961,17 @@ The user is comparing options. Provide:
 Never sit on the fence — give a clear recommendation.`;
     }
 
-    // ===== PHASE 4 FIX 11: Fuzzy Content Matching =====
-    systemPrompt += `\n\n## CONTENT MATCHING PROTOCOL
+    // ===== PHASE 4 FIX 11: Fuzzy Content Matching (conditional) =====
+    const referencesContent = /my (article|blog|post|content|draft|page)|the one about|update .*(article|blog|post|content)|delete .*(article|blog|post|content)|edit .*(article|blog|post|content)/i.test(userQuery);
+    if (referencesContent) {
+      systemPrompt += `\n\n## CONTENT MATCHING PROTOCOL
 When the user references content by name (e.g., "update my SEO article", "delete the blog about marketing"):
 1. Use get_content_items to search for matching content.
 2. If 1 match → proceed with the action.
 3. If 2-3 matches → list them and ask the user to pick: "I found these matches: [list]. Which one?"
 4. If 0 matches → say "I couldn't find content matching '[name]'. Want me to search your full library?"
 NEVER guess or assume which content the user means when multiple matches exist.`;
+    }
 
     // ===== PHASE 4 FIX 10: Service Status (injected dynamically above) =====
     // Service status is built from api_keys/website_connections query results
