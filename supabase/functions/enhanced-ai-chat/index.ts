@@ -1835,7 +1835,7 @@ You have access to powerful tools to fetch exactly the data you need:
 
     // Store counts for TOOL_USAGE_MODULE replacement
     return {
-      contextString,
+      contextString: contextString + contextString2,
       counts,
       proactiveInsights: generateProactiveInsights(counts)
     };
