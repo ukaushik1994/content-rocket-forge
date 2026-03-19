@@ -644,7 +644,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
             if (lastUserMsg) sendMessage(lastUserMsg.content);
           }} />
-        
+
+                    {/* SB-10: Getting Started Milestones */}
+                    <GettingStartedChecklist />
 
           {/* Message Search Bar (toggleable) */}
           {messages.length > 0 &&
