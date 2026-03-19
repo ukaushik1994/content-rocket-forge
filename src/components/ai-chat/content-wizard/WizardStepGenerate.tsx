@@ -1398,7 +1398,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                           dim.score >= 70 ? "text-emerald-400" : dim.score >= 40 ? "text-yellow-400" : "text-destructive"
                         )}>{dim.score}</span>
                       </div>
-                      <Progress value={dim.score} className="h-1" />
+                      <Progress value={dim.score} className="h-1 bg-white/[0.06]" />
                       {dim.topViolation && (
                         <p className="text-[9px] text-muted-foreground flex items-start gap-1">
                           <AlertTriangle className="w-2.5 h-2.5 text-yellow-400 mt-0.5 flex-shrink-0" />
