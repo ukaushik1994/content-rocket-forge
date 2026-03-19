@@ -674,6 +674,13 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 "flex flex-col overflow-hidden"
               )}
             >
+              {/* Ambient top glow */}
+              <div
+                className="absolute top-0 left-0 right-0 h-[200px] pointer-events-none z-0"
+                style={{
+                  background: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.08) 0%, transparent 60%)',
+                }}
+              />
               {/* ─── Header ─────────────────────────────────────────── */}
               <div className="flex-shrink-0 px-6 py-5 border-b border-border/10">
                 <div className="flex items-start gap-3">
