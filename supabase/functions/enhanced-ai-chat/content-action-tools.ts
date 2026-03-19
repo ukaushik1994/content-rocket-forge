@@ -701,15 +701,12 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
       case 'start_content_builder': {
         return {
           success: true,
-          message: `Opening Content Builder with keyword "${toolArgs.keyword}"`,
-          action: {
-            type: 'navigate',
-            url: '/ai-chat',
-            payload: {
-              keyword: toolArgs.keyword,
-              solution_id: toolArgs.solution_id,
-              suggested_title: toolArgs.suggested_title
-            }
+          message: `Ready to create content about "${toolArgs.keyword}". Choose how you'd like to proceed.`,
+          visualData: {
+            type: 'content_creation_choice',
+            keyword: toolArgs.keyword,
+            solution_id: toolArgs.solution_id || null,
+            content_type: toolArgs.content_type || 'blog'
           }
         };
       }
