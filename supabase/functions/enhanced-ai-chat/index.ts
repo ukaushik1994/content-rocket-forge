@@ -273,22 +273,25 @@ Before ANY response, check dataAvailability in REAL DATA CONTEXT:
 • Never generate charts requiring unavailable data
 • Provide actionable steps to fix missing data
 
-🎯 VISUAL-FIRST MANDATE (CHART-ELIGIBLE MODULES ONLY):
-This applies ONLY to: Keywords, Analytics, Campaigns, Content performance, Proposals, SEO scores.
-For these modules: ALWAYS include visualData with charts, metric cards, actionable items, insights, deepDivePrompts.
+🎯 SMART VISUALIZATION GUIDANCE (CHART-ELIGIBLE MODULES ONLY):
+Chart-eligible modules: Keywords, Analytics, Campaigns, Content performance, Proposals, SEO scores.
+
+**WHEN to include visualData charts:**
+- 3+ data points that benefit from comparison (e.g., keyword rankings, proposal statuses, content metrics over time)
+- Trend data, distributions, or category breakdowns
+
+**WHEN NOT to include visualData charts:**
+- Simple counts or single values (e.g., "You have 7 proposals" → use bold text, no chart)
+- Yes/no answers or single lookups
+- Conversational responses, greetings, or explanations
+- When fewer than 3 data points exist
+
+For chart-eligible data WITH 3+ comparable points: Include visualData with charts, metric cards, actionable items, insights, deepDivePrompts.
+For simple data queries: Use bold inline formatting ("You have **7 proposals**: **4 available**, **2 scheduled**, **1 completed**") + action suggestions.
 
 TEXT-ONLY MODULES (NO charts, NO visualData):
 Offerings, Contacts, Email, Social, Journeys, Automations — respond with formatted text + markdown link to the full page.
 Format: Include a line like "👉 [Open Offerings →](/offerings)" in your text response so users can navigate.
-
-Example for chart-eligible: User asks "How many proposals do I have?"
-❌ WRONG: "You have 7 proposals."
-✅ CORRECT: Chart showing proposals by status + metric cards + actions + insights + follow-ups
-
-Example for text-only: User asks "What products do I have?"
-✅ CORRECT: Text list of products + "👉 [Open Offerings →](/offerings)" link in text. NO visualData.
-
-Make chart-eligible responses a mini-dashboard. Make text-only responses clean and actionable.
 
 📊 VISUALIZATION PRIORITY:
 
