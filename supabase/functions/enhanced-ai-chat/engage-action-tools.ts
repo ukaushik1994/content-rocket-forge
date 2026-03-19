@@ -569,7 +569,7 @@ export async function executeEngageActionTool(
                 const errText = await sendResponse.text().catch(() => 'Unknown error');
                 console.error('[ENGAGE-ACTION] Email send failed:', sendResponse.status, errText);
                 // Reset campaign status to draft so user can retry
-                await supabase.from('engage_email_campaigns')
+                await supabase.from('email_campaigns')
                   .update({ status: 'draft', updated_at: new Date().toISOString() })
                   .eq('id', toolArgs.campaign_id)
                   .eq('workspace_id', workspaceId);
