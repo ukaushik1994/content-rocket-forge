@@ -2691,7 +2691,45 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
 
     // Inject real data context + brand voice
     systemPrompt += brandVoiceContext;
+
+    // ===== ENHANCEMENT 4: AI Negotiation Before Generation =====
+    const isContentCreation = /write|create|generate|draft|blog|article|post/i.test(userQuery) && queryIntent.categories?.includes('content');
+    const skipNegotiation = /just write|skip questions|don't ask|no questions|quick generate/i.test(userQuery);
     
+    if (isContentCreation && !skipNegotiation) {
+      systemPrompt += `\n\n## CONTENT CREATION PROTOCOL
+Before generating any content, you MUST follow this protocol:
+1. **Check Existing Coverage**: Use get_content_items to check if similar content already exists. If it does, mention it and ask if the user wants to update it or create a new angle.
+2. **Suggest Best Format**: Based on the topic, suggest the most effective content format (long-form blog, listicle, comparison post, how-to guide, case study). Explain WHY that format would perform better.
+3. **Competitor Angle**: If competitor data is available, mention what competitors are covering on this topic and suggest a differentiation angle.
+4. **Solution Integration**: Ask if the user wants to naturally integrate any of their solutions/products into the content.
+5. **Confirm Before Writing**: Summarize your recommendations and get user confirmation before generating.
+
+EXCEPTION: If the user explicitly says "just write it", "skip questions", or "quick generate", skip this protocol and generate immediately.
+Do NOT mention this protocol to the user — just naturally ask the strategic questions.`;
+      console.log('🤝 Injected Content Creation Negotiation Protocol');
+    }
+
+    // ===== ENHANCEMENT 8: Conversational Multi-Step Workflows =====
+    const isMultiStepIntent = /pipeline|full|comprehensive|audit|sweep|review all|analyze everything/i.test(userQuery);
+    
+    if (isMultiStepIntent) {
+      systemPrompt += `\n\n## MULTI-STEP WORKFLOW PROTOCOL
+This request requires a multi-step approach. Follow this protocol:
+1. **Break Down**: Identify all steps needed to fulfill this request completely.
+2. **Execute One Step**: Perform ONLY the first step and present results clearly.
+3. **Confirm Before Continuing**: Ask the user "Should I proceed to Step X?" before moving on.
+4. **Progressive Depth**: Each step should build on previous findings.
+
+Example flow for "audit my content":
+- Step 1: "I'll start by analyzing your content library for gaps and quality scores. Here's what I found: [results]. Ready for Step 2: competitor comparison?"
+- Step 2: "Now comparing against competitor coverage. [results]. Ready for Step 3: priority recommendations?"
+- Step 3: "Based on the full audit, here are your top 5 priorities with specific action items."
+
+Never try to do everything in one response. Quality over speed.`;
+      console.log('🔄 Injected Multi-Step Workflow Protocol');
+    }
+
     // PE Fix 4: Compress data context for simple/summary queries
     if (queryIntent.scope === 'summary' && realDataContext.length > 500) {
       // For summary queries, inject only a compact snapshot
