@@ -507,6 +507,8 @@ export async function executeContentActionTool(
         let competitorContext = '';
         let structureGuidance = '';
         let editPatternHint = '';
+        let performanceContext = '';
+        let businessOutcomeContext = '';
 
         try {
           const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult, perfSignalsResult] = await Promise.allSettled([
