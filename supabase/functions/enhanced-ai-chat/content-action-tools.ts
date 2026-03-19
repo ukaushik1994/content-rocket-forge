@@ -544,6 +544,14 @@ export async function executeContentActionTool(
               structureGuidance = `\n\n## Structure Guidance (from top-performing content)\nUse approximately ${avgHeadings} H2 sections. Your best content averages ${avgHeadings} main sections — replicate this winning structure.`;
             }
           }
+
+          // Edit pattern feedback — learned preferences (Fix 9)
+          if (feedbackResult.status === 'fulfilled' && feedbackResult.value.data?.length >= 3) {
+            const ratios = feedbackResult.value.data.map((d: any) => d.feedback_data?.lengthRatio || 1);
+            const avgRatio = ratios.reduce((a: number, b: number) => a + b, 0) / ratios.length;
+            if (avgRatio < 0.75) editPatternHint = '\n\n## Learned Preference\nThis user consistently shortens AI-generated content. Write MORE CONCISELY — target 20% fewer words than the stated target.';
+            else if (avgRatio > 1.25) editPatternHint = '\n\n## Learned Preference\nThis user consistently expands AI-generated content. Write with MORE DEPTH and DETAIL — target 20% more words than the stated target.';
+          }
         } catch (enrichErr) {
           console.error('[CONTENT-ACTION] Enrichment fetch failed (non-blocking):', enrichErr);
         }
