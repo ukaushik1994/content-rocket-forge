@@ -772,14 +772,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     deepDivePrompts={deepDivePrompts.map(p => p.text)}
                     onSendMessage={onSendMessage || (() => {})}
                   />
-                        {[
-                          analystState.accumulatedCharts.length > 0 && `${analystState.accumulatedCharts.length} chart${analystState.accumulatedCharts.length > 1 ? 's' : ''}`,
-                          mergedInsightsFeed.length > 0 && `${mergedInsightsFeed.length} insight${mergedInsightsFeed.length > 1 ? 's' : ''}`,
-                          analystState.webSearchResults.length > 0 && `${analystState.webSearchResults.length} web search${analystState.webSearchResults.length > 1 ? 'es' : ''}`,
-                        ].filter(Boolean).join(' · ')}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </ScrollArea>
             </motion.div>
