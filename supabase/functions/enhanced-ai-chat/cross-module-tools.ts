@@ -387,7 +387,7 @@ ${topContent.content || ''}
         }
 
         const aiResult = await proxyResponse.json();
-        const rawContent = aiResult.content || aiResult.choices?.[0]?.message?.content || '';
+        const rawContent = aiResult.data?.choices?.[0]?.message?.content || aiResult.choices?.[0]?.message?.content || aiResult.content || '';
 
         let posts;
         try {
