@@ -591,7 +591,7 @@ export async function executeEngageActionTool(
         }).select('id, name, trigger_type, is_active, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created automation "${data.name}" (${data.is_active ? 'active' : 'inactive'})`, item: data };
+        return { success: true, message: `Created automation "${data.name}" (${data.is_active ? 'active' : 'inactive'})${workspaceNotice}`, item: data };
       }
 
       case 'toggle_automation': {
