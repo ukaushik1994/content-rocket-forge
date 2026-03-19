@@ -297,11 +297,10 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
               });
             }}
             size="sm"
-            className="flex-1 gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/30 text-blue-400 hover:bg-blue-500/30 transition-all duration-200"
-            variant="outline"
+            className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all duration-200"
           >
-            <Send className="h-4 w-4" />
-            Create Content
+            <PenLine className="h-4 w-4" />
+            Write This
           </Button>
         </div>
 
