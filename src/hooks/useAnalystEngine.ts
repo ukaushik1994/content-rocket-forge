@@ -144,10 +144,11 @@ function classifyInsight(content: string): InsightItem['type'] {
   return 'trend';
 }
 
-// ─── Enhancement F: Metric Context ──────────────────────────────────────────
-export function getMetricContext(label: string, value: number, allData: PlatformDataPoint[]): string {
+// ─── Enhancement F: Metric Context (stage-aware) ────────────────────────────
+export function getMetricContext(label: string, value: number, allData: PlatformDataPoint[], stage?: UserStage | null): string {
   const totalContent = allData.find(d => d.label === 'Total Content')?.value || 0;
   const published = allData.find(d => d.label === 'Published')?.value || 0;
+  const bench = stage ? BENCHMARKS[stage] : null;
 
   switch (label) {
     case 'Total Content': {
