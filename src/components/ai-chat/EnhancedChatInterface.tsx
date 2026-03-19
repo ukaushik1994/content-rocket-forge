@@ -173,10 +173,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     
   }, [user, messages.length]);
 
-  // Analyst engine: per-conversation, only active when analyst sidebar is visible
+  // Analyst engine: per-conversation — isActive is deferred to after sidebar state declared
   const activeConvObj = conversations.find(c => c.id === activeConversation);
-  const isAnalystVisible = showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst';
-  const analystState = useAnalystEngine(messages, user?.id || null, isAnalystVisible || messages.length > 0, activeConvObj?.title || null, activeConversation);
 
   // Message search state
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
