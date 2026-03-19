@@ -315,13 +315,12 @@ function computeCrossSignals(
 
       // ─── Fix 1: Cross-Data Pattern Engine ────────────────────────────────
 
-      // 8. Keyword cannibalization: multiple articles targeting same keyword
+      // 8. Keyword cannibalization: multiple articles targeting same meta_title pattern
       const { data: contentKeywords } = await supabase
         .from('content_items')
-        .select('title, main_keyword')
+        .select('title, keywords, meta_title')
         .eq('user_id', userId)
         .eq('status', 'published')
-        .not('main_keyword', 'is', null)
         .limit(50);
 
       if (contentKeywords && contentKeywords.length >= 2) {
