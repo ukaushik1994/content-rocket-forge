@@ -667,7 +667,7 @@ export async function executeEngageActionTool(
           return { success: false, message: 'No contact IDs provided' };
         }
 
-        const { data, error } = await supabase.from('engage_journey_enrollments')
+        const { data, error } = await supabase.from('journey_enrollments')
           .insert(enrollments)
           .select('id');
 
