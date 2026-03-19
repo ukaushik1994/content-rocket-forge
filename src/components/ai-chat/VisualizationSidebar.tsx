@@ -971,7 +971,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         /* No current response data — show all charts in a stack as the dashboard view */
                         <div className="space-y-3">
                           {analystState.accumulatedCharts.map((chart, idx) => (
-                            <Card key={`dashboard-chart-${idx}`} className="p-3 bg-muted/5 border-border/15">
+                            <div key={`dashboard-chart-${idx}`} className="glass-card p-3">
                               <p className="text-xs font-medium text-foreground/80 mb-2">{chart.title || `Chart ${idx + 1}`}</p>
                               <div className="h-[180px]">
                                 {(() => {
