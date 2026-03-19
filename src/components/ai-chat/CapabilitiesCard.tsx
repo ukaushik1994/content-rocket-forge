@@ -63,8 +63,8 @@ export const CapabilitiesCard: React.FC<CapabilitiesCardProps> = ({ onTryExample
       animate={{ opacity: 1, y: 0 }}
       className="space-y-2 max-w-md"
     >
-      <p className="text-[10px] uppercase tracking-widest text-amber-300/70 flex items-center gap-1.5 pl-1">
-        <span className="w-1 h-1 rounded-full bg-amber-300/70" />
+      <p className="text-[10px] uppercase tracking-widest text-primary/70 flex items-center gap-1.5 pl-1">
+        <span className="w-1 h-1 rounded-full bg-primary/70" />
         I can help with
       </p>
 
@@ -127,7 +127,7 @@ export const CapabilitiesCard: React.FC<CapabilitiesCardProps> = ({ onTryExample
                         <button
                           key={ex}
                           onClick={() => onTryExample?.(ex)}
-                          className="text-[10px] px-2.5 py-1 rounded-full border border-amber-300/20 text-amber-300/70 hover:bg-amber-300/10 hover:text-amber-200 transition-colors duration-150"
+                          className="text-[10px] px-2.5 py-1 rounded-full border border-primary/20 text-primary/70 hover:bg-primary/10 hover:text-primary transition-colors duration-150"
                         >
                           {ex}
                         </button>
