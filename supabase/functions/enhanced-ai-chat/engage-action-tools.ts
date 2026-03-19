@@ -581,7 +581,7 @@ export async function executeEngageActionTool(
             } catch (err) {
               console.error('[ENGAGE-ACTION] Email send trigger error:', err);
               // Reset campaign status to draft
-              await supabase.from('engage_email_campaigns')
+              await supabase.from('email_campaigns')
                 .update({ status: 'draft', updated_at: new Date().toISOString() })
                 .eq('id', toolArgs.campaign_id)
                 .eq('workspace_id', workspaceId);
