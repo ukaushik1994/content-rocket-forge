@@ -12,7 +12,6 @@ interface AISummaryCardProps {
   dataSource?: string;
   onFeedback?: (helpful: boolean) => void;
   className?: string;
-  embedded?: boolean;
 }
 
 export const AISummaryCard: React.FC<AISummaryCardProps> = ({
@@ -22,8 +21,7 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
   timeframe = 'Last 30 days',
   dataSource,
   onFeedback,
-  className,
-  embedded = false
+  className
 }) => {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean | null>(null);
   
@@ -62,34 +60,16 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
   if (!summary) return null;
 
   return (
-    <div className={cn(
-      embedded ? "pt-4 mt-4 border-t border-border/10" : "glass-card p-5 relative overflow-hidden",
-      className
-    )}
-      style={!embedded ? { borderLeft: '2px solid rgba(139,92,246,0.3)' } : undefined}
-    >
-      {!embedded && (
-        <div
-          className="absolute top-0 right-0 w-24 h-24 pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)',
-          }}
-        />
-      )}
-      <div className="flex items-start gap-3 relative">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(139,92,246,0.1)' }}>
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-        </div>
+    <div className={cn("glass-card p-4", className)}>
+      <div className="flex items-start gap-3">
+        <Sparkles className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <p className={cn(
-            "leading-relaxed text-foreground/75",
-            embedded ? "text-base" : "text-sm"
-          )}>{summary}</p>
+          <p className="text-sm leading-relaxed text-foreground/70">{summary}</p>
         </div>
       </div>
 
       {onFeedback && (
-        <div className="flex items-center gap-1 mt-3 ml-10">
+        <div className="flex items-center gap-1 mt-3 ml-7">
           <AnimatePresence mode="wait">
             {feedbackSubmitted !== null ? (
               <motion.div key="thanks" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 text-emerald-500 text-[10px]">

@@ -12,7 +12,6 @@ import { getMetricContext } from '@/hooks/useAnalystEngine';
 import { MiniSparkline } from './MiniSparkline';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ContentWizardSidebar } from './content-wizard/ContentWizardSidebar';
 import { ProposalBrowserSidebar } from './proposal-browser/ProposalBrowserSidebar';
 import { RepositoryPanel } from './panels/RepositoryPanel';
@@ -101,8 +100,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const [isChartLoading, setIsChartLoading] = useState(false);
   const [showAllSessionCharts, setShowAllSessionCharts] = useState(false);
   const [expandedChartIndex, setExpandedChartIndex] = useState<number | null>(null);
-  const [intelligenceTab, setIntelligenceTab] = useState<'charts' | 'platform'>('charts');
-  const [showAllInsights, setShowAllInsights] = useState(false);
   
   const { user } = useAuth();
 
@@ -598,6 +595,18 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const qualityConfig = getQualityConfig(dataInfo.quality);
   const { isMobile, isTablet } = useResponsiveBreakpoint();
 
+  // ─── Delegate to specialized panels ───────────────────────────────────
+  if (visualData?.type === 'content_wizard') {
+    return <ContentWizardSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} solutionId={visualData.solution_id} contentType={visualData.content_type} extractedContext={visualData.extractedContext} />;
+  }
+  if (visualData?.type === 'proposal_browser') {
+    return <ProposalBrowserSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} />;
+  }
+  if (visualData?.type === 'repository') return <RepositoryPanel isOpen={isOpen} onClose={onClose} />;
+  if (visualData?.type === 'approvals') return <ApprovalsPanel isOpen={isOpen} onClose={onClose} />;
+  if (visualData?.type === 'research_intelligence') return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;
+  if (visualData?.type === 'content_repurpose') return <RepurposePanel isOpen={isOpen} onClose={onClose} contentId={visualData.contentId} />;
+
   // ─── Derived analyst data ─────────────────────────────────────────────
   const hasAnalystData = analystState && (
     analystState.insightsFeed.length > 0 || 
@@ -609,6 +618,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   // Merge analyst insights feed with current response insights
   const mergedInsightsFeed = useMemo(() => {
     const allInsights = [...(analystState?.insightsFeed || [])];
+    // Add current response insights if not already present
     for (const insight of insights) {
       const content = typeof insight === 'string' ? insight : insight.content;
       if (!allInsights.some(i => i.content === content)) {
@@ -637,18 +647,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       ? `${analystState!.insightsFeed.length} insights · ${analystState!.topics.length} topics`
       : 'Charts & insights companion';
 
-  // ─── Delegate to specialized panels (after all hooks) ─────────────────
-  if (visualData?.type === 'content_wizard') {
-    return <ContentWizardSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} solutionId={visualData.solution_id} contentType={visualData.content_type} extractedContext={visualData.extractedContext} />;
-  }
-  if (visualData?.type === 'proposal_browser') {
-    return <ProposalBrowserSidebar isOpen={isOpen} onClose={onClose} keyword={visualData.keyword || ''} />;
-  }
-  if (visualData?.type === 'repository') return <RepositoryPanel isOpen={isOpen} onClose={onClose} />;
-  if (visualData?.type === 'approvals') return <ApprovalsPanel isOpen={isOpen} onClose={onClose} />;
-  if (visualData?.type === 'research_intelligence') return <ResearchIntelligencePanel isOpen={isOpen} onClose={onClose} />;
-  if (visualData?.type === 'content_repurpose') return <RepurposePanel isOpen={isOpen} onClose={onClose} contentId={visualData.contentId} />;
-
   // ─── UNIFIED LAYOUT ──────────────────────────────────────────────────
   return (
     <AnimatePresence>
@@ -676,28 +674,19 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 "flex flex-col overflow-hidden"
               )}
             >
-              {/* Ambient top glow */}
-              <div
-                className="absolute top-0 left-0 right-0 h-[200px] pointer-events-none z-0"
-                style={{
-                  background: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.08) 0%, transparent 60%)',
-                }}
-              />
               {/* ─── Header ─────────────────────────────────────────── */}
-              <div className="flex-shrink-0 px-8 py-5 relative z-10">
+              <div className="flex-shrink-0 px-6 py-5 border-b border-border/10">
                 <div className="flex items-start gap-3">
                   <div className="relative flex-shrink-0">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(139,92,246,0.1)' }}>
-                      <BarChart3 className="w-4.5 h-4.5 text-primary" />
-                    </div>
+                    <BarChart3 className="w-5 h-5 text-muted-foreground mt-0.5" />
                     {analystState?.isEnriching && (
-                      <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
+                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 pr-2">
-                    <h2 className="text-lg font-semibold text-foreground truncate">{sidebarTitle}</h2>
+                    <h2 className="text-base font-medium text-foreground truncate">{sidebarTitle}</h2>
                     {sidebarDescription && (
-                      <p className="text-sm text-muted-foreground/70 mt-0.5 line-clamp-2">{sidebarDescription}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{sidebarDescription}</p>
                     )}
                   </div>
                   <Tooltip>
@@ -710,67 +699,55 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </Tooltip>
                 </div>
 
-                {/* Gradient accent line */}
-                <div className="mt-4 h-[2px] rounded-full" style={{ background: 'linear-gradient(90deg, hsl(var(--primary)), rgba(139,92,246,0.1), transparent)' }} />
-
-                {/* Compact metadata row: Source · Timeframe · Quality */}
-                {hasCurrentResponseData && (
-                  <div className="flex items-center gap-1.5 mt-3 text-[11px] text-muted-foreground/50">
-                    <span className="font-medium text-muted-foreground/70">{dataInfo.source}</span>
-                    <span>·</span>
-                    <Select value={selectedTimeframe} onValueChange={(val) => setSelectedTimeframe(val as TimeframeOption)}>
-                      <SelectTrigger className="h-5 text-[11px] border-none bg-transparent w-auto gap-0.5 px-1 py-0 shadow-none text-muted-foreground/50 hover:text-muted-foreground">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border z-50">
-                        <SelectItem value="7d" className="text-xs">7d</SelectItem>
-                        <SelectItem value="30d" className="text-xs">30d</SelectItem>
-                        <SelectItem value="custom" className="text-xs">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <span>·</span>
-                    <span className={cn(qualityConfig.color)}>{qualityConfig.label}</span>
-                    {isTrendLoading && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
-                  </div>
-                )}
-
-                {/* Topic tags: limit to 3 */}
+                {/* Topic tags from analyst engine */}
                 {analystState && analystState.topics.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-3">
-                    {analystState.topics.slice(0, 3).map((topic) => (
+                    {analystState.topics.map((topic) => (
                       <Badge key={topic.name} variant="outline" className="text-[10px] px-2 py-0.5 bg-muted/20 border-border/30 text-muted-foreground">
                         {topic.name}
                         {topic.mentionCount > 1 && <span className="ml-1 text-primary/70">×{topic.mentionCount}</span>}
                       </Badge>
                     ))}
-                    {analystState.topics.length > 3 && (
-                      <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-muted/20 border-border/30 text-muted-foreground/50">
-                        +{analystState.topics.length - 3} more
-                      </Badge>
+                  </div>
+                )}
+
+                {/* Data context badges + timeframe */}
+                {hasCurrentResponseData && (
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+                    <Badge variant="outline" className="text-xs">
+                      <Database className="w-3 h-3 mr-1" />
+                      {dataInfo.source}
+                    </Badge>
+                    {dataInfo.points > 0 && (
+                      <Badge variant="outline" className="text-xs text-muted-foreground">{dataInfo.points} pts</Badge>
                     )}
+                    <Select value={selectedTimeframe} onValueChange={(val) => setSelectedTimeframe(val as TimeframeOption)}>
+                      <SelectTrigger className="h-6 text-xs border-border/50 bg-transparent w-auto gap-1 px-2">
+                        <Clock className="w-3 h-3" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border z-50">
+                        <SelectItem value="7d" className="text-xs">Last 7 days</SelectItem>
+                        <SelectItem value="30d" className="text-xs">Last 30 days</SelectItem>
+                        <SelectItem value="custom" className="text-xs">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Badge variant="outline" className={cn("text-xs", qualityConfig.color)}>{qualityConfig.label}</Badge>
+                    {isTrendLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                   </div>
                 )}
 
                 {/* Goal Progress */}
                 {analystState?.goalProgress && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 glass-card p-4 space-y-2.5">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 glass-card p-2.5 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{analystState.goalProgress.goalName}</span>
-                      <span className="text-sm font-bold text-primary">{analystState.goalProgress.percentage}%</span>
+                      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{analystState.goalProgress.goalName}</span>
+                      <span className="text-[10px] font-semibold text-primary">{analystState.goalProgress.percentage}%</span>
                     </div>
-                    <div className="h-2.5 bg-muted/20 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-700 ease-out"
-                        style={{
-                          width: `${analystState.goalProgress.percentage}%`,
-                          background: 'linear-gradient(90deg, hsl(var(--primary)), rgba(139,92,246,0.6))',
-                          boxShadow: '0 0 12px rgba(139,92,246,0.3)',
-                        }}
-                      />
-                    </div>
+                    <Progress value={analystState.goalProgress.percentage} className="h-1.5" />
                     <div className="flex items-center gap-1.5">
                       <span className={cn(
-                        "text-[9px] px-2 py-0.5 rounded-full font-medium",
+                        "text-[9px] px-1.5 py-0.5 rounded-full",
                         analystState.goalProgress.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
                         analystState.goalProgress.status === 'nearly_done' ? 'bg-blue-500/10 text-blue-500' :
                         analystState.goalProgress.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500' :
@@ -778,124 +755,122 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       )}>
                         {analystState.goalProgress.status.replace('_', ' ')}
                       </span>
-                      <span className="text-[9px] text-muted-foreground/50">Next: {analystState.goalProgress.nextStep}</span>
+                      <span className="text-[9px] text-muted-foreground/60">Next: {analystState.goalProgress.nextStep}</span>
                     </div>
                   </motion.div>
                 )}
               </div>
 
-              {/* ─── Scrollable Content — 5 Hero Sections ──────────── */}
+              {/* ─── Scrollable Content ──────────────────────────────── */}
               <ScrollArea className="flex-1">
-                <div className="px-8 pb-28 space-y-10">
+                <div className="p-6 pb-28 space-y-5">
 
-                  {/* ═══ SECTION 1: HERO HEALTH (health ring + AI summary merged) ═══ */}
-                  {analystState?.healthScore && (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.08 }} className="space-y-0">
-                      <div className="glass-card p-8">
-                        <div className="flex items-center gap-8">
-                          <div
-                            className="relative w-32 h-32 flex-shrink-0"
-                            style={{
-                              filter: `drop-shadow(0 0 30px ${analystState.healthScore.total >= 70 ? 'rgba(16,185,129,0.15)' : analystState.healthScore.total >= 40 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'})`,
-                            }}
-                          >
-                            <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                              <defs>
-                                <linearGradient id="healthRingGradient" x1="0" y1="0" x2="1" y2="1">
-                                  <stop offset="0%" stopColor={analystState.healthScore.total >= 70 ? '#10b981' : analystState.healthScore.total >= 40 ? '#f59e0b' : '#ef4444'} />
-                                  <stop offset="100%" stopColor={analystState.healthScore.total >= 70 ? '#06d6a0' : analystState.healthScore.total >= 40 ? '#fbbf24' : '#f87171'} />
-                                </linearGradient>
-                              </defs>
-                              <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2" opacity={0.15} />
-                              <circle cx="18" cy="18" r="15.5" fill="none"
-                                stroke="url(#healthRingGradient)"
-                                strokeWidth="2.5" strokeLinecap="round"
-                                strokeDasharray={`${analystState.healthScore.total * 0.974} 100`}
-                                className="transition-all duration-1000 ease-out"
-                              />
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <span className="text-2xl font-bold text-foreground">{analystState.healthScore.total}</span>
-                              <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">score</span>
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <div className="flex items-center gap-1.5">
-                              {analystState.healthScore.trend === 'improving' && <TrendIcon className="w-3.5 h-3.5 text-emerald-500" />}
-                              {analystState.healthScore.trend === 'declining' && <TrendIcon className="w-3.5 h-3.5 text-red-500 rotate-180" />}
-                              {analystState.healthScore.trend === 'stable' && <Activity className="w-3.5 h-3.5 text-muted-foreground" />}
-                              <span className="text-sm text-muted-foreground capitalize font-medium">{analystState.healthScore.trend}</span>
-                            </div>
-                            {analystState.healthScore.topCritical && (
-                              <p className="text-[11px] text-amber-500/80">⚡ {analystState.healthScore.topCritical} needs attention</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Score breakdown — always visible */}
-                        <div className="mt-5 pt-4 border-t border-border/10 space-y-2.5">
-                          {analystState.healthScore.factors.map((factor) => (
-                            <button
-                              key={factor.name}
-                              className="w-full flex items-center justify-between gap-3 group hover:bg-[rgba(255,255,255,0.03)] rounded-lg px-2 py-1 -mx-2 transition-colors"
-                              onClick={() => onSendMessage?.(`How can I improve my ${factor.name} score?`)}
-                            >
-                              <span className="text-[11px] text-muted-foreground/70 truncate group-hover:text-foreground/80 transition-colors">{factor.name}</span>
-                              <div className="flex items-center gap-2">
-                                <div className="w-20 h-1.5 bg-muted/20 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full transition-all duration-500"
-                                    style={{
-                                      width: `${(factor.score / factor.maxScore) * 100}%`,
-                                      background: factor.status === 'good' ? 'linear-gradient(90deg, #10b981, #06d6a0)' : factor.status === 'warning' ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #ef4444, #f87171)',
-                                      boxShadow: `0 0 6px ${factor.status === 'good' ? 'rgba(16,185,129,0.3)' : factor.status === 'warning' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                                    }}
-                                  />
-                                </div>
-                                <span className="text-[9px] text-muted-foreground/50 w-8 text-right font-mono">{factor.score}/{factor.maxScore}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Embedded AI Summary */}
-                        {hasCurrentResponseData && hasChartData && (
-                          <AISummaryCard
-                            chartData={chartData}
-                            dataKeys={dataKeys}
-                            title={title}
-                            timeframe={dataInfo.timeframe}
-                            dataSource={dataInfo.source}
-                            embedded={true}
-                            onFeedback={(helpful) => {
-                              console.log('Visualization feedback:', { helpful, title, dataSource: dataInfo.source });
-                            }}
-                          />
+                  {/* 1. CURRENT RESPONSE: Chart/Table (only if current message has data) */}
+                  {hasCurrentResponseData && hasChartData && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <SegmentedControl
+                          options={[
+                            { value: 'chart', label: 'Chart', icon: BarChart3, tooltip: 'View as chart (Tab)' },
+                            { value: 'table', label: 'Table', icon: TableIcon, tooltip: 'View as table (Tab)' }
+                          ]}
+                          value={activeView}
+                          onChange={(v) => setActiveView(v as 'chart' | 'table')}
+                          className="flex-shrink-0"
+                          size="sm"
+                        />
+                        {activeView === 'chart' && (
+                          <PremiumChartTypeSelect value={chartType} onChange={setChartType} className="flex-shrink-0" />
                         )}
+                      </div>
+                      <div className="glass-card p-5">
+                        <AnimatePresence mode="wait">
+                          {activeView === 'chart' ? (
+                            <motion.div key="chart" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                              {renderChart()}
+                            </motion.div>
+                          ) : (
+                            <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="max-h-[400px] overflow-auto">
+                              <DataTable data={chartData} allowEdit={false} allowFilter={true} allowSort={true} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </motion.div>
                   )}
 
-                  {/* If no health score but has chart data, show standalone AI Summary */}
-                  {!analystState?.healthScore && hasCurrentResponseData && hasChartData && (
+                  {/* 2. AI SUMMARY */}
+                  {hasCurrentResponseData && hasChartData && (
                     <AISummaryCard chartData={chartData} dataKeys={dataKeys} title={title} timeframe={dataInfo.timeframe} dataSource={dataInfo.source} onFeedback={(helpful) => {
                       console.log('Visualization feedback:', { helpful, title, dataSource: dataInfo.source });
                     }} />
                   )}
 
-                  {/* ═══ SECTION 2: KEY METRICS ═══ */}
+                  {/* 3. WORKSPACE HEALTH (from analyst engine) */}
+                  {analystState?.healthScore && (
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-3">
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Workspace Health</span>
+                      <div className="glass-card p-6 flex items-center gap-6">
+                        <div className="relative w-24 h-24 flex-shrink-0">
+                          <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" opacity={0.2} />
+                            <circle cx="18" cy="18" r="15.5" fill="none"
+                              stroke={analystState.healthScore.total >= 70 ? 'hsl(142 71% 45%)' : analystState.healthScore.total >= 40 ? 'hsl(38 92% 50%)' : 'hsl(0 84% 60%)'}
+                              strokeWidth="2.5" strokeLinecap="round"
+                              strokeDasharray={`${analystState.healthScore.total * 0.974} 100`}
+                              className="transition-all duration-700 ease-out"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-xl font-bold text-foreground">{analystState.healthScore.total}</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            {analystState.healthScore.trend === 'improving' && <TrendIcon className="w-3 h-3 text-emerald-500" />}
+                            {analystState.healthScore.trend === 'declining' && <TrendIcon className="w-3 h-3 text-red-500 rotate-180" />}
+                            {analystState.healthScore.trend === 'stable' && <Activity className="w-3 h-3 text-muted-foreground" />}
+                            <span className="text-xs text-muted-foreground capitalize">{analystState.healthScore.trend}</span>
+                          </div>
+                          {analystState.healthScore.topCritical && (
+                            <p className="text-[10px] text-amber-500">⚡ {analystState.healthScore.topCritical} needs attention</p>
+                          )}
+                        </div>
+                      </div>
+                      <Collapsible>
+                        <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                          <ChevronDown className="w-3 h-3" />Score breakdown
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-2 space-y-1.5">
+                            {analystState.healthScore.factors.map((factor) => (
+                              <div key={factor.name} className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] text-muted-foreground truncate">{factor.name}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-16 h-1 bg-muted/30 rounded-full overflow-hidden">
+                                    <div className={cn("h-full rounded-full transition-all", factor.status === 'good' ? 'bg-emerald-500' : factor.status === 'warning' ? 'bg-amber-500' : 'bg-red-500')} style={{ width: `${(factor.score / factor.maxScore) * 100}%` }} />
+                                  </div>
+                                  <span className="text-[9px] text-muted-foreground/60 w-7 text-right">{factor.score}/{factor.maxScore}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </motion.div>
+                  )}
+
+                  {/* 4. KEY METRICS — prefer analyst cumulative metrics, fall back to chart-derived */}
                   {(() => {
                     const metricsToShow = (analystState?.cumulativeMetrics && analystState.cumulativeMetrics.length > 0)
                       ? analystState.cumulativeMetrics.slice(0, 4)
                       : metricCards;
                     if (metricsToShow.length === 0) return null;
                     return (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="space-y-4">
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">Key Metrics</span>
-                          </div>
+                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Key Metrics</span>
+                          <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">{dataInfo.timeframe}</Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">
                           {metricsToShow.map((metric: any, idx: number) => (
@@ -910,7 +885,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                               comparisonPeriod={metric.comparisonPeriod || timeframeLabel}
                               target={metric.target}
                               targetLabel={metric.targetLabel}
-                              onClick={onSendMessage ? () => onSendMessage(`Tell me more about ${metric.label || metric.title}`) : undefined}
                             />
                           ))}
                         </div>
@@ -918,245 +892,124 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     );
                   })()}
 
-                  {/* ═══ SECTION 3: INTELLIGENCE (Charts | Platform tabs) ═══ */}
-                  {(hasCurrentResponseData || (analystState && (analystState.platformData.length > 0 || analystState.accumulatedCharts.length > 0))) && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="space-y-4">
-                      <Tabs value={intelligenceTab} onValueChange={(v) => setIntelligenceTab(v as 'charts' | 'platform')} className="w-full">
-                        <TabsList className="w-full bg-muted/20 border border-border/10">
-                          <TabsTrigger value="charts" className="flex-1 text-xs data-[state=active]:bg-background/80">Charts</TabsTrigger>
-                          <TabsTrigger value="platform" className="flex-1 text-xs data-[state=active]:bg-background/80">Platform</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="charts" className="mt-4 space-y-4">
-                          {/* Current response chart */}
-                          {hasCurrentResponseData && hasChartData && (
-                            <>
-                              <div className="flex items-center justify-between">
-                                <SegmentedControl
-                                  options={[
-                                    { value: 'chart', label: 'Chart', icon: BarChart3, tooltip: 'View as chart (Tab)' },
-                                    { value: 'table', label: 'Table', icon: TableIcon, tooltip: 'View as table (Tab)' }
-                                  ]}
-                                  value={activeView}
-                                  onChange={(v) => setActiveView(v as 'chart' | 'table')}
-                                  className="flex-shrink-0"
-                                  size="sm"
-                                />
-                                {activeView === 'chart' && (
-                                  <PremiumChartTypeSelect value={chartType} onChange={setChartType} className="flex-shrink-0" />
+                  {/* 5. PLATFORM STATS (from analyst engine, with sparklines) */}
+                  {analystState && analystState.platformData.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="space-y-2">
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Platform Stats</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {analystState.platformData.map((dp, idx) => {
+                          const context = getMetricContext(dp.label, dp.value, analystState.platformData);
+                          return (
+                            <div key={dp.label} className="glass-card p-3">
+                              <div className="flex items-start justify-between">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
+                                {dp.trendData && dp.trendData.some(v => v > 0) && (
+                                  <MiniSparkline data={dp.trendData} height={16} width={40} trend={dp.trendData[dp.trendData.length - 1] > dp.trendData[0] ? 'up' : dp.trendData[dp.trendData.length - 1] < dp.trendData[0] ? 'down' : 'neutral'} />
                                 )}
                               </div>
-                              <div className="glass-card p-5" style={{ boxShadow: '0 0 40px rgba(139,92,246,0.04)' }}>
-                                <AnimatePresence mode="wait">
-                                  {activeView === 'chart' ? (
-                                    <motion.div key="chart" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                                      {renderChart(chartType, 300)}
-                                    </motion.div>
-                                  ) : (
-                                    <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="max-h-[400px] overflow-auto">
-                                      <DataTable data={chartData} allowEdit={false} allowFilter={true} allowSort={true} />
-                                    </motion.div>
-                                  )}
-                                </AnimatePresence>
-                              </div>
-                            </>
-                          )}
-
-                          {/* Session charts — horizontal scroll strip */}
-                          {analystState && analystState.accumulatedCharts.length > 0 && (
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Session Charts</span>
-                                <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">{analystState.accumulatedCharts.length}</Badge>
-                              </div>
-                              <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin">
-                                {analystState.accumulatedCharts.map((chart, idx) => (
-                                  <div
-                                    key={`session-chart-${idx}`}
-                                    className={cn(
-                                      "glass-card glass-card-hover p-3 cursor-pointer flex-shrink-0",
-                                      expandedChartIndex === idx && "!border-primary/40 !bg-primary/10"
-                                    )}
-                                    style={{ width: '200px' }}
-                                    onClick={() => setExpandedChartIndex(expandedChartIndex === idx ? null : idx)}
-                                  >
-                                    <p className="text-[9px] font-medium text-muted-foreground truncate mb-1.5">{chart.title || `Chart ${idx + 1}`}</p>
-                                    <div className="h-[80px]">
-                                      {(() => {
-                                        const miniData = chart.data || [];
-                                        if (!miniData.length) return <div className="flex items-center justify-center h-full text-[9px] text-muted-foreground/40">No data</div>;
-                                        const miniKeys = chart.categories?.filter((c: string) => c !== 'name') || Object.keys(miniData[0]).filter((k: string) => k !== 'name' && typeof miniData[0][k] === 'number');
-                                        const miniColors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981'];
-                                        return (
-                                          <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={miniData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-                                              {miniKeys.slice(0, 2).map((key: string, kIdx: number) => (
-                                                <Bar key={key} dataKey={key} fill={miniColors[kIdx % miniColors.length]} radius={[2, 2, 0, 0]} />
-                                              ))}
-                                            </BarChart>
-                                          </ResponsiveContainer>
-                                        );
-                                      })()}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                              <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
+                              {context && <p className="text-[9px] text-muted-foreground/60 mt-1 leading-relaxed">{context}</p>}
                             </div>
-                          )}
-                        </TabsContent>
-
-                        <TabsContent value="platform" className="mt-4">
-                          {analystState && analystState.platformData.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-2.5">
-                              {analystState.platformData.map((dp) => {
-                                const context = getMetricContext(dp.label, dp.value, analystState.platformData);
-                                return (
-                                  <button
-                                    key={dp.label}
-                                    className="glass-card glass-card-hover p-4 text-left transition-all"
-                                    onClick={() => onSendMessage?.(`Analyze my ${dp.label} in detail`)}
-                                  >
-                                    <div className="flex items-start justify-between">
-                                      <p className="text-[10px] text-muted-foreground/70 uppercase tracking-wide font-medium">{dp.label}</p>
-                                      {dp.trendData && dp.trendData.some((v: number) => v > 0) && (
-                                        <MiniSparkline data={dp.trendData} height={24} width={56} trend={dp.trendData[dp.trendData.length - 1] > dp.trendData[0] ? 'up' : dp.trendData[dp.trendData.length - 1] < dp.trendData[0] ? 'down' : 'neutral'} />
-                                      )}
-                                    </div>
-                                    <p className="text-2xl font-bold text-foreground mt-1">{dp.value.toLocaleString()}</p>
-                                    {context && <p className="text-[9px] text-muted-foreground/50 mt-1.5 leading-relaxed">{context}</p>}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <div className="text-center py-8 text-sm text-muted-foreground/50">No platform data yet</div>
-                          )}
-                        </TabsContent>
-                      </Tabs>
+                          );
+                        })}
+                      </div>
                     </motion.div>
                   )}
 
-                  {/* ═══ SECTION 4: INSIGHTS & ACTIONS (always visible) ═══ */}
-                  {(mergedInsightsFeed.length > 0 || onSendMessage) && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }} className="space-y-5">
+                  {/* ─── Section Divider ─── */}
+                  {(analystState?.platformData?.length || 0) > 0 && <div className="border-t border-border/10" />}
 
-                      {/* Insights Feed — always visible, top 4 */}
-                      {mergedInsightsFeed.length > 0 && (
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                              <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">Insights</span>
-                              <span className="text-[10px] text-muted-foreground/40">{mergedInsightsFeed.length}</span>
-                            </div>
-                          </div>
-                          <div className="space-y-2.5">
-                            {mergedInsightsFeed.slice(-(showAllInsights ? 12 : 4)).reverse().map((insight: any, idx: number) => {
-                              const config = getInsightConfig(insight.insightType || insight.type);
-                              const InsightIcon = config.icon;
-                              return (
-                                <div
-                                  key={insight.id || idx}
-                                  className="glass-card p-3.5 relative overflow-hidden"
-                                  style={{
-                                    borderLeft: '2px solid',
-                                    borderLeftColor: config.textColor.includes('blue') ? 'rgba(59,130,246,0.4)' : config.textColor.includes('amber') ? 'rgba(245,158,11,0.4)' : config.textColor.includes('emerald') ? 'rgba(16,185,129,0.4)' : config.textColor.includes('cyan') ? 'rgba(6,182,212,0.4)' : 'rgba(245,158,11,0.4)',
-                                  }}
-                                >
-                                  <div className="flex items-start gap-3">
-                                    <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0", config.bgColor)}>
-                                      <InsightIcon className={cn("w-3.5 h-3.5", config.textColor)} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm text-foreground/80 leading-relaxed">{insight.content}</p>
-                                      <div className="flex items-center gap-3 mt-2">
-                                        <span className="text-[9px] text-muted-foreground/40">
-                                          {insight.source === 'platform' ? '📊 Platform' : insight.source === 'web' ? '🌐 Web' : insight.source === 'cross-signal' ? '🔗 Cross-signal' : '🤖 AI'}
-                                        </span>
-                                        {onSendMessage && (
-                                          <button
-                                            onClick={() => onSendMessage(`Tell me more about: ${insight.content}`)}
-                                            className="text-[11px] font-medium text-primary/60 hover:text-primary transition-colors px-2 py-0.5 rounded-md hover:bg-primary/10"
-                                          >
-                                            Explore
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          {mergedInsightsFeed.length > 4 && (
-                            <button
-                              onClick={() => setShowAllInsights(!showAllInsights)}
-                              className="text-[11px] text-primary/50 hover:text-primary transition-colors"
+                  {/* 5.5 SESSION CHARTS DASHBOARD — accumulated charts from conversation */}
+                  {analystState && analystState.accumulatedCharts.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Session Charts</span>
+                        <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">{analystState.accumulatedCharts.length} charts</Badge>
+                      </div>
+                      
+                      {/* If we have a current response chart, show accumulated as mini-grid */}
+                      {hasCurrentResponseData && hasChartData ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {analystState.accumulatedCharts
+                            .slice(0, showAllSessionCharts ? undefined : 4)
+                            .map((chart, idx) => (
+                            <div 
+                              key={`session-chart-${idx}`}
+                              className={cn(
+                                "glass-card glass-card-hover p-2 cursor-pointer",
+                                expandedChartIndex === idx && "!border-primary/40 !bg-primary/10"
+                              )}
+                              onClick={() => setExpandedChartIndex(expandedChartIndex === idx ? null : idx)}
                             >
-                              {showAllInsights ? 'Show less' : `Show all ${mergedInsightsFeed.length} insights`}
+                              <p className="text-[9px] font-medium text-muted-foreground truncate mb-1">{chart.title || `Chart ${idx + 1}`}</p>
+                              <div className="h-[100px]">
+                                {(() => {
+                                  const miniData = chart.data || [];
+                                  if (!miniData.length) return <div className="flex items-center justify-center h-full text-[9px] text-muted-foreground/40">No data</div>;
+                                  const miniKeys = chart.categories?.filter(c => c !== 'name') || Object.keys(miniData[0]).filter(k => k !== 'name' && typeof miniData[0][k] === 'number');
+                                  const miniColors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981'];
+                                  return (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <BarChart data={miniData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+                                        {miniKeys.slice(0, 2).map((key, kIdx) => (
+                                          <Bar key={key} dataKey={key} fill={miniColors[kIdx % miniColors.length]} radius={[2, 2, 0, 0]} />
+                                        ))}
+                                      </BarChart>
+                                    </ResponsiveContainer>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          ))}
+                          {analystState.accumulatedCharts.length > 4 && !showAllSessionCharts && (
+                            <button onClick={() => setShowAllSessionCharts(true)} className="col-span-2 text-[10px] text-primary/60 hover:text-primary transition-colors py-1">
+                              Show all ({analystState.accumulatedCharts.length}) →
                             </button>
                           )}
                         </div>
-                      )}
-
-                      {/* Explore Next pills */}
-                      {onSendMessage && (
-                        <div className="space-y-2.5">
-                          <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/50">Explore Next</span>
-                          <div className="flex flex-wrap gap-2">
-                            {(() => {
-                              const dynamicPrompts: { id: string; label: string; action: string }[] = [];
-                              for (const prompt of deepDivePrompts.slice(0, 2)) {
-                                dynamicPrompts.push({ id: `dd-${prompt.text.slice(0, 10)}`, label: prompt.text, action: prompt.text });
-                              }
-                              if (analystState) {
-                                for (const topic of analystState.topics.slice(0, 2)) {
-                                  if (!dynamicPrompts.some(p => p.label.includes(topic.name))) {
-                                    dynamicPrompts.push({ id: `topic-${topic.name}`, label: `Deep dive: ${topic.name}`, action: `Give me a detailed analysis of my ${topic.name.toLowerCase()} performance` });
-                                  }
-                                }
-                                const warnings = analystState.insightsFeed.filter(i => i.type === 'warning').slice(0, 1);
-                                for (const warning of warnings) {
-                                  dynamicPrompts.push({ id: `warn-${warning.id}`, label: 'Address warning', action: `How can I fix this: ${warning.content}` });
-                                }
-                                for (const action of analystState.suggestedActions.slice(0, 2)) {
-                                  dynamicPrompts.push({ id: action.id, label: action.title, action: action.action || action.title });
-                                }
-                              }
-                              if (dynamicPrompts.length === 0) {
-                                return ['Show content performance', 'Campaign health overview', 'Keyword rankings analysis'].map((prompt, idx) => (
-                                  <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3.5 py-2 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
-                                    {prompt}
-                                  </button>
-                                ));
-                              }
-                              return dynamicPrompts.slice(0, 5).map((prompt) => (
-                                <button key={prompt.id} onClick={() => onSendMessage?.(prompt.action)} className="px-3.5 py-2 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
-                                  {prompt.label}
-                                </button>
-                              ));
-                            })()}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Quick Actions — inline icon row */}
-                      {onSendMessage && hasCurrentResponseData && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/50">Quick Actions</span>
-                          <SidebarActionPanel dataSource={dataInfo.source} onSendMessage={onSendMessage} onClose={onClose} />
+                      ) : (
+                        /* No current response data — show all charts in a stack as the dashboard view */
+                        <div className="space-y-3">
+                          {analystState.accumulatedCharts.map((chart, idx) => (
+                            <div key={`dashboard-chart-${idx}`} className="glass-card p-3">
+                              <p className="text-xs font-medium text-foreground/80 mb-2">{chart.title || `Chart ${idx + 1}`}</p>
+                              <div className="h-[180px]">
+                                {(() => {
+                                  const stackData = chart.data || [];
+                                  if (!stackData.length) return <div className="flex items-center justify-center h-full text-xs text-muted-foreground/40">No data</div>;
+                                  const stackKeys = chart.categories?.filter(c => c !== 'name') || Object.keys(stackData[0]).filter(k => k !== 'name' && typeof stackData[0][k] === 'number');
+                                  const stackColors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'];
+                                  return (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <BarChart data={stackData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+                                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} width={28} />
+                                        <RechartsTooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: 'none', borderRadius: '8px', fontSize: '10px' }} />
+                                        {stackKeys.slice(0, 3).map((key, kIdx) => (
+                                          <Bar key={key} dataKey={key} fill={stackColors[kIdx % stackColors.length]} radius={[4, 4, 0, 0]} />
+                                        ))}
+                                      </BarChart>
+                                    </ResponsiveContainer>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </motion.div>
                   )}
 
-                  {/* ═══ SECTION 5: WEB INTELLIGENCE (only when data exists) ═══ */}
+                  {/* ─── Section Divider ─── */}
+                  {analystState && analystState.accumulatedCharts.length > 0 && <div className="border-t border-border/10" />}
+
+                  {/* 5.7 WEB INTELLIGENCE — web search results from analyst */}
                   {analystState && analystState.webSearchResults.length > 0 && (
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="space-y-3">
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }} className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
-                          <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">Web Intelligence</span>
+                        <div className="flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5 text-cyan-500" />
+                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Web Intelligence</span>
                         </div>
                         <Badge variant="outline" className="text-[9px] text-cyan-500/60 border-cyan-500/20 h-5">{analystState.webSearchResults.length} searches</Badge>
                       </div>
@@ -1164,10 +1017,10 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         {analystState.webSearchResults.map((ws, wsIdx) => (
                           <Collapsible key={`ws-${wsIdx}`}>
                             <CollapsibleTrigger className="w-full">
-                              <div className="glass-card glass-card-hover p-3 cursor-pointer">
+                              <div className="glass-card glass-card-hover p-2.5 cursor-pointer">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <Search className="w-3.5 h-3.5 text-cyan-500 flex-shrink-0" />
+                                    <Search className="w-3 h-3 text-cyan-500 flex-shrink-0" />
                                     <span className="text-xs text-foreground/80 truncate">"{ws.query}"</span>
                                   </div>
                                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -1180,7 +1033,13 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             <CollapsibleContent>
                               <div className="mt-1.5 ml-4 space-y-1.5">
                                 {ws.results.slice(0, 3).map((result, rIdx) => (
-                                  <a key={rIdx} href={result.url} target="_blank" rel="noopener noreferrer" className="block p-2.5 glass-card glass-card-hover group">
+                                  <a
+                                    key={rIdx}
+                                    href={result.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block p-2 glass-card glass-card-hover group"
+                                  >
                                     <div className="flex items-start gap-1.5">
                                       <ExternalLink className="w-3 h-3 text-cyan-500/50 group-hover:text-cyan-500 mt-0.5 flex-shrink-0" />
                                       <div className="min-w-0">
@@ -1204,9 +1063,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </motion.div>
                   )}
 
-                  {/* Web intel prompt when topics suggest it */}
+                  {/* Web intel prompt when topics suggest it but no results yet */}
                   {analystState && analystState.webSearchResults.length === 0 && analystState.topics.some(t => t.category === 'keywords' || t.category === 'competitors') && onSendMessage && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
                       <button onClick={() => onSendMessage('[web-search] Get web intelligence on current topics')} className="w-full p-3 glass-card glass-card-hover text-left">
                         <div className="flex items-center gap-2">
                           <Globe className="w-3.5 h-3.5 text-cyan-500/50" />
@@ -1219,25 +1078,120 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </motion.div>
                   )}
 
-                  {/* Empty state */}
-                  {!hasCurrentResponseData && !hasAnalystData && (
-                    <div className="flex-1 flex items-center justify-center py-20">
-                      <div className="text-center max-w-xs space-y-8">
-                        <div className="relative mx-auto w-20 h-20">
-                          <div
-                            className="absolute inset-0 rounded-2xl animate-pulse"
-                            style={{
-                              background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(6,182,212,0.08) 50%, transparent 70%)',
-                              filter: 'blur(8px)',
-                            }}
-                          />
-                          <div className="relative w-full h-full rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <BarChart3 className="w-9 h-9 text-muted-foreground/50" />
+                  {/* ─── Section Divider ─── */}
+                  <div className="border-t border-border/10" />
+
+                  {/* 6. INSIGHTS FEED (merged: analyst cumulative + current response) */}
+                  {mergedInsightsFeed.length > 0 && (
+                    <Collapsible open={isInsightsExpanded} onOpenChange={setIsInsightsExpanded}>
+                      <CollapsibleTrigger asChild>
+                        <div className="flex items-center justify-between cursor-pointer group py-1">
+                          <div className="flex items-center gap-2">
+                            <Lightbulb className="w-4 h-4 text-muted-foreground" />
+                            <h3 className="text-sm font-medium text-foreground">Insights Feed</h3>
+                            <Badge variant="outline" className="text-xs text-muted-foreground">{mergedInsightsFeed.length}</Badge>
                           </div>
+                          <motion.div animate={{ rotate: isInsightsExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                          </motion.div>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <motion.div className="mt-3 space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+                          {mergedInsightsFeed.slice(-12).reverse().map((insight: any, idx: number) => {
+                            const config = getInsightConfig(insight.insightType || insight.type);
+                            const InsightIcon = config.icon;
+                            return (
+                              <div key={insight.id || idx} className="glass-card p-2.5">
+                                <div className="flex items-start gap-2.5">
+                                  <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", config.bgColor.replace('bg-', 'bg-').replace('/10', ''))} />
+                                  <InsightIcon className={cn("w-3.5 h-3.5 mt-0.5 flex-shrink-0", config.textColor)} />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-foreground/80 leading-relaxed">{insight.content}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-[9px] text-muted-foreground/40">
+                                        {insight.source === 'platform' ? '📊 Platform' : insight.source === 'web' ? '🌐 Web' : insight.source === 'cross-signal' ? '🔗 Cross-signal' : '🤖 AI'}
+                                      </span>
+                                      {onSendMessage && (
+                                        <button onClick={() => onSendMessage(`Tell me more about: ${insight.content}`)} className="text-[9px] text-primary/50 hover:text-primary transition-colors">
+                                          Explore →
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </motion.div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+
+                  {/* 7. EXPLORE NEXT — dynamic prompts from analyst + deep dives */}
+                  {onSendMessage && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-2">
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Explore Next</span>
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          const dynamicPrompts: { id: string; label: string; action: string }[] = [];
+
+                          // From deep dive prompts (current response)
+                          for (const prompt of deepDivePrompts.slice(0, 2)) {
+                            dynamicPrompts.push({ id: `dd-${prompt.text.slice(0, 10)}`, label: prompt.text, action: prompt.text });
+                          }
+
+                          // From analyst topics
+                          if (analystState) {
+                            for (const topic of analystState.topics.slice(0, 2)) {
+                              if (!dynamicPrompts.some(p => p.label.includes(topic.name))) {
+                                dynamicPrompts.push({ id: `topic-${topic.name}`, label: `Deep dive: ${topic.name}`, action: `Give me a detailed analysis of my ${topic.name.toLowerCase()} performance` });
+                              }
+                            }
+                            const warnings = analystState.insightsFeed.filter(i => i.type === 'warning').slice(0, 1);
+                            for (const warning of warnings) {
+                              dynamicPrompts.push({ id: `warn-${warning.id}`, label: 'Address warning', action: `How can I fix this: ${warning.content}` });
+                            }
+                            for (const action of analystState.suggestedActions.slice(0, 2)) {
+                              dynamicPrompts.push({ id: action.id, label: action.title, action: action.action || action.title });
+                            }
+                          }
+
+                          if (dynamicPrompts.length === 0) {
+                            return ['Show content performance', 'Campaign health overview', 'Keyword rankings analysis'].map((prompt, idx) => (
+                              <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                                {prompt}
+                              </button>
+                            ));
+                          }
+
+                          return dynamicPrompts.slice(0, 5).map((prompt) => (
+                            <button key={prompt.id} onClick={() => onSendMessage?.(prompt.action)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                              {prompt.label}
+                            </button>
+                          ));
+                        })()}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* 8. QUICK ACTIONS */}
+                  {onSendMessage && hasCurrentResponseData && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                      <SidebarActionPanel dataSource={dataInfo.source} onSendMessage={onSendMessage} onClose={onClose} />
+                    </motion.div>
+                  )}
+
+                  {/* Empty state — only when nothing at all */}
+                  {!hasCurrentResponseData && !hasAnalystData && (
+                    <div className="flex-1 flex items-center justify-center py-16">
+                      <div className="text-center max-w-xs space-y-6">
+                        <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/30 border border-border/20 flex items-center justify-center">
+                          <BarChart3 className="w-8 h-8 text-muted-foreground/60" />
                         </div>
                         <div className="space-y-2">
-                          <h3 className="text-lg font-semibold text-foreground">Ask about your data</h3>
-                          <p className="text-sm text-muted-foreground/70">
+                          <h3 className="text-lg font-medium text-foreground">Ask about your data</h3>
+                          <p className="text-sm text-muted-foreground">
                             I'll accumulate insights, metrics, and charts as we chat — building a live intelligence feed.
                           </p>
                         </div>
@@ -1249,7 +1203,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         )}
                         <div className="flex flex-wrap justify-center gap-2">
                           {['Show content performance', 'Campaign health overview', 'Keyword rankings analysis', 'Content pipeline status'].map((prompt, idx) => (
-                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-4 py-2 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all duration-200">
+                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
                               {prompt}
                             </button>
                           ))}
@@ -1258,9 +1212,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </div>
                   )}
 
-                  {/* Session summary counter */}
+                  {/* 9. SESSION SUMMARY COUNTER */}
                   {analystState && (analystState.accumulatedCharts.length > 0 || mergedInsightsFeed.length > 0 || analystState.webSearchResults.length > 0) && (
-                    <div className="pt-3">
+                    <div className="border-t border-border/10 pt-3">
                       <p className="text-[9px] text-center text-muted-foreground/40">
                         {[
                           analystState.accumulatedCharts.length > 0 && `${analystState.accumulatedCharts.length} chart${analystState.accumulatedCharts.length > 1 ? 's' : ''}`,
