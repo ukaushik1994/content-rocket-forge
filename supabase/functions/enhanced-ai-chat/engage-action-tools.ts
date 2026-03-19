@@ -12,13 +12,13 @@ async function getUserWorkspaceId(supabase: any, userId: string): Promise<string
   return data?.workspace_id || null;
 }
 
-async function ensureWorkspace(supabase: any, userId: string): Promise<string> {
+async function ensureWorkspace(supabase: any, userId: string): Promise<{ id: string; isNew: boolean }> {
   const existing = await getUserWorkspaceId(supabase, userId);
-  if (existing) return existing;
+  if (existing) return { id: existing, isNew: false };
 
   // Create workspace via RPC
   const { data } = await supabase.rpc('ensure_engage_workspace', { p_user_id: userId });
-  return data;
+  return { id: data, isNew: true };
 }
 
 export const ENGAGE_ACTION_TOOL_DEFINITIONS = [
@@ -377,11 +377,16 @@ export async function executeEngageActionTool(
   console.log(`[ENGAGE-ACTION] ${toolName} | user: ${userId}`);
 
   try {
-    const workspaceId = await ensureWorkspace(supabase, userId);
+    const workspace = await ensureWorkspace(supabase, userId);
+    const workspaceId = workspace.id;
     if (!workspaceId) {
       return { success: false, message: 'Could not find or create Engage workspace.' };
     }
+    
+    // Notify user if workspace was just created
+    const workspaceNotice = workspace.isNew ? '\n\n✅ I\'ve set up your Engage workspace automatically.' : '';
 
+    // Note: workspaceNotice will be appended to the first success message below
     switch (toolName) {
       case 'create_contact': {
         const { data, error } = await supabase.from('engage_contacts').insert({
@@ -394,7 +399,7 @@ export async function executeEngageActionTool(
         }).select('id, email, first_name, last_name, tags, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created contact "${data.email}"`, item: data };
+        return { success: true, message: `Created contact "${data.email}"${workspaceNotice}`, item: data };
       }
 
       case 'update_contact': {
@@ -492,7 +497,7 @@ export async function executeEngageActionTool(
           .select('id, name, subject, status, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created email campaign "${data.name}" (draft)`, item: data };
+        return { success: true, message: `Created email campaign "${data.name}" (draft)${workspaceNotice}`, item: data };
       }
 
       case 'send_email_campaign': {
@@ -559,7 +564,7 @@ export async function executeEngageActionTool(
         }).select('id, name, status, trigger_type, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created journey "${data.name}" (draft)`, item: data };
+        return { success: true, message: `Created journey "${data.name}" (draft)${workspaceNotice}`, item: data };
       }
 
       case 'activate_journey': {
@@ -586,7 +591,7 @@ export async function executeEngageActionTool(
         }).select('id, name, trigger_type, is_active, created_at').single();
 
         if (error) throw error;
-        return { success: true, message: `Created automation "${data.name}" (${data.is_active ? 'active' : 'inactive'})`, item: data };
+        return { success: true, message: `Created automation "${data.name}" (${data.is_active ? 'active' : 'inactive'})${workspaceNotice}`, item: data };
       }
 
       case 'toggle_automation': {
