@@ -399,7 +399,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 </button>
               ))}
             </motion.div>
-
+          )}
           {/* SERP Data Visualization */}
           {message.serpData && typeof message.serpData === 'object' && 'structured' in message.serpData && message.serpData.structured && (
             <motion.div
