@@ -1582,7 +1582,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             </p>
           )}
 
-          <Button variant="outline" onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-1 text-xs">
+          <Button variant="outline" onClick={generateContent} disabled={isGeneratingContent} className="w-full gap-1 text-xs border-white/[0.06] hover:bg-white/[0.04]">
             <Sparkles className="w-3 h-3" /> Regenerate
           </Button>
         </>
