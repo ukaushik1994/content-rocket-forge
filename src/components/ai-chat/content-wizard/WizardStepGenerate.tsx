@@ -1077,7 +1077,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             <Button size="sm" variant="outline" onClick={() => { navigate('/repository'); onClose(); }} className="text-xs gap-1.5 w-full justify-start h-8 border-white/[0.06] hover:bg-white/[0.04]">
               <ExternalLink className="w-3 h-3" /> View in Repository
             </Button>
-            <Button size="sm" variant="default" onClick={handleContinueEditing} className="text-xs gap-1.5 w-full justify-start h-8">
+            <Button size="sm" variant="default" onClick={handleContinueEditing} className="text-xs gap-1.5 w-full justify-start h-8 bg-amber-300/20 hover:bg-amber-300/30 text-amber-300 border border-amber-300/30">
               <PenLine className="w-3 h-3" /> Continue Editing
             </Button>
             {savedStatus === 'draft' && (
