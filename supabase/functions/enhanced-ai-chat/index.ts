@@ -2909,8 +2909,10 @@ Before executing any write tool, run these 5 mental checks:
 BYPASS: If user says "just do it" or similar, skip all checks and execute immediately.`;
     }
 
-    // ===== PHASE 2 FIX 3: End-to-End Workflow Orchestration =====
-    systemPrompt += `\n\n## WORKFLOW PROTOCOL (apply automatically after significant actions)
+    // ===== PHASE 2 FIX 3: End-to-End Workflow Orchestration (conditional) =====
+    const isMultiStep = hasWriteIntent || /then|after that|next|also|and then|workflow|steps|plan/i.test(userQuery);
+    if (isMultiStep) {
+      systemPrompt += `\n\n## WORKFLOW PROTOCOL (apply automatically after significant actions)
 After completing ANY write action (create content, send email, schedule post, etc.), suggest the NEXT logical step:
 - Content created → "Want me to schedule this on the calendar or repurpose it for social?"
 - Email drafted → "Should I assign a segment or send a test first?"
@@ -2918,6 +2920,7 @@ After completing ANY write action (create content, send email, schedule post, et
 - Content published → "Shall I create social posts to promote this?"
 - Calendar item added → "Want me to set up an email campaign for this topic?"
 Keep suggestions to ONE sentence. Don't force workflows — offer them.`;
+    }
 
     // ===== PHASE 2 FIX 7: Real-Time Feedback Loop =====
     if (userMessages.length >= 3) {
