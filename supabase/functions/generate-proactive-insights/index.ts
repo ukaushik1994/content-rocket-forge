@@ -118,6 +118,27 @@ Deno.serve(async (req) => {
         });
       }
 
+      // 5. Missed deadline detection
+      const yesterday = new Date(now.getTime() - 86400000).toISOString().split('T')[0];
+      const { data: missedItems } = await supabase
+        .from('content_calendar')
+        .select('id, title, scheduled_date, status')
+        .eq('user_id', userId)
+        .lt('scheduled_date', yesterday)
+        .in('status', ['planned', 'in_progress']);
+
+      if (missedItems?.length) {
+        recommendations.push({
+          user_id: userId,
+          type: 'missed_deadline',
+          title: `${missedItems.length} content item(s) past deadline`,
+          description: `"${missedItems[0].title}" was due ${missedItems[0].scheduled_date}. ${missedItems.length > 1 ? `Plus ${missedItems.length - 1} more overdue item(s).` : ''} Reschedule or mark as completed.`,
+          action: `Show me my overdue content calendar items and help me reschedule them`,
+          priority: 1,
+          priority_score: 85
+        });
+      }
+
       if (recommendations.length === 0) continue;
 
       // Clear old recommendations for this user, then insert new ones
@@ -132,6 +153,22 @@ Deno.serve(async (req) => {
         console.error(`[PROACTIVE] Failed to insert recs for ${userId}:`, insertError);
       } else {
         totalRecs += recommendations.length;
+      }
+
+      // Fix 8: Auto-resolve stale notifications whose conditions no longer exist
+      if (!staleDrafts?.length) {
+        await supabase.from('dashboard_alerts')
+          .update({ status: 'resolved' })
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .ilike('message', '%stale draft%');
+      }
+      if (calendarItems?.length) {
+        await supabase.from('dashboard_alerts')
+          .update({ status: 'resolved' })
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .ilike('message', '%empty calendar%');
       }
     }
 

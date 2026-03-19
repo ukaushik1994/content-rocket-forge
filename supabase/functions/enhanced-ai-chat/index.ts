@@ -2653,26 +2653,33 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       systemPrompt += `\n\n## ⚠️ DISAMBIGUATION REQUIRED:\n${queryIntent.disambiguationHint}`;
     }
     
-    // ===== Parallelized: Brand voice + User intelligence fetches (TTFT optimization) =====
+    // ===== Parallelized: Brand voice + User intelligence + Standing instructions (TTFT optimization) =====
     let brandVoiceContext = '';
     let userIntelligenceContext = '';
+    let standingInstructionsContext = '';
 
-    const [brandResult, profileResult, apiKeysResult, websiteConnsResult] = await Promise.allSettled([
+    const [brandResult, profileResult, apiKeysResult, websiteConnsResult, instructionsResult] = await Promise.allSettled([
       supabase.from('brand_guidelines')
         .select('tone, brand_personality, brand_values, target_audience, do_use, dont_use')
-        .eq('user_id', userId).maybeSingle(),
-      supabase.from('user_intelligence_profile')
-        .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .maybeSingle(),
-      // Phase 4 Fix 10: Service status check
+      supabase.from('profiles')
+        .select('first_name, last_name, company')
+        .eq('id', user.id)
+        .maybeSingle(),
       supabase.from('api_keys')
         .select('service, is_active')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .eq('is_active', true),
       supabase.from('website_connections')
-        .select('platform, status')
-        .eq('user_id', userId)
+        .select('provider, site_name, site_url, status')
+        .eq('user_id', user.id)
+        .eq('status', 'active'),
+      supabase.from('user_content_instructions')
+        .select('instruction_text, use_case')
+        .eq('user_id', user.id)
+        .order('applied_count', { ascending: false })
+        .limit(5),
     ]);
 
     // Process brand voice result
@@ -2681,6 +2688,8 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       const bParts: string[] = [];
       if (brandData.tone && Array.isArray(brandData.tone) && brandData.tone.length > 0) bParts.push(`Tone: ${brandData.tone.join(', ')}`);
       if (brandData.brand_personality) bParts.push(`Personality: ${brandData.brand_personality}`);
+      if (brandData.brand_values) bParts.push(`Values: ${brandData.brand_values}`);
+      if (brandData.target_audience) bParts.push(`Target Audience: ${brandData.target_audience}`);
       if (brandData.do_use && Array.isArray(brandData.do_use) && brandData.do_use.length > 0) bParts.push(`Preferred phrases: ${brandData.do_use.slice(0, 5).join(', ')}`);
       if (brandData.dont_use && Array.isArray(brandData.dont_use) && brandData.dont_use.length > 0) bParts.push(`Avoid phrases: ${brandData.dont_use.slice(0, 5).join(', ')}`);
       if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE\nWhen generating any content, writing suggestions, or creative output, follow these guidelines:\n${bParts.join('\n')}`;
@@ -2688,8 +2697,15 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       console.warn('[BRAND-VOICE] Failed to fetch brand guidelines (non-blocking):', brandResult.reason);
     }
 
-    // Inject real data context + brand voice
+    // Process standing user instructions
+    if (instructionsResult.status === 'fulfilled' && instructionsResult.value.data?.length) {
+      const instructions = instructionsResult.value.data.map((i: any) => `- ${i.instruction_text}`).join('\n');
+      standingInstructionsContext = `\n\n## STANDING INSTRUCTIONS (user-defined preferences)\n${instructions}\nApply these preferences to all relevant responses.`;
+    }
+
+    // Inject real data context + brand voice + standing instructions
     systemPrompt += brandVoiceContext;
+    systemPrompt += standingInstructionsContext;
 
     // Process user intelligence result
     if (profileResult.status === 'fulfilled' && profileResult.value.data) {
