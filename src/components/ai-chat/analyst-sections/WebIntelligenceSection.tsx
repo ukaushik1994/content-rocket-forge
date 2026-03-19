@@ -31,7 +31,7 @@ export const WebIntelligenceSection: React.FC<Props> = ({ webSearchResults, onSe
                     <span className="text-xs text-foreground/70 truncate">"{ws.query}"</span>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span className="text-[9px] text-muted-foreground/40">{ws.results.length}</span>
+                    <span className="text-[9px] text-muted-foreground/40">{(ws.results || []).length}</span>
                     <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/30" />
                   </div>
                 </div>
