@@ -7,6 +7,7 @@ import { ContextAwareMessageInput } from './ContextAwareMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
 import { DynamicGreeting } from './DynamicGreeting';
+import { GettingStartedChecklist } from './GettingStartedChecklist';
 import { VisualizationSidebar } from './VisualizationSidebar';
 import { ThinkingTextRotator } from './ThinkingTextRotator';
 import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
