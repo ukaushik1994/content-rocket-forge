@@ -1215,11 +1215,11 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             <div className="flex items-center justify-between">
               <Tabs value={editorTab} onValueChange={setEditorTab} className="w-full">
                 <div className="flex items-center justify-between mb-2">
-                  <TabsList className="h-7">
-                    <TabsTrigger value="preview" className="text-[10px] px-2 py-1 h-6 gap-1">
+                  <TabsList className="h-7 bg-white/[0.04] border border-white/[0.06]">
+                    <TabsTrigger value="preview" className="text-[10px] px-2 py-1 h-6 gap-1 data-[state=active]:bg-white/[0.08] data-[state=active]:text-amber-300">
                       <FileText className="w-3 h-3" /> Preview
                     </TabsTrigger>
-                    <TabsTrigger value="write" className="text-[10px] px-2 py-1 h-6 gap-1">
+                    <TabsTrigger value="write" className="text-[10px] px-2 py-1 h-6 gap-1 data-[state=active]:bg-white/[0.08] data-[state=active]:text-amber-300">
                       <PenLine className="w-3 h-3" /> Edit
                     </TabsTrigger>
                   </TabsList>
