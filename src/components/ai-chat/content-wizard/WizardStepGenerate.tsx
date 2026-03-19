@@ -1513,7 +1513,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="secondary" disabled={isSaving || !wizardState.title.trim()} className="gap-1 text-xs">
+                <Button variant="secondary" disabled={isSaving || !wizardState.title.trim()} className="gap-1 text-xs bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08]">
                   <Send className="w-3 h-3" /> Publish <ChevronDown className="w-3 h-3 ml-0.5" />
                 </Button>
               </PopoverTrigger>
