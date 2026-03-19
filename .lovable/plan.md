@@ -1,173 +1,163 @@
 
 
-# Full Platform Audit: Chat-First Vision — Implementation Status
+# Remaining Fixes — Phase-by-Phase Plan
 
-## ✅ Phase 1 — COMPLETE
-- Stripped navbar to: Logo, Calendar icon, Notification bell, User menu
-- Expanded left sidebar with Library / Tools / Engage / Chats sections
-- Deprecated AI Proposals from + menu
-- Content Wizard triggers right panel from sidebar
-
-## ✅ Phase 2 — COMPLETE
-- Repository → right panel (wraps RepositoryTabs + ContentDetailModal)
-- Offerings → right panel (wraps SolutionManager)
-- Approvals → right panel (wraps ContentApprovalView)
-- Contacts → right panel (wraps ContactsList)
-
-## ✅ Phase 3 — COMPLETE
-- Campaigns → right panel (wraps CampaignList + CampaignBreakdownView)
-- Email → right panel (wraps EmailDashboard)
-- Social → right panel (wraps SocialDashboard)
-- Keywords → right panel (wraps KeywordsHero + KeywordsFilters + cards)
-
-## ✅ Phase 4 — COMPLETE
-- Analytics → right panel (wraps AnalyticsOverview with "Full Dashboard" link)
-- Full /analytics page still available for deep-dive
-
-## Standalone Pages (kept intentionally)
-- /engage/journeys/:id → Visual Journey Builder (drag-drop canvas)
-- /engage/automations → Automation rules (complex table + builder)
-- /analytics → Dense dashboard (linked from Analytics panel)
-- /research/calendar → Full editorial calendar (navbar icon)
-
-## Panel Architecture
-All panels use shared `PanelShell.tsx` (glassmorphic slide-in, fixed right, top-16 bottom-24).
-Routing: `ChatHistorySidebar` calls `handlePanel(type)` → `EnhancedChatInterface.onOpenPanel` → `handleSetVisualization({ type })` → `VisualizationSidebar` renders matching panel component.
+After thorough investigation, here is the definitive list of what's still broken, cross-referenced against the codebase AND the migration schemas.
 
 ---
 
-# Bug Fix & Polish Plan — Subpage Output Report (Score: 69% → Target 85%+)
+## Verified Remaining Issues
 
-## Batch 1: Critical UI Bugs ✅ COMPLETE
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | Chat message not appearing | ✅ Already works |
-| 2 | New chat greeting | ✅ Already works |
-| 3 | Microphone button | ✅ Already implemented (VoiceInputHandler) |
-| 4 | Sidebar tooltips | ✅ Already implemented (CollapsedIconButton) |
-| 5 | Campaigns tab spinner | ✅ Fixed — show all campaigns |
-| 6 | Repository delete | Deferred |
-| 7 | Content Wizard 406 | ✅ Fixed — replaced upsert with check-then-insert |
-| 8 | Keywords 400 | ✅ Fixed — metadata->>mainKeyword syntax |
-| 9 | Keywords Published/Draft tabs | ✅ Fixed via #8 |
-| 10 | Campaign count mismatch | Investigate |
+### P0 — Runtime Crashes (Table Name Mismatches)
 
-## Batch 2: Approvals Workflow — ✅ COMPLETE
-- Reject + Request Changes buttons on pending_review cards (with notes dialog)
-- Revert to Draft button on approved/rejected/needs_changes cards
-- Status filter tabs: All / Draft / Pending / Changes / Approved / Rejected
-- Approval notes dialog for approve/reject/request_changes actions (saved to approval_history)
-- Batch approve: checkbox selection + floating bulk action bar
-- AI Analysis placeholder: "Run Analysis" CTA replaces "Not analyzed" text
+The original migration (`20260215195844`) creates tables WITHOUT `engage_` prefix for 4 tables, but the edge function code uses prefixed names:
 
-## Batch 3: Content Wizard & Campaigns Polish — ✅ COMPLETE
-- Cancel button during generation — already implemented (AbortController)
-- Granular progress bar — already implemented (stepped progress)
-- Campaigns validation on empty solution — already implemented
-- Campaigns empty state logic — already implemented
+| Code references | Actual DB table | Affected files |
+|---|---|---|
+| `engage_email_campaigns` | `email_campaigns` | `engage-action-tools.ts`, `engage-intelligence-tool.ts`, `cross-module-tools.ts`, `index.ts`, `tools.ts`, `engage-ai-analytics/index.ts` |
+| `engage_journeys` | `journeys` | `engage-action-tools.ts`, `engage-intelligence-tool.ts`, `index.ts`, `tools.ts`, `engage-ai-analytics/index.ts` |
+| `engage_journey_enrollments` | `journey_enrollments` | `engage-action-tools.ts`, `engage-intelligence-tool.ts` |
+| `engage_journey_steps` | `journey_steps` | `engage-intelligence-tool.ts` |
 
-## Batch 4: API-Ready Scaffolding — ✅ COMPLETE
-- Keywords: Manual keyword entry dialog (keyword, volume, difficulty → unified_keywords table)
-- Keywords: "Connect SERP API" info banner when no volume data
-- Email: Rich text editor — already implemented
-- Contacts: CSV upload — already implemented (drag-drop + FileReader)
-- Social: OAuth placeholder badges — already implemented ("Not linked" + Link Account)
-- Calendar: Week/Day views — already implemented (CalendarView toggle)
-- Journeys: Visual trash icon on node hover (all 9 node types)
-- Repository: Bulk select — already implemented (RepositoryBulkBar)
-- Offerings: Delete confirmation — already implemented (DeleteSolutionDialog)
-- Settings: Password change — already implemented (supabase.auth.updateUser)
+Additionally, `email_campaigns` is missing columns the code tries to insert: `subject`, `body_html`, `segment_id`, `from_name`, `from_email`. And `journeys` is missing `description` and `trigger_type`. And `journey_enrollments` is missing `current_step_index`.
 
-## Batch 5: Analytics & Reporting — ✅ COMPLETE
-- Analytics empty states — already implemented ("Configure API Keys" CTA)
-- Export Report: CSV export (metrics table) + Image export (html2canvas dashboard capture)
+### P1 — Security: Shared Conversation RLS
 
----
+The policy `"Shared conversations accessible by token"` allows any user to `SELECT` all shared conversations. The frontend filters by `share_token` but the DB doesn't enforce it.
 
-# Audit-Driven Fixes (Phase 1 — Critical Bugs)
+### P1 — Missing Cron Jobs
 
-## ✅ 1.1 + 1.2 — AI Chat: "New Chat" Blank Screen + No Visible Message
-- **Root cause**: Duplicate `useEnhancedAIChatDB.tsx` was shadowing `.ts`
-- **Fix**: Deleted the `.tsx` duplicate
+4 edge functions exist but are never scheduled: `engage-journey-processor`, `engage-social-poster`, `process-content-queue`, `engage-job-runner`.
 
-## ✅ 1.7 — Repository: Sanitize HTML in Titles
-- Added DOMPurify sanitization in `ContentCardPreview.tsx`
+### P2 — Value Gaps (verified NOT done)
 
-## ✅ 1.8 — Dashboard Stats Bar: Make Clickable
-- Wrapped stat cards in `onClick` handlers with `useNavigate`
+| # | Item | Status |
+|---|---|---|
+| 1 | Performance-driven topic prioritization (value-logic Fix 14) | Not done |
+| 2 | Smart follow-up suggestions on every AI response (ai-chat-value Fix 2) | Not done — no client-side generator |
+| 3 | Proactive insights on welcome screen (ai-chat-value Fix 6) | Not done |
+| 4 | Quick-apply distribution actions on generated content (ai-chat-value Fix 9) | Not done in edge function return |
+| 5 | Conversation templates from patterns (ai-chat-value Fix 10) | Not done |
+| 6 | PLATFORM_KNOWLEDGE_MODULE not split into light/full (PE Fix 3) | Not done |
+
+### Already Done (confirmed in code)
+- Fix 13 (audience-aware tone) -- DONE
+- Fix 15 (calendar diversity) -- DONE  
+- Fix 5 (format preference) -- DONE
+- Fix 3 (context indicator) -- DONE
+- Fix 12 (SERP value labels) -- DONE
+- Fix 14 (quality check) -- DONE
+- Fix 18 (analyst dynamic prompts) -- DONE
+- PE Fix 1 (intent-gated modules) -- DONE
+- PE Fix 2 (intent-gated tools) -- DONE
+- Email send fire-and-forget -- DONE (already awaits + resets status)
 
 ---
 
-# AI Chat Awareness Gaps — Implementation Tracker
+## Phase 1: Database Schema Fix (Migration)
 
-## ✅ Batch 1: Remove Glossary — COMPLETE
-- Removed `/glossary-builder` route (redirects to /ai-chat)
-- Removed RepositoryHeader "Build Glossary" button
-- Removed `get_glossary_terms` read tool from tools.ts
-- Removed `create_glossary_term` write tool from content-action-tools.ts
-- Removed glossary from query-analyzer.ts intent detection
-- Removed glossary from system prompt capabilities
-- Removed glossary from ContentType union and content type enums
-- Removed glossary from DashboardSummary stats
-- Removed glossary from ContentTypeSelection page
-- DB tables kept (no destructive migration)
+**New migration** to add missing columns and fix table name mismatches. The safest approach: add the missing columns to the existing tables rather than renaming, since the frontend Engage UI components likely use the correct names already.
 
-## ✅ Batch 2: New Write Tools (10 new tools) — COMPLETE
-- Created `proposal-action-tools.ts`: accept_proposal, reject_proposal, create_proposal
-- Created `strategy-action-tools.ts`: accept_recommendation, dismiss_recommendation
-- Added `create_campaign` to cross-module-tools.ts
-- Added `update_social_post`, `schedule_social_post` to engage-action-tools.ts
-- Added `update_email_template` to engage-action-tools.ts
-- Registered all 10 tools in TOOL_DEFINITIONS + executeToolCall routing
-- Added cache invalidation for all new write tools
-- Updated query-analyzer.ts with new intent patterns
-- Updated system prompt with new tool capabilities + usage examples
-- Edge function deployed successfully
+1. Add to `email_campaigns`: `subject text`, `body_html text`, `segment_id uuid`, `from_name text`, `from_email text`
+2. Add to `journeys`: `description text`, `trigger_type text DEFAULT 'manual'`  
+3. Add to `journey_enrollments`: `current_step_index integer DEFAULT 0`
 
-## ✅ Batch 3: Repurpose Content Sidebar — COMPLETE
-- Created `RepurposePanel.tsx` in `src/components/ai-chat/panels/` using PanelShell
-- 3-step flow: content selection → format selection → generated results with copy/download
-- Added `content_repurpose` type check in `VisualizationSidebar.tsx`
-- Imported RepurposePanel alongside other panels
-- Excluded `content_repurpose` from auto-chart-conversion in edge function
-- Updated system prompt to instruct AI to emit `content_repurpose` visualData
-- Content Wizard already has repurpose quick actions (Phase 2C) — verified working
-- Edge function deployed
-
-## ✅ Batch 4: SEO Auto-Scoring — COMPLETE
-- Added inline `calculateBasicSeoScore()` function in content-action-tools.ts
-- Scores based on: content length (25pts), keyword density (25pts), heading structure (20pts), meta tags (15pts), keyword in meta (15pts)
-- Auto-triggers after `create_content_item` — saves seo_score to content_items
-- Auto-triggers after `generate_full_content` — saves seo_score to content_items
-- Content Wizard already saves seo_score on insert (verified)
-- SEO score displayed in Repository via OptimizationBadges and RepositoryDetailView
-- Edge function deployed
-## ✅ Batch 5: Analytics + Brand Voice — COMPLETE
-- Created `brand-analytics-tools.ts` with 3 tools: `get_brand_voice`, `update_brand_voice`, `get_content_performance`
-- `get_brand_voice`: Reads from `brand_guidelines` table (tone, personality, values, do/don't phrases)
-- `update_brand_voice`: Upserts `brand_guidelines` with partial updates (creates with defaults if none exists)
-- `get_content_performance`: Checks `api_keys_metadata` for GA/GSC keys before querying `content_analytics` — returns setup guidance if no keys connected
-- Registered all 3 tools in TOOL_DEFINITIONS, routing, and cache invalidation
-- Updated query-analyzer.ts with `brand_voice` and `content_performance` intent patterns
-- Updated system prompt tool listing (25 read tools) and usage examples
-- Edge function deployed
+**Risk**: Zero — additive column additions, no existing data affected.
 
 ---
 
-# AI Chat Frontend Bug Fixes — 10 Issues, 3 Phases ✅ COMPLETE
+## Phase 2: Table Name Fixes in Edge Functions
 
-## ✅ Phase 1: Critical Functional Bugs
-- **Fix 1 — Error Retry Button:** Added `onRetry` prop to `EnhancedMessageBubble` in `EnhancedChatInterface.tsx` — finds last user message before error and re-sends
-- **Fix 2 — Edit Message Duplication:** Rewrote `editMessage` in `useEnhancedAIChatDB.ts` to invoke SSE inline (no `sendMessage` call) — inserts new AI response at correct position without duplicating user message
-- **Fix 3 — SSE Timeout:** Moved `clearTimeout(timeoutId)` into `finally` block after reader loop completes (both in `sendMessage` and `editMessage`)
+Global find-and-replace across 6 files:
 
-## ✅ Phase 2: Medium Severity Fixes
-- **Fix 4 — open_settings Event:** Changed `{ detail: action.data?.tab }` → `{ detail: { tab: action.data?.tab } }` to match listener expectations
-- **Fix 5 — RateLimitBanner Retry:** Wired to re-send last user message instead of console.log no-op
-- **Fix 6 — setState in useMemo:** Replaced `useState` + `setMessageSearchResults` inside `useMemo` with pure derived `useMemo` value
-- **Fix 7 — Title Truncation:** Smart truncation at last word boundary before 40 chars
+| Find | Replace | Files |
+|---|---|---|
+| `'engage_email_campaigns'` | `'email_campaigns'` | `engage-action-tools.ts`, `engage-intelligence-tool.ts`, `cross-module-tools.ts`, `index.ts`, `engage-ai-analytics/index.ts` |
+| `'engage_journeys'` | `'journeys'` | `engage-action-tools.ts`, `engage-intelligence-tool.ts`, `index.ts`, `engage-ai-analytics/index.ts` |
+| `'engage_journey_enrollments'` | `'journey_enrollments'` | `engage-action-tools.ts`, `engage-intelligence-tool.ts` |
+| `'engage_journey_steps'` | `'journey_steps'` | `engage-intelligence-tool.ts` |
 
-## ✅ Phase 3: Dead Code Cleanup & State Sync
-- **Fix 8 — Deleted Dead Components:** Removed `StreamingMessageBubble.tsx` and `InfiniteScrollMessages.tsx`
-- **Fix 9 — ChatContextBridge Sync:** Added `useEffect` bridge in `AppLayoutInner` to sync `activeConversation` and `messages` from `useSharedAIChatDB` → `ChatContextBridge`
-- **Fix 10 — enhancedAIService:** Already minimal (only workflow helpers) — no further cleanup needed
+Also update string references in `tools.ts` (tool dependency map uses `get_engage_email_campaigns` etc. — these are tool NAMES not table names, so they stay, but the refresh-after list should be checked).
+
+Deploy: `enhanced-ai-chat` and `engage-ai-analytics` edge functions.
+
+**Risk**: Zero — pure string replacement, makes code match actual DB.
+
+---
+
+## Phase 3: Security + Cron Jobs (Migration)
+
+### 3a. Fix shared conversation RLS
+- Drop the broad `"Shared conversations accessible by token"` policy
+- Create `get_shared_conversation(p_token text)` SECURITY DEFINER function
+- Update `SharedConversation.tsx` to use `supabase.rpc('get_shared_conversation', { p_token: shareToken })`
+
+### 3b. Add 4 cron jobs
+SQL migration using `cron.schedule()` and `net.http_post()` for:
+- `engage-social-poster` (every 5 min)
+- `engage-journey-processor` (every 10 min)
+- `process-content-queue` (every 5 min)
+- `engage-job-runner` (every 15 min)
+
+**Risk**: Low — RLS change is a tightening (more secure), cron jobs are new additions.
+
+---
+
+## Phase 4: Remaining Value Features
+
+### 4a. Smart follow-up suggestions (ai-chat-value Fix 2)
+**File**: `EnhancedMessageBubble.tsx`
+- Add `generateFollowUps(content: string): string[]` helper — pattern-matches keywords (blog, SEO, email, campaign, keyword, social) to produce 2-3 contextual follow-up chips
+- Render below message content when no `deepDivePrompts` exist
+- Pure client-side, no API call
+
+### 4b. Proactive insights on welcome screen (ai-chat-value Fix 6)
+**File**: `EnhancedChatInterface.tsx` welcome section
+- On mount with no messages, run 4 non-blocking queries: stale drafts (>14 days), failed queue items, empty calendar next 7 days, pending approvals
+- Show as compact alert badges above the quick actions
+
+### 4c. Quick-apply actions on generated content (ai-chat-value Fix 9)
+**File**: `content-action-tools.ts` `generate_full_content` return
+- Add `actions` array to the return object with: View in Repository, Publish, Send as Email, Share on Social
+- These use existing `ModernActionButtons` rendering in the frontend
+
+### 4d. Performance-driven topic prioritization (value-logic Fix 14)
+**File**: `enhanced-ai-chat/index.ts` in `realDataContext` building
+- Query `content_items` grouped by keyword/topic with avg SEO scores
+- Append top/bottom performing topics to context so AI can prioritize recommendations
+
+### 4e. Conversation templates from patterns (ai-chat-value Fix 10)
+**File**: `EnhancedChatInterface.tsx` welcome section
+- Query last 20 conversation titles, find common verb patterns (e.g., "Write a blog", "Analyze keywords")
+- Show as "Your workflows" chips
+
+### 4f. Split PLATFORM_KNOWLEDGE_MODULE (PE Fix 3)
+**File**: `modules.ts` or wherever PLATFORM_KNOWLEDGE_MODULE is defined
+- Extract lightweight `PLATFORM_BASICS` (~200 tokens) with just page routes
+- Keep full version as `PLATFORM_KNOWLEDGE_MODULE`
+- In `index.ts`, use `PLATFORM_BASICS` by default, full only when `needsPlatformKnowledge` is true
+
+---
+
+## Phase 5: Deploy & Verify
+
+1. Deploy `enhanced-ai-chat` and `engage-ai-analytics` edge functions
+2. Run migrations (schema columns + RLS fix + cron jobs)
+3. Test: create email campaign, create journey, enroll contacts — all should work without "relation does not exist" errors
+4. Test: shared conversation only accessible with valid token
+5. Test: AI chat welcome screen shows proactive insights
+
+---
+
+## Summary
+
+| Phase | Scope | Risk |
+|---|---|---|
+| 1 | Add missing DB columns (3 tables) | Zero |
+| 2 | Fix 4 table name mismatches in 6 files | Zero |
+| 3 | RLS security fix + 4 cron jobs | Low |
+| 4 | 6 value features (follow-ups, insights, templates, etc.) | Low |
+| 5 | Deploy & verify | None |
+
+Total: 4 crash fixes, 1 security fix, 4 cron jobs, 6 value features across 5 phases.
+
