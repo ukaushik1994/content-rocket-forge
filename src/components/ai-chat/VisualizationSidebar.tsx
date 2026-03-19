@@ -739,7 +739,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                 {/* Goal Progress */}
                 {analystState?.goalProgress && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 p-2.5 rounded-lg bg-muted/15 border border-border/15 space-y-1.5">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 glass-card p-2.5 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{analystState.goalProgress.goalName}</span>
                       <span className="text-[10px] font-semibold text-primary">{analystState.goalProgress.percentage}%</span>
@@ -783,7 +783,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           <PremiumChartTypeSelect value={chartType} onChange={setChartType} className="flex-shrink-0" />
                         )}
                       </div>
-                      <div className="rounded-xl bg-transparent border border-border/20 p-5">
+                      <div className="glass-card p-5">
                         <AnimatePresence mode="wait">
                           {activeView === 'chart' ? (
                             <motion.div key="chart" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
@@ -810,8 +810,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   {analystState?.healthScore && (
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-3">
                       <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Workspace Health</span>
-                      <div className="flex items-center gap-4">
-                        <div className="relative w-16 h-16 flex-shrink-0">
+                      <div className="glass-card p-6 flex items-center gap-6">
+                        <div className="relative w-24 h-24 flex-shrink-0">
                           <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                             <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" opacity={0.2} />
                             <circle cx="18" cy="18" r="15.5" fill="none"
@@ -822,7 +822,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             />
                           </svg>
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-sm font-bold text-foreground">{analystState.healthScore.total}</span>
+                            <span className="text-xl font-bold text-foreground">{analystState.healthScore.total}</span>
                           </div>
                         </div>
                         <div className="flex-1 min-w-0 space-y-1">
@@ -900,7 +900,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         {analystState.platformData.map((dp, idx) => {
                           const context = getMetricContext(dp.label, dp.value, analystState.platformData);
                           return (
-                            <Card key={dp.label} className="p-3 bg-muted/10 border-border/20">
+                            <div key={dp.label} className="glass-card p-3">
                               <div className="flex items-start justify-between">
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
                                 {dp.trendData && dp.trendData.some(v => v > 0) && (
@@ -909,7 +909,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                               </div>
                               <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
                               {context && <p className="text-[9px] text-muted-foreground/60 mt-1 leading-relaxed">{context}</p>}
-                            </Card>
+                            </div>
                           );
                         })}
                       </div>
@@ -933,11 +933,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           {analystState.accumulatedCharts
                             .slice(0, showAllSessionCharts ? undefined : 4)
                             .map((chart, idx) => (
-                            <Card 
+                            <div 
                               key={`session-chart-${idx}`}
                               className={cn(
-                                "p-2 bg-muted/5 border-border/15 cursor-pointer transition-all hover:border-primary/30 hover:bg-primary/5",
-                                expandedChartIndex === idx && "border-primary/40 bg-primary/10"
+                                "glass-card glass-card-hover p-2 cursor-pointer",
+                                expandedChartIndex === idx && "!border-primary/40 !bg-primary/10"
                               )}
                               onClick={() => setExpandedChartIndex(expandedChartIndex === idx ? null : idx)}
                             >
@@ -959,7 +959,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                   );
                                 })()}
                               </div>
-                            </Card>
+                            </div>
                           ))}
                           {analystState.accumulatedCharts.length > 4 && !showAllSessionCharts && (
                             <button onClick={() => setShowAllSessionCharts(true)} className="col-span-2 text-[10px] text-primary/60 hover:text-primary transition-colors py-1">
@@ -971,7 +971,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         /* No current response data — show all charts in a stack as the dashboard view */
                         <div className="space-y-3">
                           {analystState.accumulatedCharts.map((chart, idx) => (
-                            <Card key={`dashboard-chart-${idx}`} className="p-3 bg-muted/5 border-border/15">
+                            <div key={`dashboard-chart-${idx}`} className="glass-card p-3">
                               <p className="text-xs font-medium text-foreground/80 mb-2">{chart.title || `Chart ${idx + 1}`}</p>
                               <div className="h-[180px]">
                                 {(() => {
@@ -993,7 +993,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                   );
                                 })()}
                               </div>
-                            </Card>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -1017,7 +1017,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         {analystState.webSearchResults.map((ws, wsIdx) => (
                           <Collapsible key={`ws-${wsIdx}`}>
                             <CollapsibleTrigger className="w-full">
-                              <Card className="p-2.5 bg-transparent border-border/15 border-l-2 border-l-cyan-500/30 hover:border-l-cyan-500/60 transition-colors cursor-pointer">
+                              <div className="glass-card glass-card-hover p-2.5 cursor-pointer">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2 min-w-0">
                                     <Search className="w-3 h-3 text-cyan-500 flex-shrink-0" />
@@ -1028,7 +1028,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                     <ChevronRight className="w-3 h-3 text-muted-foreground/40" />
                                   </div>
                                 </div>
-                              </Card>
+                              </div>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                               <div className="mt-1.5 ml-4 space-y-1.5">
@@ -1038,7 +1038,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                     href={result.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="block p-2 rounded-lg bg-muted/10 border border-border/10 hover:border-cyan-500/20 hover:bg-cyan-500/5 transition-colors group"
+                                    className="block p-2 glass-card glass-card-hover group"
                                   >
                                     <div className="flex items-start gap-1.5">
                                       <ExternalLink className="w-3 h-3 text-cyan-500/50 group-hover:text-cyan-500 mt-0.5 flex-shrink-0" />
@@ -1056,7 +1056,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         ))}
                       </div>
                       {onSendMessage && (
-                        <button onClick={() => onSendMessage('[web-search] Search for more relevant information')} className="w-full text-[10px] text-cyan-500/60 hover:text-cyan-500 transition-colors py-1.5 border border-dashed border-cyan-500/15 hover:border-cyan-500/30 rounded-lg">
+                        <button onClick={() => onSendMessage('[web-search] Search for more relevant information')} className="w-full text-[10px] text-cyan-500/60 hover:text-cyan-500 transition-colors py-1.5 glass-card rounded-lg text-center">
                           Search more →
                         </button>
                       )}
@@ -1066,7 +1066,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   {/* Web intel prompt when topics suggest it but no results yet */}
                   {analystState && analystState.webSearchResults.length === 0 && analystState.topics.some(t => t.category === 'keywords' || t.category === 'competitors') && onSendMessage && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                      <button onClick={() => onSendMessage('[web-search] Get web intelligence on current topics')} className="w-full p-3 rounded-lg bg-cyan-500/5 border border-dashed border-cyan-500/15 hover:border-cyan-500/30 hover:bg-cyan-500/10 transition-colors text-left">
+                      <button onClick={() => onSendMessage('[web-search] Get web intelligence on current topics')} className="w-full p-3 glass-card glass-card-hover text-left">
                         <div className="flex items-center gap-2">
                           <Globe className="w-3.5 h-3.5 text-cyan-500/50" />
                           <div>
@@ -1102,8 +1102,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             const config = getInsightConfig(insight.insightType || insight.type);
                             const InsightIcon = config.icon;
                             return (
-                              <Card key={insight.id || idx} className={cn("p-2.5 border bg-transparent border-border/15 border-l-2", config.borderColor.replace('border-', 'border-l-'))}>
-                                <div className="flex items-start gap-2">
+                              <div key={insight.id || idx} className="glass-card p-2.5">
+                                <div className="flex items-start gap-2.5">
+                                  <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", config.bgColor.replace('bg-', 'bg-').replace('/10', ''))} />
                                   <InsightIcon className={cn("w-3.5 h-3.5 mt-0.5 flex-shrink-0", config.textColor)} />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs text-foreground/80 leading-relaxed">{insight.content}</p>
@@ -1119,7 +1120,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                     </div>
                                   </div>
                                 </div>
-                              </Card>
+                              </div>
                             );
                           })}
                         </motion.div>
@@ -1158,14 +1159,14 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                           if (dynamicPrompts.length === 0) {
                             return ['Show content performance', 'Campaign health overview', 'Keyword rankings analysis'].map((prompt, idx) => (
-                              <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                              <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
                                 {prompt}
                               </button>
                             ));
                           }
 
                           return dynamicPrompts.slice(0, 5).map((prompt) => (
-                            <button key={prompt.id} onClick={() => onSendMessage?.(prompt.action)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                            <button key={prompt.id} onClick={() => onSendMessage?.(prompt.action)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
                               {prompt.label}
                             </button>
                           ));
@@ -1202,7 +1203,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         )}
                         <div className="flex flex-wrap justify-center gap-2">
                           {['Show content performance', 'Campaign health overview', 'Keyword rankings analysis', 'Content pipeline status'].map((prompt, idx) => (
-                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/20 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
                               {prompt}
                             </button>
                           ))}

@@ -66,7 +66,6 @@ export const SidebarActionPanel: React.FC<SidebarActionPanelProps> = ({
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   const actions = useMemo(() => {
-    // Match data source to action config
     const key = Object.keys(ACTION_CONFIGS).find(k => 
       dataSource.toLowerCase().includes(k.toLowerCase()) ||
       k.toLowerCase().includes(dataSource.toLowerCase())
@@ -88,17 +87,14 @@ export const SidebarActionPanel: React.FC<SidebarActionPanelProps> = ({
             <h3 className="text-sm font-medium text-foreground">Quick Actions</h3>
             <Badge variant="outline" className="text-xs text-muted-foreground">{actions.length}</Badge>
           </div>
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
+          <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
             <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
           </motion.div>
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <motion.div 
-          className="mt-3 grid grid-cols-2 gap-2"
+          className="mt-3 glass-card p-3 grid grid-cols-2 gap-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -113,12 +109,12 @@ export const SidebarActionPanel: React.FC<SidebarActionPanelProps> = ({
                 transition={{ delay: idx * 0.05 }}
               >
                 <Button
-                  variant={action.variant === 'destructive' ? 'destructive' : 'outline'}
+                  variant={action.variant === 'destructive' ? 'destructive' : 'ghost'}
                   size="sm"
                   onClick={() => handleAction(action)}
                   className={cn(
                     "w-full h-9 text-xs gap-1.5 justify-start",
-                    action.variant !== 'destructive' && "border-border/20 hover:border-border/40 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+                    action.variant !== 'destructive' && "text-muted-foreground hover:text-foreground hover:bg-[rgba(255,255,255,0.06)]"
                   )}
                 >
                   <Icon className="w-3.5 h-3.5 flex-shrink-0" />
