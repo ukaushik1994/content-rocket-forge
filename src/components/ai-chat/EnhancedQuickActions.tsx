@@ -29,13 +29,10 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
   };
 
   return (
-    <motion.div
-      className="grid grid-cols-2 gap-1 w-full max-w-md"
+    <div
+      className="flex flex-col gap-0.5 w-full"
       role="group"
       aria-label="Quick actions"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.3, duration: 0.4 }}
     >
       {suggestions.map((item, index) => (
         <motion.button
