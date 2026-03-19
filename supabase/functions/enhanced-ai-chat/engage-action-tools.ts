@@ -602,7 +602,7 @@ export async function executeEngageActionTool(
       }
 
       case 'create_journey': {
-        const { data, error } = await supabase.from('engage_journeys').insert({
+        const { data, error } = await supabase.from('journeys').insert({
           workspace_id: workspaceId,
           name: toolArgs.name,
           description: toolArgs.description || '',
