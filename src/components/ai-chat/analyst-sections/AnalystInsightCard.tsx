@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronRight } from 'lucide-react';
+import { ArrowRight, AlertTriangle, Sparkles, TrendingUp, Info } from 'lucide-react';
 
 interface AnalystInsightCardProps {
   title: string;
@@ -9,12 +9,20 @@ interface AnalystInsightCardProps {
   onExplore?: () => void;
 }
 
-const dotColorMap = {
-  green: 'bg-emerald-400',
-  amber: 'bg-amber-400',
-  red: 'bg-red-400',
-  blue: 'bg-blue-400',
-  purple: 'bg-primary',
+const iconMap = {
+  red: AlertTriangle,
+  amber: AlertTriangle,
+  green: Sparkles,
+  blue: TrendingUp,
+  purple: Info,
+};
+
+const iconColorMap = {
+  green: 'text-emerald-400/70',
+  amber: 'text-amber-300/70',
+  red: 'text-rose-300/70',
+  blue: 'text-amber-300/70',
+  purple: 'text-muted-foreground/60',
 };
 
 export const AnalystInsightCard: React.FC<AnalystInsightCardProps> = ({
@@ -23,23 +31,27 @@ export const AnalystInsightCard: React.FC<AnalystInsightCardProps> = ({
   dotColor = 'purple',
   onExplore,
 }) => {
+  const Icon = iconMap[dotColor];
+
   return (
     <div
       className={cn(
-        'glass-card p-3 flex items-start gap-3',
+        'glass-card p-4 flex items-start gap-3.5',
         onExplore && 'glass-card-hover cursor-pointer'
       )}
       onClick={onExplore}
     >
-      <div className={cn('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', dotColorMap[dotColor])} />
-      <div className="flex-1 min-w-0">
+      <div className="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+        <Icon className={cn('w-4.5 h-4.5', iconColorMap[dotColor])} />
+      </div>
+      <div className="flex-1 min-w-0 pt-0.5">
         <p className="text-xs font-medium text-foreground/80 leading-relaxed">{title}</p>
         {description && (
-          <p className="text-[10px] text-muted-foreground/60 mt-1 line-clamp-2">{description}</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-1 line-clamp-2">{description}</p>
         )}
       </div>
       {onExplore && (
-        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0 mt-0.5" />
+        <ArrowRight className="w-4 h-4 text-muted-foreground/30 flex-shrink-0 mt-2.5" />
       )}
     </div>
   );

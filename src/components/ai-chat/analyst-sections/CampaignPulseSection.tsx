@@ -13,16 +13,14 @@ export const CampaignPulseSection: React.FC<Props> = ({ platformData, onSendMess
   const campaignMetrics = platformData.filter(d => d.category === 'campaigns');
   if (campaignMetrics.length === 0) return null;
 
-  const total = campaignMetrics.reduce((sum, m) => sum + m.value, 0);
-
   return (
     <AnalystSectionWrapper
       number="06"
       label="Campaign Pulse"
-      headline={<>Campaigns are <span className="text-emerald-400">in motion</span></>}
+      headline={<>Campaigns are <span className="text-emerald-400/80">in motion</span></>}
       delay={0.22}
     >
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-3">
         {campaignMetrics.slice(0, 4).map((metric) => (
           <AnalystDataCard
             key={metric.label}

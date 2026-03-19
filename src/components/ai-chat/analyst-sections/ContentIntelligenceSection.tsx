@@ -13,8 +13,8 @@ export const ContentIntelligenceSection: React.FC<Props> = ({ platformData, onSe
   if (contentMetrics.length === 0) return null;
 
   return (
-    <AnalystSectionWrapper number="04" label="Content Intelligence" headline={<>Your content pipeline is <span className="text-blue-400">active</span></>} delay={0.18}>
-      <div className="grid grid-cols-2 gap-2.5">
+    <AnalystSectionWrapper number="04" label="Content Intelligence" headline={<>Your content pipeline is <span className="text-emerald-400/80">active</span></>} delay={0.18}>
+      <div className="grid grid-cols-2 gap-3">
         {contentMetrics.slice(0, 4).map((metric) => (
           <AnalystDataCard
             key={metric.label}

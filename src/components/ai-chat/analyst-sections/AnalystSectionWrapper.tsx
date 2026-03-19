@@ -27,20 +27,20 @@ export const AnalystSectionWrapper: React.FC<AnalystSectionWrapperProps> = ({
       className={cn('relative', className)}
     >
       {/* Section number + label */}
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">
           {number}. {label}
         </span>
       </div>
 
       {/* Dynamic headline */}
-      <h3 className="text-lg font-semibold text-foreground leading-snug mb-4">
+      <h3 className="text-2xl font-bold text-foreground leading-tight mb-6">
         {headline}
       </h3>
 
       {/* Section content */}
-      <div className="space-y-3">{children}</div>
+      <div className="space-y-4">{children}</div>
     </motion.div>
   );
 };

@@ -16,10 +16,10 @@ export const CompetitivePositionSection: React.FC<Props> = ({ topics, onSendMess
     <AnalystSectionWrapper
       number="08"
       label="Competitive Position"
-      headline={<>Competitor landscape is <span className="text-amber-400">shifting</span></>}
+      headline={<>Competitor landscape is <span className="text-amber-300">shifting</span></>}
       delay={0.26}
     >
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {competitorTopics.map((topic) => (
           <AnalystInsightCard
             key={topic.name}

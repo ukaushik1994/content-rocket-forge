@@ -10,10 +10,10 @@ interface Props {
 
 export const GoalProgressSection: React.FC<Props> = ({ goalProgress, onSendMessage }) => {
   const getHeadline = () => {
-    if (goalProgress.status === 'completed') return <>Goal <span className="text-emerald-400">achieved</span> 🎉</>;
-    if (goalProgress.status === 'nearly_done') return <>Almost <span className="text-blue-400">there</span></>;
-    if (goalProgress.percentage > 30) return <>Making <span className="text-blue-400">progress</span></>;
-    return <>Goal is <span className="text-amber-400">just starting</span></>;
+    if (goalProgress.status === 'completed') return <>Goal <span className="text-emerald-400/80">achieved</span> 🎉</>;
+    if (goalProgress.status === 'nearly_done') return <>Almost <span className="text-emerald-400/80">there</span></>;
+    if (goalProgress.percentage > 30) return <>Making <span className="text-amber-300">progress</span></>;
+    return <>Goal is <span className="text-amber-300">just starting</span></>;
   };
 
   return (
@@ -22,16 +22,16 @@ export const GoalProgressSection: React.FC<Props> = ({ goalProgress, onSendMessa
         label={goalProgress.goalName}
         value={`${goalProgress.percentage}%`}
         progress={goalProgress.percentage}
-        color={goalProgress.percentage >= 80 ? 'green' : goalProgress.percentage >= 40 ? 'blue' : 'amber'}
+        color={goalProgress.percentage >= 80 ? 'green' : 'amber'}
         subtitle={`Next: ${goalProgress.nextStep}`}
         onClick={() => onSendMessage(`What's left to complete my goal: ${goalProgress.goalName}?`)}
       />
       {goalProgress.milestones.length > 0 && (
-        <div className="glass-card p-3 space-y-1.5">
+        <div className="glass-card p-4 space-y-2">
           {goalProgress.milestones.map((m, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <div className={`w-1.5 h-1.5 rounded-full ${m.done ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
-              <span className={`text-[10px] ${m.done ? 'text-muted-foreground line-through' : 'text-foreground/70'}`}>
+            <div key={idx} className="flex items-center gap-2.5">
+              <div className={`w-1.5 h-1.5 rounded-full ${m.done ? 'bg-amber-300/60' : 'bg-muted-foreground/20'}`} />
+              <span className={`text-[11px] ${m.done ? 'text-muted-foreground/50 line-through' : 'text-foreground/60'}`}>
                 {m.label}
               </span>
             </div>

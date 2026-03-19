@@ -11,7 +11,7 @@ export const PreviousSessionSection: React.FC<Props> = ({ onSendMessage }) => {
     <AnalystSectionWrapper
       number="10"
       label="Previous Session"
-      headline={<>Continuing from your <span className="text-blue-400">last session</span></>}
+      headline={<>Continuing from your <span className="text-amber-300">last session</span></>}
       delay={0}
     >
       <NarrativePromptCard
