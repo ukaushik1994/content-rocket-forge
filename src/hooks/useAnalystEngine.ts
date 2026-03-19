@@ -1298,7 +1298,7 @@ export function useAnalystEngine(
             .limit(100);
           if (perfSignals && perfSignals.length > 0) {
             const countMap = new Map<string, number>();
-            for (const s of perfSignals) {
+            for (const s of perfSignals as any[]) {
               countMap.set(s.content_id, (countMap.get(s.content_id) || 0) + 1);
             }
             const sorted = [...countMap.entries()].sort((a, b) => b[1] - a[1]);
