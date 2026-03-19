@@ -94,7 +94,7 @@ export const SidebarActionPanel: React.FC<SidebarActionPanelProps> = ({
       </CollapsibleTrigger>
       <CollapsibleContent>
         <motion.div 
-          className="mt-3 glass-card p-3 grid grid-cols-2 gap-2"
+          className="mt-3 glass-card p-4 grid grid-cols-2 gap-2.5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -113,11 +113,13 @@ export const SidebarActionPanel: React.FC<SidebarActionPanelProps> = ({
                   size="sm"
                   onClick={() => handleAction(action)}
                   className={cn(
-                    "w-full h-9 text-xs gap-1.5 justify-start",
+                    "w-full h-10 text-xs gap-2 justify-start",
                     action.variant !== 'destructive' && "text-muted-foreground hover:text-foreground hover:bg-[rgba(255,255,255,0.06)]"
                   )}
                 >
-                  <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  </div>
                   <span className="truncate">{action.label}</span>
                 </Button>
               </motion.div>

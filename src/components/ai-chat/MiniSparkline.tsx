@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, Area, AreaChart, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
 
 interface MiniSparklineProps {
@@ -16,8 +16,8 @@ interface MiniSparklineProps {
 export const MiniSparkline: React.FC<MiniSparklineProps> = ({
   data,
   color,
-  height = 24,
-  width = 48,
+  height = 28,
+  width = 56,
   className,
   showGradient = true,
   trend = 'neutral'
@@ -26,16 +26,15 @@ export const MiniSparkline: React.FC<MiniSparklineProps> = ({
     return data.map((value, index) => ({ value, index }));
   }, [data]);
 
-  // Determine color based on trend if not provided
   const strokeColor = useMemo(() => {
     if (color) return color;
     switch (trend) {
       case 'up':
-        return 'hsl(var(--emerald-500, 142 71% 45%))';
+        return '#10b981';
       case 'down':
-        return 'hsl(var(--red-500, 0 84% 60%))';
+        return '#ef4444';
       default:
-        return 'hsl(var(--muted-foreground))';
+        return '#8b5cf6';
     }
   }, [color, trend]);
 
@@ -52,26 +51,25 @@ export const MiniSparkline: React.FC<MiniSparklineProps> = ({
       style={{ height, width }}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-          {showGradient && (
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={strokeColor} stopOpacity={0.3} />
-                <stop offset="100%" stopColor={strokeColor} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-          )}
-          <Line
+        <AreaChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={strokeColor} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={strokeColor} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area
             type="monotone"
             dataKey="value"
             stroke={strokeColor}
             strokeWidth={1.5}
+            fill={showGradient ? `url(#${gradientId})` : 'none'}
             dot={false}
             isAnimationActive={true}
             animationDuration={500}
             animationEasing="ease-out"
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </motion.div>
   );

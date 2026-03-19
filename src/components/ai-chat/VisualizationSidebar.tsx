@@ -674,19 +674,28 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 "flex flex-col overflow-hidden"
               )}
             >
+              {/* Ambient top glow */}
+              <div
+                className="absolute top-0 left-0 right-0 h-[200px] pointer-events-none z-0"
+                style={{
+                  background: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.08) 0%, transparent 60%)',
+                }}
+              />
               {/* ─── Header ─────────────────────────────────────────── */}
-              <div className="flex-shrink-0 px-6 py-5 border-b border-border/10">
+              <div className="flex-shrink-0 px-6 py-5 border-b border-border/10 relative z-10">
                 <div className="flex items-start gap-3">
                   <div className="relative flex-shrink-0">
-                    <BarChart3 className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(139,92,246,0.1)' }}>
+                      <BarChart3 className="w-4.5 h-4.5 text-primary" />
+                    </div>
                     {analystState?.isEnriching && (
-                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                      <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 pr-2">
-                    <h2 className="text-base font-medium text-foreground truncate">{sidebarTitle}</h2>
+                    <h2 className="text-lg font-semibold text-foreground truncate">{sidebarTitle}</h2>
                     {sidebarDescription && (
-                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{sidebarDescription}</p>
+                      <p className="text-sm text-muted-foreground/70 mt-0.5 line-clamp-2">{sidebarDescription}</p>
                     )}
                   </div>
                   <Tooltip>
@@ -698,6 +707,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     <TooltipContent side="left" className="text-xs">Close (Esc)</TooltipContent>
                   </Tooltip>
                 </div>
+
+                {/* Gradient accent line below header */}
+                <div className="mt-4 h-[2px] rounded-full" style={{ background: 'linear-gradient(90deg, hsl(var(--primary)), rgba(139,92,246,0.1), transparent)' }} />
 
                 {/* Topic tags from analyst engine */}
                 {analystState && analystState.topics.length > 0 && (
@@ -739,15 +751,24 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                 {/* Goal Progress */}
                 {analystState?.goalProgress && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 glass-card p-2.5 space-y-1.5">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 glass-card p-4 space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{analystState.goalProgress.goalName}</span>
-                      <span className="text-[10px] font-semibold text-primary">{analystState.goalProgress.percentage}%</span>
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{analystState.goalProgress.goalName}</span>
+                      <span className="text-sm font-bold text-primary">{analystState.goalProgress.percentage}%</span>
                     </div>
-                    <Progress value={analystState.goalProgress.percentage} className="h-1.5" />
+                    <div className="h-2.5 bg-muted/20 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700 ease-out"
+                        style={{
+                          width: `${analystState.goalProgress.percentage}%`,
+                          background: 'linear-gradient(90deg, hsl(var(--primary)), rgba(139,92,246,0.6))',
+                          boxShadow: '0 0 12px rgba(139,92,246,0.3)',
+                        }}
+                      />
+                    </div>
                     <div className="flex items-center gap-1.5">
                       <span className={cn(
-                        "text-[9px] px-1.5 py-0.5 rounded-full",
+                        "text-[9px] px-2 py-0.5 rounded-full font-medium",
                         analystState.goalProgress.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
                         analystState.goalProgress.status === 'nearly_done' ? 'bg-blue-500/10 text-blue-500' :
                         analystState.goalProgress.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500' :
@@ -755,7 +776,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       )}>
                         {analystState.goalProgress.status.replace('_', ' ')}
                       </span>
-                      <span className="text-[9px] text-muted-foreground/60">Next: {analystState.goalProgress.nextStep}</span>
+                      <span className="text-[9px] text-muted-foreground/50">Next: {analystState.goalProgress.nextStep}</span>
                     </div>
                   </motion.div>
                 )}
@@ -763,7 +784,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
               {/* ─── Scrollable Content ──────────────────────────────── */}
               <ScrollArea className="flex-1">
-                <div className="p-6 pb-28 space-y-5">
+                <div className="p-6 pb-28 space-y-8">
 
                   {/* 1. CURRENT RESPONSE: Chart/Table (only if current message has data) */}
                   {hasCurrentResponseData && hasChartData && (
@@ -808,49 +829,71 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                   {/* 3. WORKSPACE HEALTH (from analyst engine) */}
                   {analystState?.healthScore && (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-3">
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Workspace Health</span>
-                      <div className="glass-card p-6 flex items-center gap-6">
-                        <div className="relative w-24 h-24 flex-shrink-0">
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">Workspace Health</span>
+                      </div>
+                      <div className="glass-card p-8 flex items-center gap-8">
+                        <div
+                          className="relative w-32 h-32 flex-shrink-0"
+                          style={{
+                            filter: `drop-shadow(0 0 30px ${analystState.healthScore.total >= 70 ? 'rgba(16,185,129,0.15)' : analystState.healthScore.total >= 40 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'})`,
+                          }}
+                        >
                           <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" opacity={0.2} />
+                            <defs>
+                              <linearGradient id="healthRingGradient" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stopColor={analystState.healthScore.total >= 70 ? '#10b981' : analystState.healthScore.total >= 40 ? '#f59e0b' : '#ef4444'} />
+                                <stop offset="100%" stopColor={analystState.healthScore.total >= 70 ? '#06d6a0' : analystState.healthScore.total >= 40 ? '#fbbf24' : '#f87171'} />
+                              </linearGradient>
+                            </defs>
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="2" opacity={0.15} />
                             <circle cx="18" cy="18" r="15.5" fill="none"
-                              stroke={analystState.healthScore.total >= 70 ? 'hsl(142 71% 45%)' : analystState.healthScore.total >= 40 ? 'hsl(38 92% 50%)' : 'hsl(0 84% 60%)'}
+                              stroke="url(#healthRingGradient)"
                               strokeWidth="2.5" strokeLinecap="round"
                               strokeDasharray={`${analystState.healthScore.total * 0.974} 100`}
-                              className="transition-all duration-700 ease-out"
+                              className="transition-all duration-1000 ease-out"
                             />
                           </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-xl font-bold text-foreground">{analystState.healthScore.total}</span>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-2xl font-bold text-foreground">{analystState.healthScore.total}</span>
+                            <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">score</span>
                           </div>
                         </div>
-                        <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex-1 min-w-0 space-y-2">
                           <div className="flex items-center gap-1.5">
-                            {analystState.healthScore.trend === 'improving' && <TrendIcon className="w-3 h-3 text-emerald-500" />}
-                            {analystState.healthScore.trend === 'declining' && <TrendIcon className="w-3 h-3 text-red-500 rotate-180" />}
-                            {analystState.healthScore.trend === 'stable' && <Activity className="w-3 h-3 text-muted-foreground" />}
-                            <span className="text-xs text-muted-foreground capitalize">{analystState.healthScore.trend}</span>
+                            {analystState.healthScore.trend === 'improving' && <TrendIcon className="w-3.5 h-3.5 text-emerald-500" />}
+                            {analystState.healthScore.trend === 'declining' && <TrendIcon className="w-3.5 h-3.5 text-red-500 rotate-180" />}
+                            {analystState.healthScore.trend === 'stable' && <Activity className="w-3.5 h-3.5 text-muted-foreground" />}
+                            <span className="text-sm text-muted-foreground capitalize font-medium">{analystState.healthScore.trend}</span>
                           </div>
                           {analystState.healthScore.topCritical && (
-                            <p className="text-[10px] text-amber-500">⚡ {analystState.healthScore.topCritical} needs attention</p>
+                            <p className="text-[11px] text-amber-500/80">⚡ {analystState.healthScore.topCritical} needs attention</p>
                           )}
                         </div>
                       </div>
                       <Collapsible>
-                        <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                        <CollapsibleTrigger className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
                           <ChevronDown className="w-3 h-3" />Score breakdown
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="mt-2 space-y-1.5">
+                          <div className="mt-3 glass-card p-4 space-y-2.5">
                             {analystState.healthScore.factors.map((factor) => (
-                              <div key={factor.name} className="flex items-center justify-between gap-2">
-                                <span className="text-[10px] text-muted-foreground truncate">{factor.name}</span>
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-16 h-1 bg-muted/30 rounded-full overflow-hidden">
-                                    <div className={cn("h-full rounded-full transition-all", factor.status === 'good' ? 'bg-emerald-500' : factor.status === 'warning' ? 'bg-amber-500' : 'bg-red-500')} style={{ width: `${(factor.score / factor.maxScore) * 100}%` }} />
+                              <div key={factor.name} className="flex items-center justify-between gap-3">
+                                <span className="text-[11px] text-muted-foreground/70 truncate">{factor.name}</span>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-20 h-1.5 bg-muted/20 rounded-full overflow-hidden">
+                                    <div
+                                      className={cn("h-full rounded-full transition-all duration-500")}
+                                      style={{
+                                        width: `${(factor.score / factor.maxScore) * 100}%`,
+                                        background: factor.status === 'good' ? 'linear-gradient(90deg, #10b981, #06d6a0)' : factor.status === 'warning' ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #ef4444, #f87171)',
+                                        boxShadow: `0 0 6px ${factor.status === 'good' ? 'rgba(16,185,129,0.3)' : factor.status === 'warning' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                                      }}
+                                    />
                                   </div>
-                                  <span className="text-[9px] text-muted-foreground/60 w-7 text-right">{factor.score}/{factor.maxScore}</span>
+                                  <span className="text-[9px] text-muted-foreground/50 w-8 text-right font-mono">{factor.score}/{factor.maxScore}</span>
                                 </div>
                               </div>
                             ))}
@@ -867,9 +910,12 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       : metricCards;
                     if (metricsToShow.length === 0) return null;
                     return (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-3">
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Key Metrics</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                            <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">Key Metrics</span>
+                          </div>
                           <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">{dataInfo.timeframe}</Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">
@@ -894,21 +940,24 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                   {/* 5. PLATFORM STATS (from analyst engine, with sparklines) */}
                   {analystState && analystState.platformData.length > 0 && (
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="space-y-2">
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">Platform Stats</span>
-                      <div className="grid grid-cols-2 gap-2">
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                        <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">Platform Stats</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2.5">
                         {analystState.platformData.map((dp, idx) => {
                           const context = getMetricContext(dp.label, dp.value, analystState.platformData);
                           return (
-                            <div key={dp.label} className="glass-card p-3">
+                            <div key={dp.label} className="glass-card p-4">
                               <div className="flex items-start justify-between">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{dp.label}</p>
+                                <p className="text-[10px] text-muted-foreground/70 uppercase tracking-wide font-medium">{dp.label}</p>
                                 {dp.trendData && dp.trendData.some(v => v > 0) && (
-                                  <MiniSparkline data={dp.trendData} height={16} width={40} trend={dp.trendData[dp.trendData.length - 1] > dp.trendData[0] ? 'up' : dp.trendData[dp.trendData.length - 1] < dp.trendData[0] ? 'down' : 'neutral'} />
+                                  <MiniSparkline data={dp.trendData} height={24} width={56} trend={dp.trendData[dp.trendData.length - 1] > dp.trendData[0] ? 'up' : dp.trendData[dp.trendData.length - 1] < dp.trendData[0] ? 'down' : 'neutral'} />
                                 )}
                               </div>
-                              <p className="text-lg font-semibold text-foreground mt-0.5">{dp.value.toLocaleString()}</p>
-                              {context && <p className="text-[9px] text-muted-foreground/60 mt-1 leading-relaxed">{context}</p>}
+                              <p className="text-xl font-bold text-foreground mt-1">{dp.value.toLocaleString()}</p>
+                              {context && <p className="text-[9px] text-muted-foreground/50 mt-1.5 leading-relaxed">{context}</p>}
                             </div>
                           );
                         })}
@@ -1097,18 +1146,26 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <motion.div className="mt-3 space-y-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+                        <motion.div className="mt-3 space-y-2.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
                           {mergedInsightsFeed.slice(-12).reverse().map((insight: any, idx: number) => {
                             const config = getInsightConfig(insight.insightType || insight.type);
                             const InsightIcon = config.icon;
                             return (
-                              <div key={insight.id || idx} className="glass-card p-2.5">
-                                <div className="flex items-start gap-2.5">
-                                  <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", config.bgColor.replace('bg-', 'bg-').replace('/10', ''))} />
-                                  <InsightIcon className={cn("w-3.5 h-3.5 mt-0.5 flex-shrink-0", config.textColor)} />
+                              <div
+                                key={insight.id || idx}
+                                className="glass-card p-3 relative overflow-hidden"
+                                style={{
+                                  borderLeft: `2px solid`,
+                                  borderLeftColor: config.textColor.includes('blue') ? 'rgba(59,130,246,0.4)' : config.textColor.includes('amber') ? 'rgba(245,158,11,0.4)' : config.textColor.includes('emerald') ? 'rgba(16,185,129,0.4)' : config.textColor.includes('cyan') ? 'rgba(6,182,212,0.4)' : 'rgba(245,158,11,0.4)',
+                                }}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0", config.bgColor)}>
+                                    <InsightIcon className={cn("w-3.5 h-3.5", config.textColor)} />
+                                  </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-foreground/80 leading-relaxed">{insight.content}</p>
-                                    <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-sm text-foreground/80 leading-relaxed">{insight.content}</p>
+                                    <div className="flex items-center gap-2 mt-1.5">
                                       <span className="text-[9px] text-muted-foreground/40">
                                         {insight.source === 'platform' ? '📊 Platform' : insight.source === 'web' ? '🌐 Web' : insight.source === 'cross-signal' ? '🔗 Cross-signal' : '🤖 AI'}
                                       </span>
@@ -1184,14 +1241,24 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
                   {/* Empty state — only when nothing at all */}
                   {!hasCurrentResponseData && !hasAnalystData && (
-                    <div className="flex-1 flex items-center justify-center py-16">
-                      <div className="text-center max-w-xs space-y-6">
-                        <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/30 border border-border/20 flex items-center justify-center">
-                          <BarChart3 className="w-8 h-8 text-muted-foreground/60" />
+                    <div className="flex-1 flex items-center justify-center py-20">
+                      <div className="text-center max-w-xs space-y-8">
+                        <div className="relative mx-auto w-20 h-20">
+                          {/* Animated gradient orb */}
+                          <div
+                            className="absolute inset-0 rounded-2xl animate-pulse"
+                            style={{
+                              background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(6,182,212,0.08) 50%, transparent 70%)',
+                              filter: 'blur(8px)',
+                            }}
+                          />
+                          <div className="relative w-full h-full rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <BarChart3 className="w-9 h-9 text-muted-foreground/50" />
+                          </div>
                         </div>
                         <div className="space-y-2">
-                          <h3 className="text-lg font-medium text-foreground">Ask about your data</h3>
-                          <p className="text-sm text-muted-foreground">
+                          <h3 className="text-lg font-semibold text-foreground">Ask about your data</h3>
+                          <p className="text-sm text-muted-foreground/70">
                             I'll accumulate insights, metrics, and charts as we chat — building a live intelligence feed.
                           </p>
                         </div>
@@ -1203,7 +1270,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         )}
                         <div className="flex flex-wrap justify-center gap-2">
                           {['Show content performance', 'Campaign health overview', 'Keyword rankings analysis', 'Content pipeline status'].map((prompt, idx) => (
-                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors">
+                            <button key={idx} onClick={() => onSendMessage?.(prompt)} className="px-4 py-2 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all duration-200">
                               {prompt}
                             </button>
                           ))}
