@@ -257,6 +257,7 @@ export const EnhancedContentFilters: React.FC<EnhancedContentFiltersProps> = ({
               <SelectItem value="date">Sort by Date</SelectItem>
               <SelectItem value="title">Sort by Title</SelectItem>
               <SelectItem value="score">Sort by SEO Score</SelectItem>
+              <SelectItem value="value">Sort by Value Score</SelectItem>
               <SelectItem value="wordCount">Sort by Word Count</SelectItem>
             </SelectContent>
           </Select>
