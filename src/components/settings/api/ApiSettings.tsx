@@ -116,6 +116,9 @@ export const ApiSettings = () => {
         />
       </div>
 
+      {/* Default AI Provider Selector */}
+      <DefaultAiProviderSelector />
+
       {/* Categories */}
       <div className="space-y-6">
         {sortedCategories.map(([category, providers]) => {
