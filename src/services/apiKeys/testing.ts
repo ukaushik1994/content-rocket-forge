@@ -116,7 +116,7 @@ export async function testApiKeyWithCall(provider: ApiProvider, apiKey: string):
     return success;
   } catch (error: any) {
     console.warn(`⚠️ Enhanced API test failed for ${provider}, falling back to basic validation:`, error);
-    return testApiKey(provider, apiKey);
+    return !!(await testApiKey(provider, apiKey));
   }
 }
 
