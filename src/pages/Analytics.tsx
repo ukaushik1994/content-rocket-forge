@@ -297,7 +297,7 @@ const Analytics = () => {
         )}
         {/* Hero Section */}
         <motion.div 
-          className="min-h-[5vh] w-full relative mb-4"
+          className="w-full relative mb-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
