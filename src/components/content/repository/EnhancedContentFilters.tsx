@@ -92,6 +92,18 @@ export const EnhancedContentFilters: React.FC<EnhancedContentFiltersProps> = ({
             </SelectContent>
           </Select>
           
+          <Select value={funnelFilter} onValueChange={setFunnelFilter}>
+            <SelectTrigger className="bg-glass border-white/10 w-[140px]">
+              <SelectValue placeholder="All Stages" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stages</SelectItem>
+              <SelectItem value="tofu">Awareness</SelectItem>
+              <SelectItem value="mofu">Consideration</SelectItem>
+              <SelectItem value="bofu">Decision</SelectItem>
+            </SelectContent>
+          </Select>
+          
           <Popover open={isAdvancedFilterOpen} onOpenChange={setIsAdvancedFilterOpen}>
             <PopoverTrigger asChild>
               <Button 
