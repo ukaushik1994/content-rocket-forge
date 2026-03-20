@@ -183,7 +183,7 @@ export const HistoricalProposalsSection = ({ onReuse, className }: HistoricalPro
                                 <span className="font-medium text-white">
                                   {proposal.estimated_impressions.toLocaleString()}
                                 </span>
-                                <span className="text-white/60"> impressions</span>
+                                <span className="text-white/60"> impressions (est.)</span>
                               </div>
                             </div>
                           )}
