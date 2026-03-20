@@ -77,7 +77,7 @@ async function testApiKeyFunctionality(provider: ApiProvider, skipFallback: bool
     let error: string | undefined;
 
     // Test AI providers
-    if (['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'openrouter'].includes(provider)) {
+    if (['openai', 'anthropic', 'gemini', 'mistral', 'openrouter'].includes(provider)) {
       try {
         const response = await AIServiceController.generate({
           input: 'Test',
