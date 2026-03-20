@@ -86,6 +86,19 @@ export const BRAND_ANALYTICS_TOOL_DEFINITIONS = [
         properties: {}
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_monthly_summary",
+      description: "Generate a monthly activity summary covering content created/published, keywords added, proposals accepted, calendar items completed, and top content by SEO score. Use when user asks 'monthly summary', 'what did I do this month', 'monthly report', or 'month in review'.",
+      parameters: {
+        type: "object",
+        properties: {
+          month: { type: "string", description: "Month in YYYY-MM format (defaults to current month)" }
+        }
+      }
+    }
   }
 ];
 
@@ -95,7 +108,8 @@ export const BRAND_ANALYTICS_TOOL_NAMES = [
   'get_content_performance',
   'auto_detect_brand_voice',
   'get_performance_comparison',
-  'generate_weekly_briefing'
+  'generate_weekly_briefing',
+  'get_monthly_summary'
 ];
 
 export async function executeBrandAnalyticsTool(
