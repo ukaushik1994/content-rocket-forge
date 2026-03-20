@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
-import { AnalyticsHero } from '@/components/analytics/AnalyticsHero';
 import { ContentAnalyticsTab } from '@/components/analytics/ContentAnalyticsTab';
+import { CampaignAnalyticsTab } from '@/components/analytics/CampaignAnalyticsTab';
 import { CampaignAnalyticsTab } from '@/components/analytics/CampaignAnalyticsTab';
 import { DrilldownChart } from '@/components/analytics/DrilldownChart';
 import { ContentDetailModal } from '@/components/analytics/ContentDetailModal';
-import { CustomDateRangePicker } from '@/components/analytics/CustomDateRangePicker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAnalyticsData } from '@/hooks/useAnalyticsData';
-import { DateRange } from 'react-day-picker';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { toast } from 'sonner';
 import { 
@@ -295,248 +293,127 @@ const Analytics = () => {
             </p>
           </motion.div>
         )}
-        {/* Hero Section */}
+        {/* Compact Toolbar */}
         <motion.div 
-          className="w-full relative mb-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
+          className="flex items-center justify-between gap-4 mb-6"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
         >
-          <div className="relative z-10 w-full px-6 pt-4 pb-4">
-            <motion.div 
-              className="text-center mb-6 relative"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
+          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+          
+          <div className="flex items-center gap-1 p-1 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50">
+            {[
+              { key: '24h', label: '24h' },
+              { key: '7days', label: '7d' },
+              { key: '30days', label: '30d' },
+              { key: '90days', label: '90d' }
+            ].map((filter) => (
+              <button
+                key={filter.key}
+                onClick={() => handleTimeRangeChange(filter.key)}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200',
+                  timeRange === filter.key 
+                    ? 'bg-primary text-primary-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/80'
+                )}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExportCSV}
+              disabled={!realMetrics}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
-                animate={{ opacity: [0.5, 0.8, 0.5] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              />
-              
-              <div className="relative">
-                <motion.div 
-                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-4"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium">Real-time Performance Tracking</span>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                </motion.div>
-                
-                <motion.h1 
-                  className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent"
-                >
-                  Analytics Hub
-                  <br />
-                  <span className="text-primary">Performance</span>
-                </motion.h1>
-                
-                <motion.p 
-                  className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed"
-                >
-                  Track content performance, discover insights, and optimize your strategy 
-                  with integrated analytics and Search Console data
-                </motion.p>
-
-                <motion.div className="flex gap-4 justify-center mb-6">
-                  <Button
-                    onClick={refreshAnalytics}
-                    disabled={loading}
-                    size="lg"
-                    className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl"
-                  >
-                    <RefreshCcw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh Data
-                    <TrendingUp className="h-5 w-5 ml-2" />
-                  </Button>
-                  <Button
-                    onClick={handleExportCSV}
-                    disabled={!realMetrics}
-                    size="lg"
-                    variant="outline"
-                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
-                  >
-                    <Download className="h-5 w-5 mr-2" />
-                    Export CSV
-                  </Button>
-                  <Button
-                    onClick={handleExportPDF}
-                    disabled={!realMetrics}
-                    size="lg"
-                    variant="outline"
-                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
-                  >
-                    <FileText className="h-5 w-5 mr-2" />
-                    Export Image
-                  </Button>
-                </motion.div>
-
-                <motion.div 
-                  className="flex justify-center gap-8 mb-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                >
-                  {[
-                    { icon: Eye, label: "Page Views", value: realMetrics?.totalAnalytics.pageViews.toLocaleString() || '0' },
-                    { icon: Users, label: "Sessions", value: realMetrics?.totalAnalytics.sessions.toLocaleString() || '0' },
-                    { icon: TrendingUp, label: "Impressions", value: realMetrics?.totalSearchConsole.impressions.toLocaleString() || '0' }
-                  ].map((stat) => (
-                    <motion.div 
-                      key={stat.label}
-                      className="text-center"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
-                        <stat.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="text-sm font-bold text-foreground">{stat.value}</div>
-                      <div className="text-xs text-muted-foreground">{stat.label}</div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              className="flex justify-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.0 }}
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={refreshAnalytics}
+              disabled={loading}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
             >
-              <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
-                {[
-                  { key: '24h', label: '24 Hours' },
-                  { key: '7days', label: '7 Days' },
-                  { key: '30days', label: '30 Days' },
-                  { key: '90days', label: '90 Days' }
-                ].map((filter) => (
-                  <motion.button
-                    key={filter.key}
-                    onClick={() => handleTimeRangeChange(filter.key)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                      timeRange === filter.key 
-                        ? 'bg-primary text-primary-foreground shadow-lg' 
-                        : 'hover:bg-background/80'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <CalendarRange className="h-4 w-4" />
-                    <span className="font-medium">{filter.label}</span>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
+              <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
+            </Button>
           </div>
         </motion.div>
 
-              {/* Key Metrics Cards - 8 Real Metrics */}
-              <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                {loading ? (
-                  Array.from({ length: 8 }).map((_, index) => (
-                    <Card key={`loading-${index}`} className="bg-background/60 backdrop-blur-xl border-border/50">
-                      <CardContent className="p-6">
-                        <div className="animate-pulse space-y-3">
-                          <div className="w-12 h-12 bg-muted rounded-xl" />
-                          <div className="w-20 h-8 bg-muted rounded" />
-                          <div className="w-24 h-4 bg-muted rounded" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  metricsDisplay.map((metric, index) => (
-                    <motion.div
-                      key={metric.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      className="h-full"
-                    >
-                      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full">
-                        <motion.div
-                          className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
-                        />
-                        
-                        <CardContent className="p-6 relative z-10">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
-                              <metric.icon className="w-6 h-6 text-white" />
-                            </div>
-                            <Badge variant="outline" className="text-xs bg-background/40">
-                              {metric.source}
-                            </Badge>
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <h3 className="text-2xl font-bold text-foreground">{metric.value}</h3>
-                            <p className="text-sm text-muted-foreground">{metric.label}</p>
-                          </div>
-                        </CardContent>
-
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                        />
-                      </Card>
-                    </motion.div>
-                  ))
-                )}
-              </motion.div>
-
-              {/* Search and Filters */}
+        {/* Key Metrics Cards */}
+        <motion.div 
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          {loading ? (
+            Array.from({ length: 8 }).map((_, index) => (
+              <div key={`loading-${index}`} className="p-4 rounded-xl bg-background/60 backdrop-blur-xl border border-border/50">
+                <div className="animate-pulse space-y-2">
+                  <div className="w-8 h-8 bg-muted rounded-lg" />
+                  <div className="w-16 h-6 bg-muted rounded" />
+                  <div className="w-20 h-3 bg-muted rounded" />
+                </div>
+              </div>
+            ))
+          ) : (
+            metricsDisplay.map((metric, index) => (
               <motion.div
-                className="mb-8"
-                initial={{ opacity: 0, y: 20 }}
+                key={metric.id}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ duration: 0.2, delay: index * 0.03 }}
+                whileHover={{ y: -2 }}
+                className="group relative p-4 rounded-xl bg-background/60 backdrop-blur-xl border border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer"
+                onClick={() => handleMetricClick(metric)}
               >
-                <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col lg:flex-row gap-4">
-                      <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search analytics data..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-10 bg-background/40 border-border/50"
-                        />
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Select value={sortBy} onValueChange={setSortBy}>
-                          <SelectTrigger className="w-40 bg-background/40 border-border/50">
-                            <SelectValue placeholder="Sort by" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="views">Most Views</SelectItem>
-                            <SelectItem value="engagement">Engagement</SelectItem>
-                            <SelectItem value="recency">Most Recent</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <Button
-                          variant="outline"
-                          onClick={refreshAnalytics}
-                          className="bg-background/40 border-border/50 hover:bg-background/60"
-                        >
-                          <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                          Refresh
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-2 rounded-lg bg-gradient-to-br ${metric.color}`}>
+                    <metric.icon className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{metric.source}</span>
+                </div>
+                <h3 className="text-xl font-bold text-foreground">{metric.value}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{metric.label}</p>
               </motion.div>
+            ))
+          )}
+        </motion.div>
+
+        {/* Search Row */}
+        <motion.div
+          className="flex items-center gap-3 mb-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search analytics..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-8 text-sm bg-background/40 border-border/50"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-36 h-8 text-sm bg-background/40 border-border/50">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="views">Most Views</SelectItem>
+              <SelectItem value="engagement">Engagement</SelectItem>
+              <SelectItem value="recency">Most Recent</SelectItem>
+            </SelectContent>
+          </Select>
+        </motion.div>
               
               {/* Tabs Section */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
