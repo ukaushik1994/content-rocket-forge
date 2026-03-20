@@ -234,8 +234,8 @@ export const OpenRouterSettings = () => {
       return;
     }
 
-    if (!apiKey.trim()) {
-      toast.error('Please enter an API key');
+    if (!apiKey.trim() || apiKey === '••••••••••••••••') {
+      toast.error('Please enter a new API key');
       return;
     }
 
@@ -248,21 +248,24 @@ export const OpenRouterSettings = () => {
       setIsSaving(true);
       console.log('💾 Saving OpenRouter configuration...');
 
-      const { error } = await supabase
-        .from('user_llm_keys')
-        .upsert({
-          user_id: user.id,
-          provider: 'openrouter',
-          api_key: apiKey,
-          model: selectedModel,
-          is_active: true
-        }, {
-          onConflict: 'user_id,provider'
-        });
+      // Store encrypted key in api_keys table
+      const stored = await ApiKeyService.storeApiKey('openrouter', apiKey.trim());
+      if (!stored) throw new Error('Failed to store API key');
 
-      if (error) throw error;
+      // Activate and set preferred model in ai_service_providers
+      await ApiKeyService.toggleApiKeyStatus('openrouter', true);
+      
+      // Update preferred model
+      if (selectedModel) {
+        await supabase
+          .from('ai_service_providers')
+          .update({ preferred_model: selectedModel })
+          .eq('user_id', user.id)
+          .eq('provider', 'openrouter');
+      }
 
       setKeyExists(true);
+      setApiKey('••••••••••••••••'); // Mask after save
       toast.success('🎉 OpenRouter configuration saved successfully!');
       console.log('✅ OpenRouter configuration saved');
 
@@ -278,13 +281,7 @@ export const OpenRouterSettings = () => {
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase
-        .from('user_llm_keys')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('provider', 'openrouter');
-
-      if (error) throw error;
+      await ApiKeyService.deleteApiKey('openrouter');
 
       setApiKey('');
       setSelectedModel('');
