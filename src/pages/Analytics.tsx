@@ -198,10 +198,10 @@ const Analytics = () => {
     }
     const rows = [
       ['Metric', 'Value', 'Source'],
-      ['Page Views', String(realMetrics.totalAnalytics.pageViews), 'Google Analytics'],
-      ['Sessions', String(realMetrics.totalAnalytics.sessions), 'Google Analytics'],
-      ['Bounce Rate', `${(realMetrics.avgBounceRate * 100).toFixed(1)}%`, 'Google Analytics'],
-      ['Avg Session Duration (s)', String(realMetrics.avgSessionDuration), 'Google Analytics'],
+      ['Page Views', String(realMetrics.totalAnalytics.pageViews), 'Content Analytics'],
+      ['Sessions', String(realMetrics.totalAnalytics.sessions), 'Content Analytics'],
+      ['Bounce Rate', `${(realMetrics.avgBounceRate * 100).toFixed(1)}%`, 'Content Analytics'],
+      ['Avg Session Duration (s)', String(realMetrics.avgSessionDuration), 'Content Analytics'],
       ['Search Impressions', String(realMetrics.totalSearchConsole.impressions), 'Search Console'],
       ['Search Clicks', String(realMetrics.totalSearchConsole.clicks), 'Search Console'],
       ['CTR', `${(realMetrics.avgCTR * 100).toFixed(1)}%`, 'Search Console'],
