@@ -59,7 +59,7 @@ export const EnhancedSerpStatus: React.FC<EnhancedSerpStatusProps> = ({
           serpApi: { ...prev.serpApi, configured: true, testing: true }
         }));
         
-        serpApiWorking = await testApiKey('serp', serpApiKey);
+        serpApiWorking = !!(await testApiKey('serp', serpApiKey));
         console.log('📊 SerpAPI test result:', serpApiWorking);
       } else {
         console.log('❌ No SerpAPI key found in database');
