@@ -92,7 +92,7 @@ async function testApiKeyFunctionality(provider: ApiProvider, skipFallback: bool
       }
     }
     // Test SERP providers
-    else if (['serp', 'serpstack'].includes(provider)) {
+    else if (['serp'].includes(provider)) {
       try {
         const response = await searchKeywords({
           query: 'test',
