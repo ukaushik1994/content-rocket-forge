@@ -328,6 +328,36 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
         required: ["content_id", "version_number"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "improve_content",
+      description: "Improve an existing content item using AI. Snapshots current version, rewrites based on instruction, rescores SEO, and saves. Use when user says 'improve my article', 'make this better', 'enhance content', 'rewrite article', or 'optimize my post'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "UUID of the content item to improve" },
+          instruction: { type: "string", description: "What to improve (e.g., 'add more examples', 'make it more engaging', 'strengthen the introduction', 'add FAQ section')" }
+        },
+        required: ["content_id", "instruction"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "reformat_content",
+      description: "Reformat existing content — change tone, length, or structure without changing the core message. Use when user says 'make it shorter', 'make it more formal', 'add bullet points', 'simplify this', or 'reformat content'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "UUID of the content item to reformat" },
+          format: { type: "string", enum: ["shorter", "longer", "more_casual", "more_formal", "add_bullets", "simplify"], description: "Reformat type" }
+        },
+        required: ["content_id", "format"]
+      }
+    }
   }
 ];
 
@@ -336,7 +366,8 @@ export const CONTENT_ACTION_TOOL_NAMES = [
   'submit_for_review', 'approve_content', 'reject_content',
   'generate_full_content', 'start_content_builder', 'launch_content_wizard',
   'create_calendar_item', 'update_calendar_item', 'delete_calendar_item',
-  'get_content_versions', 'restore_content_version'
+  'get_content_versions', 'restore_content_version', 'compare_content',
+  'improve_content', 'reformat_content'
 ];
 
 export async function executeContentActionTool(
@@ -501,8 +532,7 @@ export async function executeContentActionTool(
         const lengthMap: Record<string, number> = { short: 500, medium: 1000, long: 2000 };
         const targetWords = lengthMap[toolArgs.length || 'medium'];
 
-        // SB-20: Cannibalization prevention — check for existing content targeting the same keyword
-        let cannibalizationWarning = '';
+        // SB-20: Cannibalization prevention — BLOCKING check for existing content targeting the same keyword
         try {
           const { data: existingTargeting } = await supabase.from('content_items')
             .select('id, title, main_keyword, seo_score, status')
@@ -517,9 +547,23 @@ export async function executeContentActionTool(
             const parts: string[] = [];
             if (published.length > 0) parts.push(`${published.length} published article(s): ${published.map((c: any) => `"${c.title}" (SEO: ${c.seo_score || 'N/A'})`).join(', ')}`);
             if (drafts.length > 0) parts.push(`${drafts.length} draft(s): ${drafts.map((c: any) => `"${c.title}"`).join(', ')}`);
-            cannibalizationWarning = `\n\n⚠️ **Cannibalization alert**: You already have ${parts.join(' and ')} targeting "${toolArgs.keyword}". Creating another piece on the same exact keyword can split your ranking potential. Consider a different angle or long-tail variation.`;
+
+            // BLOCK generation — return early with confirmation actions
+            return {
+              success: false,
+              requiresConfirmation: true,
+              message: `⚠️ **Cannibalization blocked**: You already have ${parts.join(' and ')} targeting "${toolArgs.keyword}". Creating another piece on the same exact keyword will split your ranking potential and hurt SEO.\n\nChoose an action below:`,
+              actions: [
+                { id: 'different_angle', label: '✍️ Write a Different Angle', type: 'send_message', message: `Suggest 3 alternative long-tail keywords related to "${toolArgs.keyword}" that I don't already have content for` },
+                { id: 'update_existing', label: '🔄 Improve Existing Article', type: 'send_message', message: `Improve content "${existingTargeting[0].title}" (ID: ${existingTargeting[0].id})` },
+                { id: 'force_generate', label: '⚡ Generate Anyway', type: 'send_message', message: `Force generate a ${toolArgs.content_type || 'blog'} about "${toolArgs.keyword}" with a unique angle` }
+              ]
+            };
           }
         } catch (_) { /* non-blocking */ }
+
+        // No cannibalization — proceed with generation
+        let cannibalizationWarning = '';
 
         // Call ai-proxy for content generation
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -788,10 +832,49 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         const titleMatch = generatedContent.match(/<h[12][^>]*>(.*?)<\/h[12]>/i);
         const autoTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '') : `${toolArgs.keyword} - ${toolArgs.content_type || 'Blog Post'}`;
 
-        // Auto meta title/description (Fix 3)
-        const plainText = generatedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-        const autoMetaTitle = autoTitle.length > 60 ? autoTitle.substring(0, 57) + '...' : autoTitle;
-        const autoMetaDesc = plainText.length > 155 ? plainText.substring(0, 152) + '...' : plainText;
+        // M1-19: AI-generated meta title and description
+        let autoMetaTitle = '';
+        let autoMetaDesc = '';
+        try {
+          const metaProxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              provider: provider.provider,
+              endpoint: 'chat',
+              apiKey: decryptedApiKey,
+              params: {
+                model: provider.preferred_model || 'gpt-4',
+                messages: [
+                  { role: 'system', content: 'You generate SEO meta tags. Respond with ONLY valid JSON: {"metaTitle":"...","metaDescription":"..."}. Meta title: max 60 chars, include primary keyword and a power word. Meta description: max 155 chars, include a hook and call-to-action.' },
+                  { role: 'user', content: `Generate meta title and description for an article titled "${autoTitle}" about "${toolArgs.keyword}". First 200 chars of content: ${generatedContent.replace(/<[^>]+>/g, ' ').substring(0, 200)}` }
+                ],
+                maxTokens: 200
+              }
+            })
+          });
+          if (metaProxyResponse.ok) {
+            const metaResult = await metaProxyResponse.json();
+            const metaText = metaResult.data?.choices?.[0]?.message?.content || metaResult.choices?.[0]?.message?.content || '';
+            try {
+              const parsed = JSON.parse(metaText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
+              if (parsed.metaTitle) autoMetaTitle = parsed.metaTitle.substring(0, 60);
+              if (parsed.metaDescription) autoMetaDesc = parsed.metaDescription.substring(0, 155);
+            } catch (_) { /* fallback below */ }
+          }
+        } catch (_) { /* fallback below */ }
+
+        // Fallback to truncation if AI meta failed
+        if (!autoMetaTitle) {
+          autoMetaTitle = autoTitle.length > 60 ? autoTitle.substring(0, 57) + '...' : autoTitle;
+        }
+        if (!autoMetaDesc) {
+          const plainText = generatedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          autoMetaDesc = plainText.length > 155 ? plainText.substring(0, 152) + '...' : plainText;
+        }
 
         // Save to content_items
         const { data: saved, error: saveError } = await supabase.from('content_items').insert({
@@ -1153,6 +1236,159 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
           success: true,
           comparison,
           summary: `Compared ${comparison.length} items. Highest SEO: "${comparison.sort((a, b) => b.seoScore - a.seoScore)[0].title}" (${comparison[0].seoScore}/100).`
+        };
+      }
+
+      // === M1-1: IMPROVE CONTENT ===
+      case 'improve_content': {
+        // Fetch content
+        const { data: content, error: fetchErr } = await supabase.from('content_items')
+          .select('id, title, content, main_keyword, meta_title, meta_description, seo_score')
+          .eq('id', toolArgs.content_id).eq('user_id', userId).single();
+        if (fetchErr || !content) return { success: false, message: 'Content not found or access denied' };
+
+        // Snapshot current version
+        try {
+          const { data: latestVer } = await supabase.from('content_versions')
+            .select('version_number').eq('content_id', content.id)
+            .order('version_number', { ascending: false }).limit(1).maybeSingle();
+          const nextVersion = (latestVer?.version_number || 0) + 1;
+          await supabase.from('content_versions').insert({
+            content_id: content.id, user_id: userId, content: content.content,
+            title: content.title, meta_title: content.meta_title, meta_description: content.meta_description,
+            seo_score: content.seo_score, version_number: nextVersion,
+            change_source: 'pre_improvement_snapshot', change_description: `Snapshot before AI improvement`
+          });
+        } catch (_) { /* non-blocking */ }
+
+        // Get AI provider
+        const { data: improveProvider } = await supabase.from('ai_service_providers')
+          .select('provider, preferred_model').eq('user_id', userId).eq('status', 'active')
+          .order('priority', { ascending: true }).limit(1).single();
+        if (!improveProvider) return { success: false, message: 'No AI provider configured.' };
+        const improveApiKey = await getApiKey(improveProvider.provider, userId);
+        if (!improveApiKey) return { success: false, message: 'API key not found.' };
+
+        const improveUrl = Deno.env.get('SUPABASE_URL');
+        const improveServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+        const improveResponse = await callAiProxyWithRetry(`${improveUrl}/functions/v1/ai-proxy`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${improveServiceKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: improveProvider.provider, endpoint: 'chat', apiKey: improveApiKey,
+            params: {
+              model: improveProvider.preferred_model || 'gpt-4',
+              messages: [
+                { role: 'system', content: `You are a content editor. Improve the following article based on the user's instruction. Return ONLY the improved HTML content — no commentary, no markdown code fences. Keep the same overall structure and keyword focus ("${content.main_keyword || ''}").` },
+                { role: 'user', content: `Instruction: ${toolArgs.instruction}\n\nOriginal content:\n${content.content}` }
+              ],
+              maxTokens: 4000
+            }
+          })
+        });
+
+        if (!improveResponse.ok) return { success: false, message: 'AI improvement failed. Try again.' };
+        const improveResult = await improveResponse.json();
+        const improvedContent = improveResult.data?.choices?.[0]?.message?.content || improveResult.choices?.[0]?.message?.content || '';
+        if (!improvedContent) return { success: false, message: 'AI returned empty content.' };
+
+        // Rescore
+        const newScore = calculateBasicSeoScore(improvedContent, content.main_keyword || '', content.meta_title, content.meta_description);
+
+        // Save
+        await supabase.from('content_items').update({
+          content: improvedContent, seo_score: newScore, updated_at: new Date().toISOString()
+        }).eq('id', content.id).eq('user_id', userId);
+
+        const scoreDiff = newScore - (content.seo_score || 0);
+        const scoreNote = scoreDiff > 0 ? ` (SEO: ${content.seo_score || 0} → ${newScore}, +${scoreDiff})` : ` (SEO: ${newScore}/100)`;
+
+        return {
+          success: true,
+          message: `Improved "${content.title}"${scoreNote}. Previous version saved — use "show version history" to revert.`,
+          item: { id: content.id, title: content.title, seo_score: newScore },
+          actions: [
+            { id: 'view', label: '📄 View Article', type: 'navigate', route: '/content/repository' },
+            { id: 'improve_more', label: '🔄 Improve Further', type: 'send_message', message: `Improve content "${content.title}" (ID: ${content.id}) further` },
+            { id: 'publish', label: '🚀 Publish', type: 'send_message', message: `Publish content "${content.title}" (ID: ${content.id})` }
+          ]
+        };
+      }
+
+      // === M1-20: REFORMAT CONTENT ===
+      case 'reformat_content': {
+        const { data: rfContent, error: rfErr } = await supabase.from('content_items')
+          .select('id, title, content, main_keyword, meta_title, meta_description, seo_score')
+          .eq('id', toolArgs.content_id).eq('user_id', userId).single();
+        if (rfErr || !rfContent) return { success: false, message: 'Content not found or access denied' };
+
+        // Snapshot
+        try {
+          const { data: latestVer } = await supabase.from('content_versions')
+            .select('version_number').eq('content_id', rfContent.id)
+            .order('version_number', { ascending: false }).limit(1).maybeSingle();
+          const nextVersion = (latestVer?.version_number || 0) + 1;
+          await supabase.from('content_versions').insert({
+            content_id: rfContent.id, user_id: userId, content: rfContent.content,
+            title: rfContent.title, meta_title: rfContent.meta_title, meta_description: rfContent.meta_description,
+            seo_score: rfContent.seo_score, version_number: nextVersion,
+            change_source: 'pre_reformat_snapshot', change_description: `Snapshot before reformat (${toolArgs.format})`
+          });
+        } catch (_) { /* non-blocking */ }
+
+        const formatInstructions: Record<string, string> = {
+          shorter: 'Make this article significantly shorter (about 50% of current length) while keeping all key points and SEO value.',
+          longer: 'Expand this article with more detail, examples, and depth. Add at least 50% more content.',
+          more_casual: 'Rewrite in a conversational, casual tone. Use contractions, shorter sentences, and a friendly voice.',
+          more_formal: 'Rewrite in a formal, professional tone. Use proper grammar, avoid contractions, and maintain authority.',
+          add_bullets: 'Convert key information into bullet points and numbered lists where appropriate. Keep prose for introductions and transitions.',
+          simplify: 'Simplify the language to an 8th-grade reading level. Use shorter words, simpler sentences, and clearer explanations.'
+        };
+
+        const { data: rfProvider } = await supabase.from('ai_service_providers')
+          .select('provider, preferred_model').eq('user_id', userId).eq('status', 'active')
+          .order('priority', { ascending: true }).limit(1).single();
+        if (!rfProvider) return { success: false, message: 'No AI provider configured.' };
+        const rfApiKey = await getApiKey(rfProvider.provider, userId);
+        if (!rfApiKey) return { success: false, message: 'API key not found.' };
+
+        const rfUrl = Deno.env.get('SUPABASE_URL');
+        const rfServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+        const rfResponse = await callAiProxyWithRetry(`${rfUrl}/functions/v1/ai-proxy`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${rfServiceKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: rfProvider.provider, endpoint: 'chat', apiKey: rfApiKey,
+            params: {
+              model: rfProvider.preferred_model || 'gpt-4',
+              messages: [
+                { role: 'system', content: `You are a content editor. Reformat the following article. Return ONLY the reformatted HTML content — no commentary, no code fences. Keep keyword focus ("${rfContent.main_keyword || ''}") and heading structure.` },
+                { role: 'user', content: `${formatInstructions[toolArgs.format] || 'Reformat this content.'}\n\nContent:\n${rfContent.content}` }
+              ],
+              maxTokens: 4000
+            }
+          })
+        });
+
+        if (!rfResponse.ok) return { success: false, message: 'AI reformat failed. Try again.' };
+        const rfResult = await rfResponse.json();
+        const reformattedContent = rfResult.data?.choices?.[0]?.message?.content || rfResult.choices?.[0]?.message?.content || '';
+        if (!reformattedContent) return { success: false, message: 'AI returned empty content.' };
+
+        const rfScore = calculateBasicSeoScore(reformattedContent, rfContent.main_keyword || '', rfContent.meta_title, rfContent.meta_description);
+        await supabase.from('content_items').update({
+          content: reformattedContent, seo_score: rfScore, updated_at: new Date().toISOString()
+        }).eq('id', rfContent.id).eq('user_id', userId);
+
+        const rfScoreDiff = rfScore - (rfContent.seo_score || 0);
+        const rfScoreNote = rfScoreDiff !== 0 ? ` (SEO: ${rfContent.seo_score || 0} → ${rfScore})` : ` (SEO: ${rfScore}/100)`;
+
+        return {
+          success: true,
+          message: `Reformatted "${rfContent.title}" → ${toolArgs.format.replace('_', ' ')}${rfScoreNote}. Previous version saved.`,
+          item: { id: rfContent.id, title: rfContent.title, seo_score: rfScore }
         };
       }
 

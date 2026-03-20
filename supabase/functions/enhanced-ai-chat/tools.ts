@@ -578,6 +578,9 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   // Image generation
   generate_image: [],
   edit_image: [],
+  // Content improvement/reformat
+  improve_content: ['get_content_items', 'get_seo_scores'],
+  reformat_content: ['get_content_items', 'get_seo_scores'],
 };
 
 /**
@@ -637,7 +640,7 @@ export async function executeToolCall(
   
   // Tiered timeouts based on tool type
   const getToolTimeout = (name: string): number => {
-    const AI_GENERATION_TOOLS = ['generate_full_content', 'create_topic_cluster', 'repurpose_for_social', 'trigger_competitor_analysis', 'generate_image', 'generate_content_image'];
+    const AI_GENERATION_TOOLS = ['generate_full_content', 'create_topic_cluster', 'repurpose_for_social', 'trigger_competitor_analysis', 'generate_image', 'generate_content_image', 'improve_content', 'reformat_content'];
     const SERP_TOOLS = ['trigger_serp_analysis', 'trigger_content_gap_analysis'];
     if (AI_GENERATION_TOOLS.includes(name)) return 60000;
     if (SERP_TOOLS.includes(name)) return 30000;

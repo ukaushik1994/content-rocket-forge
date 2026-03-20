@@ -497,9 +497,14 @@ ${topContent.content || ''}
 
         return {
           success: true,
-          message: `Published "${content.title}" to ${connection.provider}${publishResult.url || publishResult.link ? ` — ${publishResult.url || publishResult.link}` : ''}`,
+          message: `Published "${content.title}" to ${connection.provider}${publishResult.url || publishResult.link ? ` — ${publishResult.url || publishResult.link}` : ''}\n\n🎉 What's next?`,
           url: publishResult.url || publishResult.link,
-          provider: connection.provider
+          provider: connection.provider,
+          actions: [
+            { id: 'create_social', label: '📱 Create Social Posts', type: 'send_message', message: `Repurpose "${content.title}" (ID: ${content.id}) for social media` },
+            { id: 'email_subscribers', label: '📧 Email Subscribers', type: 'send_message', message: `Create an email campaign from content "${content.title}" (ID: ${content.id})` },
+            { id: 'done', label: '✅ Done for Now', type: 'send_message', message: 'Thanks, I\'m done for now' }
+          ]
         };
       }
 
