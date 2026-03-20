@@ -551,7 +551,6 @@ const Analytics = () => {
                       { value: 'overview', icon: BarChart3, label: 'Overview' },
                       { value: 'content', icon: FileText, label: 'Content' },
                       { value: 'campaigns', icon: Target, label: 'Campaigns' },
-                      { value: 'performance', icon: Activity, label: 'Performance' },
                     ].map((tab) => (
                       <button
                         key={tab.value}
