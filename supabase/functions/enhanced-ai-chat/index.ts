@@ -1970,7 +1970,7 @@ serve(async (req) => {
 
         const currentCount = messages.length;
         const lastSummarizedAt = convo?.summary_message_count || 0;
-        const needsNewSummary = !convo?.summary || (currentCount - lastSummarizedAt >= 10);
+        const needsNewSummary = !convo?.summary || (currentCount - lastSummarizedAt >= RESUMMARIZE_INTERVAL);
 
         if (needsNewSummary) {
           // Build a condensed version of older messages for summarization
