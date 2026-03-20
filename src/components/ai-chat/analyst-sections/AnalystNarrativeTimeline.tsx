@@ -200,8 +200,30 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
 
   const orderedSections = [...fixedSections, ...adaptiveSections];
 
+  // Data age indicator
+  const dataAgeLabel = useMemo(() => {
+    if (!analystState?.lastUpdated) return null;
+    const ageMs = Date.now() - new Date(analystState.lastUpdated).getTime();
+    const mins = Math.floor(ageMs / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    return `${Math.floor(mins / 60)}h ago`;
+  }, [analystState?.lastUpdated]);
+
   return (
     <div className="space-y-12">
+      {/* 5B: Stale data / refresh status */}
+      {(dataAgeLabel || analystState?.lastRefreshError) && (
+        <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground/50">
+          {dataAgeLabel && <span>Updated {dataAgeLabel}</span>}
+          {analystState?.lastRefreshError && (
+            <span className="flex items-center gap-1 text-destructive/60">
+              <AlertTriangle className="w-3 h-3" />
+              Refresh failed
+            </span>
+          )}
+        </div>
+      )}
       {orderedSections.map(section => (
         <div key={section.id} onClick={() => !section.fixed && handleSectionClick(section.id)}>
           {section.render()}
