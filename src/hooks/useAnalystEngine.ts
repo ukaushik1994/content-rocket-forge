@@ -832,7 +832,7 @@ function saveSessionMemory(
       insights: insights
         .filter(i => i.type === 'warning' || i.type === 'opportunity')
         .slice(0, 5)
-        .map(i => ({ ...i, timestamp: new Date() })),
+        .map(i => ({ ...i, timestamp: i.timestamp || new Date() })),
       healthTotal,
       topics: topics.slice(0, 5).map(t => t.name),
     };
