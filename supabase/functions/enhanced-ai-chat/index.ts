@@ -19,7 +19,57 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v18-2026-03-19T06:00:00Z-ai-chat-overhaul';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v19-2026-03-20T12:00:00Z-phase1';
+
+// ===== PHASE 1A: Smart Model Routing =====
+// Routes cheap model for lookups/chat, premium model for generation/heavy tools
+const GENERATION_INTENTS = ['generate_full_content', 'launch_content_wizard', 'start_content_builder', 'create_content_item', 'improve_content', 'reformat_content'];
+const HEAVY_CATEGORIES = ['image_generation'];
+
+function selectModelForIntent(
+  baseModel: string,
+  queryIntent: QueryIntent,
+  hasWriteIntent: boolean
+): string {
+  // Map provider models to their cheap/premium variants
+  const modelTiers: Record<string, { cheap: string; premium: string }> = {
+    // OpenAI
+    'gpt-4o': { cheap: 'gpt-4o-mini', premium: 'gpt-4o' },
+    'gpt-4o-mini': { cheap: 'gpt-4o-mini', premium: 'gpt-4o' },
+    'gpt-4': { cheap: 'gpt-4o-mini', premium: 'gpt-4' },
+    'gpt-4-turbo': { cheap: 'gpt-4o-mini', premium: 'gpt-4-turbo' },
+    // Anthropic
+    'claude-3-5-sonnet-20241022': { cheap: 'claude-3-5-haiku-20241022', premium: 'claude-3-5-sonnet-20241022' },
+    'claude-3-opus-20240229': { cheap: 'claude-3-5-haiku-20241022', premium: 'claude-3-opus-20240229' },
+    // Gemini
+    'gemini-2.0-flash-exp': { cheap: 'gemini-2.0-flash-exp', premium: 'gemini-2.0-flash-exp' },
+    'gemini-1.5-pro': { cheap: 'gemini-2.0-flash-exp', premium: 'gemini-1.5-pro' },
+    // OpenRouter models — pass through (user chose specific model)
+  };
+
+  const tier = modelTiers[baseModel];
+  if (!tier) {
+    // Unknown model (e.g. OpenRouter custom) — don't override user's choice
+    return baseModel;
+  }
+
+  // Use premium model for: generation tools, content creation writes, heavy categories, detailed/full scope
+  const needsPremium =
+    hasWriteIntent && queryIntent.categories.includes('content') ||
+    queryIntent.categories.some(c => HEAVY_CATEGORIES.includes(c)) ||
+    queryIntent.scope === 'full';
+
+  const selectedModel = needsPremium ? tier.premium : tier.cheap;
+  if (selectedModel !== baseModel) {
+    console.log(`🧠 Smart routing: ${baseModel} → ${selectedModel} (${needsPremium ? 'premium' : 'cheap'})`);
+  }
+  return selectedModel;
+}
+
+// ===== PHASE 1B: Expanded Context Window Constants =====
+const MAX_HISTORY_MESSAGES = 15;  // was 5
+const SUMMARIZE_THRESHOLD = 25;   // was 10
+const RESUMMARIZE_INTERVAL = 15;  // was 10
 
 // Data categories that REQUIRE tool execution (not conversational text)
 const DATA_CATEGORIES = [
