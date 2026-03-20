@@ -88,16 +88,6 @@ export const API_PROVIDERS: ApiProvider[] = [
     category: 'SEO & Analytics'
   },
   {
-    id: 'serpstack',
-    name: 'Serpstack',
-    description: 'Alternative SERP data provider for comprehensive search analysis',
-    serviceKey: 'serpstack',
-    icon: Search,
-    link: 'https://serpstack.com/dashboard',
-    required: false,
-    category: 'SEO & Analytics'
-  },
-  {
     id: 'google-analytics',
     name: 'Google Analytics',
     description: 'Website traffic and user behavior analytics',
@@ -126,36 +116,6 @@ export const API_PROVIDERS: ApiProvider[] = [
     link: 'https://resend.com/api-keys',
     required: false,
     category: 'Communication'
-  },
-  {
-    id: 'sendgrid',
-    name: 'SendGrid',
-    description: 'Email delivery and marketing automation',
-    serviceKey: 'sendgrid',
-    icon: Mail,
-    link: 'https://app.sendgrid.com/settings/api_keys',
-    required: false,
-    category: 'Communication'
-  },
-  {
-    id: 'twilio',
-    name: 'Twilio',
-    description: 'SMS, voice, and video communication APIs',
-    serviceKey: 'twilio',
-    icon: Phone,
-    link: 'https://console.twilio.com/project/api-keys',
-    required: false,
-    category: 'Communication'
-  },
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    description: 'Payment processing and subscription management',
-    serviceKey: 'stripe',
-    icon: CreditCard,
-    link: 'https://dashboard.stripe.com/apikeys',
-    required: false,
-    category: 'Payments'
   },
   // Image & Video Gen subcategory
   {
