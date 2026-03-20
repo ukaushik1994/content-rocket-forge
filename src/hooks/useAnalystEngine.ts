@@ -1434,6 +1434,27 @@ export function useAnalystEngine(
             timestamp: now,
           });
         }
+
+        // M1-18: Stale content — published articles not reviewed in 90+ days
+        try {
+          const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+          const { data: stalePublished } = await supabase
+            .from('content_items')
+            .select('id, title')
+            .eq('user_id', userId)
+            .eq('status', 'published')
+            .lt('last_reviewed_at' as any, ninetyDaysAgo)
+            .limit(3);
+          if (stalePublished && stalePublished.length > 0) {
+            alerts.push({
+              id: `anomaly-stale-content-${now.getTime()}`,
+              content: `🕰️ ${stalePublished.length} published article${stalePublished.length > 1 ? 's' : ''} not reviewed in 90+ days — "${stalePublished[0].title}" may need a freshness update`,
+              type: 'warning',
+              source: 'platform',
+              timestamp: now,
+            });
+          }
+        } catch (_) { /* non-blocking */ }
       } catch (err) {
         console.warn('Anomaly detection failed:', err);
       }

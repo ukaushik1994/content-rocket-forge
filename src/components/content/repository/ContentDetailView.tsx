@@ -32,6 +32,15 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
   const { isPredicting, prediction, predictPerformance } = useContentPerformancePrediction();
   const navigate = useNavigate();
 
+  // M1-18: Track last_reviewed_at when content is viewed
+  useEffect(() => {
+    if (!item?.id) return;
+    supabase.from('content_items')
+      .update({ last_reviewed_at: new Date().toISOString() } as any)
+      .eq('id', item.id)
+      .then(() => {});
+  }, [item?.id]);
+
   if (!item) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[400px] border rounded-lg border-dashed border-border/60 bg-background/50">
