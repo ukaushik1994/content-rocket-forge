@@ -186,43 +186,20 @@ serve(async (req) => {
       });
     }
 
-    // Get active providers using same logic as Content Builder (AIServiceController)
-    // 1. Check user_llm_keys for OpenRouter
-    let openrouterKey = null;
-    const { data: llmKey } = await supabase
-      .from('user_llm_keys')
-      .select('api_key, provider')
-      .eq('user_id', user.id)
-      .eq('provider', 'openrouter')
-      .eq('is_active', true)
-      .maybeSingle();
-    
-    if (llmKey?.api_key) {
-      openrouterKey = llmKey.api_key;
-    }
-
-    // 2. Get active AI service providers only
+    // Get active AI service providers only
     const { data: allProviders } = await supabase
       .from('ai_service_providers')
-      .select('provider, api_key, preferred_model, status, priority')
+      .select('provider, preferred_model, status, priority')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .order('priority', { ascending: true });
 
-    // 3. Filter and find first valid provider (same logic as AIServiceController)
+    // Filter and find first valid provider with model configured
     const validProviders = (allProviders || []).filter(p => {
-      // Must have a model configured
       if (!p.preferred_model || p.preferred_model.trim() === '') {
         return false;
       }
-      
-      // Check if has valid API key
-      if (p.provider === 'openrouter' && openrouterKey) {
-        return true; // Use user_llm_keys key
-      }
-      
-      // For other providers, must have api_key in ai_service_providers
-      return p.api_key && p.api_key.trim() !== '';
+      return true;
     });
 
     const activeProvider = validProviders[0];
