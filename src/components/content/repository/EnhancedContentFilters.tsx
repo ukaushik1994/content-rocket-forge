@@ -47,6 +47,8 @@ export const EnhancedContentFilters: React.FC<EnhancedContentFiltersProps> = ({
   setDateRange,
   keywordFilter,
   setKeywordFilter,
+  funnelFilter,
+  setFunnelFilter,
   appliedFilters,
   clearFilters,
   clearFilter
