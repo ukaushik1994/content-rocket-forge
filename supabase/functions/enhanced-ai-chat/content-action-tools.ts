@@ -62,6 +62,59 @@ function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: st
   return Math.min(score, 100);
 }
 
+// 8A: Compute and save content value score
+async function computeAndSaveValueScore(supabase: any, userId: string, contentId: string, seoScore: number) {
+  try {
+    // Get repurpose count from performance signals
+    const { count: repurposeCount } = await supabase
+      .from('content_performance_signals')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('content_id', contentId)
+      .eq('signal_type', 'repurposed');
+
+    // Get updated_at for freshness
+    const { data: item } = await supabase
+      .from('content_items')
+      .select('updated_at')
+      .eq('id', contentId)
+      .single();
+
+    const daysSinceUpdate = item?.updated_at 
+      ? Math.floor((Date.now() - new Date(item.updated_at).getTime()) / (1000 * 60 * 60 * 24))
+      : 100;
+    const freshness = Math.max(0, 100 - daysSinceUpdate);
+    const valueScore = Math.min(100, Math.round(
+      (seoScore * 0.4) + ((repurposeCount || 0) * 10) + (freshness * 0.2)
+    ));
+
+    await supabase.from('content_items')
+      .update({ content_value_score: valueScore })
+      .eq('id', contentId)
+      .eq('user_id', userId);
+  } catch (err) {
+    console.error('Value score computation failed (non-blocking):', err);
+  }
+}
+
+// 8E: Extract key claims from content for cross-content consistency
+function extractClaims(content: string): string[] {
+  const claims: string[] = [];
+  // Match numbers with context (pricing, percentages, counts)
+  const patterns = [
+    /\$[\d,]+(?:\.\d{2})?(?:\s*(?:per|\/)\s*\w+)?/gi,
+    /\d+(?:\.\d+)?%\s+\w+/gi,
+    /\d+(?:\.\d+)?x\s+\w+/gi,
+    /(?:up to|over|more than|less than)\s+\d[\d,]*/gi,
+    /\d+\+?\s+(?:features?|integrations?|customers?|users?|countries?|languages?)/gi,
+  ];
+  for (const pattern of patterns) {
+    const matches = content.match(pattern) || [];
+    claims.push(...matches.slice(0, 5));
+  }
+  return [...new Set(claims)].slice(0, 15);
+}
+
 // Save SEO score to content_items.seo_score
 async function saveAutoSeoScore(supabase: any, userId: string, contentId: string, score: number, _keyword: string) {
   try {
