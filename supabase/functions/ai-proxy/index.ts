@@ -501,7 +501,6 @@ async function testAnthropic(apiKey: string) {
   console.log('🧪 Testing Anthropic API key');
   
   try {
-    // Test with a simple message
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -522,12 +521,16 @@ async function testAnthropic(apiKey: string) {
       throw new Error(`Anthropic API test failed: ${response.statusText}`);
     }
 
+    const knownModels = ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'];
+    const recommended = pickBestModel('anthropic', knownModels);
     console.log('✅ Anthropic test successful');
     
     return {
       success: true,
       provider: 'Anthropic',
-      message: 'Anthropic connection successful'
+      message: 'Anthropic connection successful',
+      available_models: knownModels,
+      recommended_model: recommended,
     };
   } catch (error: any) {
     console.error('💥 Anthropic test exception:', error);
@@ -538,47 +541,59 @@ async function testAnthropic(apiKey: string) {
 async function chatAnthropic(apiKey: string, params: any) {
   console.log('💬 Processing Anthropic chat request');
   
-  const requestBody: any = {
-    model: params.model || 'claude-3-sonnet-20240229',
-    max_tokens: params.maxTokens || params.max_tokens || 1000,
-    messages: params.messages || [],
-    temperature: params.temperature || 0.7,
-  };
-  
-  // Add system message if provided
-  if (params.system) {
-    requestBody.system = params.system;
-  }
+  const originalModel = params.model || 'claude-3-5-sonnet-20241022';
+  let model = originalModel;
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Anthropic chat failed:', response.status, errorData);
-      throw new Error(`Anthropic chat failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ Anthropic chat successful');
-    
-    return {
-      success: true,
-      data,
-      provider: 'Anthropic'
+  for (let modelAttempt = 1; modelAttempt <= 2; modelAttempt++) {
+    const requestBody: any = {
+      model,
+      max_tokens: params.maxTokens || params.max_tokens || 1000,
+      messages: params.messages || [],
+      temperature: params.temperature || 0.7,
     };
-  } catch (error: any) {
-    console.error('💥 Anthropic chat exception:', error);
-    throw new Error(`Anthropic chat error: ${error.message}`);
+    if (params.system) requestBody.system = params.system;
+    if (params.tools) requestBody.tools = params.tools;
+    if (params.tool_choice) requestBody.tool_choice = params.tool_choice;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        
+        if (isModelNotFound(response.status, errorData) && modelAttempt === 1) {
+          console.warn(`⚠️ Anthropic model ${model} not found, auto-detecting...`);
+          const available = await listModels('anthropic', apiKey);
+          const best = pickBestModel('anthropic', available);
+          if (best && best !== model) {
+            console.log(`🔄 Switching from ${model} to ${best}`);
+            model = best;
+            continue;
+          }
+        }
+        
+        throw new Error(`Anthropic chat failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Anthropic chat successful');
+      
+      const result: any = { success: true, data, provider: 'Anthropic' };
+      if (model !== originalModel) result._autoDetectedModel = model;
+      return result;
+    } catch (error: any) {
+      if (modelAttempt === 2) throw new Error(`Anthropic chat error: ${error.message}`);
+    }
   }
+  throw new Error('Anthropic chat failed after model fallback');
 }
 
 async function handleGemini(endpoint: string, apiKey: string, params: any) {
