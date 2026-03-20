@@ -2097,7 +2097,7 @@ serve(async (req) => {
         try {
           const { data: userPrefs } = await supabase.from('user_preferences')
             .select('preference_type, preference_value, confidence_score')
-            .eq('user_id', userId)
+            .eq('user_id', user.id)
             .gte('confidence_score', 0.6)
             .order('confidence_score', { ascending: false })
             .limit(5);
