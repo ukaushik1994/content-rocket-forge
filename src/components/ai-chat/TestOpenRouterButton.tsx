@@ -3,14 +3,15 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
+
 export const TestOpenRouterButton = () => {
   const [isTesting, setIsTesting] = useState(false);
-  const {
-    toast
-  } = useToast();
-  const {
-    user
-  } = useAuth();
+  const { toast } = useToast();
+  const { user } = useAuth();
+
   const testOpenRouterConnection = async () => {
     if (!user) {
       toast({
@@ -24,31 +25,37 @@ export const TestOpenRouterButton = () => {
     try {
       console.log('🧪 Testing OpenRouter connection...');
 
-      // Test the enhanced-ai-chat function directly
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('enhanced-ai-chat', {
-        body: {
-          messages: [{
-            role: 'user',
-            content: 'Hello, this is a test message.'
-          }],
-          userId: user.id
-        }
+      // C2: Use raw fetch matching the sendMessage pattern
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token || SUPABASE_KEY;
+
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': SUPABASE_KEY,
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'Hello, this is a test message.' }],
+          context: {}
+        })
       });
-      if (error) {
-        console.error('❌ OpenRouter test failed:', error);
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error('❌ OpenRouter test failed:', errText);
         toast({
           title: "OpenRouter Test Failed",
-          description: error.message || "Connection test failed",
+          description: `HTTP ${resp.status}: ${errText.slice(0, 100)}`,
           variant: "destructive"
         });
       } else {
+        const data = await resp.json();
         console.log('✅ OpenRouter test successful:', data);
         toast({
           title: "OpenRouter Test Successful",
-          description: `Response received using ${data.provider} with model ${data.model}`,
+          description: `Response received — connection working`,
           variant: "default"
         });
       }
@@ -63,6 +70,7 @@ export const TestOpenRouterButton = () => {
       setIsTesting(false);
     }
   };
+
   return (
     <Button 
       onClick={testOpenRouterConnection}
