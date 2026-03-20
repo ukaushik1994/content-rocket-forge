@@ -1,95 +1,50 @@
 
 
-# AI API Consolidation — 5 Phases
+# Fix: AI Chat Failing Due to Retired Gemini Model
 
-## Phase 1: Remove Dead Providers (frontend only)
+## Root Cause
 
-Remove 6 provider entries from `API_PROVIDERS` in `src/components/settings/api/types.ts`:
-- `lmstudio` (localhost — can't work from cloud)
-- `lmstudio_image` (same)
-- `serpstack` (no backend handler)
-- `sendgrid` (no backend handler)
-- `twilio` (no backend handler)
-- `stripe` (no billing system)
+The error logs show: **`Gemini chat failed: Not Found`** (HTTP 404) repeated 3 times, then the enhanced-ai-chat gives up.
 
-Result: 19 working providers remain.
+The default Gemini model is `gemini-2.0-flash-exp` (line 656 of `ai-proxy/index.ts`), which Google has retired. The self-heal logic detects the 404 and calls `listModels` + `pickBestModel`, but the preference list **also starts with `gemini-2.0-flash-exp`**, so it picks the same broken model and fails again.
+
+Secondary issue: `userId is not defined` warning at line 2076 in `enhanced-ai-chat/index.ts`.
 
 ---
 
-## Phase 2: Migrate OpenRouter to `api_keys` table (migration + frontend + backend)
+## Fix Plan
 
-**2A — Migration**: Copy existing OpenRouter keys from `user_llm_keys` to `api_keys` (with `ON CONFLICT DO NOTHING` safety).
+### 1. Update Gemini model preferences and default (ai-proxy/index.ts)
 
-**2B — Frontend `OpenRouterSettings.tsx`**: Replace `user_llm_keys` reads/writes with `storeApiKey`/`deleteApiKey`/`toggleApiKeyStatus` from `apiKeyService` — same pattern as all other providers.
+**Line 15** — Update `MODEL_PREFERENCES.gemini` to current model names:
+```
+gemini: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+```
 
-**2C — Frontend `crud.ts` + `apiKeyService.ts`**: Remove the OpenRouter special-case that checks `user_llm_keys` first.
+**Line 656** — Change default model from `gemini-2.0-flash-exp` to `gemini-2.5-flash`:
+```
+const originalModel = params.model || 'gemini-2.5-flash';
+```
 
-**2D — Backend `enhanced-ai-chat/index.ts`**: Remove the `user_llm_keys` special-case block (~line 2213). OpenRouter uses the same `getApiKey('openrouter', userId)` decryption path as other providers.
+Also update other provider preferences to current model names:
+- OpenAI: add `gpt-4.1-mini`, `gpt-4.1` as top preferences
+- Anthropic: ensure `claude-sonnet-4-20250514` stays first
 
-**2E — Backend `intelligent-workflow-executor/index.ts`, `glossary-generator/index.ts`, `generate-enhanced-brief/index.ts`**: Remove all `user_llm_keys` fallback reads. Use shared `getApiKey()`.
+### 2. Update frontend fallback models (apiKeyService.ts)
 
-**2F — Frontend `useOpenRouter.ts`**: Change model read from `user_llm_keys` to `ai_service_providers.preferred_model`.
+Update `FALLBACK_MODELS` map to match the new defaults so the frontend stays consistent.
 
-Result: Zero writes/reads to `user_llm_keys`. Table kept as safety net for one release cycle.
+### 3. Fix `userId is not defined` warning (enhanced-ai-chat/index.ts)
 
----
-
-## Phase 3: Wire Default AI Provider Selector (frontend only)
-
-**3A** — Import and render `DefaultAiProviderSelector` in `ApiSettings.tsx` above the AI Services category cards.
-
-**3B** — Update `DefaultAiProviderSelector.tsx` to:
-- Query `api_keys_metadata` for configured AI providers
-- Query `ai_service_providers` for currently active provider
-- On switch: deactivate all AI providers, activate selected one
-- Show only providers with configured keys; empty state if none
-
-Result: User sees which AI provider is active, switches with one click.
+At ~line 2076, a block references `userId` but it's out of scope. Fix the variable reference to use the correct scoped variable name (likely `user.id` or the variable holding the authenticated user ID in that context).
 
 ---
 
-## Phase 4: Clean `ai_service_providers.api_key` column (migration + frontend + backend)
+## Files Changed
 
-**4A — Migration**: `UPDATE ai_service_providers SET api_key = '' WHERE api_key IS NOT NULL AND api_key != ''`
-
-**4B — Backend**: In any upsert to `ai_service_providers` in `enhanced-ai-chat/index.ts`, always set `api_key: ''`.
-
-**4C — Frontend**: In `apiKeyService.ts` `toggleApiKeyStatus()` and `providerSync.ts` `syncApiKeysToProviders()`, always set `api_key: ''`.
-
-Result: `api_keys` = encrypted key storage. `ai_service_providers` = metadata only. Clean separation.
-
----
-
-## Phase 5: Auto-Detect Models + Self-Heal (backend + frontend)
-
-**5A — Backend `ai-proxy/index.ts`**: Add `listModels(service, apiKey)` function that calls each provider's model listing endpoint. Add `pickBestModel(service, availableModels)` with ranked preference lists.
-
-**5B — Backend `ai-proxy/index.ts`**: Extend test handlers to return `available_models` and `recommended_model` after key verification.
-
-**5C — Backend `ai-proxy/index.ts`**: Add 404-retry pattern to each provider's chat handler — on model-not-found, auto-detect best model, retry, return `_autoDetectedModel` signal.
-
-**5D — Backend `enhanced-ai-chat/index.ts`**: After AI response, if `_autoDetectedModel` is set, update `ai_service_providers.preferred_model`.
-
-**5E — Frontend `SimpleProviderCard.tsx`**: After successful test, save `recommended_model` and `available_models` to `ai_service_providers`.
-
-**5F — Frontend**: Show model dropdown from `available_models` when populated.
-
-**5G — Frontend `apiKeyService.ts`**: Remove hardcoded `defaultModels` map. Backend `ai-proxy`: update fallback model strings to current stable names.
-
-Result: Models auto-detected from provider APIs, self-heal on retirement, user can override via dropdown.
-
----
-
-## Execution Summary
-
-| Phase | Items | Backend | Frontend | Migrations |
-|-------|-------|---------|----------|------------|
-| 1 | 1 | 0 | 1 | 0 |
-| 2 | 6 | 3 | 3 | 1 |
-| 3 | 2 | 0 | 2 | 0 |
-| 4 | 3 | 1 | 2 | 1 |
-| 5 | 7 | 3 | 3 | 0 |
-| **Total** | **19** | **7** | **11** | **2** |
-
-Each phase completes fully before the next starts.
+| File | Change |
+|------|--------|
+| `supabase/functions/ai-proxy/index.ts` | Update model preferences (line 12-17) and default Gemini model (line 656) |
+| `src/services/apiKeyService.ts` | Update `FALLBACK_MODELS` to current model names |
+| `supabase/functions/enhanced-ai-chat/index.ts` | Fix `userId` reference at ~line 2076 |
 
