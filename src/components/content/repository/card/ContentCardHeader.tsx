@@ -3,12 +3,16 @@ import { StatusBadge } from '../StatusBadge';
 import { ScoreBadge } from '../ScoreBadge';
 import { ContentCardActions } from './ContentCardActions';
 import { OptimizationBadge } from './OptimizationBadge';
+import { ValueScoreBadge } from './ValueScoreBadge';
+import { FunnelStageBadge } from './FunnelStageBadge';
 
 interface ContentCardHeaderProps {
   status: string;
   seoScore: number;
   contentId?: string;
   pendingOptimizationsCount?: number;
+  contentValueScore?: number;
+  funnelStage?: string | null;
   onEdit: () => void;
   onPreview: () => void;
   onAnalyze: () => void;
@@ -22,6 +26,8 @@ export const ContentCardHeader: React.FC<ContentCardHeaderProps> = ({
   seoScore,
   contentId,
   pendingOptimizationsCount = 0,
+  contentValueScore = 0,
+  funnelStage,
   onEdit,
   onPreview,
   onAnalyze,
@@ -37,6 +43,8 @@ export const ContentCardHeader: React.FC<ContentCardHeaderProps> = ({
         {pendingOptimizationsCount > 0 && (
           <OptimizationBadge count={pendingOptimizationsCount} />
         )}
+        <ValueScoreBadge score={contentValueScore} />
+        <FunnelStageBadge stage={funnelStage} />
       </div>
       <ContentCardActions
         status={status}
