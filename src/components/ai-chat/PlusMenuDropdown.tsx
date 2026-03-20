@@ -99,9 +99,9 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
         side="top"
         align="start"
         sideOffset={8}
-        className="w-56 p-1.5 bg-card border-border/50 rounded-xl shadow-lg"
+        className="w-48 p-1 bg-card border-border/50 rounded-lg shadow-lg"
       >
-        <div className="space-y-0.5">
+        <div className="space-y-px">
           {menuItems.map((item, index) => (
             <button
               key={index}
@@ -110,15 +110,10 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
                 item.onClick();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors hover:bg-muted/50 group"
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors hover:bg-muted/50 group"
             >
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{item.label}</p>
-                <p className="text-xs text-muted-foreground/60 truncate">{item.description}</p>
-              </div>
+              <item.icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
             </button>
           ))}
         </div>
