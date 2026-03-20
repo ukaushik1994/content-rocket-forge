@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Edit, BarChart2, Archive, FileText, Copy, Trash, TrendingUp, Loader2, M
 import { toast } from 'sonner';
 import { useContentPerformancePrediction } from '@/hooks/useContentPerformancePrediction';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContentDetailViewProps {
   item: ContentItemType | null;
