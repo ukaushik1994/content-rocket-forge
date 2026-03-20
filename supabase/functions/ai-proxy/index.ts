@@ -284,13 +284,20 @@ async function testOpenAI(apiKey: string) {
     }
 
     const data = await response.json();
+    const allModels = (data.data || []).map((m: any) => m.id).filter(Boolean);
+    const chatModels = allModels.filter((id: string) =>
+      id.startsWith('gpt-') || id.startsWith('o3') || id.startsWith('o4')
+    );
+    const recommended = pickBestModel('openai', chatModels);
     console.log('✅ OpenAI test successful');
     
     return {
       success: true,
       provider: 'OpenAI',
       message: 'OpenAI connection successful',
-      models: data.data?.slice(0, 5).map((model: any) => model.id) || []
+      models: chatModels.slice(0, 20),
+      available_models: chatModels.slice(0, 20),
+      recommended_model: recommended,
     };
   } catch (error: any) {
     console.error('💥 OpenAI test exception:', error);
