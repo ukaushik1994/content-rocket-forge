@@ -385,46 +385,33 @@ serve(async (req) => {
 });
 
 async function getActiveProvider(userId: string, supabase: any): Promise<{provider: string, apiKey: string, model: string}> {
-  // Try ai_service_providers first
+  // Get active provider from ai_service_providers
   const { data: serviceProvider } = await supabase
     .from('ai_service_providers')
-    .select('*')
+    .select('provider, preferred_model, status, priority')
     .eq('user_id', userId)
     .eq('status', 'active')
     .order('priority', { ascending: true })
     .limit(1)
     .single();
   
-  if (serviceProvider?.api_key) {
-    console.log(`✅ Using ai_service_providers: ${serviceProvider.provider}`);
-    return {
-      provider: serviceProvider.provider,
-      apiKey: serviceProvider.api_key,
-      model: serviceProvider.preferred_model || 'gpt-4'
-    };
-  }
-  
-  // Fallback to user_llm_keys
-  console.log('⚠️ No ai_service_providers found, falling back to user_llm_keys');
-  
-  const { data: llmKey } = await supabase
-    .from('user_llm_keys')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-  
-  if (!llmKey?.api_key) {
+  if (!serviceProvider?.provider) {
     throw new Error('No active AI provider configured. Please configure your AI service in Settings.');
   }
+
+  // Resolve key from encrypted api_keys table
+  const { getApiKey } = await import('../shared/apiKeyService.ts');
+  const decryptedKey = await getApiKey(serviceProvider.provider, userId);
   
-  console.log(`✅ Using user_llm_keys: ${llmKey.provider}`);
+  if (!decryptedKey) {
+    throw new Error(`No API key found for ${serviceProvider.provider}. Please add your API key in Settings.`);
+  }
+
+  console.log(`✅ Using provider: ${serviceProvider.provider}`);
   return {
-    provider: llmKey.provider,
-    apiKey: llmKey.api_key,
-    model: llmKey.default_model || 'gpt-4'
+    provider: serviceProvider.provider,
+    apiKey: decryptedKey,
+    model: serviceProvider.preferred_model || 'gpt-4'
   };
 }
 
