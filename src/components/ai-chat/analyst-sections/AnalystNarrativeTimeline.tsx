@@ -70,6 +70,16 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
     recordSectionInteraction(sectionId);
   }, []);
 
+  // 5B: Data age label (must be before early return)
+  const dataAgeLabel = useMemo(() => {
+    if (!analystState?.lastUpdated) return null;
+    const ageMs = Date.now() - new Date(analystState.lastUpdated).getTime();
+    const mins = Math.floor(ageMs / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    return `${Math.floor(mins / 60)}h ago`;
+  }, [analystState?.lastUpdated]);
+
   // Empty state
   if (!hasAnalystData && chartData.length === 0) {
     return (
