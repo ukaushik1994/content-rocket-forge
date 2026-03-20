@@ -99,7 +99,7 @@ const Analytics = () => {
       icon: Eye,
       color: 'from-blue-500 to-cyan-400',
       bgPattern: 'from-blue-500/5 to-cyan-400/10',
-      source: 'Google Analytics'
+      source: 'Content Analytics'
     },
     { 
       id: 'sessions', 
@@ -108,7 +108,7 @@ const Analytics = () => {
       icon: Users,
       color: 'from-emerald-500 to-teal-400',
       bgPattern: 'from-emerald-500/5 to-teal-400/10',
-      source: 'Google Analytics'
+      source: 'Content Analytics'
     },
     { 
       id: 'impressions', 
@@ -135,7 +135,7 @@ const Analytics = () => {
       icon: Activity,
       color: 'from-red-500 to-rose-400',
       bgPattern: 'from-red-500/5 to-rose-400/10',
-      source: 'Google Analytics'
+      source: 'Content Analytics'
     },
     { 
       id: 'sessionDuration', 
@@ -144,7 +144,7 @@ const Analytics = () => {
       icon: Clock,
       color: 'from-yellow-500 to-amber-400',
       bgPattern: 'from-yellow-500/5 to-amber-400/10',
-      source: 'Google Analytics'
+      source: 'Content Analytics'
     },
     { 
       id: 'ctr', 
@@ -198,10 +198,10 @@ const Analytics = () => {
     }
     const rows = [
       ['Metric', 'Value', 'Source'],
-      ['Page Views', String(realMetrics.totalAnalytics.pageViews), 'Google Analytics'],
-      ['Sessions', String(realMetrics.totalAnalytics.sessions), 'Google Analytics'],
-      ['Bounce Rate', `${(realMetrics.avgBounceRate * 100).toFixed(1)}%`, 'Google Analytics'],
-      ['Avg Session Duration (s)', String(realMetrics.avgSessionDuration), 'Google Analytics'],
+      ['Page Views', String(realMetrics.totalAnalytics.pageViews), 'Content Analytics'],
+      ['Sessions', String(realMetrics.totalAnalytics.sessions), 'Content Analytics'],
+      ['Bounce Rate', `${(realMetrics.avgBounceRate * 100).toFixed(1)}%`, 'Content Analytics'],
+      ['Avg Session Duration (s)', String(realMetrics.avgSessionDuration), 'Content Analytics'],
       ['Search Impressions', String(realMetrics.totalSearchConsole.impressions), 'Search Console'],
       ['Search Clicks', String(realMetrics.totalSearchConsole.clicks), 'Search Console'],
       ['CTR', `${(realMetrics.avgCTR * 100).toFixed(1)}%`, 'Search Console'],
@@ -291,7 +291,7 @@ const Analytics = () => {
           >
             <Activity className="h-5 w-5 text-muted-foreground shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Publish content and connect Google Analytics to see real performance data here.
+              Publish content and connect analytics integrations to see real performance data here.
             </p>
           </motion.div>
         )}
@@ -337,7 +337,7 @@ const Analytics = () => {
                   className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed"
                 >
                   Track content performance, discover insights, and optimize your strategy 
-                  with real-time Google Analytics and Search Console data
+                  with integrated analytics and Search Console data
                 </motion.p>
 
                 <motion.div className="flex gap-4 justify-center mb-12">
