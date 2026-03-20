@@ -2209,22 +2209,7 @@ serve(async (req) => {
       });
     }
 
-    // Get active providers using same logic as Content Builder (AIServiceController)
-    // 1. Check user_llm_keys for OpenRouter
-    let openrouterKey = null;
-    const { data: llmKey } = await supabase
-      .from('user_llm_keys')
-      .select('api_key, provider')
-      .eq('user_id', user.id)
-      .eq('provider', 'openrouter')
-      .eq('is_active', true)
-      .maybeSingle();
-    
-    if (llmKey?.api_key) {
-      openrouterKey = llmKey.api_key;
-    }
-
-    // 2. Get the single active AI service provider (Single Active Provider Mode)
+    // Get active providers — all keys resolved from encrypted api_keys table via getApiKey()
     const { data: allProviders, error: providerError } = await supabase
       .from('ai_service_providers')
       .select('provider, preferred_model, status, priority')
@@ -2311,20 +2296,16 @@ serve(async (req) => {
     // Get the single active provider (only one should be active at a time)
     const provider = validProviders[0] as any;
     
-    // 4. Resolve API key from encrypted api_keys table (never use plaintext ai_service_providers.api_key)
+    // 4. Resolve API key from encrypted api_keys table
     const { getApiKey } = await import('../shared/apiKeyService.ts');
-    if (provider.provider === 'openrouter' && openrouterKey) {
-      provider.api_key = openrouterKey;
-    } else {
-      const decryptedKey = await getApiKey(provider.provider, user.id);
-      if (!decryptedKey) {
-        console.error(`❌ No decrypted API key found for provider: ${provider.provider}`);
-        return new Response(JSON.stringify({ error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.`, deployVersion: DEPLOY_VERSION }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-      provider.api_key = decryptedKey;
+    const decryptedKey = await getApiKey(provider.provider, user.id);
+    if (!decryptedKey) {
+      console.error(`❌ No decrypted API key found for provider: ${provider.provider}`);
+      return new Response(JSON.stringify({ error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.`, deployVersion: DEPLOY_VERSION }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
+    provider.api_key = decryptedKey;
 
     console.log(`🔑 Using active provider: ${provider.provider} (model: ${provider.preferred_model})`)
     

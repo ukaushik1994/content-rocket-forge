@@ -167,20 +167,7 @@ class ApiKeyService {
         .single();
 
       if (error || !data) {
-        console.log(`ℹ️ No ${normalizedService} API key found in new table, checking legacy table...`);
-        
-        // Fallback to check the old user_llm_keys table
-        try {
-          const legacyKey = await ApiKeyService.getLegacyApiKey(user.id, normalizedService);
-          if (legacyKey) {
-            console.log(`✅ Found ${normalizedService} API key in legacy table`);
-            return legacyKey;
-          }
-        } catch (legacyError: any) {
-          console.warn(`⚠️ Error checking legacy table for ${normalizedService}:`, legacyError);
-        }
-        
-        console.log(`ℹ️ No ${normalizedService} API key found in any table`);
+        console.log(`ℹ️ No ${normalizedService} API key found`);
         return null;
       }
 
@@ -280,40 +267,6 @@ class ApiKeyService {
     } catch (error: any) {
       console.error('❌ Error getting configured services:', error);
       return [];
-    }
-  }
-
-  /**
-   * Retrieves API key from the legacy user_llm_keys table
-   * Uses the correct schema: provider, api_key columns
-   */
-  private static async getLegacyApiKey(userId: string, service: ApiProvider): Promise<string | null> {
-    try {
-      console.log(`🔍 Checking legacy table for ${service} API key...`);
-
-      const { data, error } = await supabase
-        .from('user_llm_keys')
-        .select('api_key')
-        .eq('user_id', userId)
-        .eq('provider', service)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) {
-        console.warn(`⚠️ Error querying legacy table for ${service}:`, error.message);
-        return null;
-      }
-
-      if (!data?.api_key) {
-        console.log(`ℹ️ No ${service} API key found in legacy table`);
-        return null;
-      }
-
-      console.log(`✅ Found ${service} API key in legacy table`);
-      return data.api_key;
-    } catch (error: any) {
-      console.error(`❌ Error retrieving legacy ${service} API key:`, error);
-      return null;
     }
   }
 

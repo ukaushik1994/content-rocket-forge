@@ -31,30 +31,14 @@ async function getUnifiedApiKey(provider: ApiProvider): Promise<string | null> {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return null;
 
-    // For OpenRouter, check user_llm_keys table first (new format)
-    if (provider === 'openrouter') {
-      const { data, error: keyError } = await supabase
-        .from('user_llm_keys')
-        .select('api_key')
-        .eq('user_id', user.id)
-        .eq('provider', 'openrouter')
-        .eq('is_active', true)
-        .single();
-
-      if (!keyError && data?.api_key) {
-        console.log(`✅ Found ${provider} key in user_llm_keys table`);
-        return data.api_key;
-      }
-    }
-    
-    // Use the main service for all providers (it has fallback logic)
+    // Use the main service for all providers (unified api_keys table)
     const key = await getOriginalApiKey(provider);
     if (key) {
       console.log(`✅ Found ${provider} key via main service`);
       return key;
     }
     
-    console.log(`❌ No ${provider} key found in any table`);
+    console.log(`❌ No ${provider} key found`);
     return null;
   } catch (error) {
     console.error(`❌ Error getting ${provider} key:`, error);
@@ -93,7 +77,7 @@ async function testApiKeyFunctionality(provider: ApiProvider, skipFallback: bool
     let error: string | undefined;
 
     // Test AI providers
-    if (['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'openrouter'].includes(provider)) {
+    if (['openai', 'anthropic', 'gemini', 'mistral', 'openrouter'].includes(provider)) {
       try {
         const response = await AIServiceController.generate({
           input: 'Test',
@@ -108,7 +92,7 @@ async function testApiKeyFunctionality(provider: ApiProvider, skipFallback: bool
       }
     }
     // Test SERP providers
-    else if (['serp', 'serpstack'].includes(provider)) {
+    else if (['serp'].includes(provider)) {
       try {
         const response = await searchKeywords({
           query: 'test',
@@ -149,7 +133,7 @@ async function testApiKeyFunctionality(provider: ApiProvider, skipFallback: bool
  * Get basic status of all API keys (existence only, no testing)
  */
 export async function getAllApiKeysStatus(): Promise<Record<string, ApiKeyStatusResult>> {
-  const providers: ApiProvider[] = ['serp', 'serpstack', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
+  const providers: ApiProvider[] = ['serp', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral'];
   const status: Record<string, ApiKeyStatusResult> = {};
 
   for (const provider of providers) {
@@ -169,7 +153,7 @@ export async function getAllApiKeysStatus(): Promise<Record<string, ApiKeyStatus
  * Test all configured API keys and return detailed status
  */
 export async function testAllApiKeys(): Promise<Record<string, ApiKeyStatusResult>> {
-  const providers: ApiProvider[] = ['serp', 'serpstack', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
+  const providers: ApiProvider[] = ['serp', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral'];
   const status: Record<string, ApiKeyStatusResult> = {};
 
   for (const provider of providers) {
@@ -194,7 +178,7 @@ export async function testAllApiKeys(): Promise<Record<string, ApiKeyStatusResul
  * Get simple boolean status (for backward compatibility)
  */
 export async function getAllApiKeysStatusSimple(): Promise<Record<string, boolean>> {
-  const providers: ApiProvider[] = ['serp', 'serpstack', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
+  const providers: ApiProvider[] = ['serp', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral'];
   const status: Record<string, boolean> = {};
 
   for (const provider of providers) {

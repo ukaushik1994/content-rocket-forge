@@ -186,43 +186,20 @@ serve(async (req) => {
       });
     }
 
-    // Get active providers using same logic as Content Builder (AIServiceController)
-    // 1. Check user_llm_keys for OpenRouter
-    let openrouterKey = null;
-    const { data: llmKey } = await supabase
-      .from('user_llm_keys')
-      .select('api_key, provider')
-      .eq('user_id', user.id)
-      .eq('provider', 'openrouter')
-      .eq('is_active', true)
-      .maybeSingle();
-    
-    if (llmKey?.api_key) {
-      openrouterKey = llmKey.api_key;
-    }
-
-    // 2. Get active AI service providers only
+    // Get active AI service providers only
     const { data: allProviders } = await supabase
       .from('ai_service_providers')
-      .select('provider, api_key, preferred_model, status, priority')
+      .select('provider, preferred_model, status, priority')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .order('priority', { ascending: true });
 
-    // 3. Filter and find first valid provider (same logic as AIServiceController)
+    // Filter and find first valid provider with model configured
     const validProviders = (allProviders || []).filter(p => {
-      // Must have a model configured
       if (!p.preferred_model || p.preferred_model.trim() === '') {
         return false;
       }
-      
-      // Check if has valid API key
-      if (p.provider === 'openrouter' && openrouterKey) {
-        return true; // Use user_llm_keys key
-      }
-      
-      // For other providers, must have api_key in ai_service_providers
-      return p.api_key && p.api_key.trim() !== '';
+      return true;
     });
 
     const activeProvider = validProviders[0];
@@ -408,46 +385,33 @@ serve(async (req) => {
 });
 
 async function getActiveProvider(userId: string, supabase: any): Promise<{provider: string, apiKey: string, model: string}> {
-  // Try ai_service_providers first
+  // Get active provider from ai_service_providers
   const { data: serviceProvider } = await supabase
     .from('ai_service_providers')
-    .select('*')
+    .select('provider, preferred_model, status, priority')
     .eq('user_id', userId)
     .eq('status', 'active')
     .order('priority', { ascending: true })
     .limit(1)
     .single();
   
-  if (serviceProvider?.api_key) {
-    console.log(`✅ Using ai_service_providers: ${serviceProvider.provider}`);
-    return {
-      provider: serviceProvider.provider,
-      apiKey: serviceProvider.api_key,
-      model: serviceProvider.preferred_model || 'gpt-4'
-    };
-  }
-  
-  // Fallback to user_llm_keys
-  console.log('⚠️ No ai_service_providers found, falling back to user_llm_keys');
-  
-  const { data: llmKey } = await supabase
-    .from('user_llm_keys')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-  
-  if (!llmKey?.api_key) {
+  if (!serviceProvider?.provider) {
     throw new Error('No active AI provider configured. Please configure your AI service in Settings.');
   }
+
+  // Resolve key from encrypted api_keys table
+  const { getApiKey } = await import('../shared/apiKeyService.ts');
+  const decryptedKey = await getApiKey(serviceProvider.provider, userId);
   
-  console.log(`✅ Using user_llm_keys: ${llmKey.provider}`);
+  if (!decryptedKey) {
+    throw new Error(`No API key found for ${serviceProvider.provider}. Please add your API key in Settings.`);
+  }
+
+  console.log(`✅ Using provider: ${serviceProvider.provider}`);
   return {
-    provider: llmKey.provider,
-    apiKey: llmKey.api_key,
-    model: llmKey.default_model || 'gpt-4'
+    provider: serviceProvider.provider,
+    apiKey: decryptedKey,
+    model: serviceProvider.preferred_model || 'gpt-4'
   };
 }
 
@@ -858,43 +822,16 @@ return {
 }
 
 async function executeSolutionPerformanceWorkflow(query: string, context: any, user: any, supabase: any): Promise<any> {
-  // Get active providers using same logic as Content Builder (AIServiceController)
-  // 1. Check user_llm_keys for OpenRouter
-  let openrouterKey = null;
-  const { data: llmKey } = await supabase
-    .from('user_llm_keys')
-    .select('api_key, provider')
-    .eq('user_id', user.id)
-    .eq('provider', 'openrouter')
-    .eq('is_active', true)
-    .maybeSingle();
-  
-  if (llmKey?.api_key) {
-    openrouterKey = llmKey.api_key;
-  }
-
-  // 2. Get active AI service providers only
+  // Get active AI service provider
   const { data: allProviders } = await supabase
     .from('ai_service_providers')
-    .select('provider, api_key, preferred_model, status, priority')
+    .select('provider, preferred_model, status, priority')
     .eq('user_id', user.id)
     .eq('status', 'active')
     .order('priority', { ascending: true });
 
-  // 3. Filter and find first valid provider (same logic as AIServiceController)
-  const validProviders = (allProviders || []).filter(p => {
-    // Must have a model configured
-    if (!p.preferred_model || p.preferred_model.trim() === '') {
-      return false;
-    }
-    
-    // Check if has valid API key
-    if (p.provider === 'openrouter' && openrouterKey) {
-      return true; // Use user_llm_keys key
-    }
-    
-    // For other providers, must have api_key in ai_service_providers
-    return p.api_key && p.api_key.trim() !== '';
+  const validProviders = (allProviders || []).filter((p: any) => {
+    return p.preferred_model && p.preferred_model.trim() !== '';
   });
 
   const provider = validProviders[0];
@@ -903,8 +840,13 @@ async function executeSolutionPerformanceWorkflow(query: string, context: any, u
     throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
   }
 
-  // Use OpenRouter key if available, otherwise use provider's key
-  const apiKey = provider.provider === 'openrouter' && openrouterKey ? openrouterKey : provider.api_key;
+  // Resolve key from encrypted api_keys table
+  const { getApiKey } = await import('../shared/apiKeyService.ts');
+  const apiKey = await getApiKey(provider.provider, user.id);
+  
+  if (!apiKey) {
+    throw new Error(`No API key found for ${provider.provider}.`);
+  }
   
   console.log(`🔑 Using AI provider: ${provider.provider} (model: ${provider.preferred_model}) for performance workflow`);
 

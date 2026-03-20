@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Brain, CheckCircle, XCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { ApiKeyService } from '@/services/apiKeyService';
 
 interface ModelInfo {
   id: string;
@@ -49,22 +50,42 @@ export const OpenRouterSettings = () => {
   const loadExistingKey = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('user_llm_keys')
-        .select('api_key, model, is_active')
+      
+      // Check api_keys_metadata view for existence (no plaintext exposed)
+      const { data: metaData } = await supabase
+        .from('api_keys_metadata')
+        .select('service, is_active')
         .eq('user_id', user?.id)
-        .eq('provider', 'openrouter')
-        .single();
+        .eq('service', 'openrouter')
+        .maybeSingle();
 
-      if (data && !error) {
-        setApiKey(data.api_key);
-        setSelectedModel(data.model || '');
+      if (metaData) {
         setKeyExists(true);
-        setIsVerified(data.is_active);
+        setIsVerified(metaData.is_active);
+        setApiKey('••••••••••••••••'); // Masked — key is encrypted
         
-        // Verify the existing key
-        if (data.is_active) {
-          await verifyExistingKey(data.api_key);
+        // Load preferred model from ai_service_providers
+        const { data: providerData } = await supabase
+          .from('ai_service_providers')
+          .select('preferred_model')
+          .eq('user_id', user?.id)
+          .eq('provider', 'openrouter')
+          .maybeSingle();
+        
+        if (providerData?.preferred_model) {
+          setSelectedModel(providerData.preferred_model);
+        }
+        
+        // Verify existing key works by trying to decrypt + verify
+        if (metaData.is_active) {
+          try {
+            const decryptedKey = await ApiKeyService.getApiKey('openrouter');
+            if (decryptedKey) {
+              await verifyExistingKey(decryptedKey);
+            }
+          } catch {
+            console.log('Could not verify existing key');
+          }
         }
       }
     } catch (error: any) {
@@ -213,8 +234,8 @@ export const OpenRouterSettings = () => {
       return;
     }
 
-    if (!apiKey.trim()) {
-      toast.error('Please enter an API key');
+    if (!apiKey.trim() || apiKey === '••••••••••••••••') {
+      toast.error('Please enter a new API key');
       return;
     }
 
@@ -227,21 +248,24 @@ export const OpenRouterSettings = () => {
       setIsSaving(true);
       console.log('💾 Saving OpenRouter configuration...');
 
-      const { error } = await supabase
-        .from('user_llm_keys')
-        .upsert({
-          user_id: user.id,
-          provider: 'openrouter',
-          api_key: apiKey,
-          model: selectedModel,
-          is_active: true
-        }, {
-          onConflict: 'user_id,provider'
-        });
+      // Store encrypted key in api_keys table
+      const stored = await ApiKeyService.storeApiKey('openrouter', apiKey.trim());
+      if (!stored) throw new Error('Failed to store API key');
 
-      if (error) throw error;
+      // Activate and set preferred model in ai_service_providers
+      await ApiKeyService.toggleApiKeyStatus('openrouter', true);
+      
+      // Update preferred model
+      if (selectedModel) {
+        await supabase
+          .from('ai_service_providers')
+          .update({ preferred_model: selectedModel })
+          .eq('user_id', user.id)
+          .eq('provider', 'openrouter');
+      }
 
       setKeyExists(true);
+      setApiKey('••••••••••••••••'); // Mask after save
       toast.success('🎉 OpenRouter configuration saved successfully!');
       console.log('✅ OpenRouter configuration saved');
 
@@ -257,13 +281,7 @@ export const OpenRouterSettings = () => {
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase
-        .from('user_llm_keys')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('provider', 'openrouter');
-
-      if (error) throw error;
+      await ApiKeyService.deleteApiKey('openrouter');
 
       setApiKey('');
       setSelectedModel('');
