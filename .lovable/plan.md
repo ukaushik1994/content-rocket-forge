@@ -1,28 +1,19 @@
 
 
-# Merge AI Provider Selector into AI Services Section
+# Make Active Provider Icon Match Navbar Button Size
 
-## Problem
-AI providers appear twice: once as pill buttons at the top (DefaultAiProviderSelector), and again as individual cards inside the "AI Services" collapsible section.
-
-## Solution
-Remove the standalone `DefaultAiProviderSelector` from above the categories. Instead, embed the active-provider pill row **inside** the AI Services `CategorySection` — right above the provider cards. This gives a single, unified AI section.
+## What
+Replace the text-based pill (`ActiveProviderIndicator`) with a proper icon button showing the provider logo, sized to match the calendar and user buttons (rounded-full, `size="icon"`), positioned immediately left of the calendar button.
 
 ## Changes
 
-### 1. `ApiSettings.tsx` — Remove standalone selector
-- Delete `<DefaultAiProviderSelector />` from line 120
-- Pass `isAICategory` flag or render the selector inline inside the AI Services category block
-- Render `DefaultAiProviderSelector` as the first child inside the AI Services `CategorySection`, before the provider cards
+### `src/components/ai/ActiveProviderIndicator.tsx`
+- Replace the `<div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10">` text pill with a `<Button variant="ghost" size="icon">` matching the navbar button style (`rounded-full border border-border/10 hover:border-border/30`)
+- Inside the button, render `<ProviderLogo provider={...} size="sm" />` (16×16, same as CalendarDays icon)
+- Keep the tooltip showing provider name + model
+- Loading state: same button shell with a `Loader2` icon inside
+- Hidden state: return `null` (unchanged)
 
-### 2. `DefaultAiProviderSelector.tsx` — Minor adjustments
-- Remove the outer spacing/padding since it will now live inside `CategorySection`'s `pl-6` wrapper
-- Keep the pill buttons + fallback toggle as-is (they look great)
-- Add a subtle separator (thin line or small gap) between the pills row and the provider cards below
-
-### 3. `CategorySection.tsx` — No changes needed
-The component already accepts `children` — we just need to compose the selector + cards together as children for the AI category.
-
-## Result
-One unified "AI Services" section containing: active-provider pills → fallback toggle → individual provider cards. No duplication.
+### `src/components/layout/Navbar.tsx`
+- Move `<ActiveProviderIndicator />` to sit directly before the Calendar button (it's already there, just confirm ordering)
 
