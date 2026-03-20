@@ -8869,6 +8869,7 @@ export type Database = {
       cleanup_expired_keyword_cache: { Args: never; Returns: undefined }
       cleanup_expired_notifications: { Args: never; Returns: undefined }
       cleanup_expired_serp_history: { Args: never; Returns: undefined }
+      cleanup_old_data: { Args: never; Returns: undefined }
       cleanup_old_serp_monitoring: { Args: never; Returns: undefined }
       create_campaign_atomic:
         | {
