@@ -35,7 +35,6 @@ export const EnhancedContentCard: React.FC<EnhancedContentCardProps> = ({
   onDelete
 }) => {
   const handleCardClick = (e: React.MouseEvent) => {
-    // Don't select the card if clicking on a button or dropdown
     if (
       e.target instanceof Element && 
       (e.target.closest('button') || e.target.closest('[role="menu"]'))
@@ -55,6 +54,8 @@ export const EnhancedContentCard: React.FC<EnhancedContentCardProps> = ({
       <ContentCardHeader
         status={item.status}
         seoScore={item.seo_score || 0}
+        contentValueScore={(item as any).content_value_score || 0}
+        funnelStage={(item as any).funnel_stage}
         onEdit={onEdit}
         onPreview={onPreview}
         onAnalyze={onAnalyze}
@@ -81,5 +82,4 @@ export const EnhancedContentCard: React.FC<EnhancedContentCardProps> = ({
   );
 };
 
-// Export the skeleton component for use elsewhere
 export { ContentCardSkeleton };
