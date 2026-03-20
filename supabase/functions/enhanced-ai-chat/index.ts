@@ -2679,8 +2679,20 @@ serve(async (req) => {
         systemPrompt += '\n\n' + ACTION_MODULE;
       }
       
-      // Add platform knowledge: full when relevant, basics always (PE Fix 3)
-      if (needsPlatformKnowledge) {
+      // Phase 1C: Skip platform knowledge for experienced users (10+ conversations)
+      // Also skip for non-navigation queries to save tokens
+      let skipFullPlatformKnowledge = false;
+      try {
+        const { count: convoCount } = await supabase.from('ai_conversations')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        if ((convoCount || 0) >= 10) {
+          skipFullPlatformKnowledge = true;
+          console.log(`🧠 Experienced user (${convoCount} convos) — skipping full platform knowledge`);
+        }
+      } catch (_) { /* non-blocking */ }
+
+      if (needsPlatformKnowledge && !skipFullPlatformKnowledge) {
         systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
       } else {
         systemPrompt += '\n\n' + PLATFORM_BASICS;
