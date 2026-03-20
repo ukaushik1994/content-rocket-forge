@@ -1008,6 +1008,8 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         const seoScore = calculateBasicSeoScore(generatedContent, toolArgs.keyword, autoMetaTitle, autoMetaDesc);
         if (seoScore > 0 && saved.id) {
           await saveAutoSeoScore(supabase, userId, saved.id, seoScore, toolArgs.keyword);
+          // 8A: Compute value score
+          await computeAndSaveValueScore(supabase, userId, saved.id, seoScore);
         }
 
         // Create version 1 (E1)
