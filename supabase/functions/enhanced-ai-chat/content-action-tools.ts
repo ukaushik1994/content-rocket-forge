@@ -1406,10 +1406,13 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         // Rescore
         const newScore = calculateBasicSeoScore(improvedContent, content.main_keyword || '', content.meta_title, content.meta_description);
 
-        // Save
+        // Save + compute value score
         await supabase.from('content_items').update({
           content: improvedContent, seo_score: newScore, updated_at: new Date().toISOString()
         }).eq('id', content.id).eq('user_id', userId);
+        
+        // 8A: Update value score
+        await computeAndSaveValueScore(supabase, userId, content.id, newScore);
 
         const scoreDiff = newScore - (content.seo_score || 0);
         const scoreNote = scoreDiff > 0 ? ` (SEO: ${content.seo_score || 0} → ${newScore}, +${scoreDiff})` : ` (SEO: ${newScore}/100)`;
