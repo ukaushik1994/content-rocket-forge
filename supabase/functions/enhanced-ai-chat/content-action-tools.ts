@@ -5,15 +5,15 @@
 import { getApiKey } from '../shared/apiKeyService.ts';
 import { callAiProxyWithRetry } from '../shared/aiProxyRetry.ts';
 
-// Enhanced SEO score calculator — rewards AI-generated structures generously
+// Enhanced SEO score calculator — rewards AI-generated structures + penalizes bad patterns
 function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: string, metaDescription?: string): number {
   if (!content) return 0;
   let score = 0;
   const lowerContent = content.toLowerCase();
   const lowerKeyword = keyword?.toLowerCase() || '';
+  const wordCount = content.split(/\s+/).length;
 
   // Content length (max 20 pts) — generous thresholds
-  const wordCount = content.split(/\s+/).length;
   if (wordCount >= 1000) score += 20;
   else if (wordCount >= 500) score += 16;
   else if (wordCount >= 300) score += 12;
@@ -21,10 +21,11 @@ function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: st
   else score += 4;
 
   // Keyword presence (max 15 pts)
+  let density = 0;
   if (lowerKeyword) {
     const escaped = lowerKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const keywordCount = (lowerContent.match(new RegExp(escaped, 'gi')) || []).length;
-    const density = keywordCount / Math.max(wordCount, 1) * 100;
+    density = keywordCount / Math.max(wordCount, 1) * 100;
     if (keywordCount >= 1 && density <= 4) score += 15;
     else if (keywordCount >= 1) score += 10;
   }
@@ -59,7 +60,51 @@ function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: st
     if (metaDescription?.toLowerCase().includes(lowerKeyword)) score += 7;
   }
 
-  return Math.min(score, 100);
+  // === 2D: PENALTY DEDUCTIONS ===
+
+  // Keyword stuffing penalty (density > 3%)
+  if (density > 3) {
+    score -= Math.min(10, Math.round((density - 3) * 3));
+  }
+
+  // No links penalty — content without any links loses points
+  const linkCount = (content.match(/<a\s/gi) || []).length + (content.match(/\[.*?\]\(.*?\)/g) || []).length;
+  if (linkCount === 0 && wordCount > 300) score -= 5;
+
+  // Uniform paragraph length penalty — all paragraphs roughly same length is robotic
+  const paragraphs = content.split(/(?:<\/p>\s*<p|<br\s*\/?>\s*<br|\n\n)/).filter((p: string) => p.replace(/<[^>]+>/g, '').trim().length > 20);
+  if (paragraphs.length >= 4) {
+    const pLengths = paragraphs.map((p: string) => p.replace(/<[^>]+>/g, '').trim().split(/\s+/).length);
+    const avgLen = pLengths.reduce((a: number, b: number) => a + b, 0) / pLengths.length;
+    const variance = pLengths.reduce((sum: number, l: number) => sum + Math.pow(l - avgLen, 2), 0) / pLengths.length;
+    const cv = Math.sqrt(variance) / Math.max(avgLen, 1); // coefficient of variation
+    if (cv < 0.15) score -= 5; // very uniform = robotic
+  }
+
+  // No questions penalty — engaging content asks questions
+  const hasQuestions = /\?/.test(content);
+  if (!hasQuestions && wordCount > 500) score -= 3;
+
+  return Math.max(0, Math.min(score, 100));
+}
+
+// 2E: Readability analyzer — returns avg sentence length + grade
+function computeReadability(content: string): { avgSentenceLength: number; grade: string; note: string } {
+  const plainText = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const sentences = plainText.split(/[.!?]+/).filter((s: string) => s.trim().length > 5);
+  if (sentences.length === 0) return { avgSentenceLength: 0, grade: 'N/A', note: '' };
+  
+  const totalWords = sentences.reduce((sum: number, s: string) => sum + s.trim().split(/\s+/).length, 0);
+  const avgSL = Math.round(totalWords / sentences.length);
+  
+  let grade: string;
+  let note: string;
+  if (avgSL <= 14) { grade = 'Easy'; note = 'Very accessible — great for broad audiences'; }
+  else if (avgSL <= 20) { grade = 'Optimal'; note = 'Well-balanced for web content'; }
+  else if (avgSL <= 25) { grade = 'Moderate'; note = 'Consider shortening some sentences for scannability'; }
+  else { grade = 'Complex'; note = 'Sentences are long — break up for better readability'; }
+  
+  return { avgSentenceLength: avgSL, grade, note };
 }
 
 // 8A: Compute and save content value score
@@ -897,8 +942,9 @@ export async function executeContentActionTool(
 ## Format
 - Content type: ${toolArgs.content_type || 'blog'}
 - Tone: ${toolArgs.tone || 'professional'}
-- Target length: ~${targetWords} words
+- **CRITICAL WORD COUNT**: You MUST write exactly ~${targetWords} words (±10%). This means between ${Math.round(targetWords * 0.9)} and ${Math.round(targetWords * 1.1)} words. Count carefully — too short or too long will be flagged. Do not pad with filler; add depth instead.
 - Output clean HTML with proper headings (h2, h3), paragraphs, lists, and occasional <strong> for emphasis
+- Include at least 1-2 questions in the body text to engage readers
 - Do NOT include meta information or JSON — just the article content
 ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorContext}${structureGuidance}${editPatternHint}${performanceContext}${businessOutcomeContext}`;
 
@@ -1084,6 +1130,22 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         } catch (_) { /* non-blocking */ }
 
         const wordCount = generatedContent.split(/\s+/).length;
+        
+        // 2A: Word count deviation alert
+        const minWords = Math.round(targetWords * 0.9);
+        const maxWords = Math.round(targetWords * 1.1);
+        let wordCountAlert = '';
+        if (wordCount < minWords) {
+          wordCountAlert = `\n⚠️ **Word count short**: ${wordCount} words vs ${targetWords} target (${Math.round((wordCount / targetWords) * 100)}%). Consider asking to expand specific sections.`;
+        } else if (wordCount > maxWords) {
+          wordCountAlert = `\n⚠️ **Word count over**: ${wordCount} words vs ${targetWords} target (${Math.round((wordCount / targetWords) * 100)}%). Content may benefit from tightening.`;
+        }
+        
+        // 2E: Readability analysis
+        const readability = computeReadability(generatedContent);
+        const readabilityNote = readability.grade !== 'N/A' 
+          ? `\n📖 **Readability**: ${readability.grade} (avg ${readability.avgSentenceLength} words/sentence) — ${readability.note}`
+          : '';
         // Auto-suggest keywords from headings (E2)
         let keywordSuggestions = '';
         try {
@@ -1143,7 +1205,7 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         const seoContext = seoScore < 40 ? ' (basic check — full SEO analysis available in the Content Wizard)' : '';
         return {
           success: true,
-          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${factCheckWarning}${linkSuggestions}${keywordSuggestions}${cannibalizationWarning}${enrichmentWarning}${consistencyWarning}`,
+          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${wordCountAlert}${readabilityNote}${factCheckWarning}${linkSuggestions}${keywordSuggestions}${cannibalizationWarning}${enrichmentWarning}${consistencyWarning}`,
           item: { ...saved, seo_score: seoScore, meta_title: autoMetaTitle, meta_description: autoMetaDesc },
           wordCount,
           actions: [

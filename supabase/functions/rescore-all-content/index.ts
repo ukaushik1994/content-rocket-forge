@@ -5,24 +5,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Same SEO scorer as content-action-tools.ts
+// Same SEO scorer as content-action-tools.ts (with 2D penalties)
 function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: string, metaDescription?: string): number {
   if (!content) return 0;
   let score = 0;
   const lowerContent = content.toLowerCase();
   const lowerKeyword = keyword?.toLowerCase() || '';
-
   const wordCount = content.split(/\s+/).length;
+
   if (wordCount >= 1000) score += 20;
   else if (wordCount >= 500) score += 16;
   else if (wordCount >= 300) score += 12;
   else if (wordCount >= 150) score += 8;
   else score += 4;
 
+  let density = 0;
   if (lowerKeyword) {
     const escaped = lowerKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const keywordCount = (lowerContent.match(new RegExp(escaped, 'gi')) || []).length;
-    const density = keywordCount / Math.max(wordCount, 1) * 100;
+    density = keywordCount / Math.max(wordCount, 1) * 100;
     if (keywordCount >= 1 && density <= 4) score += 15;
     else if (keywordCount >= 1) score += 10;
   }
@@ -53,7 +54,20 @@ function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: st
     if (metaDescription?.toLowerCase().includes(lowerKeyword)) score += 7;
   }
 
-  return Math.min(score, 100);
+  // 2D Penalties
+  if (density > 3) score -= Math.min(10, Math.round((density - 3) * 3));
+  const linkCount = (content.match(/<a\s/gi) || []).length + (content.match(/\[.*?\]\(.*?\)/g) || []).length;
+  if (linkCount === 0 && wordCount > 300) score -= 5;
+  const paragraphs = content.split(/(?:<\/p>\s*<p|<br\s*\/?>\s*<br|\n\n)/).filter((p: string) => p.replace(/<[^>]+>/g, '').trim().length > 20);
+  if (paragraphs.length >= 4) {
+    const pLengths = paragraphs.map((p: string) => p.replace(/<[^>]+>/g, '').trim().split(/\s+/).length);
+    const avgLen = pLengths.reduce((a: number, b: number) => a + b, 0) / pLengths.length;
+    const variance = pLengths.reduce((sum: number, l: number) => sum + Math.pow(l - avgLen, 2), 0) / pLengths.length;
+    if (Math.sqrt(variance) / Math.max(avgLen, 1) < 0.15) score -= 5;
+  }
+  if (!/\?/.test(content) && wordCount > 500) score -= 3;
+
+  return Math.max(0, Math.min(score, 100));
 }
 
 Deno.serve(async (req) => {
