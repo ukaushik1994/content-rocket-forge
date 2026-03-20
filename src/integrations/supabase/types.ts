@@ -219,6 +219,7 @@ export type Database = {
         Row: {
           archived: boolean | null
           created_at: string
+          deleted_at: string | null
           goal: string | null
           id: string
           is_shared: boolean | null
@@ -234,6 +235,7 @@ export type Database = {
         Insert: {
           archived?: boolean | null
           created_at?: string
+          deleted_at?: string | null
           goal?: string | null
           id?: string
           is_shared?: boolean | null
@@ -249,6 +251,7 @@ export type Database = {
         Update: {
           archived?: boolean | null
           created_at?: string
+          deleted_at?: string | null
           goal?: string | null
           id?: string
           is_shared?: boolean | null
@@ -1374,6 +1377,7 @@ export type Database = {
       campaigns: {
         Row: {
           created_at: string | null
+          deleted_at: string | null
           goal: string | null
           id: string
           name: string
@@ -1389,6 +1393,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          deleted_at?: string | null
           goal?: string | null
           id?: string
           name: string
@@ -1404,6 +1409,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          deleted_at?: string | null
           goal?: string | null
           id?: string
           name?: string
@@ -2619,6 +2625,7 @@ export type Database = {
           content_value_score: number | null
           conversation_id: string | null
           created_at: string
+          deleted_at: string | null
           funnel_stage: string | null
           generated_images: Json | null
           generated_videos: Json | null
@@ -2651,6 +2658,7 @@ export type Database = {
           content_value_score?: number | null
           conversation_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           funnel_stage?: string | null
           generated_images?: Json | null
           generated_videos?: Json | null
@@ -2683,6 +2691,7 @@ export type Database = {
           content_value_score?: number | null
           conversation_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           funnel_stage?: string | null
           generated_images?: Json | null
           generated_videos?: Json | null
@@ -8883,6 +8892,7 @@ export type Database = {
             }
             Returns: {
               created_at: string | null
+              deleted_at: string | null
               goal: string | null
               id: string
               name: string
@@ -8946,6 +8956,7 @@ export type Database = {
         Returns: {
           archived: boolean | null
           created_at: string
+          deleted_at: string | null
           goal: string | null
           id: string
           is_shared: boolean | null
