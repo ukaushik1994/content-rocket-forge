@@ -483,6 +483,26 @@ export async function executeContentActionTool(
       }
 
       case 'approve_content': {
+        // Quality gate: fetch content first to check SEO score
+        const { data: contentToApprove, error: fetchErr } = await supabase.from('content_items')
+          .select('id, title, seo_score, approval_status')
+          .eq('id', toolArgs.content_id)
+          .eq('user_id', userId)
+          .single();
+
+        if (fetchErr || !contentToApprove) return { success: false, message: 'Content not found or access denied' };
+
+        // Block approval if SEO score is critically low
+        if (contentToApprove.seo_score !== null && contentToApprove.seo_score < 20) {
+          return {
+            success: false,
+            message: `Cannot approve "${contentToApprove.title}" — SEO score is ${contentToApprove.seo_score}/100 (minimum 20 required). Use "improve content" to raise quality first.`,
+            actions: [
+              { id: `improve-${toolArgs.content_id}`, type: 'button', label: '✨ Improve Content', action: 'send_message', data: { message: `Improve the content "${contentToApprove.title}" to raise its SEO score` } }
+            ]
+          };
+        }
+
         const { data, error } = await supabase.from('content_items')
           .update({ approval_status: 'approved', updated_at: new Date().toISOString() })
           .eq('id', toolArgs.content_id)

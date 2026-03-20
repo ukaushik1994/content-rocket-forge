@@ -273,14 +273,8 @@ export async function executeCrossModuleTool(
           workspaceId = newWsId;
         }
 
-        // Wrap content in email-safe HTML template (matching content_to_email pattern)
-        const wrappedHtml = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; line-height: 1.6;">
-${topContent.content || ''}
-</body>
-</html>`;
+        // Wrap content in professional email-safe HTML template
+        const wrappedHtml = buildEmailTemplate(topContent.title, topContent.content || '');
 
         const { data: emailCampaign, error: emailError } = await supabase.from('email_campaigns').insert({
           workspace_id: workspaceId,
