@@ -299,7 +299,7 @@ class AIStrategyService {
       
       const { error } = await supabase
         .from('ai_strategies')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() } as any)
         .eq('id', strategyId);
       
       if (error) {
