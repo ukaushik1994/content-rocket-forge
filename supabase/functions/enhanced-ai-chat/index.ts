@@ -2267,7 +2267,7 @@ serve(async (req) => {
             provider: fallbackService,
             status: 'active',
             preferred_model: preferredModel,
-            api_key: '***encrypted***',
+            api_key: '',
             priority: 1,
             error_message: null,
             updated_at: new Date().toISOString()

@@ -1,0 +1,1 @@
+UPDATE public.ai_service_providers SET api_key = '' WHERE api_key IS NOT NULL AND api_key != '';

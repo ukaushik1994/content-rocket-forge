@@ -1,17 +1,11 @@
-  /**
-   * Sync API keys from api_keys to ai_service_providers table
-   * This ensures AIServiceController can access the API keys saved in settings
-   */
+/**
+ * Sync API keys from api_keys to ai_service_providers table
+ * This ensures ai_service_providers has metadata records for configured providers.
+ * NOTE: api_key column is always set to '' — edge functions decrypt from api_keys table directly.
+ */
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-interface UserApiKey {
-  id: string;
-  service: string;
-  encrypted_key: string;
-  is_active: boolean;
-}
 
 interface ProviderMetadata {
   description: string;
@@ -31,7 +25,7 @@ const PROVIDER_METADATA: Record<string, ProviderMetadata> = {
     icon_name: 'brain',
     category: 'AI Services',
     capabilities: ['chat', 'completion', 'vision', 'embedding'],
-    available_models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    available_models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
     is_required: false,
     priority: 1
   },
@@ -41,17 +35,17 @@ const PROVIDER_METADATA: Record<string, ProviderMetadata> = {
     icon_name: 'message-square',
     category: 'AI Services',
     capabilities: ['chat', 'completion', 'vision', 'analysis'],
-    available_models: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
+    available_models: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022'],
     is_required: false,
     priority: 2
   },
   gemini: {
-    description: 'Google\'s multimodal AI for diverse content tasks',
+    description: "Google's multimodal AI for diverse content tasks",
     setup_url: 'https://aistudio.google.com/app/apikey',
     icon_name: 'brain',
     category: 'AI Services',
     capabilities: ['chat', 'completion', 'vision', 'multimodal'],
-    available_models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro-vision'],
+    available_models: ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash'],
     is_required: false,
     priority: 3
   },
@@ -61,89 +55,60 @@ const PROVIDER_METADATA: Record<string, ProviderMetadata> = {
     icon_name: 'binary',
     category: 'AI Services',
     capabilities: ['chat', 'completion', 'embedding'],
-    available_models: ['mistral-large', 'mistral-medium', 'mistral-small'],
+    available_models: ['mistral-large-latest', 'mistral-medium-latest'],
     is_required: false,
     priority: 4
   },
-  lmstudio: {
-    description: 'Local AI models running on your machine',
-    setup_url: 'https://lmstudio.ai/',
-    icon_name: 'server',
+  openrouter: {
+    description: 'Unified API for multiple AI models',
+    setup_url: 'https://openrouter.ai/keys',
+    icon_name: 'brain',
     category: 'AI Services',
-    capabilities: ['chat', 'completion', 'local'],
-    available_models: ['llama-3.2', 'phi-3', 'codellama'],
+    capabilities: ['chat', 'completion'],
+    available_models: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet'],
     is_required: false,
-    priority: 5
+    priority: 0
   }
 };
 
 /**
- * Sync API keys from user_llm_keys to ai_service_providers
+ * Sync API keys metadata to ai_service_providers.
+ * Never writes plaintext keys — api_key is always ''.
  */
 export async function syncApiKeysToProviders(): Promise<boolean> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
+    if (!user) throw new Error('User not authenticated');
 
     console.log('🔄 Syncing API keys to ai_service_providers...');
 
-    // Get API key metadata (encrypted_key not accessible from client for security)
     const { data: apiKeys, error: keysError } = await supabase
       .from('api_keys_metadata')
       .select('*')
       .eq('user_id', user.id)
       .eq('is_active', true);
 
-    if (keysError) {
-      throw new Error(`Failed to fetch API keys: ${keysError.message}`);
-    }
-
+    if (keysError) throw new Error(`Failed to fetch API keys: ${keysError.message}`);
     if (!apiKeys || apiKeys.length === 0) {
       console.log('📭 No active API keys found to sync');
       return true;
     }
 
-    console.log(`📦 Found ${apiKeys.length} API keys to sync`);
-
-    // Get existing providers to avoid duplicates
-    const { data: existingProviders, error: providersError } = await supabase
+    const { data: existingProviders } = await supabase
       .from('ai_service_providers')
       .select('provider')
       .eq('user_id', user.id);
 
-    if (providersError) {
-      throw new Error(`Failed to fetch existing providers: ${providersError.message}`);
-    }
+    const existingSet = new Set((existingProviders || []).map(p => p.provider));
 
-    const existingProviderNames = new Set(
-      (existingProviders || []).map(p => p.provider)
-    );
-
-    // Prepare provider data for insertion - decrypt keys first
-    const providersToInsert = [];
-    
-    for (const key of apiKeys) {
-      if (!PROVIDER_METADATA[key.service] || existingProviderNames.has(key.service)) {
-        continue;
-      }
-      
-      try {
-        // Decrypt the API key
-        const { getApiKey } = await import('../apiKeyService');
-        const decryptedKey = await getApiKey(key.service as any);
-        
-        if (!decryptedKey) {
-          console.warn(`Could not decrypt API key for ${key.service}`);
-          continue;
-        }
-        
+    const providersToInsert = apiKeys
+      .filter(key => PROVIDER_METADATA[key.service] && !existingSet.has(key.service))
+      .map(key => {
         const metadata = PROVIDER_METADATA[key.service];
-        providersToInsert.push({
+        return {
           user_id: user.id,
           provider: key.service,
-          api_key: decryptedKey,
+          api_key: '', // Never store plaintext — edge functions decrypt from api_keys
           status: 'active',
           priority: metadata.priority,
           description: metadata.description,
@@ -154,29 +119,22 @@ export async function syncApiKeysToProviders(): Promise<boolean> {
           available_models: metadata.available_models,
           is_required: metadata.is_required,
           last_verified: new Date().toISOString()
-        });
-      } catch (error) {
-        console.error(`Failed to decrypt key for ${key.service}:`, error);
-      }
-    }
+        };
+      });
 
     if (providersToInsert.length === 0) {
       console.log('✅ All API keys already synced');
       return true;
     }
 
-    // Insert providers
     const { error: insertError } = await supabase
       .from('ai_service_providers')
       .insert(providersToInsert);
 
-    if (insertError) {
-      throw new Error(`Failed to sync providers: ${insertError.message}`);
-    }
+    if (insertError) throw new Error(`Failed to sync providers: ${insertError.message}`);
 
     console.log(`✅ Successfully synced ${providersToInsert.length} providers`);
     toast.success(`Synced ${providersToInsert.length} AI providers`);
-    
     return true;
   } catch (error: any) {
     console.error('❌ Failed to sync API keys:', error);
@@ -190,7 +148,6 @@ export async function syncApiKeysToProviders(): Promise<boolean> {
  */
 export async function autoSyncApiKeys(): Promise<void> {
   try {
-    // Check if we need to sync (if ai_service_providers is empty but user_llm_keys has data)
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
