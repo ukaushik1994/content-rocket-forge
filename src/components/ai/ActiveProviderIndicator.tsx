@@ -37,10 +37,12 @@ export function ActiveProviderIndicator() {
       const { data: providerData, error: providerError } = await supabase
         .from('ai_service_providers')
         .select('provider, preferred_model')
+        .eq('user_id', user.id)
         .eq('status', 'active')
         .maybeSingle();
 
       if (providerError) {
+        console.log('[ActiveProvider] Query error:', providerError.message);
         setActiveProvider(null);
         setHasApiKey(false);
         setIsLoading(false);
@@ -53,6 +55,7 @@ export function ActiveProviderIndicator() {
         const { data: keyData, error: keyError } = await supabase
           .from('api_keys_metadata')
           .select('is_active')
+          .eq('user_id', user.id)
           .eq('service', providerData.provider)
           .eq('is_active', true)
           .maybeSingle();
@@ -72,6 +75,9 @@ export function ActiveProviderIndicator() {
   useEffect(() => {
     fetchActiveProviderAndKey();
 
+    const handleProviderChanged = () => fetchActiveProviderAndKey();
+    document.addEventListener('provider-changed', handleProviderChanged);
+
     const providerChannel = supabase
       .channel('active-provider-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ai_service_providers' }, () => fetchActiveProviderAndKey())
@@ -83,6 +89,7 @@ export function ActiveProviderIndicator() {
       .subscribe();
 
     return () => {
+      document.removeEventListener('provider-changed', handleProviderChanged);
       supabase.removeChannel(providerChannel);
       supabase.removeChannel(keysChannel);
     };
