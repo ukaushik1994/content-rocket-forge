@@ -149,6 +149,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
           : '',
       },
       additionalInstructions: extractedContext?.additional_instructions || '',
+      funnelStage: null,
     };
   });
 
