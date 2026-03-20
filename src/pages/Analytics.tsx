@@ -135,7 +135,7 @@ const Analytics = () => {
       icon: Activity,
       color: 'from-red-500 to-rose-400',
       bgPattern: 'from-red-500/5 to-rose-400/10',
-      source: 'Google Analytics'
+      source: 'Content Analytics'
     },
     { 
       id: 'sessionDuration', 
