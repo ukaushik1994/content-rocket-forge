@@ -2296,20 +2296,16 @@ serve(async (req) => {
     // Get the single active provider (only one should be active at a time)
     const provider = validProviders[0] as any;
     
-    // 4. Resolve API key from encrypted api_keys table (never use plaintext ai_service_providers.api_key)
+    // 4. Resolve API key from encrypted api_keys table
     const { getApiKey } = await import('../shared/apiKeyService.ts');
-    if (provider.provider === 'openrouter' && openrouterKey) {
-      provider.api_key = openrouterKey;
-    } else {
-      const decryptedKey = await getApiKey(provider.provider, user.id);
-      if (!decryptedKey) {
-        console.error(`❌ No decrypted API key found for provider: ${provider.provider}`);
-        return new Response(JSON.stringify({ error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.`, deployVersion: DEPLOY_VERSION }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-      provider.api_key = decryptedKey;
+    const decryptedKey = await getApiKey(provider.provider, user.id);
+    if (!decryptedKey) {
+      console.error(`❌ No decrypted API key found for provider: ${provider.provider}`);
+      return new Response(JSON.stringify({ error: `No API key found for ${provider.provider}. Please add your API key in Settings → API Keys.`, deployVersion: DEPLOY_VERSION }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
+    provider.api_key = decryptedKey;
 
     console.log(`🔑 Using active provider: ${provider.provider} (model: ${provider.preferred_model})`)
     
