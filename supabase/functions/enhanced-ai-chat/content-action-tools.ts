@@ -677,6 +677,12 @@ export async function executeContentActionTool(
               .order('created_at', { ascending: false }).limit(50)
           ]);
 
+          // 5A: Track which enrichments failed
+          const enrichmentLabels = ['Brand Voice', 'Solutions', 'Existing Content', 'Competitors', 'Top Content', 'Edit Patterns', 'Performance Signals'];
+          const failedEnrichments = [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult, perfSignalsResult]
+            .map((r, i) => r.status === 'rejected' ? enrichmentLabels[i] : null)
+            .filter(Boolean);
+
           // Brand voice context
           if (brandResult.status === 'fulfilled' && brandResult.value.data) {
             const b = brandResult.value.data;
