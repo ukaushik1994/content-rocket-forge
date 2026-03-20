@@ -653,7 +653,7 @@ async function chatGemini(apiKey: string, params: any) {
     }
   };
 
-  const originalModel = params.model || 'gemini-2.0-flash-exp';
+  const originalModel = params.model || 'gemini-2.5-flash';
   let model = originalModel;
 
   for (let modelAttempt = 1; modelAttempt <= 2; modelAttempt++) {
