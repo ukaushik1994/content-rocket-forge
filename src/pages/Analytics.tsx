@@ -99,7 +99,7 @@ const Analytics = () => {
       icon: Eye,
       color: 'from-blue-500 to-cyan-400',
       bgPattern: 'from-blue-500/5 to-cyan-400/10',
-      source: 'Google Analytics'
+      source: 'Content Analytics'
     },
     { 
       id: 'sessions', 
