@@ -113,7 +113,7 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
   const hasKeywordTopics = analystState ? analystState.topics.some(t => t.category === 'keywords') || analystState.platformData.some(d => d.category === 'keywords') : false;
   const hasCampaigns = analystState ? analystState.platformData.some(d => d.category === 'campaigns') : false;
   const hasEngagement = analystState ? analystState.platformData.some(d => ['email', 'social', 'engage'].includes(d.category)) : false;
-  const hasCompetitors = analystState ? analystState.topics.some(t => t.category === 'competitors') : false;
+  const hasCompetitors = analystState ? (analystState.topics.some(t => t.category === 'competitors') || analystState.platformData.some(d => d.category === 'competitors')) : false;
   const hasGoal = analystState?.goalProgress != null;
   const hasWebSearch = analystState ? analystState.webSearchResults.length > 0 : false;
 
@@ -179,7 +179,7 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
       id: 'competitive-position',
       visible: hasCompetitors && !!analystState,
       category: 'competitors',
-      render: () => <CompetitivePositionSection topics={analystState!.topics} onSendMessage={onSendMessage} />,
+      render: () => <CompetitivePositionSection topics={analystState!.topics} platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
     },
     {
       id: 'goal-progress',

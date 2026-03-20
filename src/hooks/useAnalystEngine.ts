@@ -1264,15 +1264,30 @@ export function useAnalystEngine(
             .eq('user_id', userId);
           if (count !== null) newData.push({ label: 'Keyword Proposals', value: count, category: 'keywords', fetchedAt: now });
         })());
+        // Real tracked keywords from keywords table
+        fetches.push((async () => {
+          const { count } = await supabase
+            .from('keywords')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId);
+          if (count !== null) newData.push({ label: 'Tracked Keywords', value: count, category: 'keywords', fetchedAt: now });
+        })());
       }
 
       if (coveredCategories.has('competitors')) {
         fetches.push((async () => {
-          const { count } = await supabase
+          const { data: competitors } = await supabase
             .from('company_competitors')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId);
-          if (count !== null) newData.push({ label: 'Tracked Competitors', value: count, category: 'competitors', fetchedAt: now });
+            .select('id, name, market_position')
+            .eq('user_id', userId)
+            .limit(10);
+          if (competitors !== null) {
+            newData.push({ label: 'Tracked Competitors', value: competitors.length, category: 'competitors', fetchedAt: now });
+            // Store competitor names as individual data points for the section
+            competitors.forEach((c: any) => {
+              newData.push({ label: `Competitor: ${c.name}`, value: 1, category: 'competitors', fetchedAt: now });
+            });
+          }
         })());
       }
 

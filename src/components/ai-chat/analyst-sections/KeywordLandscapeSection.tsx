@@ -13,21 +13,22 @@ interface Props {
 export const KeywordLandscapeSection: React.FC<Props> = ({ topics, platformData, onSendMessage }) => {
   const keywordTopics = topics.filter(t => t.category === 'keywords');
   const keywordMetrics = platformData.filter(d => d.category === 'keywords');
-  if (keywordTopics.length === 0 && keywordMetrics.length === 0) return null;
 
-  const kwCount = keywordMetrics.find(m => m.label === 'Keyword Proposals')?.value || 0;
+  const trackedKw = platformData.find(m => m.label === 'Tracked Keywords')?.value || 0;
+  const kwProposals = platformData.find(m => m.label === 'Keyword Proposals')?.value || 0;
+  const hasData = trackedKw > 0 || kwProposals > 0 || keywordTopics.length > 0;
 
   const getHeadline = () => {
-    if (kwCount === 0) return <>Keyword presence is a <span className="text-rose-300">blind spot</span></>;
-    if (kwCount < 10) return <>Your keyword presence is <span className="text-amber-300">emerging</span></>;
-    return <><span className="text-emerald-400/80">{kwCount} targets</span> tracked</>;
+    if (trackedKw > 0) return <><span className="text-emerald-400/80">{trackedKw} keyword{trackedKw !== 1 ? 's' : ''}</span> tracked</>;
+    if (kwProposals > 0) return <><span className="text-amber-300">{kwProposals} proposal{kwProposals !== 1 ? 's' : ''}</span> available</>;
+    return <>Keyword presence is a <span className="text-rose-300">blind spot</span></>;
   };
 
   return (
     <AnalystSectionWrapper number="05" label="Keyword Landscape" headline={getHeadline()} delay={0.2}>
       {keywordMetrics.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
-          {keywordMetrics.slice(0, 2).map((metric) => (
+          {keywordMetrics.slice(0, 4).map((metric) => (
             <AnalystDataCard key={metric.label} label={metric.label} value={metric.value} />
           ))}
         </div>
@@ -45,9 +46,9 @@ export const KeywordLandscapeSection: React.FC<Props> = ({ topics, platformData,
           ))}
         </div>
       )}
-      {kwCount === 0 && (
+      {!hasData && (
         <NarrativePromptCard
-          question="No keyword targets detected yet. Want me to auto-detect keywords from your content?"
+          question="No keywords tracked yet. Want me to auto-detect keywords from your content?"
           primaryLabel="Auto-Detect Keywords"
           primaryAction="Analyze my existing content and auto-detect keyword targets"
           secondaryLabel="I'll Add Manually"
