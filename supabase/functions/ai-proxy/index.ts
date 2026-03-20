@@ -640,18 +640,79 @@ async function testGemini(apiKey: string) {
 async function chatGemini(apiKey: string, params: any) {
   console.log('💬 Processing Gemini chat request');
   
-  const contents = params.messages?.map((msg: any) => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.content }]
-  })) || [{ role: 'user', parts: [{ text: params.prompt || 'Hello' }] }];
+  // Filter out system messages and prepend as systemInstruction
+  const systemMessages = (params.messages || []).filter((msg: any) => msg.role === 'system');
+  const nonSystemMessages = (params.messages || []).filter((msg: any) => msg.role !== 'system');
+  
+  const contents = nonSystemMessages.length > 0 
+    ? nonSystemMessages.map((msg: any) => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content || '' }]
+      }))
+    : [{ role: 'user', parts: [{ text: params.prompt || 'Hello' }] }];
 
-  const requestBody = {
+  const requestBody: any = {
     contents,
     generationConfig: {
       temperature: params.temperature || 0.7,
       maxOutputTokens: params.maxTokens || params.max_tokens || 1000,
     }
   };
+
+  // Add system instruction if present
+  if (systemMessages.length > 0) {
+    requestBody.systemInstruction = {
+      parts: [{ text: systemMessages.map((m: any) => m.content).join('\n\n') }]
+    };
+  }
+
+  // Convert OpenAI tools format to Gemini function declarations
+  if (params.tools && Array.isArray(params.tools) && params.tools.length > 0) {
+    try {
+      const functionDeclarations = params.tools
+        .filter((t: any) => t.type === 'function' && t.function)
+        .map((t: any) => {
+          const fn = t.function;
+          const parameters = fn.parameters ? JSON.parse(JSON.stringify(fn.parameters)) : { type: 'object', properties: {} };
+          // Remove unsupported fields
+          delete parameters.additionalProperties;
+          if (parameters.properties) {
+            for (const key of Object.keys(parameters.properties)) {
+              const prop = parameters.properties[key];
+              if (prop && typeof prop === 'object') {
+                delete prop.additionalProperties;
+              }
+            }
+          }
+          return {
+            name: fn.name,
+            description: fn.description || '',
+            parameters,
+          };
+        });
+
+      if (functionDeclarations.length > 0) {
+        requestBody.tools = [{ functionDeclarations }];
+        
+        if (params.tool_choice === 'required') {
+          requestBody.toolConfig = { functionCallingConfig: { mode: 'ANY' } };
+        } else if (params.tool_choice === 'none') {
+          requestBody.toolConfig = { functionCallingConfig: { mode: 'NONE' } };
+        } else if (typeof params.tool_choice === 'object' && params.tool_choice?.function?.name) {
+          requestBody.toolConfig = { 
+            functionCallingConfig: { 
+              mode: 'ANY',
+              allowedFunctionNames: [params.tool_choice.function.name]
+            } 
+          };
+        } else {
+          requestBody.toolConfig = { functionCallingConfig: { mode: 'AUTO' } };
+        }
+      }
+    } catch (toolConvertErr) {
+      console.warn('⚠️ Failed to convert tools to Gemini format, sending without tools:', toolConvertErr);
+    }
+  }
 
   const originalModel = params.model || 'gemini-2.5-flash';
   let model = originalModel;
@@ -687,7 +748,45 @@ async function chatGemini(apiKey: string, params: any) {
       const data = await response.json();
       console.log('✅ Gemini chat successful');
       
-      const result: any = { success: true, data, provider: 'Gemini' };
+      // Normalize Gemini response to OpenAI format
+      const candidate = data?.candidates?.[0];
+      const parts = candidate?.content?.parts || [];
+      
+      const functionCallParts = parts.filter((p: any) => p.functionCall);
+      const textParts = parts.filter((p: any) => p.text !== undefined);
+      const text = textParts.map((p: any) => p.text).join('') || '';
+      
+      let toolCalls = null;
+      if (functionCallParts.length > 0) {
+        toolCalls = functionCallParts.map((p: any, idx: number) => ({
+          id: `call_${Date.now()}_${idx}`,
+          type: 'function',
+          function: {
+            name: p.functionCall.name,
+            arguments: JSON.stringify(p.functionCall.args || {}),
+          }
+        }));
+      }
+      
+      const normalizedData = {
+        choices: [{
+          message: {
+            role: 'assistant',
+            content: text || null,
+            tool_calls: toolCalls,
+          },
+          index: 0,
+          finish_reason: candidate?.finishReason === 'STOP' ? 'stop' : (toolCalls ? 'tool_calls' : 'stop'),
+        }],
+        usage: {
+          prompt_tokens: data?.usageMetadata?.promptTokenCount || 0,
+          completion_tokens: data?.usageMetadata?.candidatesTokenCount || 0,
+          total_tokens: data?.usageMetadata?.totalTokenCount || 0,
+        },
+        model: data?.modelVersion || model,
+      };
+      
+      const result: any = { success: true, data: normalizedData, provider: 'Gemini' };
       if (model !== originalModel) result._autoDetectedModel = model;
       return result;
     } catch (error: any) {
