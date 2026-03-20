@@ -105,6 +105,7 @@ export interface AnalystState {
   webSearchResults: AnalystWebSearchData[];
   lastUpdated: Date | null;
   isEnriching: boolean;
+  lastRefreshError: string | null;
   messageCount: number;
   healthScore: HealthScore | null;
   crossSignalInsights: InsightItem[];
@@ -832,7 +833,7 @@ function saveSessionMemory(
       insights: insights
         .filter(i => i.type === 'warning' || i.type === 'opportunity')
         .slice(0, 5)
-        .map(i => ({ ...i, timestamp: new Date() })),
+        .map(i => ({ ...i, timestamp: i.timestamp || new Date() })),
       healthTotal,
       topics: topics.slice(0, 5).map(t => t.name),
     };
@@ -851,12 +852,15 @@ function loadSessionMemory(): InsightItem[] {
       localStorage.removeItem(SESSION_MEMORY_KEY);
       return [];
     }
+    const ageMs = Date.now() - memory.timestamp;
+    const ageHours = Math.floor(ageMs / (1000 * 60 * 60));
+    const ageStr = ageHours < 1 ? 'Recently' : ageHours < 24 ? `${ageHours}h ago` : `${Math.floor(ageHours / 24)}d ago`;
     return memory.insights.map(i => ({
       ...i,
       id: `prev-${i.id}`,
-      content: `Previous session: ${i.content}`,
+      content: `${ageStr}: ${i.content}`,
       source: 'memory' as const,
-      timestamp: new Date(memory.timestamp),
+      timestamp: new Date(i.timestamp || memory.timestamp),
     }));
   } catch {
     return [];
@@ -874,6 +878,7 @@ export function useAnalystEngine(
 ): AnalystState {
   const [platformData, setPlatformData] = useState<PlatformDataPoint[]>([]);
   const [isEnriching, setIsEnriching] = useState(false);
+  const [lastRefreshError, setLastRefreshError] = useState<string | null>(null);
   const lastFetchedTopicsRef = useRef<string>('');
   const processedMessageIdsRef = useRef<Set<string>>(new Set());
 
@@ -1328,6 +1333,7 @@ export function useAnalystEngine(
       }
     } catch (err) {
       console.error('Analyst engine: platform data fetch failed', err);
+      setLastRefreshError(err instanceof Error ? err.message : 'Refresh failed');
     } finally {
       setIsEnriching(false);
     }
@@ -1647,6 +1653,7 @@ export function useAnalystEngine(
     webSearchResults,
     lastUpdated: messages.length > 0 ? messages[messages.length - 1].timestamp : null,
     isEnriching,
+    lastRefreshError,
     messageCount: messages.filter(m => m.role === 'assistant').length,
     healthScore,
     crossSignalInsights,

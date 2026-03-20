@@ -104,6 +104,11 @@ export const FileUploadHandler: React.FC<FileUploadHandlerProps> = ({
       if (uploadError) {
         // If bucket doesn't exist, proceed with analysis only
         console.warn('Storage upload skipped:', uploadError.message);
+        toast({
+          title: 'File analyzed but not stored',
+          description: 'Storage unavailable — analysis will still proceed.',
+          variant: 'default',
+        });
       }
 
       setUploadState({ status: 'analyzing', progress: 50, fileName: file.name });

@@ -640,6 +640,7 @@ export async function executeContentActionTool(
         let editPatternHint = '';
         let performanceContext = '';
         let businessOutcomeContext = '';
+        const failedEnrichments: string[] = [];
 
         try {
           const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult, perfSignalsResult] = await Promise.allSettled([
@@ -676,6 +677,11 @@ export async function executeContentActionTool(
               .eq('user_id', userId)
               .order('created_at', { ascending: false }).limit(50)
           ]);
+
+          // 5A: Track which enrichments failed
+          const enrichmentLabels = ['Brand Voice', 'Solutions', 'Existing Content', 'Competitors', 'Top Content', 'Edit Patterns', 'Performance Signals'];
+          [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult, perfSignalsResult]
+            .forEach((r, i) => { if (r.status === 'rejected') failedEnrichments.push(enrichmentLabels[i]); });
 
           // Brand voice context
           if (brandResult.status === 'fulfilled' && brandResult.value.data) {
@@ -808,6 +814,13 @@ export async function executeContentActionTool(
           }
         } catch (enrichErr) {
           console.error('[CONTENT-ACTION] Enrichment fetch failed (non-blocking):', enrichErr);
+          failedEnrichments.push('All enrichment');
+        }
+
+        // Build enrichment warning note (5A)
+        let enrichmentWarning = '';
+        if (failedEnrichments.length > 0) {
+          enrichmentWarning = `\n\n⚠️ Some context was unavailable: ${failedEnrichments.join(', ')}. Results may be less personalized.`;
         }
 
         // === BUILD ENRICHED SYSTEM PROMPT ===
@@ -1045,7 +1058,7 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         const seoContext = seoScore < 40 ? ' (basic check — full SEO analysis available in the Content Wizard)' : '';
         return {
           success: true,
-          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${factCheckWarning}${linkSuggestions}${keywordSuggestions}${cannibalizationWarning}`,
+          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${factCheckWarning}${linkSuggestions}${keywordSuggestions}${cannibalizationWarning}${enrichmentWarning}`,
           item: { ...saved, seo_score: seoScore, meta_title: autoMetaTitle, meta_description: autoMetaDesc },
           wordCount,
           actions: [
