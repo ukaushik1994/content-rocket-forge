@@ -79,7 +79,9 @@ export function useWorkflowData() {
 
       if (error) throw error;
       return data as IntelligentWorkflow[];
-    }
+    },
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   // Fetch workflow executions
