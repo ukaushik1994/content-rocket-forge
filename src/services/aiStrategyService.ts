@@ -323,7 +323,7 @@ class AIStrategyService {
 
       const { error } = await supabase
         .from('ai_strategy_proposals')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() } as any)
         .in('id', proposalIds)
         .eq('user_id', user.id);
       
