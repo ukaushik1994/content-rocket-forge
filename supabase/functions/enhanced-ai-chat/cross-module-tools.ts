@@ -495,6 +495,16 @@ ${topContent.content || ''}
           })
           .eq('id', content.id);
 
+        // 3E: Track publish event as performance signal
+        try {
+          await supabase.from('content_performance_signals').insert({
+            content_id: content.id,
+            user_id: userId,
+            signal_type: 'publish',
+            signal_data: { provider: connection.provider, url: publishResult.url || publishResult.link }
+          });
+        } catch (_) { /* non-blocking */ }
+
         return {
           success: true,
           message: `Published "${content.title}" to ${connection.provider}${publishResult.url || publishResult.link ? ` — ${publishResult.url || publishResult.link}` : ''}\n\n🎉 What's next?`,
