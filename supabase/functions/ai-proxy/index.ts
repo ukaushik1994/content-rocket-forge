@@ -308,155 +308,104 @@ async function testOpenAI(apiKey: string) {
 async function chatOpenAI(apiKey: string, params: any) {
   console.log('💬 Processing OpenAI chat request');
   
-  const model = params.model || 'gpt-4';
-  const isNewerModel = model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1');
-  
-  const requestBody: any = {
-    model,
-    messages: params.messages || [],
-  };
+  const originalModel = params.model || 'gpt-4o-mini';
+  let model = originalModel;
+  const maxModelRetries = 2; // one normal + one fallback
 
-  // Handle token limits based on model type
-  if (isNewerModel) {
-    // Newer models use max_completion_tokens and don't support temperature
-    if (params.maxTokens || params.max_tokens) {
+  for (let modelAttempt = 1; modelAttempt <= maxModelRetries; modelAttempt++) {
+    const isNewerModel = model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1');
+    
+    const requestBody: any = { model, messages: params.messages || [] };
+
+    if (isNewerModel) {
       requestBody.max_completion_tokens = params.maxTokens || params.max_tokens || 1000;
+    } else {
+      requestBody.temperature = params.temperature || 0.7;
     }
-    // Remove temperature for newer models
-    delete requestBody.temperature;
-  } else {
-    // Legacy models use max_tokens and support temperature
-    requestBody.temperature = params.temperature || 0.7;
-  }
 
-  // Store the desired max_tokens before cleanup
-  const legacyMaxTokens = params.maxTokens || params.max_tokens;
+    const legacyMaxTokens = params.maxTokens || params.max_tokens;
+    delete requestBody.maxTokens;
+    delete requestBody.max_tokens;
+    if (!isNewerModel && legacyMaxTokens) requestBody.max_tokens = legacyMaxTokens;
 
-  // Clean up unused parameters
-  delete requestBody.maxTokens;
-  delete requestBody.max_tokens;
-
-  // Set max_tokens AFTER cleanup for legacy models
-  if (!isNewerModel && legacyMaxTokens) {
-    requestBody.max_tokens = legacyMaxTokens;
-  }
-
-  // Model-aware safety clamp -- prevent exceeding provider limits
-  const MODEL_TOKEN_LIMITS: Record<string, number> = {
-    'gpt-4o': 16384,
-    'gpt-4o-mini': 16384,
-    'gpt-4-turbo': 4096,
-    'gpt-4': 8192,
-    'gpt-3.5-turbo': 4096,
-  };
-
-  if (requestBody.max_tokens) {
-    const matchedLimit = Object.entries(MODEL_TOKEN_LIMITS)
-      .find(([key]) => model.startsWith(key));
-    if (matchedLimit) {
-      const clamped = Math.min(requestBody.max_tokens, matchedLimit[1]);
-      if (clamped !== requestBody.max_tokens) {
-        console.log(`⚠️ Clamped max_tokens from ${requestBody.max_tokens} to ${clamped} for model ${model}`);
-      }
-      requestBody.max_tokens = clamped;
+    // Token limit clamp
+    const MODEL_TOKEN_LIMITS: Record<string, number> = {
+      'gpt-4o': 16384, 'gpt-4o-mini': 16384, 'gpt-4-turbo': 4096, 'gpt-4': 8192, 'gpt-3.5-turbo': 4096,
+    };
+    if (requestBody.max_tokens) {
+      const match = Object.entries(MODEL_TOKEN_LIMITS).find(([k]) => model.startsWith(k));
+      if (match) requestBody.max_tokens = Math.min(requestBody.max_tokens, match[1]);
     }
-  }
-
-  if (requestBody.max_completion_tokens) {
-    const matchedLimit = Object.entries(MODEL_TOKEN_LIMITS)
-      .find(([key]) => model.startsWith(key));
-    if (matchedLimit) {
-      requestBody.max_completion_tokens = Math.min(requestBody.max_completion_tokens, matchedLimit[1]);
+    if (requestBody.max_completion_tokens) {
+      const match = Object.entries(MODEL_TOKEN_LIMITS).find(([k]) => model.startsWith(k));
+      if (match) requestBody.max_completion_tokens = Math.min(requestBody.max_completion_tokens, match[1]);
     }
-  }
 
-  const maxRetries = 3;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`🔄 OpenAI API call attempt ${attempt}/${maxRetries}`);
-      
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+    // Add tools/tool_choice if provided
+    if (params.tools) requestBody.tools = params.tools;
+    if (params.tool_choice) requestBody.tool_choice = params.tool_choice;
 
-      if (!response.ok) {
-        const errorText = await response.text();
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 OpenAI API call attempt ${attempt}/${maxRetries} (model: ${model})`);
         
-        // Handle rate limit (429) specifically with intelligent TPM/RPM detection
-        if (response.status === 429) {
-          console.error('❌ OpenAI chat failed:', response.status, errorText);
-          
-          let waitTime = 2000 * attempt; // Default exponential backoff
-          try {
-            const errorData = JSON.parse(errorText);
-            const errorMsg = errorData.error?.message || '';
-            
-            // Detect TPM vs RPM limit type
-            const isTPM = errorMsg.includes('tokens per min') || errorMsg.includes('TPM');
-            const isRPM = errorMsg.includes('requests per min') || errorMsg.includes('RPM');
-            
-            // Check for Retry-After header
-            const retryAfter = response.headers.get('Retry-After');
-            const waitMatch = errorMsg.match(/try again in ([\d.]+)s/);
-            
-            if (retryAfter) {
-              waitTime = parseInt(retryAfter) * 1000;
-              console.log(`⏰ Rate limit (Retry-After header): ${waitTime}ms`);
-            } else if (waitMatch) {
-              waitTime = Math.ceil(parseFloat(waitMatch[1]) * 1000);
-              console.log(`⏰ Rate limit (extracted from message): ${waitTime}ms`);
-            } else if (isTPM) {
-              // TPM limits need much longer waits - at least 30s
-              waitTime = 30000 + (10000 * attempt); // 30s, 40s, 50s
-              console.log(`⏰ TPM Rate limit detected, waiting ${waitTime}ms (attempt ${attempt})`);
-            } else if (isRPM) {
-              // RPM limits can use shorter waits
-              waitTime = 5000 * attempt; // 5s, 10s, 15s
-              console.log(`⏰ RPM Rate limit detected, waiting ${waitTime}ms (attempt ${attempt})`);
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+
+          // Model not found → auto-detect best model
+          if (isModelNotFound(response.status, errorText) && modelAttempt === 1) {
+            console.warn(`⚠️ Model ${model} not found, auto-detecting...`);
+            const available = await listModels('openai', apiKey);
+            const best = pickBestModel('openai', available);
+            if (best && best !== model) {
+              console.log(`🔄 Switching from ${model} to ${best}`);
+              model = best;
+              break; // break retry loop, restart with new model
             }
-            
-            console.log(`🔍 Rate limit details: ${isTPM ? 'TPM' : isRPM ? 'RPM' : 'Unknown'} - ${errorMsg.substring(0, 200)}`);
-          } catch (parseError) {
-            console.warn('Could not parse rate limit details, using default backoff');
           }
           
-          if (attempt < maxRetries) {
-            console.log(`⏳ Waiting ${waitTime}ms before retry ${attempt + 1}...`);
-            await new Promise(r => setTimeout(r, waitTime));
-            continue;
+          // Rate limit retry
+          if (response.status === 429) {
+            let waitTime = 2000 * attempt;
+            try {
+              const errorData = JSON.parse(errorText);
+              const msg = errorData.error?.message || '';
+              const isTPM = msg.includes('tokens per min') || msg.includes('TPM');
+              const retryAfter = response.headers.get('Retry-After');
+              const waitMatch = msg.match(/try again in ([\d.]+)s/);
+              if (retryAfter) waitTime = parseInt(retryAfter) * 1000;
+              else if (waitMatch) waitTime = Math.ceil(parseFloat(waitMatch[1]) * 1000);
+              else if (isTPM) waitTime = 30000 + (10000 * attempt);
+            } catch {}
+            if (attempt < maxRetries) {
+              console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+              await new Promise(r => setTimeout(r, waitTime));
+              continue;
+            }
           }
+          
+          throw new Error(`OpenAI chat failed: ${response.statusText}`);
         }
-        
-        // For other errors, throw immediately
-        console.error('❌ OpenAI chat failed:', response.status, errorText);
-        throw new Error(`OpenAI chat failed: ${response.statusText}`);
-      }
 
-      const data = await response.json();
-      console.log('✅ OpenAI chat successful');
-      
-      return {
-        success: true,
-        data,
-        provider: 'OpenAI'
-      };
-    } catch (error: any) {
-      console.error(`💥 OpenAI chat exception on attempt ${attempt}:`, error);
-      
-      if (attempt === maxRetries) {
-        throw new Error(`OpenAI chat error: ${error.message}`);
+        const data = await response.json();
+        console.log('✅ OpenAI chat successful');
+        
+        const result: any = { success: true, data, provider: 'OpenAI' };
+        if (model !== originalModel) result._autoDetectedModel = model;
+        return result;
+      } catch (error: any) {
+        if (attempt === maxRetries && modelAttempt === maxModelRetries) throw new Error(`OpenAI chat error: ${error.message}`);
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+        }
       }
-      
-      // Wait before retry for non-rate-limit errors
-      const waitTime = 2000 * attempt;
-      console.log(`⏳ Waiting ${waitTime}ms before retry...`);
-      await new Promise(r => setTimeout(r, waitTime));
     }
   }
   
