@@ -851,12 +851,15 @@ function loadSessionMemory(): InsightItem[] {
       localStorage.removeItem(SESSION_MEMORY_KEY);
       return [];
     }
+    const ageMs = Date.now() - memory.timestamp;
+    const ageHours = Math.floor(ageMs / (1000 * 60 * 60));
+    const ageStr = ageHours < 1 ? 'Recently' : ageHours < 24 ? `${ageHours}h ago` : `${Math.floor(ageHours / 24)}d ago`;
     return memory.insights.map(i => ({
       ...i,
       id: `prev-${i.id}`,
-      content: `Previous session: ${i.content}`,
+      content: `${ageStr}: ${i.content}`,
       source: 'memory' as const,
-      timestamp: new Date(memory.timestamp),
+      timestamp: new Date(i.timestamp || memory.timestamp),
     }));
   } catch {
     return [];

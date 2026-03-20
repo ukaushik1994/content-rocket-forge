@@ -814,6 +814,13 @@ export async function executeContentActionTool(
           }
         } catch (enrichErr) {
           console.error('[CONTENT-ACTION] Enrichment fetch failed (non-blocking):', enrichErr);
+          failedEnrichments.push('All enrichment');
+        }
+
+        // Build enrichment warning note (5A)
+        let enrichmentWarning = '';
+        if (failedEnrichments.length > 0) {
+          enrichmentWarning = `\n\n⚠️ Some context was unavailable: ${failedEnrichments.join(', ')}. Results may be less personalized.`;
         }
 
         // === BUILD ENRICHED SYSTEM PROMPT ===
