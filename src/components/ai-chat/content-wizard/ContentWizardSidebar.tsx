@@ -59,6 +59,7 @@ export interface WizardState {
   generatedContent: string;
   contentBrief: ContentBrief;
   additionalInstructions: string;
+  funnelStage: 'tofu' | 'mofu' | 'bofu' | null; // 8B: Funnel stage tagging
 }
 
 const BLOG_STEPS = [
@@ -148,6 +149,7 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
           : '',
       },
       additionalInstructions: extractedContext?.additional_instructions || '',
+      funnelStage: null,
     };
   });
 
@@ -416,6 +418,8 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         contentType={wizardState.contentType}
                         onContentTypeChange={(ct) => updateState({ contentType: ct })}
                         keywordError={validationError}
+                        funnelStage={wizardState.funnelStage}
+                        onFunnelStageChange={(stage) => updateState({ funnelStage: stage })}
                       />
                     )}
                     {!quick && currentStep === 1 && (

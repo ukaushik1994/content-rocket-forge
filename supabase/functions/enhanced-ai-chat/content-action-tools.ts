@@ -62,6 +62,59 @@ function calculateBasicSeoScore(content: string, keyword: string, metaTitle?: st
   return Math.min(score, 100);
 }
 
+// 8A: Compute and save content value score
+async function computeAndSaveValueScore(supabase: any, userId: string, contentId: string, seoScore: number) {
+  try {
+    // Get repurpose count from performance signals
+    const { count: repurposeCount } = await supabase
+      .from('content_performance_signals')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('content_id', contentId)
+      .eq('signal_type', 'repurposed');
+
+    // Get updated_at for freshness
+    const { data: item } = await supabase
+      .from('content_items')
+      .select('updated_at')
+      .eq('id', contentId)
+      .single();
+
+    const daysSinceUpdate = item?.updated_at 
+      ? Math.floor((Date.now() - new Date(item.updated_at).getTime()) / (1000 * 60 * 60 * 24))
+      : 100;
+    const freshness = Math.max(0, 100 - daysSinceUpdate);
+    const valueScore = Math.min(100, Math.round(
+      (seoScore * 0.4) + ((repurposeCount || 0) * 10) + (freshness * 0.2)
+    ));
+
+    await supabase.from('content_items')
+      .update({ content_value_score: valueScore })
+      .eq('id', contentId)
+      .eq('user_id', userId);
+  } catch (err) {
+    console.error('Value score computation failed (non-blocking):', err);
+  }
+}
+
+// 8E: Extract key claims from content for cross-content consistency
+function extractClaims(content: string): string[] {
+  const claims: string[] = [];
+  // Match numbers with context (pricing, percentages, counts)
+  const patterns = [
+    /\$[\d,]+(?:\.\d{2})?(?:\s*(?:per|\/)\s*\w+)?/gi,
+    /\d+(?:\.\d+)?%\s+\w+/gi,
+    /\d+(?:\.\d+)?x\s+\w+/gi,
+    /(?:up to|over|more than|less than)\s+\d[\d,]*/gi,
+    /\d+\+?\s+(?:features?|integrations?|customers?|users?|countries?|languages?)/gi,
+  ];
+  for (const pattern of patterns) {
+    const matches = content.match(pattern) || [];
+    claims.push(...matches.slice(0, 5));
+  }
+  return [...new Set(claims)].slice(0, 15);
+}
+
 // Save SEO score to content_items.seo_score
 async function saveAutoSeoScore(supabase: any, userId: string, contentId: string, score: number, _keyword: string) {
   try {
@@ -955,6 +1008,8 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         const seoScore = calculateBasicSeoScore(generatedContent, toolArgs.keyword, autoMetaTitle, autoMetaDesc);
         if (seoScore > 0 && saved.id) {
           await saveAutoSeoScore(supabase, userId, saved.id, seoScore, toolArgs.keyword);
+          // 8A: Compute value score
+          await computeAndSaveValueScore(supabase, userId, saved.id, seoScore);
         }
 
         // Create version 1 (E1)
@@ -1055,10 +1110,40 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
           }
         } catch (_) { /* non-blocking */ }
 
+        // 8E: Cross-content consistency check
+        let consistencyWarning = '';
+        try {
+          const newClaims = extractClaims(generatedContent);
+          if (newClaims.length > 0) {
+            const { data: published } = await supabase.from('content_items')
+              .select('title, content')
+              .eq('user_id', userId).eq('status', 'published')
+              .neq('id', saved.id).limit(10);
+            if (published?.length > 0) {
+              const conflicts: string[] = [];
+              for (const pub of published) {
+                const existingClaims = extractClaims(pub.content || '');
+                for (const nc of newClaims) {
+                  for (const ec of existingClaims) {
+                    const ncNum = nc.match(/[\d,.]+/)?.[0];
+                    const ecNum = ec.match(/[\d,.]+/)?.[0];
+                    if (ncNum && ecNum && ncNum !== ecNum && nc.replace(/[\d,.]+/, '') === ec.replace(/[\d,.]+/, '')) {
+                      conflicts.push(`"${nc}" vs "${ec}" in "${pub.title}"`);
+                    }
+                  }
+                }
+              }
+              if (conflicts.length > 0) {
+                consistencyWarning = `\n\n⚠️ **Potential data conflicts** with existing content:\n${conflicts.slice(0, 3).map(c => `- ${c}`).join('\n')}\nReview before publishing to ensure consistency.`;
+              }
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
         const seoContext = seoScore < 40 ? ' (basic check — full SEO analysis available in the Content Wizard)' : '';
         return {
           success: true,
-          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${factCheckWarning}${linkSuggestions}${keywordSuggestions}${cannibalizationWarning}${enrichmentWarning}`,
+          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${factCheckWarning}${linkSuggestions}${keywordSuggestions}${cannibalizationWarning}${enrichmentWarning}${consistencyWarning}`,
           item: { ...saved, seo_score: seoScore, meta_title: autoMetaTitle, meta_description: autoMetaDesc },
           wordCount,
           actions: [
@@ -1353,10 +1438,13 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         // Rescore
         const newScore = calculateBasicSeoScore(improvedContent, content.main_keyword || '', content.meta_title, content.meta_description);
 
-        // Save
+        // Save + compute value score
         await supabase.from('content_items').update({
           content: improvedContent, seo_score: newScore, updated_at: new Date().toISOString()
         }).eq('id', content.id).eq('user_id', userId);
+        
+        // 8A: Update value score
+        await computeAndSaveValueScore(supabase, userId, content.id, newScore);
 
         const scoreDiff = newScore - (content.seo_score || 0);
         const scoreNote = scoreDiff > 0 ? ` (SEO: ${content.seo_score || 0} → ${newScore}, +${scoreDiff})` : ` (SEO: ${newScore}/100)`;
@@ -1438,6 +1526,9 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         await supabase.from('content_items').update({
           content: reformattedContent, seo_score: rfScore, updated_at: new Date().toISOString()
         }).eq('id', rfContent.id).eq('user_id', userId);
+        
+        // 8A: Update value score
+        await computeAndSaveValueScore(supabase, userId, rfContent.id, rfScore);
 
         const rfScoreDiff = rfScore - (rfContent.seo_score || 0);
         const rfScoreNote = rfScoreDiff !== 0 ? ` (SEO: ${rfContent.seo_score || 0} → ${rfScore})` : ` (SEO: ${rfScore}/100)`;

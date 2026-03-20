@@ -29,6 +29,8 @@ interface EnhancedContentFiltersProps {
   setDateRange: (range: { from: Date | undefined; to: Date | undefined }) => void;
   keywordFilter: string;
   setKeywordFilter: (value: string) => void;
+  funnelFilter: string;
+  setFunnelFilter: (value: string) => void;
   appliedFilters: string[];
   clearFilters: () => void;
   clearFilter: (filter: string) => void;
@@ -45,6 +47,8 @@ export const EnhancedContentFilters: React.FC<EnhancedContentFiltersProps> = ({
   setDateRange,
   keywordFilter,
   setKeywordFilter,
+  funnelFilter,
+  setFunnelFilter,
   appliedFilters,
   clearFilters,
   clearFilter
@@ -85,6 +89,18 @@ export const EnhancedContentFilters: React.FC<EnhancedContentFiltersProps> = ({
               <SelectItem value="ready_to_publish">Ready to Publish (SEO ≥ 60)</SelectItem>
               <SelectItem value="published">Published</SelectItem>
               <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={funnelFilter} onValueChange={setFunnelFilter}>
+            <SelectTrigger className="bg-glass border-white/10 w-[140px]">
+              <SelectValue placeholder="All Stages" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stages</SelectItem>
+              <SelectItem value="tofu">Awareness</SelectItem>
+              <SelectItem value="mofu">Consideration</SelectItem>
+              <SelectItem value="bofu">Decision</SelectItem>
             </SelectContent>
           </Select>
           
@@ -241,6 +257,7 @@ export const EnhancedContentFilters: React.FC<EnhancedContentFiltersProps> = ({
               <SelectItem value="date">Sort by Date</SelectItem>
               <SelectItem value="title">Sort by Title</SelectItem>
               <SelectItem value="score">Sort by SEO Score</SelectItem>
+              <SelectItem value="value">Sort by Value Score</SelectItem>
               <SelectItem value="wordCount">Sort by Word Count</SelectItem>
             </SelectContent>
           </Select>
