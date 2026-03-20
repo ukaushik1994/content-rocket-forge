@@ -2038,7 +2038,7 @@ serve(async (req) => {
           }
         } else if (convo?.summary) {
           // Use existing summary — keep only last 5 messages
-          const recentMessages = messages.slice(-5);
+          const recentMessages = messages.slice(-MAX_HISTORY_MESSAGES);
           messages.length = 0;
           messages.push({ role: 'system', content: `[Previous conversation summary]: ${convo.summary}` });
           messages.push(...recentMessages);
