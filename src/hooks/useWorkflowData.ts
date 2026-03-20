@@ -96,11 +96,13 @@ export function useWorkflowData() {
         .from('workflow_executions')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50); // Limit to recent executions
+        .limit(50);
 
       if (error) throw error;
       return data as WorkflowExecution[];
-    }
+    },
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   // Fetch workflow templates
