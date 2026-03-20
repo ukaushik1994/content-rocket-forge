@@ -31,6 +31,7 @@ export interface AIConversation {
   pinned?: boolean;
   archived?: boolean;
   tags?: string[];
+  goal?: string | null;
 }
 
 export const useEnhancedAIChatDB = () => {
