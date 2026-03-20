@@ -1,103 +1,82 @@
 
 
-# Creaiter Improvement Plan — 27 Items, 8 Phases
+# AI API Consolidation — 5 Phases
+
+## Phase 1: Remove Dead Providers (frontend only)
+
+Remove 6 provider entries from `API_PROVIDERS` in `src/components/settings/api/types.ts`:
+- `lmstudio` (localhost — can't work from cloud)
+- `lmstudio_image` (same)
+- `serpstack` (no backend handler)
+- `sendgrid` (no backend handler)
+- `twilio` (no backend handler)
+- `stripe` (no billing system)
+
+Result: 19 working providers remain.
 
 ---
 
-## Phase 1: AI Model + Cost + Context Window (backend only)
+## Phase 2: Migrate OpenRouter to `api_keys` table (migration + frontend + backend)
 
-| # | Item | File | Change |
-|---|------|------|--------|
-| 1A | Smart Model Routing | `enhanced-ai-chat/index.ts` | Route cheap model (`gpt-4o-mini`) for lookups/chat, premium model (`gpt-4o`) for generation intents + heavy tools |
-| 1B | Expand Context Window | `enhanced-ai-chat/index.ts` | Change `MAX_HISTORY_MESSAGES` 5→15, `SUMMARIZE_THRESHOLD` 10→25 |
-| 1C | Reduce System Prompt Tokens | `enhanced-ai-chat/index.ts` | 3 optimizations: compress non-relevant tool defs to name+first-sentence, skip platform knowledge for experienced users (10+ convos), lazy-load chart modules only when query needs them |
+**2A — Migration**: Copy existing OpenRouter keys from `user_llm_keys` to `api_keys` (with `ON CONFLICT DO NOTHING` safety).
 
-**Deploy:** Edge function only. No frontend changes.
+**2B — Frontend `OpenRouterSettings.tsx`**: Replace `user_llm_keys` reads/writes with `storeApiKey`/`deleteApiKey`/`toggleApiKeyStatus` from `apiKeyService` — same pattern as all other providers.
 
----
+**2C — Frontend `crud.ts` + `apiKeyService.ts`**: Remove the OpenRouter special-case that checks `user_llm_keys` first.
 
-## Phase 2: Content Generation Quality (backend only)
+**2D — Backend `enhanced-ai-chat/index.ts`**: Remove the `user_llm_keys` special-case block (~line 2213). OpenRouter uses the same `getApiKey('openrouter', userId)` decryption path as other providers.
 
-| # | Item | File | Change |
-|---|------|------|--------|
-| 2A | Enforce Word Count | `content-action-tools.ts` | Add explicit word count instruction to generation prompt with ±10% target |
-| 2B | SERP in Chunked Generation | `advancedContentGeneration.ts` | Pass remaining SERP items to each chunk prompt |
-| 2C | Outline Structure in Chunks | `advancedContentGeneration.ts` | Slice outline sections per chunk instead of sending full outline |
-| 2D | SEO Scoring Penalties | `content-action-tools.ts` | Add penalties for keyword stuffing (>3%), no links, uniform paragraph lengths, no questions. Bonus for FAQ section |
-| 2E | Readability Score | `content-action-tools.ts` | Compute avg sentence length, append readability note to response |
+**2E — Backend `intelligent-workflow-executor/index.ts`, `glossary-generator/index.ts`, `generate-enhanced-brief/index.ts`**: Remove all `user_llm_keys` fallback reads. Use shared `getApiKey()`.
 
-**Deploy:** Edge function only. No frontend changes.
+**2F — Frontend `useOpenRouter.ts`**: Change model read from `user_llm_keys` to `ai_service_providers.preferred_model`.
+
+Result: Zero writes/reads to `user_llm_keys`. Table kept as safety net for one release cycle.
 
 ---
 
-## Phase 3: Data Architecture (DB only)
+## Phase 3: Wire Default AI Provider Selector (frontend only)
 
-| # | Item | Change |
-|---|------|--------|
-| 3A | Performance Indexes | Migration: 12 indexes on `content_items`, `ai_messages`, `ai_conversations`, `keywords`, `proposals`, `content_calendar`, `campaigns`, `content_analytics`, `content_performance_signals` |
-| 3B | Data Retention | Migration: `cleanup_old_data()` function — deletes archived conversation messages >1yr, acted-on recommendations >90d, old performance signals >1yr. Wire into `engage-job-runner` on Sundays |
+**3A** — Import and render `DefaultAiProviderSelector` in `ApiSettings.tsx` above the AI Services category cards.
 
-**Deploy:** Migration only.
+**3B** — Update `DefaultAiProviderSelector.tsx` to:
+- Query `api_keys_metadata` for configured AI providers
+- Query `ai_service_providers` for currently active provider
+- On switch: deactivate all AI providers, activate selected one
+- Show only providers with configured keys; empty state if none
 
----
-
-## Phase 4: UX Fixes (mostly frontend)
-
-| # | Item | File | Change |
-|---|------|------|--------|
-| 4A | Conversation Goal in Header | `EnhancedChatInterface.tsx` | Show `activeConvObj.goal` as a small chip next to conversation title |
-| 4B | Empty State Guidance | Analytics, Keywords, Calendar, Competitors pages | Add icon + text + setup hint when no data exists |
-| 4C | Notification Auto-Triggers | `generate-proactive-insights/index.ts` | Insert into `dashboard_alerts` when high-priority recommendation is created |
-| 4D | Repository Bulk Archive | `RepositoryBulkBar.tsx` | Add "Archive" button that sets `status: 'archived'` for selected items |
-
-**Deploy:** 4C = edge function. Rest = frontend only.
+Result: User sees which AI provider is active, switches with one click.
 
 ---
 
-## Phase 5: Analyst Sidebar (frontend only)
+## Phase 4: Clean `ai_service_providers.api_key` column (migration + frontend + backend)
 
-| # | Item | File | Change |
-|---|------|------|--------|
-| 5A | Competitive Position Detail | `CompetitivePositionSection.tsx` | Show strengths, weaknesses, and "analyzed X days ago" per competitor |
-| 5B | Campaign Pulse Performance | `CampaignPulseSection.tsx` | Show avg content SEO alongside campaign count |
-| 5C | Health Score Fix | `useAnalystEngine.ts` | Replace hardcoded SEO factor with real avg SEO score from platformData |
+**4A — Migration**: `UPDATE ai_service_providers SET api_key = '' WHERE api_key IS NOT NULL AND api_key != ''`
 
-**Deploy:** Frontend only.
+**4B — Backend**: In any upsert to `ai_service_providers` in `enhanced-ai-chat/index.ts`, always set `api_key: ''`.
 
----
+**4C — Frontend**: In `apiKeyService.ts` `toggleApiKeyStatus()` and `providerSync.ts` `syncApiKeysToProviders()`, always set `api_key: ''`.
 
-## Phase 6: Scalability (frontend only)
-
-| # | Item | File | Change |
-|---|------|------|--------|
-| 6A | Pagination | Repository, Keywords, Proposals list hooks | Add `PAGE_SIZE=20`, `.range()` query, "Load more" button |
-| 6B | Analyst Query Frequency | `useAnalystEngine.ts` | Change refresh interval 60s→120s, skip refresh when `document.hidden` |
-| 6C | React Query Caching | All Supabase query hooks | Add `staleTime: 30s`, `cacheTime: 5min` to content, keywords, proposals, campaigns, competitors queries |
-
-**Deploy:** Frontend only.
+Result: `api_keys` = encrypted key storage. `ai_service_providers` = metadata only. Clean separation.
 
 ---
 
-## Phase 7: Code Quality (frontend only)
+## Phase 5: Auto-Detect Models + Self-Heal (backend + frontend)
 
-| # | Item | Change |
-|---|------|--------|
-| 7A | Remove Hardcoded Supabase Fallbacks | Remove hardcoded URL/key fallbacks in `TestOpenRouterButton.tsx`, `useEnhancedAIChatDB.ts`, and any other file with `.supabase.co` strings. Use env vars only |
-| 7B | ESLint + Prettier Config | Create `.eslintrc.json` and `.prettierrc` at project root (config only, don't reformat existing code) |
-| 7C | Error Boundary | `App.tsx` — wrap router with `react-error-boundary` fallback component showing error + retry button |
+**5A — Backend `ai-proxy/index.ts`**: Add `listModels(service, apiKey)` function that calls each provider's model listing endpoint. Add `pickBestModel(service, availableModels)` with ranked preference lists.
 
-**Deploy:** Frontend only.
+**5B — Backend `ai-proxy/index.ts`**: Extend test handlers to return `available_models` and `recommended_model` after key verification.
 
----
+**5C — Backend `ai-proxy/index.ts`**: Add 404-retry pattern to each provider's chat handler — on model-not-found, auto-detect best model, retry, return `_autoDetectedModel` signal.
 
-## Phase 8: Business Viability (DB + backend + frontend)
+**5D — Backend `enhanced-ai-chat/index.ts`**: After AI response, if `_autoDetectedModel` is set, update `ai_service_providers.preferred_model`.
 
-| # | Item | Change |
-|---|------|--------|
-| 8A | Token Usage Tracking | **Migration:** Create `ai_usage_log` table with RLS. **Backend:** Log `prompt_tokens`, `completion_tokens`, `model`, `tool_name` after every AI call in `index.ts`. **Frontend:** Add "Usage" tab in Settings showing monthly token usage + estimated cost |
-| 8B | Soft Delete | **Migration:** Add `deleted_at` to `content_items`, `ai_conversations`, `campaigns`. Update RLS policies to filter `deleted_at IS NULL`. **Backend:** Change delete handlers to set `deleted_at` instead of hard deleting |
+**5E — Frontend `SimpleProviderCard.tsx`**: After successful test, save `recommended_model` and `available_models` to `ai_service_providers`.
 
-**Deploy:** Migration + edge function + frontend.
+**5F — Frontend**: Show model dropdown from `available_models` when populated.
+
+**5G — Frontend `apiKeyService.ts`**: Remove hardcoded `defaultModels` map. Backend `ai-proxy`: update fallback model strings to current stable names.
+
+Result: Models auto-detected from provider APIs, self-heal on retirement, user can override via dropdown.
 
 ---
 
@@ -105,15 +84,12 @@
 
 | Phase | Items | Backend | Frontend | Migrations |
 |-------|-------|---------|----------|------------|
-| 1 | 1A, 1B, 1C | 3 | 0 | 0 |
-| 2 | 2A–2E | 5 | 0 | 0 |
-| 3 | 3A, 3B | 1 | 0 | 2 |
-| 4 | 4A–4D | 1 | 3 | 0 |
-| 5 | 5A–5C | 0 | 3 | 0 |
-| 6 | 6A–6C | 0 | 3 | 0 |
-| 7 | 7A–7C | 0 | 3 | 0 |
-| 8 | 8A, 8B | 2 | 1 | 2 |
-| **Total** | **27** | **12** | **13** | **4** |
+| 1 | 1 | 0 | 1 | 0 |
+| 2 | 6 | 3 | 3 | 1 |
+| 3 | 2 | 0 | 2 | 0 |
+| 4 | 3 | 1 | 2 | 1 |
+| 5 | 7 | 3 | 3 | 0 |
+| **Total** | **19** | **7** | **11** | **2** |
 
-Each phase completes fully before the next starts. Edge function deploys after each backend phase.
+Each phase completes fully before the next starts.
 
