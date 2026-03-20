@@ -626,7 +626,19 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         runQualityAnalysis(result);
 
         setGenerationProgress(100);
-        toast.success('Content generated successfully!');
+        
+        // Word count deviation feedback (7B)
+        const actualWords = result.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+        const deviation = Math.abs(actualWords - targetLength) / targetLength;
+        if (deviation > 0.25) {
+          const direction = actualWords > targetLength ? 'longer' : 'shorter';
+          toast.info(
+            `Generated ${actualWords.toLocaleString()} words (target: ${targetLength.toLocaleString()}). Content is ${Math.round(deviation * 100)}% ${direction} than requested. You can refine length in the editor.`,
+            { duration: 8000 }
+          );
+        } else {
+          toast.success('Content generated successfully!');
+        }
       } else {
         const fallback = buildKeywordRichFallback();
         onContentGenerated(fallback);
