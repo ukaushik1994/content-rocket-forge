@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Trash2, X, CheckSquare, Square } from 'lucide-react';
+import { Trash2, X, CheckSquare, Square, Archive } from 'lucide-react';
 import { useContent } from '@/contexts/content';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -28,9 +29,10 @@ export const RepositoryBulkBar: React.FC<RepositoryBulkBarProps> = ({
   onSelectAll,
   onClearSelection,
 }) => {
-  const { deleteContentItem } = useContent();
+  const { deleteContentItem, refreshContent } = useContent();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const count = selectedIds.size;
   if (count === 0) return null;
@@ -50,6 +52,26 @@ export const RepositoryBulkBar: React.FC<RepositoryBulkBarProps> = ({
     onClearSelection();
     setShowDeleteDialog(false);
     setIsDeleting(false);
+  };
+
+  const handleBulkArchive = async () => {
+    setIsArchiving(true);
+    let archived = 0;
+    for (const id of selectedIds) {
+      try {
+        const { error } = await supabase
+          .from('content_items')
+          .update({ status: 'archived' })
+          .eq('id', id);
+        if (!error) archived++;
+      } catch (e) {
+        console.error('Failed to archive', id, e);
+      }
+    }
+    toast.success(`Archived ${archived} item${archived !== 1 ? 's' : ''}`);
+    onClearSelection();
+    setIsArchiving(false);
+    refreshContent?.();
   };
 
   return (
@@ -80,6 +102,16 @@ export const RepositoryBulkBar: React.FC<RepositoryBulkBarProps> = ({
             </span>
 
             <div className="h-4 w-px bg-border/60" />
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkArchive}
+              disabled={isArchiving}
+            >
+              <Archive className="h-3.5 w-3.5 mr-1" />
+              {isArchiving ? 'Archiving...' : 'Archive'}
+            </Button>
 
             <Button
               variant="destructive"
