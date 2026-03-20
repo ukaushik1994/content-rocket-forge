@@ -350,7 +350,7 @@ export async function testApiKeyWithAutoDetection(apiKey: string): Promise<ApiKe
     if (result.formatValid) {
       // Test connection if format is valid
       const { testApiKey } = await import('@/services/apiKeys/testing');
-      result.connectionValid = await testApiKey(detectedProvider as any, cleanKey);
+      result.connectionValid = !!(await testApiKey(detectedProvider as any, cleanKey));
       result.success = result.connectionValid;
       
       if (result.success) {
