@@ -13,6 +13,7 @@ export const CampaignPulseSection: React.FC<Props> = ({ platformData, onSendMess
   const campaignMetrics = platformData.filter(d => d.category === 'campaigns');
   const campaignCount = platformData.find(d => d.label === 'Active Campaigns')?.value || 0;
   const queueFailed = platformData.find(d => d.label === 'Queue Failed')?.value || 0;
+  const avgSeo = platformData.find(d => d.label === 'Avg SEO Score')?.value || 0;
   const hasData = campaignMetrics.length > 0;
 
   const getHeadline = () => {
