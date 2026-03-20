@@ -59,6 +59,7 @@ export interface WizardState {
   generatedContent: string;
   contentBrief: ContentBrief;
   additionalInstructions: string;
+  funnelStage: 'tofu' | 'mofu' | 'bofu' | null; // 8B: Funnel stage tagging
 }
 
 const BLOG_STEPS = [
