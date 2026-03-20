@@ -501,8 +501,7 @@ export async function executeContentActionTool(
         const lengthMap: Record<string, number> = { short: 500, medium: 1000, long: 2000 };
         const targetWords = lengthMap[toolArgs.length || 'medium'];
 
-        // SB-20: Cannibalization prevention — check for existing content targeting the same keyword
-        let cannibalizationWarning = '';
+        // SB-20: Cannibalization prevention — BLOCKING check for existing content targeting the same keyword
         try {
           const { data: existingTargeting } = await supabase.from('content_items')
             .select('id, title, main_keyword, seo_score, status')
@@ -517,9 +516,23 @@ export async function executeContentActionTool(
             const parts: string[] = [];
             if (published.length > 0) parts.push(`${published.length} published article(s): ${published.map((c: any) => `"${c.title}" (SEO: ${c.seo_score || 'N/A'})`).join(', ')}`);
             if (drafts.length > 0) parts.push(`${drafts.length} draft(s): ${drafts.map((c: any) => `"${c.title}"`).join(', ')}`);
-            cannibalizationWarning = `\n\n⚠️ **Cannibalization alert**: You already have ${parts.join(' and ')} targeting "${toolArgs.keyword}". Creating another piece on the same exact keyword can split your ranking potential. Consider a different angle or long-tail variation.`;
+
+            // BLOCK generation — return early with confirmation actions
+            return {
+              success: false,
+              requiresConfirmation: true,
+              message: `⚠️ **Cannibalization blocked**: You already have ${parts.join(' and ')} targeting "${toolArgs.keyword}". Creating another piece on the same exact keyword will split your ranking potential and hurt SEO.\n\nChoose an action below:`,
+              actions: [
+                { id: 'different_angle', label: '✍️ Write a Different Angle', type: 'send_message', message: `Suggest 3 alternative long-tail keywords related to "${toolArgs.keyword}" that I don't already have content for` },
+                { id: 'update_existing', label: '🔄 Improve Existing Article', type: 'send_message', message: `Improve content "${existingTargeting[0].title}" (ID: ${existingTargeting[0].id})` },
+                { id: 'force_generate', label: '⚡ Generate Anyway', type: 'send_message', message: `Force generate a ${toolArgs.content_type || 'blog'} about "${toolArgs.keyword}" with a unique angle` }
+              ]
+            };
           }
         } catch (_) { /* non-blocking */ }
+
+        // No cannibalization — proceed with generation
+        let cannibalizationWarning = '';
 
         // Call ai-proxy for content generation
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
