@@ -1329,6 +1329,7 @@ export function useAnalystEngine(
       }
     } catch (err) {
       console.error('Analyst engine: platform data fetch failed', err);
+      setLastRefreshError(err instanceof Error ? err.message : 'Refresh failed');
     } finally {
       setIsEnriching(false);
     }
