@@ -275,14 +275,14 @@ class ApiKeyService {
    * Also syncs with ai_service_providers table for AI providers
    */
   static async toggleApiKeyStatus(service: ApiProvider, isActive: boolean): Promise<boolean> {
-    // Default models for each provider
-    const DEFAULT_MODELS: Record<string, string> = {
+    // Models are now auto-detected from provider APIs (Phase 5).
+    // These are last-resort fallbacks only.
+    const FALLBACK_MODELS: Record<string, string> = {
       openrouter: 'openai/gpt-4o-mini',
       gemini: 'gemini-2.0-flash-exp',
       openai: 'gpt-4o-mini',
-      anthropic: 'claude-3-5-sonnet-20241022',
+      anthropic: 'claude-sonnet-4-20250514',
       mistral: 'mistral-large-latest',
-      lmstudio: 'local-model'
     };
 
     // Default priorities for providers
