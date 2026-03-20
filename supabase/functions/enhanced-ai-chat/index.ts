@@ -1959,9 +1959,9 @@ serve(async (req) => {
     const conversationId = context?.conversation_id;
     console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
 
-    // ── CONVERSATION SUMMARIZATION ──
-    // If conversation has 10+ messages, generate/load a summary to keep token usage low
-    if (conversationId && messages.length > 10) {
+    // ── CONVERSATION SUMMARIZATION (Phase 1B: expanded thresholds) ──
+    // If conversation has SUMMARIZE_THRESHOLD+ messages, generate/load a summary
+    if (conversationId && messages.length > SUMMARIZE_THRESHOLD) {
       try {
         const { data: convo } = await supabase.from('ai_conversations')
           .select('summary, summary_message_count')
