@@ -7,6 +7,7 @@ import { useSidebarContext } from '@/contexts/SidebarContext';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { ActiveProviderIndicator } from '@/components/ai/ActiveProviderIndicator';
 import { useDueContentNotifications } from '@/hooks/useDueContentNotifications';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 
