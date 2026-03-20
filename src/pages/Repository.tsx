@@ -18,7 +18,9 @@ const Repository = () => {
   const {
     contentItems,
     refreshContent,
-    loading
+    loading,
+    hasMore,
+    loadMore
   } = useContent();
   const [selectedContent, setSelectedContent] = useState<ContentItemType | null>(null);
   const [detailViewOpen, setDetailViewOpen] = useState(false);
