@@ -2030,7 +2030,7 @@ serve(async (req) => {
                     messages.push({ role: 'system', content: `[Previous conversation summary]: ${summary}` });
                     messages.push(...recentMessages);
                     
-                    console.log(`📝 Conversation summarized (${currentCount} msgs → summary + last 5)`);
+                    console.log(`📝 Conversation summarized (${currentCount} msgs → summary + last ${MAX_HISTORY_MESSAGES})`);
                   }
                 }
               }
