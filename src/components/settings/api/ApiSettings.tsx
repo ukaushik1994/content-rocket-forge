@@ -134,6 +134,12 @@ export const ApiSettings = () => {
               defaultExpanded={isAICategory}
             >
               <div className="space-y-2">
+                {isAICategory && (
+                  <>
+                    <DefaultAiProviderSelector />
+                    <div className="h-px bg-border/50 my-3" />
+                  </>
+                )}
                 {/* Providers without subcategory */}
                 {providers.filter(p => !p.subcategory).map((provider) => (
                   <SimpleProviderCard key={provider.serviceKey} provider={provider} />
