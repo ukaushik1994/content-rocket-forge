@@ -29,14 +29,9 @@ import {
   Clock,
   Users,
   MousePointer,
-  ArrowUpRight,
-  ArrowDownRight,
   Zap,
   Target,
-  Globe,
-  Filter,
   Search,
-  Loader2
 } from 'lucide-react';
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { motion, AnimatePresence } from 'framer-motion';
