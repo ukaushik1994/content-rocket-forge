@@ -280,7 +280,7 @@ const Analytics = () => {
       
       
       
-      <main className="flex-1 container px-6 pt-24 pb-12 relative z-10">
+      <main className="flex-1 container px-6 pt-6 pb-12 relative z-10">
         <PageBreadcrumb section="Tools" page="Analytics" />
         {/* Empty State Banner */}
         {realMetrics && realMetrics.totalAnalytics.pageViews === 0 && realMetrics.totalSearchConsole.impressions === 0 && (
@@ -297,14 +297,14 @@ const Analytics = () => {
         )}
         {/* Hero Section */}
         <motion.div 
-          className="min-h-[5vh] w-full relative mb-4"
+          className="w-full relative mb-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
         >
-          <div className="relative z-10 w-full px-6 pt-16 pb-8">
+          <div className="relative z-10 w-full px-6 pt-4 pb-4">
             <motion.div 
-              className="text-center mb-16 relative"
+              className="text-center mb-6 relative"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -317,7 +317,7 @@ const Analytics = () => {
               
               <div className="relative">
                 <motion.div 
-                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-4"
                   whileHover={{ scale: 1.05 }}
                 >
                   <BarChart3 className="h-5 w-5 text-primary" />
@@ -334,13 +334,13 @@ const Analytics = () => {
                 </motion.h1>
                 
                 <motion.p 
-                  className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed"
+                  className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed"
                 >
                   Track content performance, discover insights, and optimize your strategy 
                   with integrated analytics and Search Console data
                 </motion.p>
 
-                <motion.div className="flex gap-4 justify-center mb-12">
+                <motion.div className="flex gap-4 justify-center mb-6">
                   <Button
                     onClick={refreshAnalytics}
                     disabled={loading}
