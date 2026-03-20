@@ -1973,8 +1973,8 @@ serve(async (req) => {
         const needsNewSummary = !convo?.summary || (currentCount - lastSummarizedAt >= RESUMMARIZE_INTERVAL);
 
         if (needsNewSummary) {
-          // Build a condensed version of older messages for summarization
-          const olderMessages = messages.slice(0, -5).map((m: any) => 
+          // Build a condensed version of older messages for summarization (keep last MAX_HISTORY_MESSAGES)
+          const olderMessages = messages.slice(0, -MAX_HISTORY_MESSAGES).map((m: any) => 
             `${m.role}: ${(m.content || '').substring(0, 200)}`
           ).join('\n');
 
