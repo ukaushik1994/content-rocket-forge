@@ -31,30 +31,14 @@ async function getUnifiedApiKey(provider: ApiProvider): Promise<string | null> {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return null;
 
-    // For OpenRouter, check user_llm_keys table first (new format)
-    if (provider === 'openrouter') {
-      const { data, error: keyError } = await supabase
-        .from('user_llm_keys')
-        .select('api_key')
-        .eq('user_id', user.id)
-        .eq('provider', 'openrouter')
-        .eq('is_active', true)
-        .single();
-
-      if (!keyError && data?.api_key) {
-        console.log(`✅ Found ${provider} key in user_llm_keys table`);
-        return data.api_key;
-      }
-    }
-    
-    // Use the main service for all providers (it has fallback logic)
+    // Use the main service for all providers (unified api_keys table)
     const key = await getOriginalApiKey(provider);
     if (key) {
       console.log(`✅ Found ${provider} key via main service`);
       return key;
     }
     
-    console.log(`❌ No ${provider} key found in any table`);
+    console.log(`❌ No ${provider} key found`);
     return null;
   } catch (error) {
     console.error(`❌ Error getting ${provider} key:`, error);

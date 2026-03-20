@@ -119,15 +119,15 @@ export const useOpenRouter = () => {
 
     try {
       const { data, error } = await supabase
-        .from('user_llm_keys')
-        .select('model')
+        .from('ai_service_providers')
+        .select('preferred_model')
         .eq('user_id', user.id)
         .eq('provider', 'openrouter')
-        .eq('is_active', true)
+        .eq('status', 'active')
         .single();
 
       if (error) return null;
-      return data?.model || 'openai/gpt-4';
+      return data?.preferred_model || 'openai/gpt-4';
     } catch (error) {
       return null;
     }

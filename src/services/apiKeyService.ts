@@ -167,20 +167,7 @@ class ApiKeyService {
         .single();
 
       if (error || !data) {
-        console.log(`ℹ️ No ${normalizedService} API key found in new table, checking legacy table...`);
-        
-        // Fallback to check the old user_llm_keys table
-        try {
-          const legacyKey = await ApiKeyService.getLegacyApiKey(user.id, normalizedService);
-          if (legacyKey) {
-            console.log(`✅ Found ${normalizedService} API key in legacy table`);
-            return legacyKey;
-          }
-        } catch (legacyError: any) {
-          console.warn(`⚠️ Error checking legacy table for ${normalizedService}:`, legacyError);
-        }
-        
-        console.log(`ℹ️ No ${normalizedService} API key found in any table`);
+        console.log(`ℹ️ No ${normalizedService} API key found`);
         return null;
       }
 
