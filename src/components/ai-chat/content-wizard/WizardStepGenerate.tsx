@@ -1253,12 +1253,13 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
                           aiHumanScore >= 25 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' :
                           'bg-red-500/15 text-red-400 border-red-500/30'
                         )}
+                        title="Informational only — this score is an estimate and does not block publishing"
                       >
                         <ShieldCheck className="w-2.5 h-2.5" />
                         {aiHumanScore >= 60 ? `Human: ${aiHumanScore}%` :
                          aiHumanScore >= 40 ? `Value Pass: ${aiHumanScore}%` :
                          aiHumanScore >= 25 ? `Quality OK: ${aiHumanScore}%` :
-                         `AI Detected: ${aiHumanScore}%`}
+                         `AI Detected: ${aiHumanScore}% (info only)`}
                       </Badge>
                     )}
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyContent}>

@@ -181,9 +181,9 @@ export const EnhancedAIProposalCard: React.FC<EnhancedAIProposalCardProps> = ({
 
       {/* Estimated impressions — only shown when real data exists */}
       {proposal.estimated_impressions != null && proposal.estimated_impressions > 0 && (
-        <div className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground" title="Estimated based on search volume data — not guaranteed traffic">
           <TrendingUp className="h-3.5 w-3.5 text-primary" />
-          <span>Est. <span className="font-semibold text-foreground">{proposal.estimated_impressions.toLocaleString()}</span> impressions/mo</span>
+          <span>~<span className="font-semibold text-foreground">{proposal.estimated_impressions.toLocaleString()}</span> impressions/mo (est.)</span>
         </div>
       )}
 

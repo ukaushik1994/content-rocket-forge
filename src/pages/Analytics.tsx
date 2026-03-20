@@ -337,7 +337,7 @@ const Analytics = () => {
                   className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed"
                 >
                   Track content performance, discover insights, and optimize your strategy 
-                  with real-time Google Analytics and Search Console data
+                  with integrated analytics and Search Console data
                 </motion.p>
 
                 <motion.div className="flex gap-4 justify-center mb-12">

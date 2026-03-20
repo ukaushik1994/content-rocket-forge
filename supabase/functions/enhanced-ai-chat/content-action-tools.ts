@@ -922,7 +922,7 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
           const statsPattern = /(\d{1,3}(?:,\d{3})*(?:\.\d+)?%|\$\d+(?:\.\d+)?(?:\s*(?:billion|million|trillion))?|\d+%)/gi;
           const statsFound = generatedContent.match(statsPattern) || [];
           if (statsFound.length > 0) {
-            factCheckWarning = `\n⚠️ **Fact-check advisory**: This article contains ${statsFound.length} statistic(s)/figure(s) that should be verified before publishing.`;
+            factCheckWarning = `\n⚠️ **Statistics detected (not verified)**: This article contains ${statsFound.length} statistic(s)/figure(s). These are AI-generated and should be independently verified before publishing.`;
           }
         } catch (_) { /* non-blocking */ }
 

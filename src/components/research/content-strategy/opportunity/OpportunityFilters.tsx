@@ -163,7 +163,7 @@ export const OpportunityFilters: React.FC<OpportunityFiltersProps> = ({
           </div>
         </div>
 
-        {/* Difficulty Range */}
+        {/* Difficulty Range — only useful when keywords have difficulty data */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">
             Max Keyword Difficulty: {filters.maxDifficulty}
@@ -176,6 +176,7 @@ export const OpportunityFilters: React.FC<OpportunityFiltersProps> = ({
             step={5}
             className="w-full"
           />
+          <p className="text-[10px] text-muted-foreground">Only affects proposals with difficulty data from SERP research</p>
         </div>
 
         {/* Volume Range */}
