@@ -640,6 +640,7 @@ export async function executeContentActionTool(
         let editPatternHint = '';
         let performanceContext = '';
         let businessOutcomeContext = '';
+        const failedEnrichments: string[] = [];
 
         try {
           const [brandResult, solutionsResult, existingResult, competitorResult, topContentResult, feedbackResult, perfSignalsResult] = await Promise.allSettled([
