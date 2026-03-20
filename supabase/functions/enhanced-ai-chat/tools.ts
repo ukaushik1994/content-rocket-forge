@@ -578,6 +578,9 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   // Image generation
   generate_image: [],
   edit_image: [],
+  // Content improvement/reformat
+  improve_content: ['get_content_items', 'get_seo_scores'],
+  reformat_content: ['get_content_items', 'get_seo_scores'],
 };
 
 /**
