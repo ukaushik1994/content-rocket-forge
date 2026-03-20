@@ -2209,22 +2209,7 @@ serve(async (req) => {
       });
     }
 
-    // Get active providers using same logic as Content Builder (AIServiceController)
-    // 1. Check user_llm_keys for OpenRouter
-    let openrouterKey = null;
-    const { data: llmKey } = await supabase
-      .from('user_llm_keys')
-      .select('api_key, provider')
-      .eq('user_id', user.id)
-      .eq('provider', 'openrouter')
-      .eq('is_active', true)
-      .maybeSingle();
-    
-    if (llmKey?.api_key) {
-      openrouterKey = llmKey.api_key;
-    }
-
-    // 2. Get the single active AI service provider (Single Active Provider Mode)
+    // Get active providers — all keys resolved from encrypted api_keys table via getApiKey()
     const { data: allProviders, error: providerError } = await supabase
       .from('ai_service_providers')
       .select('provider, preferred_model, status, priority')
