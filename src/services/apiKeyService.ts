@@ -337,7 +337,7 @@ class ApiKeyService {
       }
 
       // Check if this is an AI provider
-      const isAiProvider = DEFAULT_MODELS[service];
+      const isAiProvider = FALLBACK_MODELS[service];
       
       // If NOT an AI provider (e.g., SERP, serpstack, etc.), we're done
       if (!isAiProvider) {
@@ -362,7 +362,7 @@ class ApiKeyService {
           // Update existing provider
           const updateData: any = {
             status: isActive ? 'active' : 'inactive',
-            preferred_model: DEFAULT_MODELS[service],
+            preferred_model: FALLBACK_MODELS[service],
             priority: DEFAULT_PRIORITIES[service] ?? 99,
             error_message: null,
             updated_at: new Date().toISOString()
@@ -391,10 +391,10 @@ class ApiKeyService {
               provider: service,
               status: 'active',
               priority: DEFAULT_PRIORITIES[service] ?? 99,
-              preferred_model: DEFAULT_MODELS[service],
+              preferred_model: FALLBACK_MODELS[service],
               api_key: '', // Intentionally empty — edge functions decrypt from api_keys table
               capabilities: ['chat', 'completion'],
-              available_models: [DEFAULT_MODELS[service]]
+              available_models: [FALLBACK_MODELS[service]]
             });
 
           if (insertError) {
