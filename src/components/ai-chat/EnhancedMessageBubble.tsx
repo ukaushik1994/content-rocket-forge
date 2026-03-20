@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
-import { Bot, User, RefreshCw, Search, FileText, HelpCircle, Users, BarChart3 } from 'lucide-react';
+import { Bot, User, RefreshCw, Search, FileText, HelpCircle, Users, BarChart3, Pin } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EnhancedChatMessage, ChartConfiguration } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
