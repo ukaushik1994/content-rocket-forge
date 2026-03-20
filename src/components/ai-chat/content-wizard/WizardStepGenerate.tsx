@@ -941,6 +941,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         solution_id: wizardState.selectedSolution?.id || null,
         keywords: { main: wizardState.keyword, secondary: relatedKeywords } as any,
         metadata: metadata as any,
+        outline: wizardState.outline.length > 0 ? wizardState.outline as any : null, // 8C: Outline persistence
+        funnel_stage: wizardState.funnelStage || null, // 8B: Funnel stage tagging
       };
 
       if (existingContent) {
