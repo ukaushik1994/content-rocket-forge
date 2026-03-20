@@ -16,6 +16,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 
+const PAGE_SIZE = 20;
+
 const AIProposals = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -23,8 +25,10 @@ const AIProposals = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProposals, setSelectedProposals] = useState<Record<number, boolean>>({});
   const [viewMode, setViewMode] = useState<ViewMode>('tiles');
+  const [allProposals, setAllProposals] = useState<any[]>([]);
+  const [hasMore, setHasMore] = useState(true);
 
-  const { data: proposals = [], isLoading } = useQuery({
+  const { isLoading } = useQuery({
     queryKey: ['ai-proposals', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -32,12 +36,33 @@ const AIProposals = () => {
         .from('ai_strategy_proposals')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(0, PAGE_SIZE - 1);
       if (error) throw error;
-      return data || [];
+      const items = data || [];
+      setAllProposals(items);
+      setHasMore(items.length === PAGE_SIZE);
+      return items;
     },
     enabled: !!user?.id,
   });
+
+  const proposals = allProposals;
+
+  const loadMore = useCallback(async () => {
+    if (!user?.id || !hasMore) return;
+    const offset = allProposals.length;
+    const { data, error } = await supabase
+      .from('ai_strategy_proposals')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+    if (error) return;
+    const items = data || [];
+    setAllProposals(prev => [...prev, ...items]);
+    setHasMore(items.length === PAGE_SIZE);
+  }, [user?.id, hasMore, allProposals.length]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<ProposalStatus, number> = {
@@ -153,6 +178,16 @@ const AIProposals = () => {
                 />
               </motion.div>
             ))}
+          </div>
+        )}
+        {hasMore && !isLoading && filtered.length > 0 && (
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={loadMore}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors px-6 py-2.5 rounded-lg border border-border/50 hover:border-border bg-card/50 hover:bg-card"
+            >
+              Load more ({proposals.length} loaded)
+            </button>
           </div>
         )}
       </div>
