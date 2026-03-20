@@ -19,12 +19,9 @@ import {
   Brain, 
   Search, 
   Mail, 
-  Phone, 
-  CreditCard, 
   BarChart3,
   TrendingUp,
   Binary,
-  Server,
   Image,
   Video
 } from 'lucide-react';
@@ -81,16 +78,6 @@ export const API_PROVIDERS: ApiProvider[] = [
     category: 'AI Services'
   },
   {
-    id: 'lmstudio',
-    name: 'LM Studio',
-    description: 'Local AI models running on your machine',
-    serviceKey: 'lmstudio',
-    icon: Server,
-    link: 'https://lmstudio.ai/',
-    required: false,
-    category: 'AI Services'
-  },
-  {
     id: 'serp',
     name: 'SERP API',
     description: 'Search Engine Results Page data for SEO analysis',
@@ -98,16 +85,6 @@ export const API_PROVIDERS: ApiProvider[] = [
     icon: Search,
     link: 'https://serpapi.com/manage-api-key',
     required: true,
-    category: 'SEO & Analytics'
-  },
-  {
-    id: 'serpstack',
-    name: 'Serpstack',
-    description: 'Alternative SERP data provider for comprehensive search analysis',
-    serviceKey: 'serpstack',
-    icon: Search,
-    link: 'https://serpstack.com/dashboard',
-    required: false,
     category: 'SEO & Analytics'
   },
   {
@@ -140,36 +117,6 @@ export const API_PROVIDERS: ApiProvider[] = [
     required: false,
     category: 'Communication'
   },
-  {
-    id: 'sendgrid',
-    name: 'SendGrid',
-    description: 'Email delivery and marketing automation',
-    serviceKey: 'sendgrid',
-    icon: Mail,
-    link: 'https://app.sendgrid.com/settings/api_keys',
-    required: false,
-    category: 'Communication'
-  },
-  {
-    id: 'twilio',
-    name: 'Twilio',
-    description: 'SMS, voice, and video communication APIs',
-    serviceKey: 'twilio',
-    icon: Phone,
-    link: 'https://console.twilio.com/project/api-keys',
-    required: false,
-    category: 'Communication'
-  },
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    description: 'Payment processing and subscription management',
-    serviceKey: 'stripe',
-    icon: CreditCard,
-    link: 'https://dashboard.stripe.com/apikeys',
-    required: false,
-    category: 'Payments'
-  },
   // Image & Video Gen subcategory
   {
     id: 'openai_image',
@@ -189,17 +136,6 @@ export const API_PROVIDERS: ApiProvider[] = [
     serviceKey: 'gemini_image',
     icon: Image,
     link: 'https://aistudio.google.com/app/apikey',
-    required: false,
-    category: 'AI Services',
-    subcategory: 'Image & Video Gen'
-  },
-  {
-    id: 'lmstudio_image',
-    name: 'LM Studio (Image)',
-    description: 'Local image generation models',
-    serviceKey: 'lmstudio_image',
-    icon: Image,
-    link: 'https://lmstudio.ai/',
     required: false,
     category: 'AI Services',
     subcategory: 'Image & Video Gen'
