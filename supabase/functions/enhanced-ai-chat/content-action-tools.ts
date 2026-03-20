@@ -942,8 +942,9 @@ export async function executeContentActionTool(
 ## Format
 - Content type: ${toolArgs.content_type || 'blog'}
 - Tone: ${toolArgs.tone || 'professional'}
-- Target length: ~${targetWords} words
+- **CRITICAL WORD COUNT**: You MUST write exactly ~${targetWords} words (±10%). This means between ${Math.round(targetWords * 0.9)} and ${Math.round(targetWords * 1.1)} words. Count carefully — too short or too long will be flagged. Do not pad with filler; add depth instead.
 - Output clean HTML with proper headings (h2, h3), paragraphs, lists, and occasional <strong> for emphasis
+- Include at least 1-2 questions in the body text to engage readers
 - Do NOT include meta information or JSON — just the article content
 ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorContext}${structureGuidance}${editPatternHint}${performanceContext}${businessOutcomeContext}`;
 
