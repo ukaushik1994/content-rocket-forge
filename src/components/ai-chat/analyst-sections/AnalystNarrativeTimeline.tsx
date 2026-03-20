@@ -210,15 +210,6 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
 
   const orderedSections = [...fixedSections, ...adaptiveSections];
 
-  // Data age indicator
-  const dataAgeLabel = useMemo(() => {
-    if (!analystState?.lastUpdated) return null;
-    const ageMs = Date.now() - new Date(analystState.lastUpdated).getTime();
-    const mins = Math.floor(ageMs / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    return `${Math.floor(mins / 60)}h ago`;
-  }, [analystState?.lastUpdated]);
 
   return (
     <div className="space-y-12">
