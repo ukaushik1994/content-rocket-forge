@@ -1278,14 +1278,25 @@ export function useAnalystEngine(
         fetches.push((async () => {
           const { data: competitors } = await supabase
             .from('company_competitors')
-            .select('id, name, market_position')
+            .select('id, name, market_position, strengths, weaknesses, last_analyzed_at')
             .eq('user_id', userId)
             .limit(10);
           if (competitors !== null) {
             newData.push({ label: 'Tracked Competitors', value: competitors.length, category: 'competitors', fetchedAt: now });
-            // Store competitor names as individual data points for the section
+            // Store competitor names + metadata as individual data points for the section
             competitors.forEach((c: any) => {
-              newData.push({ label: `Competitor: ${c.name}`, value: 1, category: 'competitors', fetchedAt: now });
+              newData.push({
+                label: `Competitor: ${c.name}`,
+                value: 1,
+                category: 'competitors',
+                fetchedAt: now,
+                metadata: {
+                  strengths: Array.isArray(c.strengths) ? c.strengths : [],
+                  weaknesses: Array.isArray(c.weaknesses) ? c.weaknesses : [],
+                  lastAnalyzedAt: c.last_analyzed_at || null,
+                  marketPosition: c.market_position || null,
+                },
+              });
             });
           }
         })());
