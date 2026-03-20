@@ -2616,8 +2616,10 @@ export type Database = {
           campaign_id: string | null
           content: string | null
           content_type: Database["public"]["Enums"]["content_type_enum"] | null
+          content_value_score: number | null
           conversation_id: string | null
           created_at: string
+          funnel_stage: string | null
           generated_images: Json | null
           generated_videos: Json | null
           glossary_id: string | null
@@ -2627,6 +2629,7 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           metadata: Json | null
+          outline: Json | null
           pending_optimizations_count: number | null
           performance_metrics: Json | null
           published_url: string | null
@@ -2645,8 +2648,10 @@ export type Database = {
           campaign_id?: string | null
           content?: string | null
           content_type?: Database["public"]["Enums"]["content_type_enum"] | null
+          content_value_score?: number | null
           conversation_id?: string | null
           created_at?: string
+          funnel_stage?: string | null
           generated_images?: Json | null
           generated_videos?: Json | null
           glossary_id?: string | null
@@ -2656,6 +2661,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           metadata?: Json | null
+          outline?: Json | null
           pending_optimizations_count?: number | null
           performance_metrics?: Json | null
           published_url?: string | null
@@ -2674,8 +2680,10 @@ export type Database = {
           campaign_id?: string | null
           content?: string | null
           content_type?: Database["public"]["Enums"]["content_type_enum"] | null
+          content_value_score?: number | null
           conversation_id?: string | null
           created_at?: string
+          funnel_stage?: string | null
           generated_images?: Json | null
           generated_videos?: Json | null
           glossary_id?: string | null
@@ -2685,6 +2693,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           metadata?: Json | null
+          outline?: Json | null
           pending_optimizations_count?: number | null
           performance_metrics?: Json | null
           published_url?: string | null
@@ -6020,6 +6029,50 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_validations: {
+        Row: {
+          accuracy_score: number | null
+          actual_impressions: number | null
+          created_at: string | null
+          data_source: string | null
+          id: string
+          predicted_impressions: number | null
+          proposal_id: string | null
+          user_id: string
+          validated_at: string | null
+        }
+        Insert: {
+          accuracy_score?: number | null
+          actual_impressions?: number | null
+          created_at?: string | null
+          data_source?: string | null
+          id?: string
+          predicted_impressions?: number | null
+          proposal_id?: string | null
+          user_id: string
+          validated_at?: string | null
+        }
+        Update: {
+          accuracy_score?: number | null
+          actual_impressions?: number | null
+          created_at?: string | null
+          data_source?: string | null
+          id?: string
+          predicted_impressions?: number | null
+          proposal_id?: string | null
+          user_id?: string
+          validated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_validations_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "ai_strategy_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       raw_serp_data: {
         Row: {
           cached_at: string
@@ -8009,6 +8062,48 @@ export type Database = {
           session_id?: string | null
           updated_at?: string
           use_case?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_goals: {
+        Row: {
+          created_at: string | null
+          current_value: number | null
+          ends_at: string | null
+          goal_type: string
+          id: string
+          period: string | null
+          starts_at: string | null
+          status: string | null
+          target_value: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number | null
+          ends_at?: string | null
+          goal_type: string
+          id?: string
+          period?: string | null
+          starts_at?: string | null
+          status?: string | null
+          target_value: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number | null
+          ends_at?: string | null
+          goal_type?: string
+          id?: string
+          period?: string | null
+          starts_at?: string | null
+          status?: string | null
+          target_value?: number
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
