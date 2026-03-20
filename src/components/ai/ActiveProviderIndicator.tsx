@@ -75,6 +75,9 @@ export function ActiveProviderIndicator() {
   useEffect(() => {
     fetchActiveProviderAndKey();
 
+    const handleProviderChanged = () => fetchActiveProviderAndKey();
+    document.addEventListener('provider-changed', handleProviderChanged);
+
     const providerChannel = supabase
       .channel('active-provider-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ai_service_providers' }, () => fetchActiveProviderAndKey())
@@ -86,6 +89,7 @@ export function ActiveProviderIndicator() {
       .subscribe();
 
     return () => {
+      document.removeEventListener('provider-changed', handleProviderChanged);
       supabase.removeChannel(providerChannel);
       supabase.removeChannel(keysChannel);
     };
