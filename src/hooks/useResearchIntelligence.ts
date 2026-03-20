@@ -80,6 +80,8 @@ export const useRecommendations = (status?: string) => {
     queryKey: ['strategy_recommendations', uid, status],
     queryFn: () => svc.fetchStrategyRecommendations(uid!, status),
     enabled: !!uid,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   const acceptMutation = useMutation({
