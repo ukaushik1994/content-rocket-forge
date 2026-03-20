@@ -142,52 +142,28 @@ serve(async (req) => {
 
 async function getUserAIProvider(userId: string) {
   try {
-    const { data: userKeys } = await supabase
-      .from('user_llm_keys')
-      .select('*')
+    // Use ai_service_providers + encrypted api_keys
+    const { getApiKey } = await import('../shared/apiKeyService.ts');
+    
+    const { data: activeProvider } = await supabase
+      .from('ai_service_providers')
+      .select('provider, preferred_model')
       .eq('user_id', userId)
-      .eq('is_active', true)
-      .order('updated_at', { ascending: false });
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .single();
 
-    // Priority: OpenRouter > Anthropic > Gemini > OpenAI
-    const openrouter = userKeys?.find(k => k.provider === 'openrouter');
-    const anthropic = userKeys?.find(k => k.provider === 'anthropic');
-    const gemini = userKeys?.find(k => k.provider === 'gemini');
-    const openai = userKeys?.find(k => k.provider === 'openai');
+    if (!activeProvider) return null;
 
-    if (openrouter?.api_key) {
-      return {
-        provider: 'openrouter',
-        api_key: openrouter.api_key,
-        model: openrouter.model || 'meta-llama/llama-3.2-3b-instruct:free'
-      };
-    }
-    
-    if (anthropic?.api_key) {
-      return {
-        provider: 'anthropic',
-        api_key: anthropic.api_key,
-        model: anthropic.model || 'claude-3-haiku-20240307'
-      };
-    }
-    
-    if (gemini?.api_key) {
-      return {
-        provider: 'gemini',
-        api_key: gemini.api_key,
-        model: gemini.model || 'gemini-pro'
-      };
-    }
-    
-    if (openai?.api_key) {
-      return {
-        provider: 'openai',
-        api_key: openai.api_key,
-        model: openai.model || 'gpt-4o-mini'
-      };
-    }
+    const decryptedKey = await getApiKey(activeProvider.provider, userId);
+    if (!decryptedKey) return null;
 
-    return null;
+    return {
+      provider: activeProvider.provider,
+      api_key: decryptedKey,
+      model: activeProvider.preferred_model || 'gpt-4o-mini'
+    };
   } catch (error) {
     console.error('Error getting user AI provider:', error);
     return null;

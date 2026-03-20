@@ -69,16 +69,11 @@ serve(async (req) => {
 
     console.log(`🚀 OpenRouter content generation request for user: ${user_id}`);
 
-    // Get user's OpenRouter API key
-    const { data: userKey, error: keyError } = await supabase
-      .from('user_llm_keys')
-      .select('api_key, model')
-      .eq('user_id', user_id)
-      .eq('provider', 'openrouter')
-      .eq('is_active', true)
-      .single();
+    // Get user's OpenRouter API key from encrypted api_keys table
+    const { getApiKey } = await import('../shared/apiKeyService.ts');
+    const decryptedKey = await getApiKey('openrouter', user_id);
 
-    if (keyError || !userKey) {
+    if (!decryptedKey) {
       console.error(`❌ No OpenRouter key found for user: ${user_id}`);
       return new Response(JSON.stringify({
         error: "OpenRouter API key not configured. Please add your key in Settings."
@@ -88,8 +83,7 @@ serve(async (req) => {
       });
     }
 
-    // Validate the API key format
-    const sanitizedKey = typeof userKey.api_key === 'string' ? userKey.api_key.trim() : '';
+    const sanitizedKey = decryptedKey.trim();
     if (!sanitizedKey || !/^[a-zA-Z0-9_\-\.]+$/.test(sanitizedKey)) {
       console.error(`❌ Invalid API key format for user: ${user_id}`);
       return new Response(JSON.stringify({
