@@ -242,6 +242,16 @@ const KeywordsPage = () => {
               ))}
             </motion.div>
           )}
+          {hasMore && !loading && filteredAndSortedKeywords.length > 0 && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={loadMoreKeywords}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors px-6 py-2.5 rounded-lg border border-border/50 hover:border-border bg-card/50 hover:bg-card"
+              >
+                Load more ({keywords.length} loaded)
+              </button>
+            </div>
+          )}
         </div>
       </div>
       </div>
