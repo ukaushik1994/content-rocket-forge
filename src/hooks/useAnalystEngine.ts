@@ -1653,6 +1653,7 @@ export function useAnalystEngine(
     webSearchResults,
     lastUpdated: messages.length > 0 ? messages[messages.length - 1].timestamp : null,
     isEnriching,
+    lastRefreshError,
     messageCount: messages.filter(m => m.role === 'assistant').length,
     healthScore,
     crossSignalInsights,
