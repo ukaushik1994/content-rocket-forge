@@ -123,6 +123,8 @@ export function ContentRepository() {
         setDateRange={filterState.setDateRange}
         keywordFilter={filterState.keywordFilter}
         setKeywordFilter={filterState.setKeywordFilter}
+        funnelFilter={filterState.funnelFilter}
+        setFunnelFilter={filterState.setFunnelFilter}
         appliedFilters={appliedFilters}
         clearFilters={clearAllFilters}
         clearFilter={clearFilter}
