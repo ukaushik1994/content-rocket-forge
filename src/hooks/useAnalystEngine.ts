@@ -1580,11 +1580,80 @@ export function useAnalystEngine(
     return computeHealthScore(platformData, anomalyInsights, crossSignalInsights);
   }, [isActive, platformData, anomalyInsights, crossSignalInsights]);
 
-  // ─── Enhancement E: Goal progress ──────────────────────────────────────
+  // ─── Enhancement E: Goal progress (8D: DB-backed) ───────────────────────
+  const [dbGoalProgress, setDbGoalProgress] = useState<GoalProgress | null>(null);
+
+  useEffect(() => {
+    if (!isActive || !userId) return;
+    const fetchGoals = async () => {
+      try {
+        const { data: goals } = await supabase
+          .from('user_goals')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (goals && goals.length > 0) {
+          const goal = goals[0];
+          // Compute current_value from real data
+          let currentValue = goal.current_value || 0;
+          
+          if (goal.goal_type === 'publish_count') {
+            const since = goal.starts_at || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+            const { count } = await supabase
+              .from('content_items')
+              .select('*', { count: 'exact', head: true })
+              .eq('user_id', userId)
+              .eq('status', 'published')
+              .gte('updated_at', since);
+            currentValue = count || 0;
+          } else if (goal.goal_type === 'content_count') {
+            const since = goal.starts_at || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+            const { count } = await supabase
+              .from('content_items')
+              .select('*', { count: 'exact', head: true })
+              .eq('user_id', userId)
+              .gte('created_at', since);
+            currentValue = count || 0;
+          } else if (goal.goal_type === 'avg_seo') {
+            const avgSeo = platformData.find(d => d.label === 'Avg SEO Score')?.value || 0;
+            currentValue = avgSeo;
+          }
+          
+          const percentage = Math.min(100, Math.round((currentValue / goal.target_value) * 100));
+          const typeLabels: Record<string, string> = {
+            publish_count: 'Publish Articles',
+            content_count: 'Create Content',
+            avg_seo: 'Avg SEO Score',
+            keyword_count: 'Track Keywords',
+          };
+          
+          setDbGoalProgress({
+            goalName: typeLabels[goal.goal_type] || goal.goal_type,
+            percentage,
+            status: percentage >= 100 ? 'completed' : percentage >= 75 ? 'nearly_done' : percentage > 0 ? 'in_progress' : 'not_started',
+            nextStep: percentage >= 100 ? 'Goal complete!' : `${currentValue}/${goal.target_value} — keep going!`,
+            milestones: [
+              { label: '25% done', done: percentage >= 25 },
+              { label: '50% done', done: percentage >= 50 },
+              { label: '75% done', done: percentage >= 75 },
+              { label: 'Complete', done: percentage >= 100 },
+            ],
+          });
+        }
+      } catch { /* fail silently */ }
+    };
+    fetchGoals();
+  }, [isActive, userId, platformData]);
+
   const goalProgress = useMemo<GoalProgress | null>(() => {
     if (!isActive) return null;
+    // Prefer DB goal over conversation-based assessment
+    if (dbGoalProgress) return dbGoalProgress;
     return assessGoalProgress(conversationGoal, messages);
-  }, [isActive, conversationGoal, messages]);
+  }, [isActive, conversationGoal, messages, dbGoalProgress]);
 
   // ─── Strategic Recommendation ──────────────────────────────────────────
   const strategicRecommendation = useMemo<StrategicRecommendation | null>(() => {
