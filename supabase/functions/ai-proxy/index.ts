@@ -89,11 +89,6 @@ interface AiRequest {
   apiKey: string;
   params?: any;
 }
-  service: string;
-  endpoint: string;
-  apiKey: string;
-  params?: any;
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
