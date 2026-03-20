@@ -7,6 +7,7 @@ import { useSidebarContext } from '@/contexts/SidebarContext';
 import { cn } from '@/lib/utils';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { ActiveProviderIndicator } from '@/components/ai/ActiveProviderIndicator';
 import { useDueContentNotifications } from '@/hooks/useDueContentNotifications';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 
@@ -110,7 +111,10 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <NotificationBell />
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <ActiveProviderIndicator />
+        <NotificationBell />
+      </div>
       <div className="flex-1 flex relative">
         {isMobile ? (
           <AnimatePresence>
