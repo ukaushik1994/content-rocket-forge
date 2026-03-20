@@ -179,7 +179,7 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
       id: 'competitive-position',
       visible: hasCompetitors && !!analystState,
       category: 'competitors',
-      render: () => <CompetitivePositionSection topics={analystState!.topics} onSendMessage={onSendMessage} />,
+      render: () => <CompetitivePositionSection topics={analystState!.topics} platformData={analystState!.platformData} onSendMessage={onSendMessage} />,
     },
     {
       id: 'goal-progress',
