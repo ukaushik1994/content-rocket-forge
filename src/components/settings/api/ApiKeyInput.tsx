@@ -60,6 +60,7 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
           try {
             const result = await testApiKey(provider.serviceKey as ApiProvider, key);
             const success = typeof result === 'object' ? !!result?.success : !!result;
+            setTestSuccessful(success);
             if (success) {
               console.log(`✅ ${provider.name} API key verified successfully`);
             } else {
