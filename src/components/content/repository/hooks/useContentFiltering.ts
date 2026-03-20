@@ -9,6 +9,7 @@ export type FilterParams = {
   sortBy: string;
   dateRange: { from: Date | undefined; to: Date | undefined };
   keywordFilter: string;
+  funnelFilter: string;
 }
 
 export type FilterState = FilterParams & {
@@ -16,11 +17,11 @@ export type FilterState = FilterParams & {
 }
 
 export function useContentFiltering(contentItems: ContentItemType[]) {
-  // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date');
   const [filterStatus, setFilterStatus] = useState('all');
   const [keywordFilter, setKeywordFilter] = useState('');
+  const [funnelFilter, setFunnelFilter] = useState('all');
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ 
     from: undefined, 
     to: undefined 
@@ -28,16 +29,13 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredItems, setFilteredItems] = useState<ContentItemType[]>(contentItems);
   
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterStatus, dateRange, keywordFilter, sortBy]);
+  }, [searchQuery, filterStatus, dateRange, keywordFilter, sortBy, funnelFilter]);
   
-  // Apply filters and sorting
   useEffect(() => {
     let filtered = [...contentItems];
     
-    // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(item => 
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -45,26 +43,27 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
       );
     }
     
-    // Apply status filter (SB-2: ready_to_publish = drafts with SEO ≥ 60)
     if (filterStatus === 'ready_to_publish') {
       filtered = filtered.filter(item => item.status === 'draft' && (item.seo_score || 0) >= 60);
     } else if (filterStatus !== 'all') {
       filtered = filtered.filter(item => item.status === filterStatus);
     }
     
-    // Apply date filter
+    // 8B: Funnel stage filter
+    if (funnelFilter !== 'all') {
+      filtered = filtered.filter(item => (item as any).funnel_stage === funnelFilter);
+    }
+    
     if (dateRange.from || dateRange.to) {
       filtered = filtered.filter(item => {
         const itemDate = new Date(item.updated_at);
         if (dateRange.from && dateRange.to) {
-          // Set time to end of day for the to date for inclusive range
           const endDate = new Date(dateRange.to);
           endDate.setHours(23, 59, 59, 999);
           return itemDate >= dateRange.from && itemDate <= endDate;
         } else if (dateRange.from) {
           return itemDate >= dateRange.from;
         } else if (dateRange.to) {
-          // Set time to end of day for inclusive to date
           const endDate = new Date(dateRange.to);
           endDate.setHours(23, 59, 59, 999);
           return itemDate <= endDate;
@@ -73,7 +72,6 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
       });
     }
     
-    // Apply keyword filter
     if (keywordFilter) {
       const normalizedKeyword = keywordFilter.toLowerCase();
       filtered = filtered.filter(item =>
@@ -81,7 +79,6 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
       );
     }
     
-    // Apply sorting (SB-2: force SEO score sort for ready_to_publish)
     const effectiveSortBy = filterStatus === 'ready_to_publish' ? 'score' : sortBy;
     filtered.sort((a, b) => {
       if (effectiveSortBy === 'date') {
@@ -94,19 +91,25 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
         const aWordCount = a.content ? a.content.split(/\s+/).length : 0;
         const bWordCount = b.content ? b.content.split(/\s+/).length : 0;
         return bWordCount - aWordCount;
+      } else if (effectiveSortBy === 'value') {
+        return ((b as any).content_value_score || 0) - ((a as any).content_value_score || 0);
       }
       return 0;
     });
     
     setFilteredItems(filtered);
-  }, [contentItems, searchQuery, sortBy, filterStatus, dateRange, keywordFilter]);
+  }, [contentItems, searchQuery, sortBy, filterStatus, dateRange, keywordFilter, funnelFilter]);
 
-  // Generate applied filters list for display
   const getAppliedFilters = () => {
     const filters: string[] = [];
     
     if (filterStatus !== 'all') {
       filters.push(`Status: ${filterStatus}`);
+    }
+    
+    if (funnelFilter !== 'all') {
+      const labels: Record<string, string> = { tofu: 'Awareness', mofu: 'Consideration', bofu: 'Decision' };
+      filters.push(`Funnel: ${labels[funnelFilter] || funnelFilter}`);
     }
     
     if (dateRange.from && dateRange.to) {
@@ -127,6 +130,7 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
   const clearAllFilters = () => {
     setSearchQuery('');
     setFilterStatus('all');
+    setFunnelFilter('all');
     setDateRange({ from: undefined, to: undefined });
     setKeywordFilter('');
   };
@@ -138,16 +142,16 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
       setDateRange({ from: undefined, to: undefined });
     } else if (filter.startsWith('Keyword:')) {
       setKeywordFilter('');
+    } else if (filter.startsWith('Funnel:')) {
+      setFunnelFilter('all');
     }
   };
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
-    // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Add reset filters function
   const resetFilters = useCallback(() => {
     clearAllFilters();
     setCurrentPage(1);
@@ -165,6 +169,8 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
       setDateRange,
       keywordFilter,
       setKeywordFilter,
+      funnelFilter,
+      setFunnelFilter,
       currentPage,
       setCurrentPage
     },
