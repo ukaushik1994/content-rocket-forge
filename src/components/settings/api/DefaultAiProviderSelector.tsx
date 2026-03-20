@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,10 +8,10 @@ import { toast } from 'sonner';
 import { ProviderIcon } from './ProviderIcon';
 
 const AI_PROVIDERS = [
-  { id: 'openrouter', label: 'OpenRouter', badge: 'Recommended', badgeClass: 'bg-cyan-950/30 text-cyan-400 border-cyan-400/30' },
+  { id: 'openrouter', label: 'OpenRouter' },
   { id: 'anthropic', label: 'Claude' },
   { id: 'openai', label: 'OpenAI' },
-  { id: 'gemini', label: 'Gemini', badge: 'High Performance', badgeClass: 'bg-emerald-950/30 text-emerald-400 border-emerald-400/30' },
+  { id: 'gemini', label: 'Gemini' },
   { id: 'mistral', label: 'Mistral' },
 ] as const;
 
@@ -27,38 +24,18 @@ export function DefaultAiProviderSelector() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSwitching, setIsSwitching] = useState(false);
 
-  useEffect(() => {
-    loadState();
-  }, []);
+  useEffect(() => { loadState(); }, []);
 
   const loadState = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      // Parallel: get configured keys + active provider
       const [keysResult, providerResult] = await Promise.all([
-        supabase
-          .from('api_keys_metadata')
-          .select('service')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .in('service', AI_PROVIDERS.map(p => p.id)),
-        supabase
-          .from('ai_service_providers')
-          .select('provider, status')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .in('provider', AI_PROVIDERS.map(p => p.id))
-          .limit(1)
+        supabase.from('api_keys_metadata').select('service').eq('user_id', user.id).eq('is_active', true).in('service', AI_PROVIDERS.map(p => p.id)),
+        supabase.from('ai_service_providers').select('provider, status').eq('user_id', user.id).eq('status', 'active').in('provider', AI_PROVIDERS.map(p => p.id)).limit(1)
       ]);
-
-      const configured = new Set(keysResult.data?.map(k => k.service) || []);
-      setConfiguredProviders(configured);
-
-      const active = providerResult.data?.[0]?.provider as AiProviderId | undefined;
-      setActiveProvider(active || null);
-
+      setConfiguredProviders(new Set(keysResult.data?.map(k => k.service) || []));
+      setActiveProvider((providerResult.data?.[0]?.provider as AiProviderId) || null);
       setEnableFallback(getUserPreference('enableAiFallback') === true);
     } catch (err) {
       console.error('Failed to load AI provider state:', err);
@@ -67,40 +44,21 @@ export function DefaultAiProviderSelector() {
     }
   };
 
-  const handleProviderChange = async (providerId: string) => {
-    const id = providerId as AiProviderId;
+  const handleProviderChange = async (id: AiProviderId) => {
     if (!configuredProviders.has(id)) {
       toast.error(`Configure your ${AI_PROVIDERS.find(p => p.id === id)?.label} API key first`);
       return;
     }
-
+    if (activeProvider === id) return;
     setIsSwitching(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      // Deactivate all AI providers, then activate selected
-      await supabase
-        .from('ai_service_providers')
-        .update({ status: 'inactive', updated_at: new Date().toISOString() })
-        .eq('user_id', user.id)
-        .in('provider', AI_PROVIDERS.map(p => p.id));
-
-      await supabase
-        .from('ai_service_providers')
-        .upsert({
-          user_id: user.id,
-          provider: id,
-          status: 'active',
-          api_key: '',
-          priority: 1,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,provider' });
-
+      await supabase.from('ai_service_providers').update({ status: 'inactive', updated_at: new Date().toISOString() }).eq('user_id', user.id).in('provider', AI_PROVIDERS.map(p => p.id));
+      await supabase.from('ai_service_providers').upsert({ user_id: user.id, provider: id, status: 'active', api_key: '', priority: 1, updated_at: new Date().toISOString() }, { onConflict: 'user_id,provider' });
       setActiveProvider(id);
       toast.success(`Switched to ${AI_PROVIDERS.find(p => p.id === id)?.label}`);
-    } catch (err) {
-      console.error('Failed to switch provider:', err);
+    } catch {
       toast.error('Failed to switch provider');
     } finally {
       setIsSwitching(false);
@@ -115,89 +73,77 @@ export function DefaultAiProviderSelector() {
 
   if (isLoading) {
     return (
-      <Card className="border-border/20">
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
-  const hasAnyConfigured = configuredProviders.size > 0;
+  const hasAny = configuredProviders.size > 0;
 
   return (
-    <Card className="border-border/20">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Default AI Provider</CardTitle>
-        <CardDescription>
-          {hasAnyConfigured
-            ? 'Select which AI provider to use across the application'
-            : 'Configure at least one AI provider key below to get started'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {hasAnyConfigured ? (
-          <RadioGroup
-            value={activeProvider || ''}
-            onValueChange={handleProviderChange}
-            className="flex flex-col sm:flex-row gap-4 flex-wrap"
-            disabled={isSwitching}
-          >
-            {AI_PROVIDERS.map((provider) => {
-              const isConfigured = configuredProviders.has(provider.id);
-              const isActive = activeProvider === provider.id;
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-sm font-medium text-foreground">AI Provider</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {hasAny ? 'Select your default provider' : 'Add an API key below to get started'}
+        </p>
+      </div>
 
-              return (
-                <div key={provider.id} className={`flex items-center space-x-2 ${!isConfigured ? 'opacity-40' : ''}`}>
-                  <RadioGroupItem value={provider.id} id={`ai-${provider.id}`} disabled={!isConfigured} />
-                  <Label htmlFor={`ai-${provider.id}`} className="flex items-center gap-2 cursor-pointer">
-                    <ProviderIcon provider={provider.id} />
-                    <span>{provider.label}</span>
-                    {'badge' in provider && provider.badge && (
-                      <Badge variant="outline" className={`text-xs ${provider.badgeClass}`}>
-                        {provider.badge}
-                      </Badge>
-                    )}
-                    {isActive && isConfigured && (
-                      <Badge variant="outline" className="text-xs bg-green-950/30 text-green-400 border-green-400/30">
-                        <Check className="h-3 w-3 mr-1" /> Active
-                      </Badge>
-                    )}
-                    {!isConfigured && (
-                      <Badge variant="outline" className="text-xs text-muted-foreground">
-                        No key
-                      </Badge>
-                    )}
-                  </Label>
-                </div>
-              );
-            })}
-          </RadioGroup>
-        ) : (
-          <div className="text-center py-4 text-sm text-muted-foreground">
-            <AlertTriangle className="h-5 w-5 mx-auto mb-2 text-amber-400" />
-            No AI providers configured yet. Add an API key in the AI Services section below.
-          </div>
-        )}
+      {hasAny ? (
+        <div className="flex flex-wrap gap-2">
+          {AI_PROVIDERS.map((provider) => {
+            const configured = configuredProviders.has(provider.id);
+            const active = activeProvider === provider.id;
 
-        {hasAnyConfigured && (
-          <div className="flex items-center space-x-2 mt-6 pt-4 border-t border-border/10">
-            <Switch
-              id="enable-fallback"
-              checked={enableFallback}
-              onCheckedChange={handleFallbackToggle}
-            />
-            <Label htmlFor="enable-fallback">
-              <div>
-                <span className="font-medium">Enable AI Provider Fallback</span>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Try alternative providers when your primary choice fails
-                </p>
-              </div>
-            </Label>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            return (
+              <button
+                key={provider.id}
+                onClick={() => handleProviderChange(provider.id)}
+                disabled={isSwitching || !configured}
+                className={`
+                  group relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm
+                  transition-all duration-200 outline-none
+                  ${active
+                    ? 'bg-white/[0.08] border border-emerald-500/40 text-foreground shadow-[0_0_12px_-4px_rgba(16,185,129,0.3)]'
+                    : configured
+                      ? 'bg-white/[0.04] border border-white/[0.08] text-foreground/80 hover:bg-white/[0.07] hover:border-white/[0.15]'
+                      : 'bg-white/[0.02] border border-white/[0.05] text-muted-foreground/50 cursor-not-allowed'
+                  }
+                `}
+              >
+                <ProviderIcon provider={provider.id} />
+                <span className="font-medium">{provider.label}</span>
+                {active && (
+                  <Check className="h-3 w-3 text-emerald-400 ml-0.5" />
+                )}
+                {!configured && (
+                  <span className="text-[10px] text-muted-foreground/40 ml-0.5">no key</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
+          <AlertTriangle className="h-3.5 w-3.5 text-amber-400/70" />
+          <span>No providers configured</span>
+        </div>
+      )}
+
+      {hasAny && (
+        <div className="flex items-center gap-2.5 pt-1">
+          <Switch
+            id="enable-fallback"
+            checked={enableFallback}
+            onCheckedChange={handleFallbackToggle}
+            className="scale-[0.85]"
+          />
+          <Label htmlFor="enable-fallback" className="text-xs text-muted-foreground cursor-pointer">
+            Auto-fallback to other providers
+          </Label>
+        </div>
+      )}
+    </div>
   );
 }
