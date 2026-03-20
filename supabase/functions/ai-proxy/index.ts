@@ -7,9 +7,88 @@ import { getApiKey } from "../shared/apiKeyService.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-// Removed Lovable AI - using user's configured providers only
+
+// ── Model preference lists (best → worst) ──────────────────────────
+const MODEL_PREFERENCES: Record<string, string[]> = {
+  openai:     ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
+  anthropic:  ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
+  gemini:     ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'],
+  openrouter: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'google/gemini-flash-1.5'],
+  mistral:    ['mistral-large-latest', 'mistral-medium-latest', 'mistral-small-latest'],
+};
+
+// ── List available models from a provider ───────────────────────────
+async function listModels(service: string, apiKey: string): Promise<string[]> {
+  try {
+    let url = '';
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    switch (service) {
+      case 'openai':
+        url = 'https://api.openai.com/v1/models';
+        headers['Authorization'] = `Bearer ${apiKey}`;
+        break;
+      case 'anthropic':
+        // Anthropic doesn't have a list-models endpoint; return known models
+        return ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'];
+      case 'gemini':
+        url = 'https://generativelanguage.googleapis.com/v1beta/models';
+        headers['x-goog-api-key'] = apiKey;
+        break;
+      case 'openrouter':
+        url = 'https://openrouter.ai/api/v1/models';
+        headers['Authorization'] = `Bearer ${apiKey}`;
+        break;
+      case 'mistral':
+        url = 'https://api.mistral.ai/v1/models';
+        headers['Authorization'] = `Bearer ${apiKey}`;
+        break;
+      default:
+        return [];
+    }
+
+    const resp = await fetch(url, { headers });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+
+    if (service === 'gemini') {
+      return (data.models || []).map((m: any) => m.name?.replace('models/', '') || m.name).filter(Boolean);
+    }
+    return (data.data || []).map((m: any) => m.id).filter(Boolean);
+  } catch (e) {
+    console.error(`listModels(${service}) error:`, e);
+    return [];
+  }
+}
+
+// ── Pick the best model from available ones ─────────────────────────
+function pickBestModel(service: string, availableModels: string[]): string | null {
+  const prefs = MODEL_PREFERENCES[service] || [];
+  for (const preferred of prefs) {
+    if (availableModels.some(m => m === preferred || m.includes(preferred))) {
+      return preferred;
+    }
+  }
+  return availableModels[0] || null;
+}
+
+// ── Check if error is model-not-found ───────────────────────────────
+function isModelNotFound(status: number, errorText: string): boolean {
+  if (status === 404) return true;
+  const lower = errorText.toLowerCase();
+  return lower.includes('model_not_found') ||
+         lower.includes('does not exist') ||
+         lower.includes('not found') ||
+         lower.includes('invalid model') ||
+         lower.includes('decommissioned');
+}
 
 interface AiRequest {
+  service: string;
+  endpoint: string;
+  apiKey: string;
+  params?: any;
+}
   service: string;
   endpoint: string;
   apiKey: string;
