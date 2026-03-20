@@ -13,13 +13,14 @@ export const CampaignPulseSection: React.FC<Props> = ({ platformData, onSendMess
   const campaignMetrics = platformData.filter(d => d.category === 'campaigns');
   const campaignCount = platformData.find(d => d.label === 'Active Campaigns')?.value || 0;
   const queueFailed = platformData.find(d => d.label === 'Queue Failed')?.value || 0;
+  const avgSeo = platformData.find(d => d.label === 'Avg SEO Score')?.value || 0;
   const hasData = campaignMetrics.length > 0;
 
   const getHeadline = () => {
     if (!hasData) return <>Campaigns <span className="text-muted-foreground/60">not started</span></>;
     if (campaignCount === 0) return <>Campaigns are <span className="text-muted-foreground/60">idle</span></>;
     if (queueFailed > 0) return <><span className="text-rose-300">{queueFailed} failure{queueFailed > 1 ? 's' : ''}</span> in queue</>;
-    return <>Campaigns are <span className="text-emerald-400/80">operational</span></>;
+    return <>Campaigns are <span className="text-emerald-400/80">operational</span>{avgSeo > 0 && <span className="text-muted-foreground/50 text-sm ml-1.5">· avg SEO {avgSeo}</span>}</>;
   };
 
   return (

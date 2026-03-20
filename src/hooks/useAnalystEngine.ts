@@ -43,7 +43,8 @@ export interface PlatformDataPoint {
   value: number;
   category: string;
   fetchedAt: Date;
-  trendData?: number[]; // Enhancement B: weekly trend data
+  trendData?: number[];
+  metadata?: Record<string, any>;
 }
 
 // Enhancement A: Health Score
@@ -671,15 +672,24 @@ function computeHealthScore(
     detail: `${Math.round(publishRatio * 100)}% of content published`,
   });
 
-  // 3. SEO Quality (20 pts) — based on anomaly warnings
+  // 3. SEO Quality (20 pts) — based on real avg SEO score from platformData
+  const avgSeoFromData = platformData.find(d => d.label === 'Avg SEO Score')?.value || 0;
   const seoWarnings = anomalyInsights.filter(i => i.content.includes('SEO score')).length;
-  const seoScore = Math.max(0, 20 - seoWarnings * 7);
+  let seoScore: number;
+  if (avgSeoFromData > 0) {
+    // Scale real avg SEO (0-100) to 0-20 points, minus warning penalties
+    seoScore = Math.max(0, Math.round((avgSeoFromData / 100) * 20) - seoWarnings * 3);
+  } else {
+    seoScore = Math.max(0, 20 - seoWarnings * 7);
+  }
   factors.push({
     name: 'SEO Quality',
     score: seoScore,
     maxScore: 20,
     status: seoScore >= 14 ? 'good' : seoScore >= 8 ? 'warning' : 'critical',
-    detail: seoWarnings === 0 ? 'No SEO issues detected' : `${seoWarnings} SEO warning${seoWarnings > 1 ? 's' : ''} found`,
+    detail: avgSeoFromData > 0
+      ? `Avg SEO: ${avgSeoFromData}/100${seoWarnings > 0 ? ` (${seoWarnings} warning${seoWarnings > 1 ? 's' : ''})` : ''}`
+      : (seoWarnings === 0 ? 'No SEO issues detected' : `${seoWarnings} SEO warning${seoWarnings > 1 ? 's' : ''} found`),
   });
 
   // 4. Strategic Completeness (20 pts)
@@ -1278,14 +1288,25 @@ export function useAnalystEngine(
         fetches.push((async () => {
           const { data: competitors } = await supabase
             .from('company_competitors')
-            .select('id, name, market_position')
+            .select('id, name, market_position, strengths, weaknesses, last_analyzed_at')
             .eq('user_id', userId)
             .limit(10);
           if (competitors !== null) {
             newData.push({ label: 'Tracked Competitors', value: competitors.length, category: 'competitors', fetchedAt: now });
-            // Store competitor names as individual data points for the section
+            // Store competitor names + metadata as individual data points for the section
             competitors.forEach((c: any) => {
-              newData.push({ label: `Competitor: ${c.name}`, value: 1, category: 'competitors', fetchedAt: now });
+              newData.push({
+                label: `Competitor: ${c.name}`,
+                value: 1,
+                category: 'competitors',
+                fetchedAt: now,
+                metadata: {
+                  strengths: Array.isArray(c.strengths) ? c.strengths : [],
+                  weaknesses: Array.isArray(c.weaknesses) ? c.weaknesses : [],
+                  lastAnalyzedAt: c.last_analyzed_at || null,
+                  marketPosition: c.market_position || null,
+                },
+              });
             });
           }
         })());

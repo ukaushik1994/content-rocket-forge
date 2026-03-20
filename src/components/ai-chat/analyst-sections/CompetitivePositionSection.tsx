@@ -3,6 +3,7 @@ import { AnalystSectionWrapper } from './AnalystSectionWrapper';
 import { AnalystInsightCard } from './AnalystInsightCard';
 import { NarrativePromptCard } from './NarrativePromptCard';
 import { AnalystTopic, PlatformDataPoint } from '@/hooks/useAnalystEngine';
+import { formatDistanceToNow } from 'date-fns';
 
 interface Props {
   topics: AnalystTopic[];
@@ -12,20 +13,45 @@ interface Props {
 
 export const CompetitivePositionSection: React.FC<Props> = ({ topics, platformData = [], onSendMessage }) => {
   // Real competitors from DB (platform data)
-  const competitorNames = platformData
+  const competitorData = platformData
     .filter(d => d.category === 'competitors' && d.label.startsWith('Competitor: '))
-    .map(d => d.label.replace('Competitor: ', ''));
+    .map(d => ({
+      name: d.label.replace('Competitor: ', ''),
+      strengths: (d.metadata?.strengths as string[]) || [],
+      weaknesses: (d.metadata?.weaknesses as string[]) || [],
+      lastAnalyzedAt: d.metadata?.lastAnalyzedAt as string | null,
+      marketPosition: d.metadata?.marketPosition as string | null,
+    }));
   const trackedCount = platformData.find(d => d.label === 'Tracked Competitors')?.value || 0;
 
   // Fallback to topic-parsed mentions
   const competitorTopics = topics.filter(t => t.category === 'competitors');
 
-  const hasData = competitorNames.length > 0 || competitorTopics.length > 0;
+  const hasData = competitorData.length > 0 || competitorTopics.length > 0;
 
   const getHeadline = () => {
-    if (competitorNames.length > 0) return <><span className="text-emerald-400/80">{trackedCount}</span> competitor{trackedCount !== 1 ? 's' : ''} tracked</>;
+    if (competitorData.length > 0) return <><span className="text-emerald-400/80">{trackedCount}</span> competitor{trackedCount !== 1 ? 's' : ''} tracked</>;
     if (competitorTopics.length > 0) return <><span className="text-amber-300">{competitorTopics.length} signal{competitorTopics.length > 1 ? 's' : ''}</span> detected</>;
     return <>Competitive landscape is a <span className="text-rose-300">blind spot</span></>;
+  };
+
+  const getCompetitorDescription = (comp: typeof competitorData[0]) => {
+    const parts: string[] = [];
+    if (comp.strengths.length > 0) parts.push(`+${comp.strengths.length} strengths`);
+    if (comp.weaknesses.length > 0) parts.push(`-${comp.weaknesses.length} weaknesses`);
+    if (comp.lastAnalyzedAt) {
+      try {
+        parts.push(`analyzed ${formatDistanceToNow(new Date(comp.lastAnalyzedAt), { addSuffix: true })}`);
+      } catch { /* ignore parse errors */ }
+    }
+    if (parts.length === 0 && comp.marketPosition) return comp.marketPosition;
+    return parts.join(' · ') || 'Tracked competitor';
+  };
+
+  const getCompetitorDotColor = (comp: typeof competitorData[0]): 'green' | 'amber' | 'red' => {
+    if (comp.strengths.length > 0 && comp.weaknesses.length > 0) return 'green';
+    if (comp.lastAnalyzedAt) return 'green';
+    return 'amber';
   };
 
   return (
@@ -35,15 +61,15 @@ export const CompetitivePositionSection: React.FC<Props> = ({ topics, platformDa
       headline={getHeadline()}
       delay={0.26}
     >
-      {competitorNames.length > 0 ? (
+      {competitorData.length > 0 ? (
         <div className="space-y-2.5">
-          {competitorNames.map((name) => (
+          {competitorData.map((comp) => (
             <AnalystInsightCard
-              key={name}
-              title={name}
-              description="Tracked competitor"
-              dotColor="green"
-              onExplore={() => onSendMessage(`Give me a competitive analysis against ${name}`)}
+              key={comp.name}
+              title={comp.name}
+              description={getCompetitorDescription(comp)}
+              dotColor={getCompetitorDotColor(comp)}
+              onExplore={() => onSendMessage(`Give me a competitive analysis against ${comp.name}`)}
             />
           ))}
         </div>
@@ -71,7 +97,7 @@ export const CompetitivePositionSection: React.FC<Props> = ({ topics, platformDa
           onSendMessage={onSendMessage}
         />
       )}
-      {hasData && competitorNames.length <= 1 && (
+      {hasData && competitorData.length <= 1 && competitorTopics.length === 0 && (
         <NarrativePromptCard
           question="Limited competitor data. Want me to discover more competitors?"
           primaryLabel="Find More"
