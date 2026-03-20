@@ -153,6 +153,24 @@ Deno.serve(async (req) => {
         console.error(`[PROACTIVE] Failed to insert recs for ${userId}:`, insertError);
       } else {
         totalRecs += recommendations.length;
+
+        // 4C: Auto-trigger dashboard_alerts for high-priority recommendations
+        const highPriority = recommendations.filter(r => r.priority <= 1);
+        for (const rec of highPriority) {
+          try {
+            await supabase.from('dashboard_alerts').insert({
+              user_id: userId,
+              title: rec.title,
+              message: rec.description,
+              type: 'recommendation',
+              severity: 'high',
+              module: rec.type,
+              status: 'active',
+              action_url: null,
+              metadata: { action: rec.action, priority_score: rec.priority_score }
+            });
+          } catch (_) { /* non-blocking */ }
+        }
       }
 
       // Fix 8: Auto-resolve stale notifications whose conditions no longer exist

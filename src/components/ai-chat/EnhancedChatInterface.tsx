@@ -26,7 +26,7 @@ import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicat
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { RateLimitBanner } from '@/components/common/RateLimitBanner';
 import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
-import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search, Sparkles, AlertTriangle, Clock, CalendarX, CheckCircle2 } from 'lucide-react';
+import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search, Sparkles, AlertTriangle, Clock, CalendarX, CheckCircle2, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -633,8 +633,20 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         animate="visible"
         variants={containerVariants}>
         
-          {/* Breadcrumb */}
-          
+          {/* 4A: Conversation Goal Chip */}
+          {activeConvObj && messages.length > 0 && (
+            <div className="mx-6 mt-2 flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground/70 truncate max-w-xs">
+                {activeConvObj.title || 'New conversation'}
+              </span>
+              {activeConvObj.goal && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+                  <Target className="h-2.5 w-2.5" />
+                  {activeConvObj.goal}
+                </span>
+              )}
+            </div>
+          )}
 
         
           {/* Rate Limit Banner */}
