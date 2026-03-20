@@ -78,16 +78,6 @@ export const API_PROVIDERS: ApiProvider[] = [
     category: 'AI Services'
   },
   {
-    id: 'lmstudio',
-    name: 'LM Studio',
-    description: 'Local AI models running on your machine',
-    serviceKey: 'lmstudio',
-    icon: Server,
-    link: 'https://lmstudio.ai/',
-    required: false,
-    category: 'AI Services'
-  },
-  {
     id: 'serp',
     name: 'SERP API',
     description: 'Search Engine Results Page data for SEO analysis',
