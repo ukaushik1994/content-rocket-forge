@@ -94,8 +94,8 @@ serve(async (req) => {
       });
     }
 
-    // Use provided model or fall back to user's default model
-    const selectedModel = model || userKey.model || 'openai/gpt-4';
+    // Use provided model or fall back to default
+    const selectedModel = model || 'openai/gpt-4';
     
     console.log(`🤖 Using model: ${selectedModel}`);
     
