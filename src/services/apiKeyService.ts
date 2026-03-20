@@ -271,40 +271,6 @@ class ApiKeyService {
   }
 
   /**
-   * Retrieves API key from the legacy user_llm_keys table
-   * Uses the correct schema: provider, api_key columns
-   */
-  private static async getLegacyApiKey(userId: string, service: ApiProvider): Promise<string | null> {
-    try {
-      console.log(`🔍 Checking legacy table for ${service} API key...`);
-
-      const { data, error } = await supabase
-        .from('user_llm_keys')
-        .select('api_key')
-        .eq('user_id', userId)
-        .eq('provider', service)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) {
-        console.warn(`⚠️ Error querying legacy table for ${service}:`, error.message);
-        return null;
-      }
-
-      if (!data?.api_key) {
-        console.log(`ℹ️ No ${service} API key found in legacy table`);
-        return null;
-      }
-
-      console.log(`✅ Found ${service} API key in legacy table`);
-      return data.api_key;
-    } catch (error: any) {
-      console.error(`❌ Error retrieving legacy ${service} API key:`, error);
-      return null;
-    }
-  }
-
-  /**
    * Toggles the active status of an API key without deleting it
    * Also syncs with ai_service_providers table for AI providers
    */
