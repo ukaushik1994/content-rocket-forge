@@ -2025,7 +2025,7 @@ serve(async (req) => {
                       .eq('id', conversationId);
 
                     // Prepend summary as system message, keep only last 5 messages
-                    const recentMessages = messages.slice(-5);
+                    const recentMessages = messages.slice(-MAX_HISTORY_MESSAGES);
                     messages.length = 0;
                     messages.push({ role: 'system', content: `[Previous conversation summary]: ${summary}` });
                     messages.push(...recentMessages);
