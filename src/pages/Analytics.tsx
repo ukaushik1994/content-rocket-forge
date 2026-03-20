@@ -108,7 +108,7 @@ const Analytics = () => {
       icon: Users,
       color: 'from-emerald-500 to-teal-400',
       bgPattern: 'from-emerald-500/5 to-teal-400/10',
-      source: 'Google Analytics'
+      source: 'Content Analytics'
     },
     { 
       id: 'impressions', 
