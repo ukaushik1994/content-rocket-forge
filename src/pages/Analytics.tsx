@@ -340,7 +340,7 @@ const Analytics = () => {
                   with integrated analytics and Search Console data
                 </motion.p>
 
-                <motion.div className="flex gap-4 justify-center mb-12">
+                <motion.div className="flex gap-4 justify-center mb-6">
                   <Button
                     onClick={refreshAnalytics}
                     disabled={loading}
