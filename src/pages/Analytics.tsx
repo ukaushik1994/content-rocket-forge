@@ -291,7 +291,7 @@ const Analytics = () => {
           >
             <Activity className="h-5 w-5 text-muted-foreground shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Publish content and connect Google Analytics to see real performance data here.
+              Publish content and connect analytics integrations to see real performance data here.
             </p>
           </motion.div>
         )}
