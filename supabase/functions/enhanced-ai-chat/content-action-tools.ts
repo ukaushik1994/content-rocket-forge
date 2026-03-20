@@ -1130,6 +1130,22 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         } catch (_) { /* non-blocking */ }
 
         const wordCount = generatedContent.split(/\s+/).length;
+        
+        // 2A: Word count deviation alert
+        const minWords = Math.round(targetWords * 0.9);
+        const maxWords = Math.round(targetWords * 1.1);
+        let wordCountAlert = '';
+        if (wordCount < minWords) {
+          wordCountAlert = `\n⚠️ **Word count short**: ${wordCount} words vs ${targetWords} target (${Math.round((wordCount / targetWords) * 100)}%). Consider asking to expand specific sections.`;
+        } else if (wordCount > maxWords) {
+          wordCountAlert = `\n⚠️ **Word count over**: ${wordCount} words vs ${targetWords} target (${Math.round((wordCount / targetWords) * 100)}%). Content may benefit from tightening.`;
+        }
+        
+        // 2E: Readability analysis
+        const readability = computeReadability(generatedContent);
+        const readabilityNote = readability.grade !== 'N/A' 
+          ? `\n📖 **Readability**: ${readability.grade} (avg ${readability.avgSentenceLength} words/sentence) — ${readability.note}`
+          : '';
         // Auto-suggest keywords from headings (E2)
         let keywordSuggestions = '';
         try {
