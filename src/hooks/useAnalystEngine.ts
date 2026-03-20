@@ -874,6 +874,7 @@ export function useAnalystEngine(
 ): AnalystState {
   const [platformData, setPlatformData] = useState<PlatformDataPoint[]>([]);
   const [isEnriching, setIsEnriching] = useState(false);
+  const [lastRefreshError, setLastRefreshError] = useState<string | null>(null);
   const lastFetchedTopicsRef = useRef<string>('');
   const processedMessageIdsRef = useRef<Set<string>>(new Set());
 
