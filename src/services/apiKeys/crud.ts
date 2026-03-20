@@ -178,7 +178,7 @@ export async function testAllApiKeys(): Promise<Record<string, ApiKeyStatusResul
  * Get simple boolean status (for backward compatibility)
  */
 export async function getAllApiKeysStatusSimple(): Promise<Record<string, boolean>> {
-  const providers: ApiProvider[] = ['serp', 'serpstack', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
+  const providers: ApiProvider[] = ['serp', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral'];
   const status: Record<string, boolean> = {};
 
   for (const provider of providers) {
