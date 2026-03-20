@@ -19,6 +19,8 @@ interface WizardStepSolutionProps {
   contentType: string;
   onContentTypeChange: (type: string) => void;
   keywordError?: boolean;
+  funnelStage: 'tofu' | 'mofu' | 'bofu' | null;
+  onFunnelStageChange: (stage: 'tofu' | 'mofu' | 'bofu') => void;
 }
 
 export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
