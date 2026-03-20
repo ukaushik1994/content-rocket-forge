@@ -66,6 +66,12 @@ export const SettingsPopup = () => {
       component: <EngageIntegrationSettings />
     },
     {
+      id: 'usage',
+      label: 'Usage',
+      icon: <BarChart3 className="h-4 w-4" />,
+      component: <UsageSettingsTab />
+    },
+    {
       id: 'helpTour',
       label: 'Help & Tour',
       icon: <Compass className="h-4 w-4" />,
