@@ -32,6 +32,8 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
   contentType,
   onContentTypeChange,
   keywordError,
+  funnelStage,
+  onFunnelStageChange,
 }) => {
   const [solutions, setSolutions] = useState<EnhancedSolution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
