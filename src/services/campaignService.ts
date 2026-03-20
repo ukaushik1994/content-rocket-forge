@@ -95,6 +95,7 @@ export const campaignService = {
         solution:solutions(*)
       `)
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -329,9 +330,10 @@ export const campaignService = {
    * Delete a campaign
    */
   async deleteCampaign(campaignId: string): Promise<void> {
+    // Soft delete: set deleted_at instead of hard deleting
     const { error } = await supabase
       .from('campaigns')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() } as any)
       .eq('id', campaignId);
 
     if (error) throw error;

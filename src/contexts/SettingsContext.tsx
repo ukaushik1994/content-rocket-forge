@@ -27,7 +27,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const urlParams = new URLSearchParams(window.location.search);
     const settingsTab = urlParams.get('settingsTab');
     
-    if (settingsTab && ['profile', 'api', 'websites', 'notifications', 'promptTemplates', 'helpTour', 'engage', 'content'].includes(settingsTab)) {
+    if (settingsTab && ['profile', 'api', 'websites', 'notifications', 'promptTemplates', 'helpTour', 'engage', 'content', 'usage'].includes(settingsTab)) {
       setActiveTab(settingsTab);
       setIsOpen(true);
     }

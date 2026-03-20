@@ -4491,15 +4491,55 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
       }
     }
 
+    // ===== Phase 8A: Token Usage Logging (non-blocking) =====
+    try {
+      const usageData = aiProxyResult?.data?.usage || aiProxyResult?.data?.choices?.[0]?.usage || {};
+      const promptTokens = usageData.prompt_tokens || 0;
+      const completionTokens = usageData.completion_tokens || 0;
+      const totalTokensUsed = usageData.total_tokens || (promptTokens + completionTokens);
+      const modelUsed = selectModelForIntent(provider.preferred_model, queryIntent, /create|generate|write|draft|add|make|build|send|publish|schedule/i.test(userQuery));
+      
+      if (totalTokensUsed > 0 || promptTokens > 0) {
+        const costPerMToken: Record<string, { input: number; output: number }> = {
+          'gpt-4o': { input: 2.5, output: 10 },
+          'gpt-4o-mini': { input: 0.15, output: 0.6 },
+          'gpt-4': { input: 30, output: 60 },
+          'gpt-4-turbo': { input: 10, output: 30 },
+          'claude-3-5-sonnet-20241022': { input: 3, output: 15 },
+          'claude-3-5-haiku-20241022': { input: 0.8, output: 4 },
+          'gemini-2.0-flash-exp': { input: 0.1, output: 0.4 },
+          'gemini-1.5-pro': { input: 1.25, output: 5 },
+        };
+        const rates = costPerMToken[modelUsed] || { input: 1, output: 3 };
+        const estimatedCost = (promptTokens * rates.input + completionTokens * rates.output) / 1_000_000;
+
+        supabase.from('llm_usage_logs').insert({
+          user_id: user.id,
+          provider: provider.provider,
+          model: modelUsed,
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: totalTokensUsed,
+          cost_estimate: estimatedCost,
+          success: true,
+        }).then(({ error }) => {
+          if (error) console.warn('Token usage log failed:', error.message);
+          else console.log(`📊 Logged ${totalTokensUsed} tokens (~$${estimatedCost.toFixed(6)}) for ${modelUsed}`);
+        });
+      }
+    } catch (logErr) {
+      console.warn('Token usage logging error (non-critical):', logErr);
+    }
+
     const responseData = {
       message: finalContent,
-      content: finalContent, // Fallback for different response formats
+      content: finalContent,
       actions: actions || undefined,
-      visualData: visualData || undefined, // First chart for inline display
-      allVisualData: allCharts, // All charts for modal (only if multiple exist)
-      serpData: serpData || undefined, // Include SERP data from our analysis
-      insights: aiInsights.length > 0 ? aiInsights : undefined, // Include AI-generated insights
-      analystContext: analystContext || undefined, // Analyst panel enrichment
+      visualData: visualData || undefined,
+      allVisualData: allCharts,
+      serpData: serpData || undefined,
+      insights: aiInsights.length > 0 ? aiInsights : undefined,
+      analystContext: analystContext || undefined,
       metadata: {
         processed_at: new Date().toISOString(),
         has_actions: !!actions,
