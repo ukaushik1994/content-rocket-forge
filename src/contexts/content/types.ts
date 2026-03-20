@@ -107,6 +107,8 @@ export interface ApprovalAssignmentType {
 export interface ContentContextType {
   contentItems: ContentItemType[];
   loading: boolean;
+  hasMore?: boolean;
+  loadMore?: () => void;
   error?: string;
   addContentItem: (item: Omit<ContentItemType, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => Promise<void>;
   updateContentItem: (id: string, updates: Partial<ContentItemType>) => Promise<void>;
