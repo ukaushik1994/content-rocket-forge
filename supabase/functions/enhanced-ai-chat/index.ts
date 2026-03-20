@@ -3395,7 +3395,7 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
             endpoint: 'chat',
             apiKey: provider.api_key,
             params: {
-              model: provider.preferred_model,
+              model: selectModelForIntent(provider.preferred_model, queryIntent, /create|generate|write|draft|add|make|build|send|publish|schedule/i.test(userQuery)),
               messages: [
                 { role: "system", content: systemPrompt },
                 ...messages,
