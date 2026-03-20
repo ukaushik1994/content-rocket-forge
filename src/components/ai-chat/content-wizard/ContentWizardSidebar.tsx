@@ -418,6 +418,8 @@ export const ContentWizardSidebar: React.FC<ContentWizardSidebarProps> = ({
                         contentType={wizardState.contentType}
                         onContentTypeChange={(ct) => updateState({ contentType: ct })}
                         keywordError={validationError}
+                        funnelStage={wizardState.funnelStage}
+                        onFunnelStageChange={(stage) => updateState({ funnelStage: stage })}
                       />
                     )}
                     {!quick && currentStep === 1 && (

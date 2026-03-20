@@ -190,6 +190,38 @@ export const WizardStepSolution: React.FC<WizardStepSolutionProps> = ({
           </div>
         </div>
       )}
+
+      {/* 8B: Content Purpose / Funnel Stage */}
+      {selectedSolution && (
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">4. Purpose</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">What stage of the buyer journey?</p>
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            {([
+              { id: 'tofu' as const, label: 'Awareness', desc: 'Educate & attract' },
+              { id: 'mofu' as const, label: 'Consideration', desc: 'Compare & evaluate' },
+              { id: 'bofu' as const, label: 'Decision', desc: 'Convert & close' },
+            ]).map(stage => (
+              <button
+                key={stage.id}
+                onClick={() => onFunnelStageChange(stage.id)}
+                className={cn(
+                  "flex flex-col items-center gap-1 p-2.5 rounded-2xl border transition-all cursor-pointer text-center backdrop-blur-md",
+                  funnelStage === stage.id
+                    ? "bg-white/[0.08] border-amber-300/30"
+                    : "bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]"
+                )}
+              >
+                <p className={cn("text-[10px] font-medium leading-tight", funnelStage === stage.id ? "text-amber-300" : "text-foreground")}>{stage.label}</p>
+                <p className="text-[9px] text-muted-foreground leading-tight">{stage.desc}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
