@@ -722,26 +722,26 @@ async function testOpenRouter(apiKey: string) {
   
   try {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('❌ OpenRouter test failed:', response.status, errorData);
       throw new Error(`OpenRouter API test failed: ${response.statusText}`);
     }
 
     const data = await response.json();
+    const allModels = (data.data || []).map((m: any) => m.id).filter(Boolean);
+    const recommended = pickBestModel('openrouter', allModels);
     console.log('✅ OpenRouter test successful');
     
     return {
       success: true,
       provider: 'OpenRouter',
       message: 'OpenRouter connection successful',
-      models: data.data?.slice(0, 5).map((model: any) => model.id) || []
+      models: allModels.slice(0, 20),
+      available_models: allModels.slice(0, 50),
+      recommended_model: recommended,
     };
   } catch (error: any) {
     console.error('💥 OpenRouter test exception:', error);
@@ -752,78 +752,72 @@ async function testOpenRouter(apiKey: string) {
 async function chatOpenRouter(apiKey: string, params: any) {
   console.log('💬 Processing OpenRouter chat request');
   
-  const model = params.model || 'gpt-5-2025-08-07';
-  const isNewerModel = model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1');
-  
-  const requestBody: any = {
-    model,
-    messages: params.messages || [],
-  };
+  const originalModel = params.model || 'openai/gpt-4o-mini';
+  let model = originalModel;
 
-  // Handle token limits based on model type
-  if (isNewerModel) {
-    // Newer models use max_completion_tokens and don't support temperature
-    if (params.maxTokens || params.max_tokens) {
-      requestBody.max_completion_tokens = params.maxTokens || params.max_tokens || 1000;
-    }
-    // Remove temperature for newer models
-    delete requestBody.temperature;
-  } else {
-    // Legacy models use max_tokens and support temperature
-    if (params.maxTokens || params.max_tokens) {
-      requestBody.max_tokens = params.maxTokens || params.max_tokens || 1000;
-    }
-    requestBody.temperature = params.temperature || 0.7;
-  }
-
-  // Clean up unused parameters
-  delete requestBody.maxTokens;
-  delete requestBody.max_tokens;
-
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://creaiter.lovable.app',
-        'X-Title': 'Creaiter'
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ OpenRouter chat failed:', response.status, errorData);
-      throw new Error(`OpenRouter chat failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ OpenRouter chat successful');
+  for (let modelAttempt = 1; modelAttempt <= 2; modelAttempt++) {
+    const isNewerModel = model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1');
     
-    return {
-      success: true,
-      data,
-      provider: 'OpenRouter'
-    };
-  } catch (error: any) {
-    console.error('💥 OpenRouter chat exception:', error);
-    throw new Error(`OpenRouter chat error: ${error.message}`);
+    const requestBody: any = { model, messages: params.messages || [] };
+
+    if (isNewerModel) {
+      if (params.maxTokens || params.max_tokens) requestBody.max_completion_tokens = params.maxTokens || params.max_tokens || 1000;
+    } else {
+      if (params.maxTokens || params.max_tokens) requestBody.max_tokens = params.maxTokens || params.max_tokens || 1000;
+      requestBody.temperature = params.temperature || 0.7;
+    }
+    delete requestBody.maxTokens;
+    if (params.tools) requestBody.tools = params.tools;
+    if (params.tool_choice) requestBody.tool_choice = params.tool_choice;
+
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://creaiter.lovable.app',
+          'X-Title': 'Creaiter'
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        
+        if (isModelNotFound(response.status, errorData) && modelAttempt === 1) {
+          console.warn(`⚠️ OpenRouter model ${model} not found, auto-detecting...`);
+          const available = await listModels('openrouter', apiKey);
+          const best = pickBestModel('openrouter', available);
+          if (best && best !== model) {
+            console.log(`🔄 Switching from ${model} to ${best}`);
+            model = best;
+            continue;
+          }
+        }
+        
+        throw new Error(`OpenRouter chat failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ OpenRouter chat successful');
+      
+      const result: any = { success: true, data, provider: 'OpenRouter' };
+      if (model !== originalModel) result._autoDetectedModel = model;
+      return result;
+    } catch (error: any) {
+      if (modelAttempt === 2) throw new Error(`OpenRouter chat error: ${error.message}`);
+    }
   }
+  throw new Error('OpenRouter chat failed after model fallback');
 }
 
 // Mistral Handler Functions  
 async function handleMistral(endpoint: string, apiKey: string, params: any) {
   console.log(`🔍 Processing Mistral request: ${endpoint}`);
   
-  if (endpoint === 'test') {
-    return await testMistral(apiKey);
-  }
-  
-  if (endpoint === 'chat' || endpoint === 'completion') {
-    return await chatMistral(apiKey, params);
-  }
-  
+  if (endpoint === 'test') return await testMistral(apiKey);
+  if (endpoint === 'chat' || endpoint === 'completion') return await chatMistral(apiKey, params);
   throw new Error(`Unsupported Mistral endpoint: ${endpoint}`);
 }
 
@@ -832,24 +826,25 @@ async function testMistral(apiKey: string) {
   
   try {
     const response = await fetch('https://api.mistral.ai/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('❌ Mistral test failed:', response.status, errorData);
       throw new Error(`Mistral API test failed: ${response.statusText}`);
     }
 
+    const data = await response.json();
+    const allModels = (data.data || []).map((m: any) => m.id).filter(Boolean);
+    const recommended = pickBestModel('mistral', allModels);
     console.log('✅ Mistral test successful');
     
     return {
       success: true,
       provider: 'Mistral',
-      message: 'Mistral connection successful'
+      message: 'Mistral connection successful',
+      available_models: allModels.slice(0, 20),
+      recommended_model: recommended,
     };
   } catch (error: any) {
     console.error('💥 Mistral test exception:', error);
@@ -860,45 +855,57 @@ async function testMistral(apiKey: string) {
 async function chatMistral(apiKey: string, params: any) {
   console.log('💬 Processing Mistral chat request');
   
-  const requestBody: any = {
-    model: params.model || 'mistral-large-latest',
-    messages: params.messages || [],
-    temperature: params.temperature || 0.7,
-    max_tokens: params.maxTokens || params.max_tokens || 1000,
-  };
+  const originalModel = params.model || 'mistral-large-latest';
+  let model = originalModel;
 
-  try {
-    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Mistral chat failed:', response.status, errorData);
-      throw new Error(`Mistral chat failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ Mistral chat successful');
-    
-    return {
-      success: true,
-      data,
-      provider: 'Mistral'
+  for (let modelAttempt = 1; modelAttempt <= 2; modelAttempt++) {
+    const requestBody: any = {
+      model,
+      messages: params.messages || [],
+      temperature: params.temperature || 0.7,
+      max_tokens: params.maxTokens || params.max_tokens || 1000,
     };
-  } catch (error: any) {
-    console.error('💥 Mistral chat exception:', error);
-    throw new Error(`Mistral chat error: ${error.message}`);
+    if (params.tools) requestBody.tools = params.tools;
+    if (params.tool_choice) requestBody.tool_choice = params.tool_choice;
+
+    try {
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        
+        if (isModelNotFound(response.status, errorData) && modelAttempt === 1) {
+          console.warn(`⚠️ Mistral model ${model} not found, auto-detecting...`);
+          const available = await listModels('mistral', apiKey);
+          const best = pickBestModel('mistral', available);
+          if (best && best !== model) {
+            console.log(`🔄 Switching from ${model} to ${best}`);
+            model = best;
+            continue;
+          }
+        }
+        
+        throw new Error(`Mistral chat failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Mistral chat successful');
+      
+      const result: any = { success: true, data, provider: 'Mistral' };
+      if (model !== originalModel) result._autoDetectedModel = model;
+      return result;
+    } catch (error: any) {
+      if (modelAttempt === 2) throw new Error(`Mistral chat error: ${error.message}`);
+    }
   }
+  throw new Error('Mistral chat failed after model fallback');
 }
 
 // LM Studio handlers removed — localhost is unreachable from cloud edge functions.
-// Users are informed at line 87-93 with a clear error message.
+// Users are informed with a clear error message.
 
-// Lovable AI has been removed - all AI requests now use user-configured providers
-// Users can configure OpenAI, Anthropic, Gemini, OpenRouter, Mistral, or LMStudio in Settings
+// All AI requests now use user-configured providers
