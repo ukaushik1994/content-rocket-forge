@@ -471,6 +471,30 @@ export async function executeContentActionTool(
       }
 
       case 'submit_for_review': {
+        // Block resubmission of rejected content that hasn't been modified
+        const { data: currentContent, error: fetchError } = await supabase.from('content_items')
+          .select('id, title, approval_status, updated_at, submitted_for_review_at')
+          .eq('id', toolArgs.content_id)
+          .eq('user_id', userId)
+          .single();
+        
+        if (fetchError || !currentContent) return { success: false, message: 'Content not found or access denied' };
+
+        // If previously rejected/needs_changes, check if content was actually modified since last submission
+        if (currentContent.approval_status === 'rejected' || currentContent.approval_status === 'needs_changes') {
+          const lastSubmitted = currentContent.submitted_for_review_at ? new Date(currentContent.submitted_for_review_at).getTime() : 0;
+          const lastUpdated = new Date(currentContent.updated_at).getTime();
+          if (lastUpdated <= lastSubmitted) {
+            return {
+              success: false,
+              message: `Cannot resubmit "${currentContent.title}" — it was ${currentContent.approval_status === 'rejected' ? 'rejected' : 'returned for changes'} and hasn't been modified since. Please edit the content first.`,
+              actions: [
+                { id: `improve-${toolArgs.content_id}`, type: 'button', label: '✨ Improve Content', action: 'send_message', data: { message: `Improve the content "${currentContent.title}"` } }
+              ]
+            };
+          }
+        }
+
         const { data, error } = await supabase.from('content_items')
           .update({ approval_status: 'pending_review', submitted_for_review_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq('id', toolArgs.content_id)
@@ -483,6 +507,26 @@ export async function executeContentActionTool(
       }
 
       case 'approve_content': {
+        // Quality gate: fetch content first to check SEO score
+        const { data: contentToApprove, error: fetchErr } = await supabase.from('content_items')
+          .select('id, title, seo_score, approval_status')
+          .eq('id', toolArgs.content_id)
+          .eq('user_id', userId)
+          .single();
+
+        if (fetchErr || !contentToApprove) return { success: false, message: 'Content not found or access denied' };
+
+        // Block approval if SEO score is critically low
+        if (contentToApprove.seo_score !== null && contentToApprove.seo_score < 20) {
+          return {
+            success: false,
+            message: `Cannot approve "${contentToApprove.title}" — SEO score is ${contentToApprove.seo_score}/100 (minimum 20 required). Use "improve content" to raise quality first.`,
+            actions: [
+              { id: `improve-${toolArgs.content_id}`, type: 'button', label: '✨ Improve Content', action: 'send_message', data: { message: `Improve the content "${contentToApprove.title}" to raise its SEO score` } }
+            ]
+          };
+        }
+
         const { data, error } = await supabase.from('content_items')
           .update({ approval_status: 'approved', updated_at: new Date().toISOString() })
           .eq('id', toolArgs.content_id)
