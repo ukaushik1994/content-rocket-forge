@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { AnalystState } from '@/hooks/useAnalystEngine';
 import { ChartConfiguration } from '@/types/enhancedChat';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 // Section components
 import { PreviousSessionSection } from './PreviousSessionSection';
