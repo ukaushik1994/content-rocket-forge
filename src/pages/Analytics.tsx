@@ -304,7 +304,7 @@ const Analytics = () => {
         >
           <div className="relative z-10 w-full px-6 pt-4 pb-4">
             <motion.div 
-              className="text-center mb-16 relative"
+              className="text-center mb-6 relative"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
