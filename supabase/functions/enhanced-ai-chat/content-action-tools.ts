@@ -1143,7 +1143,7 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         const seoContext = seoScore < 40 ? ' (basic check — full SEO analysis available in the Content Wizard)' : '';
         return {
           success: true,
-          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${factCheckWarning}${linkSuggestions}${keywordSuggestions}${cannibalizationWarning}${enrichmentWarning}`,
+          message: `Generated and saved "${saved.title}" (~${wordCount} words, SEO: ${seoScore}/100${seoContext}) as draft${factCheckWarning}${linkSuggestions}${keywordSuggestions}${cannibalizationWarning}${enrichmentWarning}${consistencyWarning}`,
           item: { ...saved, seo_score: seoScore, meta_title: autoMetaTitle, meta_description: autoMetaDesc },
           wordCount,
           actions: [
