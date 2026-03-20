@@ -19,12 +19,9 @@ import {
   Brain, 
   Search, 
   Mail, 
-  Phone, 
-  CreditCard, 
   BarChart3,
   TrendingUp,
   Binary,
-  Server,
   Image,
   Video
 } from 'lucide-react';
