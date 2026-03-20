@@ -44,6 +44,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       const { data: contentData, error: contentError } = await supabase
         .from('content_items')
         .select('*')
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
       

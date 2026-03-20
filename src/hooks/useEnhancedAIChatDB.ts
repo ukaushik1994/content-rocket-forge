@@ -116,7 +116,8 @@ export const useEnhancedAIChatDB = () => {
       let query = supabase
         .from('ai_conversations')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .is('deleted_at', null);
 
       // Apply archived filter
       if (!options?.includeArchived) {
