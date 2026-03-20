@@ -105,6 +105,8 @@ export const useTopicPerformance = (clusterId?: string) => {
     queryKey: ['topic_performance', uid, clusterId],
     queryFn: () => svc.fetchTopicPerformance(uid!, clusterId),
     enabled: !!uid,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   return query;
