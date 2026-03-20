@@ -147,14 +147,18 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   const actions = createContentActions(contentItems, setContentItems, user?.id);
   const approvalActions = createApprovalActions(actions.updateContentItem, user?.id);
 
+  const loadMore = useCallback(() => fetchContentItems(true), [fetchContentItems]);
+
   return (
     <ContentContext.Provider 
       value={{ 
-        contentItems: deduplicateItems(contentItems), // Always return deduplicated content
+        contentItems: deduplicateItems(contentItems),
         loading,
+        hasMore,
+        loadMore,
         ...actions,
         ...approvalActions,
-        refreshContent: fetchContentItems
+        refreshContent: () => fetchContentItems(false)
       }}
     >
       {children}
