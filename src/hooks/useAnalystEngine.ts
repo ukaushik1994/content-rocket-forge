@@ -105,6 +105,7 @@ export interface AnalystState {
   webSearchResults: AnalystWebSearchData[];
   lastUpdated: Date | null;
   isEnriching: boolean;
+  lastRefreshError: string | null;
   messageCount: number;
   healthScore: HealthScore | null;
   crossSignalInsights: InsightItem[];
