@@ -328,6 +328,36 @@ export const CONTENT_ACTION_TOOL_DEFINITIONS = [
         required: ["content_id", "version_number"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "improve_content",
+      description: "Improve an existing content item using AI. Snapshots current version, rewrites based on instruction, rescores SEO, and saves. Use when user says 'improve my article', 'make this better', 'enhance content', 'rewrite article', or 'optimize my post'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "UUID of the content item to improve" },
+          instruction: { type: "string", description: "What to improve (e.g., 'add more examples', 'make it more engaging', 'strengthen the introduction', 'add FAQ section')" }
+        },
+        required: ["content_id", "instruction"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "reformat_content",
+      description: "Reformat existing content — change tone, length, or structure without changing the core message. Use when user says 'make it shorter', 'make it more formal', 'add bullet points', 'simplify this', or 'reformat content'.",
+      parameters: {
+        type: "object",
+        properties: {
+          content_id: { type: "string", description: "UUID of the content item to reformat" },
+          format: { type: "string", enum: ["shorter", "longer", "more_casual", "more_formal", "add_bullets", "simplify"], description: "Reformat type" }
+        },
+        required: ["content_id", "format"]
+      }
+    }
   }
 ];
 
@@ -336,7 +366,8 @@ export const CONTENT_ACTION_TOOL_NAMES = [
   'submit_for_review', 'approve_content', 'reject_content',
   'generate_full_content', 'start_content_builder', 'launch_content_wizard',
   'create_calendar_item', 'update_calendar_item', 'delete_calendar_item',
-  'get_content_versions', 'restore_content_version'
+  'get_content_versions', 'restore_content_version', 'compare_content',
+  'improve_content', 'reformat_content'
 ];
 
 export async function executeContentActionTool(
