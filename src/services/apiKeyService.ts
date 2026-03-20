@@ -279,8 +279,8 @@ class ApiKeyService {
     // These are last-resort fallbacks only.
     const FALLBACK_MODELS: Record<string, string> = {
       openrouter: 'openai/gpt-4o-mini',
-      gemini: 'gemini-2.0-flash-exp',
-      openai: 'gpt-4o-mini',
+      gemini: 'gemini-2.5-flash',
+      openai: 'gpt-4.1-mini',
       anthropic: 'claude-sonnet-4-20250514',
       mistral: 'mistral-large-latest',
     };
