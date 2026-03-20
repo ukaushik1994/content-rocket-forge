@@ -317,7 +317,7 @@ const Analytics = () => {
               
               <div className="relative">
                 <motion.div 
-                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-4"
                   whileHover={{ scale: 1.05 }}
                 >
                   <BarChart3 className="h-5 w-5 text-primary" />
