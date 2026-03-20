@@ -42,7 +42,7 @@ export const CompetitivePositionSection: React.FC<Props> = ({ topics, platformDa
               key={name}
               title={name}
               description="Tracked competitor"
-              dotColor="emerald"
+              dotColor="green"
               onExplore={() => onSendMessage(`Give me a competitive analysis against ${name}`)}
             />
           ))}
