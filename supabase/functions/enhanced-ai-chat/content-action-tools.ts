@@ -1494,6 +1494,9 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         await supabase.from('content_items').update({
           content: reformattedContent, seo_score: rfScore, updated_at: new Date().toISOString()
         }).eq('id', rfContent.id).eq('user_id', userId);
+        
+        // 8A: Update value score
+        await computeAndSaveValueScore(supabase, userId, rfContent.id, rfScore);
 
         const rfScoreDiff = rfScore - (rfContent.seo_score || 0);
         const rfScoreNote = rfScoreDiff !== 0 ? ` (SEO: ${rfContent.seo_score || 0} → ${rfScore})` : ` (SEO: ${rfScore}/100)`;
