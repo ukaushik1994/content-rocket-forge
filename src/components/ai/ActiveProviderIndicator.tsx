@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { ProviderLogo } from "@/components/ui/provider-logo";
 import { Loader2 } from "lucide-react";
 
 interface ActiveProvider {
@@ -24,7 +26,6 @@ export function ActiveProviderIndicator() {
 
   const fetchActiveProviderAndKey = async () => {
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setActiveProvider(null);
@@ -33,7 +34,6 @@ export function ActiveProviderIndicator() {
         return;
       }
 
-      // Fetch active provider
       const { data: providerData, error: providerError } = await supabase
         .from('ai_service_providers')
         .select('provider, preferred_model')
@@ -41,7 +41,6 @@ export function ActiveProviderIndicator() {
         .maybeSingle();
 
       if (providerError) {
-        console.error('Error fetching active provider:', providerError);
         setActiveProvider(null);
         setHasApiKey(false);
         setIsLoading(false);
@@ -50,7 +49,6 @@ export function ActiveProviderIndicator() {
 
       setActiveProvider(providerData);
 
-      // If we have an active provider, check if API key exists
       if (providerData?.provider) {
         const { data: keyData, error: keyError } = await supabase
           .from('api_keys_metadata')
@@ -59,17 +57,11 @@ export function ActiveProviderIndicator() {
           .eq('is_active', true)
           .maybeSingle();
 
-        if (keyError) {
-          console.error('Error checking API key:', keyError);
-          setHasApiKey(false);
-        } else {
-          setHasApiKey(!!keyData);
-        }
+        setHasApiKey(keyError ? false : !!keyData);
       } else {
         setHasApiKey(false);
       }
     } catch (error) {
-      console.error('Error fetching provider status:', error);
       setActiveProvider(null);
       setHasApiKey(false);
     } finally {
@@ -80,36 +72,14 @@ export function ActiveProviderIndicator() {
   useEffect(() => {
     fetchActiveProviderAndKey();
 
-    // Subscribe to real-time changes on ai_service_providers
     const providerChannel = supabase
       .channel('active-provider-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ai_service_providers'
-        },
-        () => {
-          fetchActiveProviderAndKey();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ai_service_providers' }, () => fetchActiveProviderAndKey())
       .subscribe();
 
-    // Subscribe to real-time changes on api_keys
     const keysChannel = supabase
       .channel('api-keys-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'api_keys'
-        },
-        () => {
-          fetchActiveProviderAndKey();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'api_keys' }, () => fetchActiveProviderAndKey())
       .subscribe();
 
     return () => {
@@ -120,30 +90,34 @@ export function ActiveProviderIndicator() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-muted/50">
-        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-      </div>
+      <Button variant="ghost" size="icon" className="rounded-full border border-border/10" disabled>
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </Button>
     );
   }
 
-  // Only show if BOTH provider is active AND API key exists
   if (!activeProvider || !hasApiKey) {
     return null;
   }
 
   const providerLabel = PROVIDER_LABELS[activeProvider.provider] || activeProvider.provider;
+  const normalizedProvider = activeProvider.provider.toLowerCase() as 'openai' | 'anthropic' | 'gemini' | 'lmstudio' | 'mistral' | 'openrouter';
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary cursor-default">
-            <span className="text-xs font-medium">{providerLabel}</span>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full border border-border/10 hover:border-border/30 text-muted-foreground hover:text-foreground"
+          >
+            <ProviderLogo provider={normalizedProvider} size="sm" />
+          </Button>
         </TooltipTrigger>
         <TooltipContent>
           <p className="text-xs">
-            <strong>Active Model:</strong> {activeProvider.preferred_model}
+            <strong>{providerLabel}</strong> — {activeProvider.preferred_model}
           </p>
         </TooltipContent>
       </Tooltip>
