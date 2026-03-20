@@ -15,6 +15,8 @@ export const useClusters = () => {
     queryKey: ['topic_clusters', uid],
     queryFn: () => svc.fetchTopicClusters(uid!),
     enabled: !!uid,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   const createMutation = useMutation({
