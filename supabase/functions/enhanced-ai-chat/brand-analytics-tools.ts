@@ -536,6 +536,51 @@ export async function executeBrandAnalyticsTool(
       };
     }
 
+    case 'get_monthly_summary': {
+      const now = new Date();
+      const monthStr = toolArgs.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const startDate = `${monthStr}-01T00:00:00Z`;
+      const endYear = parseInt(monthStr.split('-')[0]);
+      const endMonth = parseInt(monthStr.split('-')[1]);
+      const nextMonth = endMonth === 12 ? `${endYear + 1}-01` : `${endYear}-${String(endMonth + 1).padStart(2, '0')}`;
+      const endDate = `${nextMonth}-01T00:00:00Z`;
+
+      const [contentResult, publishedResult, keywordsResult, proposalsResult, calendarResult, emailsResult, topContentResult] = await Promise.allSettled([
+        supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', startDate).lt('created_at', endDate),
+        supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'published').gte('updated_at', startDate).lt('updated_at', endDate),
+        supabase.from('keywords').select('id', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', startDate).lt('created_at', endDate),
+        supabase.from('ai_strategy_proposals').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'completed').gte('updated_at', startDate).lt('updated_at', endDate),
+        supabase.from('content_calendar').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'completed').gte('scheduled_date', startDate).lt('scheduled_date', endDate),
+        supabase.from('engage_email_campaigns').select('id', { count: 'exact', head: true }).eq('status', 'sent').gte('sent_at', startDate).lt('sent_at', endDate),
+        supabase.from('content_items').select('id, title, seo_score, content_type').eq('user_id', userId).gte('created_at', startDate).lt('created_at', endDate).order('seo_score', { ascending: false }).limit(5)
+      ]);
+
+      const getCount = (r: any) => r.status === 'fulfilled' ? (r.value.count || 0) : 0;
+      const topContent = topContentResult.status === 'fulfilled' ? topContentResult.value.data || [] : [];
+
+      const sections: string[] = [];
+      sections.push(`# 📊 Monthly Summary — ${monthStr}`);
+      sections.push(`| Metric | Count |\n|--------|-------|\n| Content Created | ${getCount(contentResult)} |\n| Published | ${getCount(publishedResult)} |\n| Keywords Added | ${getCount(keywordsResult)} |\n| Proposals Completed | ${getCount(proposalsResult)} |\n| Calendar Items Done | ${getCount(calendarResult)} |\n| Emails Sent | ${getCount(emailsResult)} |`);
+
+      if (topContent.length > 0) {
+        sections.push(`## 🏆 Top Content by SEO Score\n${topContent.map((c: any, i: number) => `${i + 1}. "${c.title}" — SEO: ${c.seo_score || 'N/A'} (${c.content_type})`).join('\n')}`);
+      }
+
+      const summary = sections.join('\n\n');
+      return {
+        success: true,
+        message: summary,
+        stats: {
+          contentCreated: getCount(contentResult),
+          published: getCount(publishedResult),
+          keywordsAdded: getCount(keywordsResult),
+          proposalsCompleted: getCount(proposalsResult),
+          calendarCompleted: getCount(calendarResult),
+          emailsSent: getCount(emailsResult)
+        }
+      };
+    }
+
     default:
       throw new Error(`Unknown brand/analytics tool: ${toolName}`);
   }

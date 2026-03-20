@@ -637,7 +637,7 @@ export async function executeToolCall(
   
   // Tiered timeouts based on tool type
   const getToolTimeout = (name: string): number => {
-    const AI_GENERATION_TOOLS = ['generate_full_content', 'create_topic_cluster', 'repurpose_for_social', 'trigger_competitor_analysis', 'generate_image', 'generate_content_image'];
+    const AI_GENERATION_TOOLS = ['generate_full_content', 'create_topic_cluster', 'repurpose_for_social', 'trigger_competitor_analysis', 'generate_image', 'generate_content_image', 'improve_content', 'reformat_content'];
     const SERP_TOOLS = ['trigger_serp_analysis', 'trigger_content_gap_analysis'];
     if (AI_GENERATION_TOOLS.includes(name)) return 60000;
     if (SERP_TOOLS.includes(name)) return 30000;
