@@ -42,6 +42,8 @@ export const useContentGaps = (clusterId?: string) => {
     queryKey: ['content_gaps', uid, clusterId],
     queryFn: () => svc.fetchContentGaps(uid!, clusterId),
     enabled: !!uid,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   const createMutation = useMutation({

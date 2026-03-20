@@ -121,7 +121,9 @@ export function useWorkflowData() {
 
       if (error) throw error;
       return data as WorkflowTemplate[];
-    }
+    },
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   // Create workflow mutation
