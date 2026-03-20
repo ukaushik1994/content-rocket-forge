@@ -108,7 +108,7 @@ export async function testApiKeyWithCall(provider: ApiProvider, apiKey: string):
 
     if (error) {
       console.warn(`⚠️ API proxy not available for ${provider}, falling back to basic validation:`, error);
-      return testApiKey(provider, apiKey);
+      return !!(await testApiKey(provider, apiKey));
     }
 
     const success = data?.success === true;
