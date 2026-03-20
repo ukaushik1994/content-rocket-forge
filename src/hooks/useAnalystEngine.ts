@@ -43,7 +43,8 @@ export interface PlatformDataPoint {
   value: number;
   category: string;
   fetchedAt: Date;
-  trendData?: number[]; // Enhancement B: weekly trend data
+  trendData?: number[];
+  metadata?: Record<string, any>;
 }
 
 // Enhancement A: Health Score
