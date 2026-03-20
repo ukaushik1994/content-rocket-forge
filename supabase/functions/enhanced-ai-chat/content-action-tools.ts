@@ -801,10 +801,49 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
         const titleMatch = generatedContent.match(/<h[12][^>]*>(.*?)<\/h[12]>/i);
         const autoTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '') : `${toolArgs.keyword} - ${toolArgs.content_type || 'Blog Post'}`;
 
-        // Auto meta title/description (Fix 3)
-        const plainText = generatedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-        const autoMetaTitle = autoTitle.length > 60 ? autoTitle.substring(0, 57) + '...' : autoTitle;
-        const autoMetaDesc = plainText.length > 155 ? plainText.substring(0, 152) + '...' : plainText;
+        // M1-19: AI-generated meta title and description
+        let autoMetaTitle = '';
+        let autoMetaDesc = '';
+        try {
+          const metaProxyResponse = await callAiProxyWithRetry(`${supabaseUrl}/functions/v1/ai-proxy`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              provider: provider.provider,
+              endpoint: 'chat',
+              apiKey: decryptedApiKey,
+              params: {
+                model: provider.preferred_model || 'gpt-4',
+                messages: [
+                  { role: 'system', content: 'You generate SEO meta tags. Respond with ONLY valid JSON: {"metaTitle":"...","metaDescription":"..."}. Meta title: max 60 chars, include primary keyword and a power word. Meta description: max 155 chars, include a hook and call-to-action.' },
+                  { role: 'user', content: `Generate meta title and description for an article titled "${autoTitle}" about "${toolArgs.keyword}". First 200 chars of content: ${generatedContent.replace(/<[^>]+>/g, ' ').substring(0, 200)}` }
+                ],
+                maxTokens: 200
+              }
+            })
+          });
+          if (metaProxyResponse.ok) {
+            const metaResult = await metaProxyResponse.json();
+            const metaText = metaResult.data?.choices?.[0]?.message?.content || metaResult.choices?.[0]?.message?.content || '';
+            try {
+              const parsed = JSON.parse(metaText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
+              if (parsed.metaTitle) autoMetaTitle = parsed.metaTitle.substring(0, 60);
+              if (parsed.metaDescription) autoMetaDesc = parsed.metaDescription.substring(0, 155);
+            } catch (_) { /* fallback below */ }
+          }
+        } catch (_) { /* fallback below */ }
+
+        // Fallback to truncation if AI meta failed
+        if (!autoMetaTitle) {
+          autoMetaTitle = autoTitle.length > 60 ? autoTitle.substring(0, 57) + '...' : autoTitle;
+        }
+        if (!autoMetaDesc) {
+          const plainText = generatedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          autoMetaDesc = plainText.length > 155 ? plainText.substring(0, 152) + '...' : plainText;
+        }
 
         // Save to content_items
         const { data: saved, error: saveError } = await supabase.from('content_items').insert({
