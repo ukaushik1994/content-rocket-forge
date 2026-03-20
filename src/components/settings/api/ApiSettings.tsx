@@ -116,8 +116,7 @@ export const ApiSettings = () => {
         />
       </div>
 
-      {/* Default AI Provider Selector */}
-      <DefaultAiProviderSelector />
+      {/* Default AI Provider Selector moved into AI Services category */}
 
       {/* Categories */}
       <div className="space-y-6">
