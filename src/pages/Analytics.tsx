@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAnalyticsData } from '@/hooks/useAnalyticsData';
-import { DateRange } from 'react-day-picker';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { toast } from 'sonner';
 import { 
