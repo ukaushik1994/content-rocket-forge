@@ -2042,6 +2042,24 @@ serve(async (req) => {
           messages.unshift({ role: 'system', content: `[Conversation goal]: ${convoGoal.goal}. Keep responses focused on this objective.` });
           console.log(`🎯 Conversation goal: ${convoGoal.goal}`);
         }
+
+        // 3A: Inject learned user preferences into prompt
+        try {
+          const { data: userPrefs } = await supabase.from('user_preferences')
+            .select('preference_type, preference_value, confidence_score')
+            .eq('user_id', userId)
+            .gte('confidence_score', 0.6)
+            .order('confidence_score', { ascending: false })
+            .limit(5);
+          
+          if (userPrefs && userPrefs.length > 0) {
+            const prefsText = userPrefs.map((p: any) => `- ${p.preference_type}: ${JSON.stringify(p.preference_value)}`).join('\n');
+            messages.unshift({ role: 'system', content: `[Learned User Preferences (high confidence)]:\n${prefsText}\nAdapt your responses to respect these preferences.` });
+            console.log(`🧠 Injected ${userPrefs.length} user preferences into context`);
+          }
+        } catch (prefErr) {
+          console.warn('⚠️ Failed to load user preferences (non-blocking):', prefErr);
+        }
       } catch (ctxErr) {
         console.warn('⚠️ Failed to load pinned/feedback/goal context (non-blocking):', ctxErr);
       }

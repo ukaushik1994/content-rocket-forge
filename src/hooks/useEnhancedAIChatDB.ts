@@ -1583,10 +1583,26 @@ export const useEnhancedAIChatDB = () => {
       setMessages(prev => prev.map(m => 
         m.id === messageId ? { ...m, feedbackHelpful: newVal } : m
       ));
+
+      // 3A: Learn from feedback — record preference when user gives negative feedback
+      if (newVal === false) {
+        try {
+          const { learnUserPreference } = await import('@/services/conversationMemory');
+          const assistantMsg = messages.find(m => m.id === messageId);
+          if (assistantMsg) {
+            await learnUserPreference(
+              'disliked_response_style',
+              { messagePreview: assistantMsg.content?.substring(0, 200), timestamp: new Date().toISOString() },
+              activeConversation || undefined,
+              0.4
+            );
+          }
+        } catch (_) { /* non-blocking */ }
+      }
     } catch (error) {
       console.error('Error setting feedback:', error);
     }
-  }, [user, messages]);
+  }, [user, messages, activeConversation]);
 
   // Pin/Unpin message
   const handlePinMessage = useCallback(async (messageId: string) => {

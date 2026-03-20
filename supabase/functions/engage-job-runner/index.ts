@@ -42,6 +42,18 @@ Deno.serve(async (req) => {
     });
     results.social = await socialRes.json();
 
+    // 3B: Aggregate user intelligence profiles (daily)
+    try {
+      const intelligenceRes = await fetch(`${baseUrl}/functions/v1/aggregate-user-intelligence`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ trigger: 'daily_job_runner' }),
+      });
+      results.intelligence = await intelligenceRes.json();
+    } catch (intErr) {
+      results.intelligence = { error: String(intErr) };
+    }
+
     // 4. Evaluate automation triggers with rate limiting, scheduling, branching + audit logging
     try {
       const { data: automations } = await supabase
