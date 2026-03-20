@@ -82,7 +82,7 @@ export function DefaultAiProviderSelector() {
   const hasAny = configuredProviders.size > 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
         <h3 className="text-sm font-medium text-foreground">AI Provider</h3>
         <p className="text-xs text-muted-foreground mt-0.5">
