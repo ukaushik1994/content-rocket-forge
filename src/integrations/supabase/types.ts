@@ -2623,6 +2623,7 @@ export type Database = {
           glossary_id: string | null
           id: string
           keywords: Json | null
+          last_reviewed_at: string | null
           meta_description: string | null
           meta_title: string | null
           metadata: Json | null
@@ -2651,6 +2652,7 @@ export type Database = {
           glossary_id?: string | null
           id?: string
           keywords?: Json | null
+          last_reviewed_at?: string | null
           meta_description?: string | null
           meta_title?: string | null
           metadata?: Json | null
@@ -2679,6 +2681,7 @@ export type Database = {
           glossary_id?: string | null
           id?: string
           keywords?: Json | null
+          last_reviewed_at?: string | null
           meta_description?: string | null
           meta_title?: string | null
           metadata?: Json | null
