@@ -9,7 +9,7 @@ import { validateApiKeyFormat } from './validation';
  * @param apiKey The API key to test
  * @returns Promise<boolean> indicating if the key works
  */
-export async function testApiKey(provider: ApiProvider, apiKey: string): Promise<boolean> {
+export async function testApiKey(provider: ApiProvider, apiKey: string): Promise<boolean | Record<string, any>> {
   try {
     console.log(`🧪 Testing ${provider} API key...`);
     
@@ -39,7 +39,7 @@ export async function testApiKey(provider: ApiProvider, apiKey: string): Promise
       console.log(`🌐 Attempting real API test for ${provider} via edge function...`);
       
       // Route AI providers to ai-proxy, others to api-proxy
-      const aiProviders = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'];
+      const aiProviders = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'openrouter'];
       const proxyFunction = aiProviders.includes(provider) ? 'ai-proxy' : 'api-proxy';
       
       const { data, error } = await supabase.functions.invoke(proxyFunction, {
@@ -52,20 +52,20 @@ export async function testApiKey(provider: ApiProvider, apiKey: string): Promise
 
       if (error) {
         console.warn(`⚠️ API proxy not available for ${provider}, falling back to format validation:`, error);
-        // Fall back to format validation
         return true; // Format was already validated above
       }
 
       const success = data?.success === true;
       if (success) {
         console.log(`✅ ${provider} API key real test passed`);
+        // Return full data object so callers can access available_models & recommended_model
+        return data;
       } else {
         console.warn(`⚠️ ${provider} API key real test failed:`, data);
       }
       return success;
     } catch (proxyError: any) {
       console.warn(`⚠️ API proxy test failed for ${provider}, using format validation:`, proxyError);
-      // Fall back to format validation - if we got here, format was valid
       return true;
     }
   } catch (error: any) {
