@@ -254,9 +254,10 @@ export const useEnhancedAIChatDB = () => {
   // Delete conversation
   const deleteConversation = useCallback(async (conversationId: string) => {
     try {
+      // Soft delete: set deleted_at instead of hard deleting
       const { error } = await supabase
         .from('ai_conversations')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() } as any)
         .eq('id', conversationId);
 
       if (error) throw error;

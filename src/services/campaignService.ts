@@ -329,9 +329,10 @@ export const campaignService = {
    * Delete a campaign
    */
   async deleteCampaign(campaignId: string): Promise<void> {
+    // Soft delete: set deleted_at instead of hard deleting
     const { error } = await supabase
       .from('campaigns')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() } as any)
       .eq('id', campaignId);
 
     if (error) throw error;
