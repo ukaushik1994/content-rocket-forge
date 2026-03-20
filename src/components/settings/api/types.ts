@@ -140,17 +140,6 @@ export const API_PROVIDERS: ApiProvider[] = [
     category: 'AI Services',
     subcategory: 'Image & Video Gen'
   },
-  {
-    id: 'lmstudio_image',
-    name: 'LM Studio (Image)',
-    description: 'Local image generation models',
-    serviceKey: 'lmstudio_image',
-    icon: Image,
-    link: 'https://lmstudio.ai/',
-    required: false,
-    category: 'AI Services',
-    subcategory: 'Image & Video Gen'
-  },
   // Video Generation
   {
     id: 'runway_video',
