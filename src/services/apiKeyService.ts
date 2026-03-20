@@ -7,9 +7,9 @@ import { toast } from 'sonner';
 
 // Updated type to include all API providers
 export type ApiProvider = 
-  | 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'openrouter' 
-  | 'serp' | 'serpapi'
-  | 'openai_image' | 'gemini_image'
+  | 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter' 
+  | 'serp' | 'serpapi' | 'serpstack'
+  | 'openai_image' | 'gemini_image' | 'lmstudio_image'
   | 'runway_video' | 'kling_video' | 'replicate_video'
   | 'resend';
 
