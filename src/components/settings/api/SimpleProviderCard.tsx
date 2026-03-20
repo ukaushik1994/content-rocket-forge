@@ -164,7 +164,9 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
         toast.success('API key saved');
         
         // Test after saving
-        const testSuccess = await testApiKey(provider.serviceKey as ApiProvider, trimmedKey);
+        const testResult = await testApiKey(provider.serviceKey as ApiProvider, trimmedKey);
+        const testSuccess = typeof testResult === 'object' ? (testResult as any)?.success !== false : !!testResult;
+        const data = typeof testResult === 'object' ? testResult : null;
         setStatus(testSuccess ? 'connected' : 'error');
         
         if (testSuccess) {
