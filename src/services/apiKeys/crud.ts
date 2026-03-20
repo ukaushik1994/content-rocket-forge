@@ -133,7 +133,7 @@ async function testApiKeyFunctionality(provider: ApiProvider, skipFallback: bool
  * Get basic status of all API keys (existence only, no testing)
  */
 export async function getAllApiKeysStatus(): Promise<Record<string, ApiKeyStatusResult>> {
-  const providers: ApiProvider[] = ['serp', 'serpstack', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
+  const providers: ApiProvider[] = ['serp', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral'];
   const status: Record<string, ApiKeyStatusResult> = {};
 
   for (const provider of providers) {
