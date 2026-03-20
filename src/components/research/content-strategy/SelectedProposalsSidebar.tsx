@@ -216,7 +216,7 @@ export const SelectedProposalsSidebar = ({
                                   <span className="font-semibold text-green-400">
                                     {(proposal.estimated_impressions ?? 
                                       Math.round((proposal.serp_data?.[proposal.primary_keyword]?.searchVolume || 0) * 0.05)
-                                    ).toLocaleString()}
+                                    ).toLocaleString()} <span className="text-white/40">(est.)</span>
                                   </span>
                                 </div>
                               </div>

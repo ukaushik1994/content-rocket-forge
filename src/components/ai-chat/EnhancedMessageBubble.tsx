@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
-import { Bot, User, RefreshCw, Search, FileText, HelpCircle, Users, BarChart3 } from 'lucide-react';
+import { Bot, User, RefreshCw, Search, FileText, HelpCircle, Users, BarChart3, Pin } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EnhancedChatMessage, ChartConfiguration } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
@@ -233,10 +233,20 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 </div>
               )}
 
+              {/* C3: Pinned message indicator */}
+              {!isUser && (message as any).isPinned && (
+                <div className="flex items-center gap-1 mb-1 ml-1">
+                  <Pin className="h-3 w-3 text-amber-500" />
+                  <span className="text-[10px] font-medium text-amber-500 uppercase tracking-wider">Pinned</span>
+                </div>
+              )}
+
               <Card className={`relative ${
                  isUser 
                    ? 'bg-primary/15 text-foreground border border-primary/25 ml-4' 
-                   : 'bg-transparent border border-border/20 mr-4'
+                   : (message as any).isPinned
+                     ? 'bg-transparent border-l-2 border-l-amber-500 border border-border/20 mr-4'
+                     : 'bg-transparent border border-border/20 mr-4'
                }`}>
                 <div className="px-6 py-4 overflow-x-auto">
                   <div className={`text-sm leading-relaxed ${

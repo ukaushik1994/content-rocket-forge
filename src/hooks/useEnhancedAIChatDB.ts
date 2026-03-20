@@ -626,6 +626,20 @@ export const useEnhancedAIChatDB = () => {
         console.warn('⚠️ Conversation memory enrichment failed (non-critical):', memoryError);
       }
 
+      // C1: Refresh session before sending to prevent stale token errors
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session) {
+          const expiresAt = sessionData.session.expires_at || 0;
+          const nowSecs = Math.floor(Date.now() / 1000);
+          if (expiresAt - nowSecs < 120) {
+            await supabase.auth.refreshSession();
+          }
+        }
+      } catch (_refreshErr) {
+        console.warn('⚠️ Session refresh failed (non-critical):', _refreshErr);
+      }
+
       // SSE streaming: use fetch() with AbortController for timeout
       const headers = await getAuthHeaders();
 

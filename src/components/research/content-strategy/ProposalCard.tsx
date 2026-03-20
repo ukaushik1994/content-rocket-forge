@@ -215,7 +215,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
           <div>
             <div className="text-sm font-medium text-white/80">Estimated Monthly Impressions</div>
             <div className="text-2xl font-bold text-white">
-              {estImpressions.toLocaleString()}
+              {estImpressions.toLocaleString()} <span className="text-sm font-normal text-white/50">(est.)</span>
             </div>
           </div>
         </div>
