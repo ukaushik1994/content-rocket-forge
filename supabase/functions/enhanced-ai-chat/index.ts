@@ -1,4 +1,4 @@
-// Deploy v11: 2026-03-19T06:00:00Z - AI Chat Overhaul: 15 Fixes (Response Intelligence, Proactive, Safety, Memory)
+// Deploy v12: 2026-03-20T12:00:00Z - Phase 1: Smart Model Routing, Expanded Context, Prompt Token Optimization
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
