@@ -16,6 +16,8 @@ import { Database } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+const PAGE_SIZE = 20;
+
 const KeywordsPage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -23,6 +25,8 @@ const KeywordsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [keywords, setKeywords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   const canonicalUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/keywords` 
@@ -52,13 +56,27 @@ const KeywordsPage = () => {
   const loadKeywords = async () => {
     try {
       setLoading(true);
-      const result = await keywordLibraryService.getKeywords({}, 1, 100);
+      const result = await keywordLibraryService.getKeywords({}, 1, PAGE_SIZE);
       setKeywords(result.keywords);
+      setHasMore(result.keywords.length === PAGE_SIZE);
+      setPage(1);
     } catch (error) {
       console.error('Error loading keywords:', error);
       toast.error('Failed to load keywords');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMoreKeywords = async () => {
+    try {
+      const nextPage = page + 1;
+      const result = await keywordLibraryService.getKeywords({}, nextPage, PAGE_SIZE);
+      setKeywords(prev => [...prev, ...result.keywords]);
+      setHasMore(result.keywords.length === PAGE_SIZE);
+      setPage(nextPage);
+    } catch (error) {
+      console.error('Error loading more keywords:', error);
     }
   };
 
