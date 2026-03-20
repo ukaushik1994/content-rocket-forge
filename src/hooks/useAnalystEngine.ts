@@ -1264,6 +1264,14 @@ export function useAnalystEngine(
             .eq('user_id', userId);
           if (count !== null) newData.push({ label: 'Keyword Proposals', value: count, category: 'keywords', fetchedAt: now });
         })());
+        // Real tracked keywords from keywords table
+        fetches.push((async () => {
+          const { count } = await supabase
+            .from('keywords')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId);
+          if (count !== null) newData.push({ label: 'Tracked Keywords', value: count, category: 'keywords', fetchedAt: now });
+        })());
       }
 
       if (coveredCategories.has('competitors')) {
