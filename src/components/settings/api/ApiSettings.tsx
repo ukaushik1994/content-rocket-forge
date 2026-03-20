@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SimpleProviderCard } from './SimpleProviderCard';
 import { CategorySection } from './CategorySection';
+import { DefaultAiProviderSelector } from './DefaultAiProviderSelector';
 import { API_PROVIDERS } from './types';
 import { getApiKey, type ApiProvider } from "@/services/apiKeyService";
 import { Input } from '@/components/ui/input';
