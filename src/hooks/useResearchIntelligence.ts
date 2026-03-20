@@ -15,6 +15,8 @@ export const useClusters = () => {
     queryKey: ['topic_clusters', uid],
     queryFn: () => svc.fetchTopicClusters(uid!),
     enabled: !!uid,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   const createMutation = useMutation({
@@ -40,6 +42,8 @@ export const useContentGaps = (clusterId?: string) => {
     queryKey: ['content_gaps', uid, clusterId],
     queryFn: () => svc.fetchContentGaps(uid!, clusterId),
     enabled: !!uid,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   const createMutation = useMutation({
@@ -76,6 +80,8 @@ export const useRecommendations = (status?: string) => {
     queryKey: ['strategy_recommendations', uid, status],
     queryFn: () => svc.fetchStrategyRecommendations(uid!, status),
     enabled: !!uid,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   const acceptMutation = useMutation({
@@ -99,6 +105,8 @@ export const useTopicPerformance = (clusterId?: string) => {
     queryKey: ['topic_performance', uid, clusterId],
     queryFn: () => svc.fetchTopicPerformance(uid!, clusterId),
     enabled: !!uid,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   return query;

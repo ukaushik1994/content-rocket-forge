@@ -13,7 +13,10 @@ const ContentContext = createContext<ContentContextType | undefined>(undefined);
 export const ContentProvider = ({ children }: { children: ReactNode }) => {
   const [contentItems, setContentItems] = useState<ContentItemType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
   const { user } = useAuth();
+
+  const PAGE_SIZE = 20;
 
   // Helper function to deduplicate content items
   const deduplicateItems = (items: ContentItemType[]): ContentItemType[] => {
@@ -25,7 +28,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Fetch content items function
-  const fetchContentItems = useCallback(async () => {
+  const fetchContentItems = useCallback(async (append = false) => {
     if (!user) {
       setContentItems([]);
       setLoading(false);
@@ -35,32 +38,42 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       
+      const offset = append ? contentItems.length : 0;
+      
       // First, fetch the content items
       const { data: contentData, error: contentError } = await supabase
         .from('content_items')
         .select('*')
-        .order('updated_at', { ascending: false });
+        .order('updated_at', { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
       
       if (contentError) throw contentError;
       
       if (!contentData || contentData.length === 0) {
-        setContentItems([]);
+        if (!append) setContentItems([]);
+        setHasMore(false);
         setLoading(false);
         return;
       }
+
+      setHasMore(contentData.length === PAGE_SIZE);
       
       // Process the content items with keywords and ensure no duplicates
       const processedItems = await processContentItems(contentData);
-      const uniqueItems = deduplicateItems(processedItems);
-      setContentItems(uniqueItems);
+      if (append) {
+        setContentItems(prev => deduplicateItems([...prev, ...processedItems]));
+      } else {
+        const uniqueItems = deduplicateItems(processedItems);
+        setContentItems(uniqueItems);
+      }
     } catch (error: any) {
       console.error('Error fetching content items:', error);
       toast.error('Failed to load content items');
-      setContentItems([]);
+      if (!append) setContentItems([]);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, contentItems.length]);
 
   // Initial loading of content
   useEffect(() => {
@@ -134,14 +147,18 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   const actions = createContentActions(contentItems, setContentItems, user?.id);
   const approvalActions = createApprovalActions(actions.updateContentItem, user?.id);
 
+  const loadMore = useCallback(() => fetchContentItems(true), [fetchContentItems]);
+
   return (
     <ContentContext.Provider 
       value={{ 
-        contentItems: deduplicateItems(contentItems), // Always return deduplicated content
+        contentItems: deduplicateItems(contentItems),
         loading,
+        hasMore,
+        loadMore,
         ...actions,
         ...approvalActions,
-        refreshContent: fetchContentItems
+        refreshContent: () => fetchContentItems(false)
       }}
     >
       {children}

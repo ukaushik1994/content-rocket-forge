@@ -79,7 +79,9 @@ export function useWorkflowData() {
 
       if (error) throw error;
       return data as IntelligentWorkflow[];
-    }
+    },
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   // Fetch workflow executions
@@ -94,11 +96,13 @@ export function useWorkflowData() {
         .from('workflow_executions')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50); // Limit to recent executions
+        .limit(50);
 
       if (error) throw error;
       return data as WorkflowExecution[];
-    }
+    },
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   // Fetch workflow templates
@@ -117,7 +121,9 @@ export function useWorkflowData() {
 
       if (error) throw error;
       return data as WorkflowTemplate[];
-    }
+    },
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   // Create workflow mutation

@@ -1402,8 +1402,10 @@ export function useAnalystEngine(
   useEffect(() => {
     if (!isActive || !userId) return;
     const interval = setInterval(() => {
+      // Skip refresh when tab is hidden to reduce unnecessary queries
+      if (document.hidden) return;
       fetchPlatformData(true);
-    }, 60000);
+    }, 120000);
     return () => clearInterval(interval);
   }, [isActive, userId, fetchPlatformData]);
 

@@ -18,7 +18,9 @@ const Repository = () => {
   const {
     contentItems,
     refreshContent,
-    loading
+    loading,
+    hasMore,
+    loadMore
   } = useContent();
   const [selectedContent, setSelectedContent] = useState<ContentItemType | null>(null);
   const [detailViewOpen, setDetailViewOpen] = useState(false);
@@ -93,6 +95,17 @@ const Repository = () => {
             drafts: contentItems.filter(i => i.status === 'draft').length,
           }} />
           <RepositoryTabs onOpenDetailView={handleOpenDetailView} />
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={loadMore}
+                disabled={loading}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors px-6 py-2.5 rounded-lg border border-border/50 hover:border-border bg-card/50 hover:bg-card disabled:opacity-50"
+              >
+                {loading ? 'Loading…' : 'Load more'}
+              </button>
+            </div>
+          )}
         </motion.div>
       </div>
 
