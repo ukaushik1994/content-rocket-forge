@@ -3223,6 +3223,24 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
         console.log(`🔧 Intent-filtered tools: ${toolsToUse.length}/${TOOL_DEFINITIONS.length} (categories: ${intentCategories.join(', ')})`);
       }
 
+      // Phase 1C: Compress tool descriptions for non-action read-only queries
+      // Keep only name + first sentence of description to save ~2000 tokens
+      const hasActionCategory = intentCategories.includes('action');
+      if (!hasActionCategory && toolsToUse.length > 10) {
+        toolsToUse = toolsToUse.map((t: any) => {
+          if (!t.function?.description) return t;
+          const firstSentence = t.function.description.split(/[.!]\s/)[0] + '.';
+          return {
+            ...t,
+            function: {
+              ...t.function,
+              description: firstSentence,
+            }
+          };
+        });
+        console.log(`📦 Compressed ${toolsToUse.length} tool descriptions (read-only query)`);
+      }
+
       if (queryRequiresToolExecution(queryIntent)) {
         // Fix 1: Force tool_choice for data queries
         toolChoice = "required";
