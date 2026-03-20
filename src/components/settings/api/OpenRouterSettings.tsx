@@ -50,22 +50,42 @@ export const OpenRouterSettings = () => {
   const loadExistingKey = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('user_llm_keys')
-        .select('api_key, model, is_active')
+      
+      // Check api_keys_metadata view for existence (no plaintext exposed)
+      const { data: metaData } = await supabase
+        .from('api_keys_metadata')
+        .select('service, is_active')
         .eq('user_id', user?.id)
-        .eq('provider', 'openrouter')
-        .single();
+        .eq('service', 'openrouter')
+        .maybeSingle();
 
-      if (data && !error) {
-        setApiKey(data.api_key);
-        setSelectedModel(data.model || '');
+      if (metaData) {
         setKeyExists(true);
-        setIsVerified(data.is_active);
+        setIsVerified(metaData.is_active);
+        setApiKey('••••••••••••••••'); // Masked — key is encrypted
         
-        // Verify the existing key
-        if (data.is_active) {
-          await verifyExistingKey(data.api_key);
+        // Load preferred model from ai_service_providers
+        const { data: providerData } = await supabase
+          .from('ai_service_providers')
+          .select('preferred_model')
+          .eq('user_id', user?.id)
+          .eq('provider', 'openrouter')
+          .maybeSingle();
+        
+        if (providerData?.preferred_model) {
+          setSelectedModel(providerData.preferred_model);
+        }
+        
+        // Verify existing key works by trying to decrypt + verify
+        if (metaData.is_active) {
+          try {
+            const decryptedKey = await ApiKeyService.getApiKey('openrouter');
+            if (decryptedKey) {
+              await verifyExistingKey(decryptedKey);
+            }
+          } catch {
+            console.log('Could not verify existing key');
+          }
         }
       }
     } catch (error: any) {
