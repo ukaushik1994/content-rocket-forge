@@ -144,7 +144,7 @@ const Analytics = () => {
       icon: Clock,
       color: 'from-yellow-500 to-amber-400',
       bgPattern: 'from-yellow-500/5 to-amber-400/10',
-      source: 'Google Analytics'
+      source: 'Content Analytics'
     },
     { 
       id: 'ctr', 
