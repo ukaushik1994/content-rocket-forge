@@ -29,6 +29,8 @@ interface EnhancedContentFiltersProps {
   setDateRange: (range: { from: Date | undefined; to: Date | undefined }) => void;
   keywordFilter: string;
   setKeywordFilter: (value: string) => void;
+  funnelFilter: string;
+  setFunnelFilter: (value: string) => void;
   appliedFilters: string[];
   clearFilters: () => void;
   clearFilter: (filter: string) => void;
