@@ -1110,6 +1110,36 @@ ${brandContext}${solutionContext}${readingLevel}${freshnessContext}${competitorC
           }
         } catch (_) { /* non-blocking */ }
 
+        // 8E: Cross-content consistency check
+        let consistencyWarning = '';
+        try {
+          const newClaims = extractClaims(generatedContent);
+          if (newClaims.length > 0) {
+            const { data: published } = await supabase.from('content_items')
+              .select('title, content')
+              .eq('user_id', userId).eq('status', 'published')
+              .neq('id', saved.id).limit(10);
+            if (published?.length > 0) {
+              const conflicts: string[] = [];
+              for (const pub of published) {
+                const existingClaims = extractClaims(pub.content || '');
+                for (const nc of newClaims) {
+                  for (const ec of existingClaims) {
+                    const ncNum = nc.match(/[\d,.]+/)?.[0];
+                    const ecNum = ec.match(/[\d,.]+/)?.[0];
+                    if (ncNum && ecNum && ncNum !== ecNum && nc.replace(/[\d,.]+/, '') === ec.replace(/[\d,.]+/, '')) {
+                      conflicts.push(`"${nc}" vs "${ec}" in "${pub.title}"`);
+                    }
+                  }
+                }
+              }
+              if (conflicts.length > 0) {
+                consistencyWarning = `\n\n⚠️ **Potential data conflicts** with existing content:\n${conflicts.slice(0, 3).map(c => `- ${c}`).join('\n')}\nReview before publishing to ensure consistency.`;
+              }
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+
         const seoContext = seoScore < 40 ? ' (basic check — full SEO analysis available in the Content Wizard)' : '';
         return {
           success: true,
