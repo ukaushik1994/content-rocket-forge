@@ -217,8 +217,8 @@ export async function testApiKeyWithDebug(
   // Test connection
   try {
     console.log(`🔌 Testing ${provider} API connection...`);
-    const connectionSuccess = await testApiKey(provider, apiKey);
-    testDetails.connectionTest = connectionSuccess;
+    const connectionResult = await testApiKey(provider, apiKey);
+    testDetails.connectionTest = !!connectionResult;
     
     if (connectionSuccess) {
       console.log(`✅ ${provider} API key test successful`);

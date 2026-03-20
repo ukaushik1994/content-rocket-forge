@@ -134,7 +134,7 @@ export async function testMultipleApiKeys(tests: Array<{provider: ApiProvider, a
     const testPromises = tests.map(async ({ provider, apiKey }) => {
       try {
         const result = await testApiKey(provider, apiKey);
-        results[provider] = result;
+        results[provider] = !!result;
         return { provider, result };
       } catch (error) {
         console.error(`❌ Error testing ${provider}:`, error);
