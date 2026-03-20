@@ -1,4 +1,4 @@
-// Deploy v11: 2026-03-19T06:00:00Z - AI Chat Overhaul: 15 Fixes (Response Intelligence, Proactive, Safety, Memory)
+// Deploy v12: 2026-03-20T12:00:00Z - Phase 1: Smart Model Routing, Expanded Context, Prompt Token Optimization
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
@@ -19,7 +19,57 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v18-2026-03-19T06:00:00Z-ai-chat-overhaul';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v19-2026-03-20T12:00:00Z-phase1';
+
+// ===== PHASE 1A: Smart Model Routing =====
+// Routes cheap model for lookups/chat, premium model for generation/heavy tools
+const GENERATION_INTENTS = ['generate_full_content', 'launch_content_wizard', 'start_content_builder', 'create_content_item', 'improve_content', 'reformat_content'];
+const HEAVY_CATEGORIES = ['image_generation'];
+
+function selectModelForIntent(
+  baseModel: string,
+  queryIntent: QueryIntent,
+  hasWriteIntent: boolean
+): string {
+  // Map provider models to their cheap/premium variants
+  const modelTiers: Record<string, { cheap: string; premium: string }> = {
+    // OpenAI
+    'gpt-4o': { cheap: 'gpt-4o-mini', premium: 'gpt-4o' },
+    'gpt-4o-mini': { cheap: 'gpt-4o-mini', premium: 'gpt-4o' },
+    'gpt-4': { cheap: 'gpt-4o-mini', premium: 'gpt-4' },
+    'gpt-4-turbo': { cheap: 'gpt-4o-mini', premium: 'gpt-4-turbo' },
+    // Anthropic
+    'claude-3-5-sonnet-20241022': { cheap: 'claude-3-5-haiku-20241022', premium: 'claude-3-5-sonnet-20241022' },
+    'claude-3-opus-20240229': { cheap: 'claude-3-5-haiku-20241022', premium: 'claude-3-opus-20240229' },
+    // Gemini
+    'gemini-2.0-flash-exp': { cheap: 'gemini-2.0-flash-exp', premium: 'gemini-2.0-flash-exp' },
+    'gemini-1.5-pro': { cheap: 'gemini-2.0-flash-exp', premium: 'gemini-1.5-pro' },
+    // OpenRouter models — pass through (user chose specific model)
+  };
+
+  const tier = modelTiers[baseModel];
+  if (!tier) {
+    // Unknown model (e.g. OpenRouter custom) — don't override user's choice
+    return baseModel;
+  }
+
+  // Use premium model for: generation tools, content creation writes, heavy categories, detailed/full scope
+  const needsPremium =
+    hasWriteIntent && queryIntent.categories.includes('content') ||
+    queryIntent.categories.some(c => HEAVY_CATEGORIES.includes(c)) ||
+    queryIntent.scope === 'full';
+
+  const selectedModel = needsPremium ? tier.premium : tier.cheap;
+  if (selectedModel !== baseModel) {
+    console.log(`🧠 Smart routing: ${baseModel} → ${selectedModel} (${needsPremium ? 'premium' : 'cheap'})`);
+  }
+  return selectedModel;
+}
+
+// ===== PHASE 1B: Expanded Context Window Constants =====
+const MAX_HISTORY_MESSAGES = 15;  // was 5
+const SUMMARIZE_THRESHOLD = 25;   // was 10
+const RESUMMARIZE_INTERVAL = 15;  // was 10
 
 // Data categories that REQUIRE tool execution (not conversational text)
 const DATA_CATEGORIES = [
@@ -1909,9 +1959,9 @@ serve(async (req) => {
     const conversationId = context?.conversation_id;
     console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
 
-    // ── CONVERSATION SUMMARIZATION ──
-    // If conversation has 10+ messages, generate/load a summary to keep token usage low
-    if (conversationId && messages.length > 10) {
+    // ── CONVERSATION SUMMARIZATION (Phase 1B: expanded thresholds) ──
+    // If conversation has SUMMARIZE_THRESHOLD+ messages, generate/load a summary
+    if (conversationId && messages.length > SUMMARIZE_THRESHOLD) {
       try {
         const { data: convo } = await supabase.from('ai_conversations')
           .select('summary, summary_message_count')
@@ -1920,11 +1970,11 @@ serve(async (req) => {
 
         const currentCount = messages.length;
         const lastSummarizedAt = convo?.summary_message_count || 0;
-        const needsNewSummary = !convo?.summary || (currentCount - lastSummarizedAt >= 10);
+        const needsNewSummary = !convo?.summary || (currentCount - lastSummarizedAt >= RESUMMARIZE_INTERVAL);
 
         if (needsNewSummary) {
-          // Build a condensed version of older messages for summarization
-          const olderMessages = messages.slice(0, -5).map((m: any) => 
+          // Build a condensed version of older messages for summarization (keep last MAX_HISTORY_MESSAGES)
+          const olderMessages = messages.slice(0, -MAX_HISTORY_MESSAGES).map((m: any) => 
             `${m.role}: ${(m.content || '').substring(0, 200)}`
           ).join('\n');
 
@@ -1975,12 +2025,12 @@ serve(async (req) => {
                       .eq('id', conversationId);
 
                     // Prepend summary as system message, keep only last 5 messages
-                    const recentMessages = messages.slice(-5);
+                    const recentMessages = messages.slice(-MAX_HISTORY_MESSAGES);
                     messages.length = 0;
                     messages.push({ role: 'system', content: `[Previous conversation summary]: ${summary}` });
                     messages.push(...recentMessages);
                     
-                    console.log(`📝 Conversation summarized (${currentCount} msgs → summary + last 5)`);
+                    console.log(`📝 Conversation summarized (${currentCount} msgs → summary + last ${MAX_HISTORY_MESSAGES})`);
                   }
                 }
               }
@@ -1988,7 +2038,7 @@ serve(async (req) => {
           }
         } else if (convo?.summary) {
           // Use existing summary — keep only last 5 messages
-          const recentMessages = messages.slice(-5);
+          const recentMessages = messages.slice(-MAX_HISTORY_MESSAGES);
           messages.length = 0;
           messages.push({ role: 'system', content: `[Previous conversation summary]: ${convo.summary}` });
           messages.push(...recentMessages);
@@ -2629,8 +2679,20 @@ serve(async (req) => {
         systemPrompt += '\n\n' + ACTION_MODULE;
       }
       
-      // Add platform knowledge: full when relevant, basics always (PE Fix 3)
-      if (needsPlatformKnowledge) {
+      // Phase 1C: Skip platform knowledge for experienced users (10+ conversations)
+      // Also skip for non-navigation queries to save tokens
+      let skipFullPlatformKnowledge = false;
+      try {
+        const { count: convoCount } = await supabase.from('ai_conversations')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        if ((convoCount || 0) >= 10) {
+          skipFullPlatformKnowledge = true;
+          console.log(`🧠 Experienced user (${convoCount} convos) — skipping full platform knowledge`);
+        }
+      } catch (_) { /* non-blocking */ }
+
+      if (needsPlatformKnowledge && !skipFullPlatformKnowledge) {
         systemPrompt += '\n\n' + PLATFORM_KNOWLEDGE_MODULE;
       } else {
         systemPrompt += '\n\n' + PLATFORM_BASICS;
@@ -3161,6 +3223,24 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
         console.log(`🔧 Intent-filtered tools: ${toolsToUse.length}/${TOOL_DEFINITIONS.length} (categories: ${intentCategories.join(', ')})`);
       }
 
+      // Phase 1C: Compress tool descriptions for non-action read-only queries
+      // Keep only name + first sentence of description to save ~2000 tokens
+      const hasActionCategory = intentCategories.includes('action');
+      if (!hasActionCategory && toolsToUse.length > 10) {
+        toolsToUse = toolsToUse.map((t: any) => {
+          if (!t.function?.description) return t;
+          const firstSentence = t.function.description.split(/[.!]\s/)[0] + '.';
+          return {
+            ...t,
+            function: {
+              ...t.function,
+              description: firstSentence,
+            }
+          };
+        });
+        console.log(`📦 Compressed ${toolsToUse.length} tool descriptions (read-only query)`);
+      }
+
       if (queryRequiresToolExecution(queryIntent)) {
         // Fix 1: Force tool_choice for data queries
         toolChoice = "required";
@@ -3184,7 +3264,7 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
             endpoint: 'chat',
             apiKey: provider.api_key,
             params: {
-              model: provider.preferred_model,
+              model: selectModelForIntent(provider.preferred_model, queryIntent, /create|generate|write|draft|add|make|build|send|publish|schedule/i.test(userQuery)),
               messages: [
                 {
                   role: "system",
@@ -3333,7 +3413,7 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
             endpoint: 'chat',
             apiKey: provider.api_key,
             params: {
-              model: provider.preferred_model,
+              model: selectModelForIntent(provider.preferred_model, queryIntent, /create|generate|write|draft|add|make|build|send|publish|schedule/i.test(userQuery)),
               messages: [
                 { role: "system", content: systemPrompt },
                 ...messages,
@@ -3442,7 +3522,7 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
             endpoint: 'chat',
             apiKey: provider.api_key,
             params: {
-              model: provider.preferred_model,
+              model: selectModelForIntent(provider.preferred_model, queryIntent, /create|generate|write|draft|add|make|build|send|publish|schedule/i.test(userQuery)),
               messages: [
                 { role: "system", content: systemPrompt },
                 ...messages,
@@ -3631,7 +3711,7 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
             endpoint: 'chat',
             apiKey: provider.api_key,
             params: {
-              model: provider.preferred_model,
+              model: selectModelForIntent(provider.preferred_model, queryIntent, /create|generate|write|draft|add|make|build|send|publish|schedule/i.test(userQuery)),
               messages: [
                 {
                   role: "system",
