@@ -164,7 +164,9 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
         toast.success('API key saved');
         
         // Test after saving
-        const testSuccess = await testApiKey(provider.serviceKey as ApiProvider, trimmedKey);
+        const testResult = await testApiKey(provider.serviceKey as ApiProvider, trimmedKey);
+        const testSuccess = typeof testResult === 'object' ? (testResult as any)?.success !== false : !!testResult;
+        const data = typeof testResult === 'object' ? testResult : null;
         setStatus(testSuccess ? 'connected' : 'error');
         
         if (testSuccess) {
@@ -172,6 +174,24 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
           try {
             await toggleApiKeyStatus(provider.serviceKey as ApiProvider, true);
             setIsEnabled(true);
+
+            // Save recommended_model and available_models from test response
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && (data as any)?.available_models) {
+              const updatePayload: any = {
+                available_models: (data as any).available_models,
+                updated_at: new Date().toISOString(),
+              };
+              if ((data as any).recommended_model) {
+                updatePayload.preferred_model = (data as any).recommended_model;
+              }
+              await supabase
+                .from('ai_service_providers')
+                .update(updatePayload)
+                .eq('user_id', user.id)
+                .eq('provider', provider.serviceKey);
+              console.log(`✅ Saved ${(data as any).available_models?.length} models for ${provider.serviceKey}`);
+            }
           } catch (e) {
             console.warn('Auto-activate after test failed:', e);
           }

@@ -275,14 +275,14 @@ class ApiKeyService {
    * Also syncs with ai_service_providers table for AI providers
    */
   static async toggleApiKeyStatus(service: ApiProvider, isActive: boolean): Promise<boolean> {
-    // Default models for each provider
-    const DEFAULT_MODELS: Record<string, string> = {
+    // Models are now auto-detected from provider APIs (Phase 5).
+    // These are last-resort fallbacks only.
+    const FALLBACK_MODELS: Record<string, string> = {
       openrouter: 'openai/gpt-4o-mini',
       gemini: 'gemini-2.0-flash-exp',
       openai: 'gpt-4o-mini',
-      anthropic: 'claude-3-5-sonnet-20241022',
+      anthropic: 'claude-sonnet-4-20250514',
       mistral: 'mistral-large-latest',
-      lmstudio: 'local-model'
     };
 
     // Default priorities for providers
@@ -337,7 +337,7 @@ class ApiKeyService {
       }
 
       // Check if this is an AI provider
-      const isAiProvider = DEFAULT_MODELS[service];
+      const isAiProvider = FALLBACK_MODELS[service];
       
       // If NOT an AI provider (e.g., SERP, serpstack, etc.), we're done
       if (!isAiProvider) {
@@ -362,7 +362,7 @@ class ApiKeyService {
           // Update existing provider
           const updateData: any = {
             status: isActive ? 'active' : 'inactive',
-            preferred_model: DEFAULT_MODELS[service],
+            preferred_model: FALLBACK_MODELS[service],
             priority: DEFAULT_PRIORITIES[service] ?? 99,
             error_message: null,
             updated_at: new Date().toISOString()
@@ -391,10 +391,10 @@ class ApiKeyService {
               provider: service,
               status: 'active',
               priority: DEFAULT_PRIORITIES[service] ?? 99,
-              preferred_model: DEFAULT_MODELS[service],
+              preferred_model: FALLBACK_MODELS[service],
               api_key: '', // Intentionally empty — edge functions decrypt from api_keys table
               capabilities: ['chat', 'completion'],
-              available_models: [DEFAULT_MODELS[service]]
+              available_models: [FALLBACK_MODELS[service]]
             });
 
           if (insertError) {

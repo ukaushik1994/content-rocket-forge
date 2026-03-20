@@ -7,9 +7,88 @@ import { getApiKey } from "../shared/apiKeyService.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-// Removed Lovable AI - using user's configured providers only
+
+// ── Model preference lists (best → worst) ──────────────────────────
+const MODEL_PREFERENCES: Record<string, string[]> = {
+  openai:     ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
+  anthropic:  ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
+  gemini:     ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'],
+  openrouter: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'google/gemini-flash-1.5'],
+  mistral:    ['mistral-large-latest', 'mistral-medium-latest', 'mistral-small-latest'],
+};
+
+// ── List available models from a provider ───────────────────────────
+async function listModels(service: string, apiKey: string): Promise<string[]> {
+  try {
+    let url = '';
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    switch (service) {
+      case 'openai':
+        url = 'https://api.openai.com/v1/models';
+        headers['Authorization'] = `Bearer ${apiKey}`;
+        break;
+      case 'anthropic':
+        // Anthropic doesn't have a list-models endpoint; return known models
+        return ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'];
+      case 'gemini':
+        url = 'https://generativelanguage.googleapis.com/v1beta/models';
+        headers['x-goog-api-key'] = apiKey;
+        break;
+      case 'openrouter':
+        url = 'https://openrouter.ai/api/v1/models';
+        headers['Authorization'] = `Bearer ${apiKey}`;
+        break;
+      case 'mistral':
+        url = 'https://api.mistral.ai/v1/models';
+        headers['Authorization'] = `Bearer ${apiKey}`;
+        break;
+      default:
+        return [];
+    }
+
+    const resp = await fetch(url, { headers });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+
+    if (service === 'gemini') {
+      return (data.models || []).map((m: any) => m.name?.replace('models/', '') || m.name).filter(Boolean);
+    }
+    return (data.data || []).map((m: any) => m.id).filter(Boolean);
+  } catch (e) {
+    console.error(`listModels(${service}) error:`, e);
+    return [];
+  }
+}
+
+// ── Pick the best model from available ones ─────────────────────────
+function pickBestModel(service: string, availableModels: string[]): string | null {
+  const prefs = MODEL_PREFERENCES[service] || [];
+  for (const preferred of prefs) {
+    if (availableModels.some(m => m === preferred || m.includes(preferred))) {
+      return preferred;
+    }
+  }
+  return availableModels[0] || null;
+}
+
+// ── Check if error is model-not-found ───────────────────────────────
+function isModelNotFound(status: number, errorText: string): boolean {
+  if (status === 404) return true;
+  const lower = errorText.toLowerCase();
+  return lower.includes('model_not_found') ||
+         lower.includes('does not exist') ||
+         lower.includes('not found') ||
+         lower.includes('invalid model') ||
+         lower.includes('decommissioned');
+}
 
 interface AiRequest {
+  service: string;
+  endpoint: string;
+  apiKey: string;
+  params?: any;
+}
   service: string;
   endpoint: string;
   apiKey: string;
@@ -205,13 +284,20 @@ async function testOpenAI(apiKey: string) {
     }
 
     const data = await response.json();
+    const allModels = (data.data || []).map((m: any) => m.id).filter(Boolean);
+    const chatModels = allModels.filter((id: string) =>
+      id.startsWith('gpt-') || id.startsWith('o3') || id.startsWith('o4')
+    );
+    const recommended = pickBestModel('openai', chatModels);
     console.log('✅ OpenAI test successful');
     
     return {
       success: true,
       provider: 'OpenAI',
       message: 'OpenAI connection successful',
-      models: data.data?.slice(0, 5).map((model: any) => model.id) || []
+      models: chatModels.slice(0, 20),
+      available_models: chatModels.slice(0, 20),
+      recommended_model: recommended,
     };
   } catch (error: any) {
     console.error('💥 OpenAI test exception:', error);
@@ -222,155 +308,104 @@ async function testOpenAI(apiKey: string) {
 async function chatOpenAI(apiKey: string, params: any) {
   console.log('💬 Processing OpenAI chat request');
   
-  const model = params.model || 'gpt-4';
-  const isNewerModel = model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1');
-  
-  const requestBody: any = {
-    model,
-    messages: params.messages || [],
-  };
+  const originalModel = params.model || 'gpt-4o-mini';
+  let model = originalModel;
+  const maxModelRetries = 2; // one normal + one fallback
 
-  // Handle token limits based on model type
-  if (isNewerModel) {
-    // Newer models use max_completion_tokens and don't support temperature
-    if (params.maxTokens || params.max_tokens) {
+  for (let modelAttempt = 1; modelAttempt <= maxModelRetries; modelAttempt++) {
+    const isNewerModel = model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1');
+    
+    const requestBody: any = { model, messages: params.messages || [] };
+
+    if (isNewerModel) {
       requestBody.max_completion_tokens = params.maxTokens || params.max_tokens || 1000;
+    } else {
+      requestBody.temperature = params.temperature || 0.7;
     }
-    // Remove temperature for newer models
-    delete requestBody.temperature;
-  } else {
-    // Legacy models use max_tokens and support temperature
-    requestBody.temperature = params.temperature || 0.7;
-  }
 
-  // Store the desired max_tokens before cleanup
-  const legacyMaxTokens = params.maxTokens || params.max_tokens;
+    const legacyMaxTokens = params.maxTokens || params.max_tokens;
+    delete requestBody.maxTokens;
+    delete requestBody.max_tokens;
+    if (!isNewerModel && legacyMaxTokens) requestBody.max_tokens = legacyMaxTokens;
 
-  // Clean up unused parameters
-  delete requestBody.maxTokens;
-  delete requestBody.max_tokens;
-
-  // Set max_tokens AFTER cleanup for legacy models
-  if (!isNewerModel && legacyMaxTokens) {
-    requestBody.max_tokens = legacyMaxTokens;
-  }
-
-  // Model-aware safety clamp -- prevent exceeding provider limits
-  const MODEL_TOKEN_LIMITS: Record<string, number> = {
-    'gpt-4o': 16384,
-    'gpt-4o-mini': 16384,
-    'gpt-4-turbo': 4096,
-    'gpt-4': 8192,
-    'gpt-3.5-turbo': 4096,
-  };
-
-  if (requestBody.max_tokens) {
-    const matchedLimit = Object.entries(MODEL_TOKEN_LIMITS)
-      .find(([key]) => model.startsWith(key));
-    if (matchedLimit) {
-      const clamped = Math.min(requestBody.max_tokens, matchedLimit[1]);
-      if (clamped !== requestBody.max_tokens) {
-        console.log(`⚠️ Clamped max_tokens from ${requestBody.max_tokens} to ${clamped} for model ${model}`);
-      }
-      requestBody.max_tokens = clamped;
+    // Token limit clamp
+    const MODEL_TOKEN_LIMITS: Record<string, number> = {
+      'gpt-4o': 16384, 'gpt-4o-mini': 16384, 'gpt-4-turbo': 4096, 'gpt-4': 8192, 'gpt-3.5-turbo': 4096,
+    };
+    if (requestBody.max_tokens) {
+      const match = Object.entries(MODEL_TOKEN_LIMITS).find(([k]) => model.startsWith(k));
+      if (match) requestBody.max_tokens = Math.min(requestBody.max_tokens, match[1]);
     }
-  }
-
-  if (requestBody.max_completion_tokens) {
-    const matchedLimit = Object.entries(MODEL_TOKEN_LIMITS)
-      .find(([key]) => model.startsWith(key));
-    if (matchedLimit) {
-      requestBody.max_completion_tokens = Math.min(requestBody.max_completion_tokens, matchedLimit[1]);
+    if (requestBody.max_completion_tokens) {
+      const match = Object.entries(MODEL_TOKEN_LIMITS).find(([k]) => model.startsWith(k));
+      if (match) requestBody.max_completion_tokens = Math.min(requestBody.max_completion_tokens, match[1]);
     }
-  }
 
-  const maxRetries = 3;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`🔄 OpenAI API call attempt ${attempt}/${maxRetries}`);
-      
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+    // Add tools/tool_choice if provided
+    if (params.tools) requestBody.tools = params.tools;
+    if (params.tool_choice) requestBody.tool_choice = params.tool_choice;
 
-      if (!response.ok) {
-        const errorText = await response.text();
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 OpenAI API call attempt ${attempt}/${maxRetries} (model: ${model})`);
         
-        // Handle rate limit (429) specifically with intelligent TPM/RPM detection
-        if (response.status === 429) {
-          console.error('❌ OpenAI chat failed:', response.status, errorText);
-          
-          let waitTime = 2000 * attempt; // Default exponential backoff
-          try {
-            const errorData = JSON.parse(errorText);
-            const errorMsg = errorData.error?.message || '';
-            
-            // Detect TPM vs RPM limit type
-            const isTPM = errorMsg.includes('tokens per min') || errorMsg.includes('TPM');
-            const isRPM = errorMsg.includes('requests per min') || errorMsg.includes('RPM');
-            
-            // Check for Retry-After header
-            const retryAfter = response.headers.get('Retry-After');
-            const waitMatch = errorMsg.match(/try again in ([\d.]+)s/);
-            
-            if (retryAfter) {
-              waitTime = parseInt(retryAfter) * 1000;
-              console.log(`⏰ Rate limit (Retry-After header): ${waitTime}ms`);
-            } else if (waitMatch) {
-              waitTime = Math.ceil(parseFloat(waitMatch[1]) * 1000);
-              console.log(`⏰ Rate limit (extracted from message): ${waitTime}ms`);
-            } else if (isTPM) {
-              // TPM limits need much longer waits - at least 30s
-              waitTime = 30000 + (10000 * attempt); // 30s, 40s, 50s
-              console.log(`⏰ TPM Rate limit detected, waiting ${waitTime}ms (attempt ${attempt})`);
-            } else if (isRPM) {
-              // RPM limits can use shorter waits
-              waitTime = 5000 * attempt; // 5s, 10s, 15s
-              console.log(`⏰ RPM Rate limit detected, waiting ${waitTime}ms (attempt ${attempt})`);
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+
+          // Model not found → auto-detect best model
+          if (isModelNotFound(response.status, errorText) && modelAttempt === 1) {
+            console.warn(`⚠️ Model ${model} not found, auto-detecting...`);
+            const available = await listModels('openai', apiKey);
+            const best = pickBestModel('openai', available);
+            if (best && best !== model) {
+              console.log(`🔄 Switching from ${model} to ${best}`);
+              model = best;
+              break; // break retry loop, restart with new model
             }
-            
-            console.log(`🔍 Rate limit details: ${isTPM ? 'TPM' : isRPM ? 'RPM' : 'Unknown'} - ${errorMsg.substring(0, 200)}`);
-          } catch (parseError) {
-            console.warn('Could not parse rate limit details, using default backoff');
           }
           
-          if (attempt < maxRetries) {
-            console.log(`⏳ Waiting ${waitTime}ms before retry ${attempt + 1}...`);
-            await new Promise(r => setTimeout(r, waitTime));
-            continue;
+          // Rate limit retry
+          if (response.status === 429) {
+            let waitTime = 2000 * attempt;
+            try {
+              const errorData = JSON.parse(errorText);
+              const msg = errorData.error?.message || '';
+              const isTPM = msg.includes('tokens per min') || msg.includes('TPM');
+              const retryAfter = response.headers.get('Retry-After');
+              const waitMatch = msg.match(/try again in ([\d.]+)s/);
+              if (retryAfter) waitTime = parseInt(retryAfter) * 1000;
+              else if (waitMatch) waitTime = Math.ceil(parseFloat(waitMatch[1]) * 1000);
+              else if (isTPM) waitTime = 30000 + (10000 * attempt);
+            } catch {}
+            if (attempt < maxRetries) {
+              console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+              await new Promise(r => setTimeout(r, waitTime));
+              continue;
+            }
           }
+          
+          throw new Error(`OpenAI chat failed: ${response.statusText}`);
         }
-        
-        // For other errors, throw immediately
-        console.error('❌ OpenAI chat failed:', response.status, errorText);
-        throw new Error(`OpenAI chat failed: ${response.statusText}`);
-      }
 
-      const data = await response.json();
-      console.log('✅ OpenAI chat successful');
-      
-      return {
-        success: true,
-        data,
-        provider: 'OpenAI'
-      };
-    } catch (error: any) {
-      console.error(`💥 OpenAI chat exception on attempt ${attempt}:`, error);
-      
-      if (attempt === maxRetries) {
-        throw new Error(`OpenAI chat error: ${error.message}`);
+        const data = await response.json();
+        console.log('✅ OpenAI chat successful');
+        
+        const result: any = { success: true, data, provider: 'OpenAI' };
+        if (model !== originalModel) result._autoDetectedModel = model;
+        return result;
+      } catch (error: any) {
+        if (attempt === maxRetries && modelAttempt === maxModelRetries) throw new Error(`OpenAI chat error: ${error.message}`);
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+        }
       }
-      
-      // Wait before retry for non-rate-limit errors
-      const waitTime = 2000 * attempt;
-      console.log(`⏳ Waiting ${waitTime}ms before retry...`);
-      await new Promise(r => setTimeout(r, waitTime));
     }
   }
   
@@ -466,7 +501,6 @@ async function testAnthropic(apiKey: string) {
   console.log('🧪 Testing Anthropic API key');
   
   try {
-    // Test with a simple message
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -487,12 +521,16 @@ async function testAnthropic(apiKey: string) {
       throw new Error(`Anthropic API test failed: ${response.statusText}`);
     }
 
+    const knownModels = ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'];
+    const recommended = pickBestModel('anthropic', knownModels);
     console.log('✅ Anthropic test successful');
     
     return {
       success: true,
       provider: 'Anthropic',
-      message: 'Anthropic connection successful'
+      message: 'Anthropic connection successful',
+      available_models: knownModels,
+      recommended_model: recommended,
     };
   } catch (error: any) {
     console.error('💥 Anthropic test exception:', error);
@@ -503,47 +541,59 @@ async function testAnthropic(apiKey: string) {
 async function chatAnthropic(apiKey: string, params: any) {
   console.log('💬 Processing Anthropic chat request');
   
-  const requestBody: any = {
-    model: params.model || 'claude-3-sonnet-20240229',
-    max_tokens: params.maxTokens || params.max_tokens || 1000,
-    messages: params.messages || [],
-    temperature: params.temperature || 0.7,
-  };
-  
-  // Add system message if provided
-  if (params.system) {
-    requestBody.system = params.system;
-  }
+  const originalModel = params.model || 'claude-3-5-sonnet-20241022';
+  let model = originalModel;
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Anthropic chat failed:', response.status, errorData);
-      throw new Error(`Anthropic chat failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ Anthropic chat successful');
-    
-    return {
-      success: true,
-      data,
-      provider: 'Anthropic'
+  for (let modelAttempt = 1; modelAttempt <= 2; modelAttempt++) {
+    const requestBody: any = {
+      model,
+      max_tokens: params.maxTokens || params.max_tokens || 1000,
+      messages: params.messages || [],
+      temperature: params.temperature || 0.7,
     };
-  } catch (error: any) {
-    console.error('💥 Anthropic chat exception:', error);
-    throw new Error(`Anthropic chat error: ${error.message}`);
+    if (params.system) requestBody.system = params.system;
+    if (params.tools) requestBody.tools = params.tools;
+    if (params.tool_choice) requestBody.tool_choice = params.tool_choice;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        
+        if (isModelNotFound(response.status, errorData) && modelAttempt === 1) {
+          console.warn(`⚠️ Anthropic model ${model} not found, auto-detecting...`);
+          const available = await listModels('anthropic', apiKey);
+          const best = pickBestModel('anthropic', available);
+          if (best && best !== model) {
+            console.log(`🔄 Switching from ${model} to ${best}`);
+            model = best;
+            continue;
+          }
+        }
+        
+        throw new Error(`Anthropic chat failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Anthropic chat successful');
+      
+      const result: any = { success: true, data, provider: 'Anthropic' };
+      if (model !== originalModel) result._autoDetectedModel = model;
+      return result;
+    } catch (error: any) {
+      if (modelAttempt === 2) throw new Error(`Anthropic chat error: ${error.message}`);
+    }
   }
+  throw new Error('Anthropic chat failed after model fallback');
 }
 
 async function handleGemini(endpoint: string, apiKey: string, params: any) {
@@ -564,12 +614,8 @@ async function testGemini(apiKey: string) {
   console.log('🧪 Testing Gemini API key');
   
   try {
-    // Use x-goog-api-key header instead of URL parameter to prevent key leakage in logs
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
-      headers: {
-        'x-goog-api-key': apiKey,
-        'Content-Type': 'application/json',
-      }
+      headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) {
@@ -578,12 +624,17 @@ async function testGemini(apiKey: string) {
       throw new Error(`Gemini API test failed: ${response.statusText}`);
     }
 
+    const data = await response.json();
+    const allModels = (data.models || []).map((m: any) => (m.name || '').replace('models/', '')).filter(Boolean);
+    const recommended = pickBestModel('gemini', allModels);
     console.log('✅ Gemini test successful');
     
     return {
       success: true,
       provider: 'Gemini',
-      message: 'Gemini connection successful'
+      message: 'Gemini connection successful',
+      available_models: allModels.slice(0, 20),
+      recommended_model: recommended,
     };
   } catch (error: any) {
     console.error('💥 Gemini test exception:', error);
@@ -594,7 +645,6 @@ async function testGemini(apiKey: string) {
 async function chatGemini(apiKey: string, params: any) {
   console.log('💬 Processing Gemini chat request');
   
-  // Convert messages to Gemini format
   const contents = params.messages?.map((msg: any) => ({
     role: msg.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: msg.content }]
@@ -608,39 +658,48 @@ async function chatGemini(apiKey: string, params: any) {
     }
   };
 
-  try {
-    const model = params.model || 'gemini-pro';
-    // Use x-goog-api-key header instead of URL parameter to prevent key leakage in logs
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'x-goog-api-key': apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+  const originalModel = params.model || 'gemini-2.0-flash-exp';
+  let model = originalModel;
+
+  for (let modelAttempt = 1; modelAttempt <= 2; modelAttempt++) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        
+        if (isModelNotFound(response.status, errorData) && modelAttempt === 1) {
+          console.warn(`⚠️ Gemini model ${model} not found, auto-detecting...`);
+          const available = await listModels('gemini', apiKey);
+          const best = pickBestModel('gemini', available);
+          if (best && best !== model) {
+            console.log(`🔄 Switching from ${model} to ${best}`);
+            model = best;
+            continue;
+          }
+        }
+        
+        throw new Error(`Gemini chat failed: ${response.statusText}`);
       }
-    );
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Gemini chat failed:', response.status, errorData);
-      throw new Error(`Gemini chat failed: ${response.statusText}`);
+      const data = await response.json();
+      console.log('✅ Gemini chat successful');
+      
+      const result: any = { success: true, data, provider: 'Gemini' };
+      if (model !== originalModel) result._autoDetectedModel = model;
+      return result;
+    } catch (error: any) {
+      if (modelAttempt === 2) throw new Error(`Gemini chat error: ${error.message}`);
     }
-
-    const data = await response.json();
-    console.log('✅ Gemini chat successful');
-    
-    return {
-      success: true,
-      data,
-      provider: 'Gemini'
-    };
-  } catch (error: any) {
-    console.error('💥 Gemini chat exception:', error);
-    throw new Error(`Gemini chat error: ${error.message}`);
   }
+  throw new Error('Gemini chat failed after model fallback');
 }
 
 // OpenRouter Handler Functions
@@ -663,26 +722,26 @@ async function testOpenRouter(apiKey: string) {
   
   try {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('❌ OpenRouter test failed:', response.status, errorData);
       throw new Error(`OpenRouter API test failed: ${response.statusText}`);
     }
 
     const data = await response.json();
+    const allModels = (data.data || []).map((m: any) => m.id).filter(Boolean);
+    const recommended = pickBestModel('openrouter', allModels);
     console.log('✅ OpenRouter test successful');
     
     return {
       success: true,
       provider: 'OpenRouter',
       message: 'OpenRouter connection successful',
-      models: data.data?.slice(0, 5).map((model: any) => model.id) || []
+      models: allModels.slice(0, 20),
+      available_models: allModels.slice(0, 50),
+      recommended_model: recommended,
     };
   } catch (error: any) {
     console.error('💥 OpenRouter test exception:', error);
@@ -693,78 +752,72 @@ async function testOpenRouter(apiKey: string) {
 async function chatOpenRouter(apiKey: string, params: any) {
   console.log('💬 Processing OpenRouter chat request');
   
-  const model = params.model || 'gpt-5-2025-08-07';
-  const isNewerModel = model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1');
-  
-  const requestBody: any = {
-    model,
-    messages: params.messages || [],
-  };
+  const originalModel = params.model || 'openai/gpt-4o-mini';
+  let model = originalModel;
 
-  // Handle token limits based on model type
-  if (isNewerModel) {
-    // Newer models use max_completion_tokens and don't support temperature
-    if (params.maxTokens || params.max_tokens) {
-      requestBody.max_completion_tokens = params.maxTokens || params.max_tokens || 1000;
-    }
-    // Remove temperature for newer models
-    delete requestBody.temperature;
-  } else {
-    // Legacy models use max_tokens and support temperature
-    if (params.maxTokens || params.max_tokens) {
-      requestBody.max_tokens = params.maxTokens || params.max_tokens || 1000;
-    }
-    requestBody.temperature = params.temperature || 0.7;
-  }
-
-  // Clean up unused parameters
-  delete requestBody.maxTokens;
-  delete requestBody.max_tokens;
-
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://creaiter.lovable.app',
-        'X-Title': 'Creaiter'
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ OpenRouter chat failed:', response.status, errorData);
-      throw new Error(`OpenRouter chat failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ OpenRouter chat successful');
+  for (let modelAttempt = 1; modelAttempt <= 2; modelAttempt++) {
+    const isNewerModel = model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1');
     
-    return {
-      success: true,
-      data,
-      provider: 'OpenRouter'
-    };
-  } catch (error: any) {
-    console.error('💥 OpenRouter chat exception:', error);
-    throw new Error(`OpenRouter chat error: ${error.message}`);
+    const requestBody: any = { model, messages: params.messages || [] };
+
+    if (isNewerModel) {
+      if (params.maxTokens || params.max_tokens) requestBody.max_completion_tokens = params.maxTokens || params.max_tokens || 1000;
+    } else {
+      if (params.maxTokens || params.max_tokens) requestBody.max_tokens = params.maxTokens || params.max_tokens || 1000;
+      requestBody.temperature = params.temperature || 0.7;
+    }
+    delete requestBody.maxTokens;
+    if (params.tools) requestBody.tools = params.tools;
+    if (params.tool_choice) requestBody.tool_choice = params.tool_choice;
+
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://creaiter.lovable.app',
+          'X-Title': 'Creaiter'
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        
+        if (isModelNotFound(response.status, errorData) && modelAttempt === 1) {
+          console.warn(`⚠️ OpenRouter model ${model} not found, auto-detecting...`);
+          const available = await listModels('openrouter', apiKey);
+          const best = pickBestModel('openrouter', available);
+          if (best && best !== model) {
+            console.log(`🔄 Switching from ${model} to ${best}`);
+            model = best;
+            continue;
+          }
+        }
+        
+        throw new Error(`OpenRouter chat failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ OpenRouter chat successful');
+      
+      const result: any = { success: true, data, provider: 'OpenRouter' };
+      if (model !== originalModel) result._autoDetectedModel = model;
+      return result;
+    } catch (error: any) {
+      if (modelAttempt === 2) throw new Error(`OpenRouter chat error: ${error.message}`);
+    }
   }
+  throw new Error('OpenRouter chat failed after model fallback');
 }
 
 // Mistral Handler Functions  
 async function handleMistral(endpoint: string, apiKey: string, params: any) {
   console.log(`🔍 Processing Mistral request: ${endpoint}`);
   
-  if (endpoint === 'test') {
-    return await testMistral(apiKey);
-  }
-  
-  if (endpoint === 'chat' || endpoint === 'completion') {
-    return await chatMistral(apiKey, params);
-  }
-  
+  if (endpoint === 'test') return await testMistral(apiKey);
+  if (endpoint === 'chat' || endpoint === 'completion') return await chatMistral(apiKey, params);
   throw new Error(`Unsupported Mistral endpoint: ${endpoint}`);
 }
 
@@ -773,24 +826,25 @@ async function testMistral(apiKey: string) {
   
   try {
     const response = await fetch('https://api.mistral.ai/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('❌ Mistral test failed:', response.status, errorData);
       throw new Error(`Mistral API test failed: ${response.statusText}`);
     }
 
+    const data = await response.json();
+    const allModels = (data.data || []).map((m: any) => m.id).filter(Boolean);
+    const recommended = pickBestModel('mistral', allModels);
     console.log('✅ Mistral test successful');
     
     return {
       success: true,
       provider: 'Mistral',
-      message: 'Mistral connection successful'
+      message: 'Mistral connection successful',
+      available_models: allModels.slice(0, 20),
+      recommended_model: recommended,
     };
   } catch (error: any) {
     console.error('💥 Mistral test exception:', error);
@@ -801,45 +855,57 @@ async function testMistral(apiKey: string) {
 async function chatMistral(apiKey: string, params: any) {
   console.log('💬 Processing Mistral chat request');
   
-  const requestBody: any = {
-    model: params.model || 'mistral-large-latest',
-    messages: params.messages || [],
-    temperature: params.temperature || 0.7,
-    max_tokens: params.maxTokens || params.max_tokens || 1000,
-  };
+  const originalModel = params.model || 'mistral-large-latest';
+  let model = originalModel;
 
-  try {
-    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Mistral chat failed:', response.status, errorData);
-      throw new Error(`Mistral chat failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ Mistral chat successful');
-    
-    return {
-      success: true,
-      data,
-      provider: 'Mistral'
+  for (let modelAttempt = 1; modelAttempt <= 2; modelAttempt++) {
+    const requestBody: any = {
+      model,
+      messages: params.messages || [],
+      temperature: params.temperature || 0.7,
+      max_tokens: params.maxTokens || params.max_tokens || 1000,
     };
-  } catch (error: any) {
-    console.error('💥 Mistral chat exception:', error);
-    throw new Error(`Mistral chat error: ${error.message}`);
+    if (params.tools) requestBody.tools = params.tools;
+    if (params.tool_choice) requestBody.tool_choice = params.tool_choice;
+
+    try {
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        
+        if (isModelNotFound(response.status, errorData) && modelAttempt === 1) {
+          console.warn(`⚠️ Mistral model ${model} not found, auto-detecting...`);
+          const available = await listModels('mistral', apiKey);
+          const best = pickBestModel('mistral', available);
+          if (best && best !== model) {
+            console.log(`🔄 Switching from ${model} to ${best}`);
+            model = best;
+            continue;
+          }
+        }
+        
+        throw new Error(`Mistral chat failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Mistral chat successful');
+      
+      const result: any = { success: true, data, provider: 'Mistral' };
+      if (model !== originalModel) result._autoDetectedModel = model;
+      return result;
+    } catch (error: any) {
+      if (modelAttempt === 2) throw new Error(`Mistral chat error: ${error.message}`);
+    }
   }
+  throw new Error('Mistral chat failed after model fallback');
 }
 
 // LM Studio handlers removed — localhost is unreachable from cloud edge functions.
-// Users are informed at line 87-93 with a clear error message.
+// Users are informed with a clear error message.
 
-// Lovable AI has been removed - all AI requests now use user-configured providers
-// Users can configure OpenAI, Anthropic, Gemini, OpenRouter, Mistral, or LMStudio in Settings
+// All AI requests now use user-configured providers
