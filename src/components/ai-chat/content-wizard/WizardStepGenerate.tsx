@@ -958,6 +958,8 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
             metadata: insertPayload.metadata,
             keywords: insertPayload.keywords,
             solution_id: insertPayload.solution_id,
+            outline: insertPayload.outline,
+            funnel_stage: insertPayload.funnel_stage,
           })
           .eq('id', existingContent.id)
           .select('id')
