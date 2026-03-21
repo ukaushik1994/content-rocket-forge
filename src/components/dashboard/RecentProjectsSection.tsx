@@ -66,7 +66,7 @@ export const RecentProjectsSection: React.FC<RecentProjectsSectionProps> = ({ na
             {projects.length}
           </Badge>
         </h2>
-        <Button variant="link" className="text-primary flex items-center gap-1" onClick={() => navigate('/content')}>
+        <Button variant="link" className="text-primary flex items-center gap-1" onClick={() => navigate('/repository')}>
           View all
           <ArrowRight className="ml-1 h-4 w-4" />
         </Button>
