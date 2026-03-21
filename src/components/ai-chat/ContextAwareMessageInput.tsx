@@ -37,6 +37,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   onSendMessage,
   isLoading,
   placeholder = "Type your message...",
+  centered = false,
   onTypingChange,
   onOpenProposals,
   onOpenResearch,
