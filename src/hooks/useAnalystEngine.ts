@@ -1482,7 +1482,7 @@ export function useAnalystEngine(
           .lte('scheduled_date', nextWeek);
         if (scheduledItems === 0) {
           alerts.push({
-            id: `anomaly-empty-calendar-${now.getTime()}`,
+            id: `anomaly-empty-calendar`,  // Phase 5: stable anomaly ID
             content: `📅 No content scheduled for the next 7 days — consider planning ahead`,
             type: 'warning',
             source: 'platform',
