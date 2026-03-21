@@ -34,7 +34,6 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
         prompt: 'I want to write my first blog post. What topic should I write about?',
         directWizard: true,
         icon: PenTool,
-        iconColor: 'text-emerald-400',
         priority: 1,
       });
     } else if (draftCount > 5) {
