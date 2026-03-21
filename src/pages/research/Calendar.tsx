@@ -68,7 +68,7 @@ const CalendarPage: React.FC = () => {
                 transition={{ type: 'spring', stiffness: 300 }}
               >
                 <Sparkles className="h-5 w-5 text-primary" />
-                <span className="text-sm font-medium">Smart Scheduling</span>
+                <span className="text-sm font-medium">Content Schedule</span>
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               </motion.div>
 

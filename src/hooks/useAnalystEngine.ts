@@ -278,7 +278,7 @@ function computeCrossSignals(
         if (daysSinceLast > 14) {
           signals.push({
             id: `cross-publish-gap`,
-            content: `⏰ ${daysSinceLast} days since last published content — consistency drives SEO growth`,
+            content: `⏰ ${daysSinceLast} days since your last publish ("${lastPublished[0].title || 'Untitled'}"). Consistency drives SEO growth — aim for weekly.`,
             type: 'warning',
             source: 'cross-signal',
             timestamp: now,
