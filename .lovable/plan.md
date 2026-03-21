@@ -1,30 +1,28 @@
 
 
-# Premium Welcome Screen — Summary + Insights Redesign
+# Show Search Button Only on AI Chat Route
 
 ## What
-The Platform Summary metrics and Insights/Recommended sections look plain. Redesign them with premium glassmorphism, staggered animations, and cleaner typography matching the page's dark editorial theme.
+The search icon button in the top-right corner is an AI chat feature (searches chat messages). It should only appear on `/ai-chat`. When on other pages, the remaining two icons (AI provider indicator + notification bell) should animate and shift to the right to fill the space.
 
-## Changes — 2 files
+## Changes — 1 file
 
-### 1. `src/components/ai-chat/PlatformSummaryCard.tsx`
-- Wrap each metric in a `glass-card` container with subtle border (`border-white/[0.08]`) and `backdrop-blur-md`
-- Reduce icon circle size to `w-11 h-11`, icon to `h-5 w-5` — more refined
-- Use `text-xl` for values instead of `text-2xl` — less shouty
-- Add staggered entrance: each metric fades up with `delay: index * 0.08`
-- Add subtle `whileHover: { y: -3, scale: 1.02 }` spring animation
-- Use `font-mono` (Spline Sans Mono) for numeric values for editorial feel
-- Keep colored icons and backgrounds as-is
+### `src/components/layout/AppLayout.tsx` (lines 24-26, 178-182)
 
-### 2. `src/components/ai-chat/EnhancedChatInterface.tsx` (lines 751-810)
-**Insights & Recommended columns:**
-- Add staggered `motion.button` entrance per item (`delay: 0.4 + index * 0.06`)
-- Each item gets a subtle left accent line on hover (`before:` pseudo or border-left)
-- Insight icons: add unique colors per type — `stale: text-amber-400`, `failed: text-rose-400`, `empty_cal: text-blue-400`, `approvals: text-emerald-400`
-- Recommended `✦` icon: replace with a subtle `Sparkles` lucide icon in `text-primary/60`
-- Section labels: add a thin horizontal line after label (`border-b border-white/[0.06]`) for visual separation
-- Hover state: `bg-white/[0.04]` instead of `bg-accent/5` — matches glass theme
-- Add `backdrop-blur-sm` to each row on hover for depth
+**SearchIconButton**: Add route check — only render when on `/ai-chat`:
+```tsx
+const SearchIconButton: React.FC = () => {
+  const location = useLocation();
+  const chatSearch = useChatSearch();
+  if (!chatSearch || location.pathname !== '/ai-chat') return null;
+  // ... rest unchanged
+};
+```
 
-### Files changed: 2
+**Icon container** (line 178): Add `transition-all duration-300` so the two remaining icons animate smoothly when search disappears:
+```tsx
+<div className="fixed top-4 right-4 z-50 flex items-center gap-2 transition-all duration-300">
+```
+
+No other files need changes. `useLocation` is already imported.
 
