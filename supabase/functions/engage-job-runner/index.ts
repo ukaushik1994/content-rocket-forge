@@ -228,7 +228,13 @@ Deno.serve(async (req) => {
       results.automations = { error: e.message };
     }
 
-    return new Response(JSON.stringify({ success: true, results }), {
+    // M13: Check for partial failures across sub-jobs
+    const hasErrors = Object.values(results).some((r: any) => r?.error);
+    const statusCode = hasErrors ? 207 : 200;
+    const status = hasErrors ? 'partial_failure' : 'success';
+
+    return new Response(JSON.stringify({ success: !hasErrors, status, results }), {
+      status: statusCode,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
