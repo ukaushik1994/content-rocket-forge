@@ -711,7 +711,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       {analystState.topics.map((topic) => (
                         <span key={topic.name} className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-muted-foreground/70">
                           {topic.name}
-                          {topic.mentionCount > 1 && <span className="ml-1 text-amber-300/70">×{topic.mentionCount}</span>}
+                          {topic.mentionCount > 1 && <span className="ml-1 text-primary/60">×{topic.mentionCount}</span>}
                         </span>
                       ))}
                     </div>
