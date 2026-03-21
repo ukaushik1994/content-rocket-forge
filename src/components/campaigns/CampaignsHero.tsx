@@ -70,7 +70,7 @@ export const CampaignsHero = React.memo(({
         recognitionRef.current.continuous = false;
         recognitionRef.current.interimResults = false;
         recognitionRef.current.lang = 'en-US';
-        recognitionRef.current.onresult = event => {
+        recognitionRef.current.onresult = (event) => {
           const transcript = event.results[0][0].transcript;
           setCampaignIdea(transcript);
           setIsListening(false);
@@ -163,16 +163,16 @@ export const CampaignsHero = React.memo(({
           delay: 0.2,
           duration: 0.4
         }} className="flex items-center justify-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 hover:scale-105 transition-transform duration-300">
-              <Zap className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">AI-Powered Campaign Builder</span>
-              <motion.div className="w-2 h-2 rounded-full bg-green-500" animate={{
-              opacity: [0.5, 1, 0.5]
-            }} transition={{
-              duration: 2,
-              repeat: Infinity
-            }} />
-            </div>
+            
+
+
+
+
+
+
+
+
+          
           </motion.div>
 
           <motion.div initial={{
@@ -219,46 +219,46 @@ export const CampaignsHero = React.memo(({
           duration: 0.4
         }} className="flex justify-center gap-8 mt-12">
             {[
-              { icon: Target, value: statsLoading ? '-' : activeCampaigns, label: 'Active', color: 'text-emerald-400' },
-              { icon: TrendingUp, value: statsLoading ? '-' : contentPiecesCreated, label: 'Content Created', color: 'text-teal-400' },
-              { icon: Sparkles, value: statsLoading ? '-' : completedCampaigns, label: 'Completed', color: 'text-green-400' },
-            ].map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center gap-2">
+          { icon: Target, value: statsLoading ? '-' : activeCampaigns, label: 'Active', color: 'text-emerald-400' },
+          { icon: TrendingUp, value: statsLoading ? '-' : contentPiecesCreated, label: 'Content Created', color: 'text-teal-400' },
+          { icon: Sparkles, value: statsLoading ? '-' : completedCampaigns, label: 'Completed', color: 'text-green-400' }].
+          map((stat) =>
+          <div key={stat.label} className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
                   <stat.icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
                 <p className="text-lg font-bold text-foreground">{stat.value}</p>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
-            ))}
+          )}
           </motion.div>
 
           {/* Mode Toggle */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0, duration: 0.4 }}
-            className="mt-6 flex justify-center"
-          >
+          <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.0, duration: 0.4 }}
+          className="mt-6 flex justify-center">
+          
             <div className="inline-flex items-center gap-1 p-1 bg-background/60 backdrop-blur-xl rounded-full border border-border/50">
               <button
-                onClick={() => setMode('conversation')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  mode === 'conversation' 
-                    ? 'bg-primary text-primary-foreground shadow-sm' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
+              onClick={() => setMode('conversation')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+              mode === 'conversation' ?
+              'bg-primary text-primary-foreground shadow-sm' :
+              'text-muted-foreground hover:text-foreground'}`
+              }>
+              
                 Conversation
               </button>
               <button
-                onClick={() => setMode('express')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  mode === 'express' 
-                    ? 'bg-primary text-primary-foreground shadow-sm' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
+              onClick={() => setMode('express')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+              mode === 'express' ?
+              'bg-primary text-primary-foreground shadow-sm' :
+              'text-muted-foreground hover:text-foreground'}`
+              }>
+              
                 Quick Setup
               </button>
             </div>
@@ -277,13 +277,13 @@ export const CampaignsHero = React.memo(({
         }} className="mt-6 max-w-3xl mx-auto space-y-4">
               {/* Campaign Settings Panel */}
               <CampaignSettingsPanel
-                isOpen={showSettings}
-                onClose={() => setShowSettings(false)}
-                selectedSolutionId={selectedSolutionId}
-                onSolutionChange={setSelectedSolutionId}
-                platformPreferences={platformPreferences}
-                onPlatformPreferencesChange={setPlatformPreferences}
-              />
+            isOpen={showSettings}
+            onClose={() => setShowSettings(false)}
+            selectedSolutionId={selectedSolutionId}
+            onSolutionChange={setSelectedSolutionId}
+            platformPreferences={platformPreferences}
+            onPlatformPreferencesChange={setPlatformPreferences} />
+          
 
               <div className="relative group">
                 {/* Gradient glow on hover */}
@@ -300,17 +300,17 @@ export const CampaignsHero = React.memo(({
                     </div>
                     
                     {/* Input */}
-                    <input type="text" value={campaignIdea} onChange={e => setCampaignIdea(e.target.value)} onKeyDown={handleKeyDown} placeholder="Start a conversation about your campaign idea..." className="flex-1 bg-transparent text-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none" />
+                    <input type="text" value={campaignIdea} onChange={(e) => setCampaignIdea(e.target.value)} onKeyDown={handleKeyDown} placeholder="Start a conversation about your campaign idea..." className="flex-1 bg-transparent text-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none" />
                     
                     {/* Settings Button */}
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setShowSettings(!showSettings)}
-                      className={`p-2 ${showSettings ? 'text-primary' : 'text-muted-foreground'} hover:bg-white/10`}
-                      title="Campaign Settings"
-                    >
+                    <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSettings(!showSettings)}
+                  className={`p-2 ${showSettings ? 'text-primary' : 'text-muted-foreground'} hover:bg-white/10`}
+                  title="Campaign Settings">
+                  
                       <SlidersHorizontal className="h-5 w-5" />
                     </Button>
 
@@ -354,7 +354,7 @@ export const CampaignsHero = React.memo(({
               {/* Quick prompt suggestions */}
               <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
                 <span className="text-xs text-muted-foreground">Try:</span>
-                {['Product Launch', 'Brand Awareness', 'Lead Generation'].map(prompt => <button key={prompt} onClick={() => setCampaignIdea(prompt)} className="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/30 transition-all duration-200 hover:scale-105">
+                {['Product Launch', 'Brand Awareness', 'Lead Generation'].map((prompt) => <button key={prompt} onClick={() => setCampaignIdea(prompt)} className="text-xs px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/30 transition-all duration-200 hover:scale-105">
                     {prompt}
                   </button>)}
               </div>
@@ -373,33 +373,33 @@ export const CampaignsHero = React.memo(({
         }} className="mt-6 max-w-3xl mx-auto space-y-4">
               {/* Campaign Settings Panel */}
               <CampaignSettingsPanel
-                isOpen={showSettings}
-                onClose={() => setShowSettings(false)}
-                selectedSolutionId={selectedSolutionId}
-                onSolutionChange={setSelectedSolutionId}
-                platformPreferences={platformPreferences}
-                onPlatformPreferencesChange={setPlatformPreferences}
-              />
+            isOpen={showSettings}
+            onClose={() => setShowSettings(false)}
+            selectedSolutionId={selectedSolutionId}
+            onSolutionChange={setSelectedSolutionId}
+            platformPreferences={platformPreferences}
+            onPlatformPreferencesChange={setPlatformPreferences} />
+          
 
               <div className="bg-background/60 backdrop-blur-xl border border-border/50 rounded-2xl p-6 shadow-xl space-y-4">
                 {/* Settings Toggle */}
                 <div className="flex items-center justify-between pb-3 border-b border-border/50">
                   <h3 className="text-sm font-medium text-foreground">Express Campaign Setup</h3>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowSettings(!showSettings)}
-                    className={`gap-2 ${showSettings ? 'text-primary' : 'text-muted-foreground'}`}
-                    title="Campaign Settings"
-                  >
+                  <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(!showSettings)}
+                className={`gap-2 ${showSettings ? 'text-primary' : 'text-muted-foreground'}`}
+                title="Campaign Settings">
+                
                     <SlidersHorizontal className="h-4 w-4" />
                     {showSettings ? 'Hide' : 'Show'} Settings
                   </Button>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Campaign Idea*</label>
-                  <Textarea value={expressData.idea} onChange={e => setExpressData({
+                  <Textarea value={expressData.idea} onChange={(e) => setExpressData({
                 ...expressData,
                 idea: e.target.value
               })} placeholder="Describe your campaign idea (100-500 characters)..." className="min-h-[100px] bg-background/50" maxLength={500} />
@@ -410,7 +410,7 @@ export const CampaignsHero = React.memo(({
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Target Audience*</label>
-                  <Input value={expressData.audience} onChange={e => setExpressData({
+                  <Input value={expressData.audience} onChange={(e) => setExpressData({
                 ...expressData,
                 audience: e.target.value
               })} placeholder="e.g., B2B SaaS founders, Enterprise CIOs..." className="bg-background/50" />
@@ -419,7 +419,7 @@ export const CampaignsHero = React.memo(({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">Timeline</label>
-                    <Select value={expressData.timeline} onValueChange={value => setExpressData({
+                    <Select value={expressData.timeline} onValueChange={(value) => setExpressData({
                   ...expressData,
                   timeline: value
                 })}>
@@ -437,7 +437,7 @@ export const CampaignsHero = React.memo(({
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">Goal</label>
-                    <Select value={expressData.goal} onValueChange={value => setExpressData({
+                    <Select value={expressData.goal} onValueChange={(value) => setExpressData({
                   ...expressData,
                   goal: value
                 })}>
