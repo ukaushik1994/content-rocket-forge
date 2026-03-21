@@ -1,24 +1,51 @@
 
 
-# Fix Analytics Page Crash
+# Fix 7 Broken Routes (404s)
 
-## Root Cause
+## Changes
 
-In `src/pages/Analytics.tsx` lines 333-384, the `internalMetrics` object is rendered directly as a React child:
+All fixes are simple `navigate()` target replacements — no new files, no structural changes.
 
-```tsx
-{internalMetrics
-  // ~50 blank lines where rendering code was deleted
-}
-```
+### File 1: `src/components/dashboard/QuickActionsGrid.tsx`
+| Line | Old Route | New Route |
+|------|-----------|-----------|
+| 146 | `/team` | `/ai-chat` |
+| 164 | `/seo-tools` | `/keywords` |
+| 182 | `/brand-guidelines` | `/offerings` |
+| 200 | `/templates` | `/engage/email` |
 
-This passes the raw object `{totalContent, published, drafts, avgSeoScore, ...}` into JSX, which React cannot render.
+### File 2: `src/components/dashboard/EnhancedQuickActions.tsx`
+| Line | Old Route | New Route |
+|------|-----------|-----------|
+| 90 | `/seo-tools` | `/keywords` |
+| 101 | `/team` | `/ai-chat` |
+| 112 | `/templates` | `/engage/email` |
 
-## Fix
+### File 3: `src/components/ai-chat/content-wizard/WizardStepGenerate.tsx`
+| Line | Old Route | New Route |
+|------|-----------|-----------|
+| 1043 | `/content` | `/repository` |
 
-**File: `src/pages/Analytics.tsx` (lines 332-384)**
+### File 4: `src/components/dashboard/RecentProjectsSection.tsx`
+| Line | Old Route | New Route |
+|------|-----------|-----------|
+| 69 | `/content` | `/repository` |
+| 138 | `/content` | `/repository` |
 
-Remove the entire broken `{internalMetrics ... }` block (lines 332-384). The internal metrics data (content counts, SEO scores) is already displayed via the hero stats section (lines 483-499) and the `AnalyticsOverview` component. Deleting this dead block fixes the crash with zero functional loss.
+### File 5: `src/components/content-repurposing/tour/ContentRepurposingTour.tsx`
+| Line | Old Route | New Route |
+|------|-----------|-----------|
+| 126 | `/content-repurposing` | `/ai-chat` |
 
-**1 file, 1 change — delete ~52 lines of broken/empty code.**
+### File 6: `src/components/landing/ai-showcase/AIProposalDemo.tsx`
+| Line | Old Route | New Route |
+|------|-----------|-----------|
+| 116 | `/content-strategy` | `/ai-proposals` |
+
+### File 7: `src/components/research/content-strategy/SelectedProposalsSidebar.tsx`
+| Line | Old Route | New Route |
+|------|-----------|-----------|
+| 270 | `/content-strategy?proposal=...` | `/ai-proposals?proposal=...` |
+
+**7 files, ~12 line changes total.**
 
