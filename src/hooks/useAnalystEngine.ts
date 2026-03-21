@@ -368,7 +368,7 @@ function computeCrossSignals(
         for (const [kw, titles] of kwMap) {
           if (titles.length >= 2) {
             signals.push({
-              id: `cross-cannibalization-${kw}-${now.getTime()}`,
+              id: `cross-cannibalization-${kw}`,
               content: `⚠️ Keyword cannibalization: ${titles.length} articles target "${kw}" — they may compete against each other in search. Consider consolidating or differentiating.`,
               type: 'warning',
               source: 'cross-signal',
