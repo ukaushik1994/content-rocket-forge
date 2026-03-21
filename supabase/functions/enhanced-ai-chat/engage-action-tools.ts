@@ -389,6 +389,18 @@ export async function executeEngageActionTool(
     // Note: workspaceNotice will be appended to the first success message below
     switch (toolName) {
       case 'create_contact': {
+        // M6: Check for duplicate email before inserting
+        const { data: existing } = await supabase.from('engage_contacts')
+          .select('id, email')
+          .eq('workspace_id', workspaceId)
+          .eq('email', toolArgs.email)
+          .limit(1)
+          .maybeSingle();
+        
+        if (existing) {
+          return { success: false, message: `A contact with email "${toolArgs.email}" already exists (ID: ${existing.id}). Use update_contact to modify it.` };
+        }
+
         const { data, error } = await supabase.from('engage_contacts').insert({
           workspace_id: workspaceId,
           email: toolArgs.email,
