@@ -374,8 +374,6 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
       <ContentApprovalHero
         contentStats={contentStats}
         onAnalyzeAll={handleAnalyzeAll}
-        onQuickFilter={setStatusFilter}
-        activeFilter={statusFilter}
         isAnalyzing={isAnalyzingAll}
       />
 
@@ -402,6 +400,21 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                 </div>
                 
                 <div className="flex gap-2 flex-wrap">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40 bg-background/40 border-border/50">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All ({contentStats.all})</SelectItem>
+                      <SelectItem value="draft">Draft ({contentStats.draft})</SelectItem>
+                      <SelectItem value="pending_review">Pending ({contentStats.pending_review})</SelectItem>
+                      <SelectItem value="needs_changes">Changes ({contentStats.needs_changes})</SelectItem>
+                      <SelectItem value="approved">Approved ({contentStats.approved})</SelectItem>
+                      <SelectItem value="rejected">Rejected ({contentStats.rejected})</SelectItem>
+                    </SelectContent>
+                  </Select>
+
                   <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                     <SelectTrigger className="w-40 bg-background/40 border-border/50">
                       <SelectValue placeholder="Sort by" />
