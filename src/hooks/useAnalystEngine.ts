@@ -290,7 +290,7 @@ function computeCrossSignals(
       // 4. Content-to-keyword ratio (untargeted proposals)
       if (proposals > 0 && published > 0 && proposals > published * 3) {
         signals.push({
-          id: `cross-keyword-ratio-${now.getTime()}`,
+          id: `cross-keyword-ratio`,
           content: `📊 ${proposals} keyword proposals but only ${published} published articles — ${proposals - published} opportunities waiting for content`,
           type: 'opportunity',
           source: 'cross-signal',
