@@ -552,6 +552,8 @@ export const useEnhancedAIChatDB = () => {
     const userDbId = await saveMessage(userMessage, conversationId);
     if (userDbId) {
       setMessages(prev => prev.map(m => m.id === userMessage.id ? { ...m, id: userDbId } : m));
+    } else {
+      toast({ title: "Warning", description: "Message may not be saved — check your connection", variant: "destructive" });
     }
 
     // Phase 1: Learn from user message patterns (non-blocking)
@@ -681,7 +683,7 @@ export const useEnhancedAIChatDB = () => {
       abortControllerRef.current = abortController;
       const timeoutId = setTimeout(() => abortController.abort(), 90000); // 90s timeout
 
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
+      let resp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
         method: 'POST',
         signal: abortController.signal,
         headers,
@@ -699,8 +701,39 @@ export const useEnhancedAIChatDB = () => {
       // Don't clear timeout here — wait until stream reading is complete
 
       if (!resp.ok || !resp.body) {
-        const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(errData.error || errData.message || `HTTP ${resp.status}`);
+        // Retry once on 401 with session refresh
+        if (resp.status === 401) {
+          console.log('🔄 Got 401, attempting session refresh and retry...');
+          const { error: refreshErr } = await supabase.auth.refreshSession();
+          if (!refreshErr) {
+            const retryHeaders = await getAuthHeaders();
+            const retryResp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
+              method: 'POST',
+              headers: retryHeaders,
+              signal: abortControllerRef.current?.signal,
+              body: JSON.stringify({
+                message: content,
+                context: { 
+                  conversation_id: conversationId, 
+                  analystActive: analystActiveRef.current,
+                  analystSummary: (window as any).__analystSummary || null,
+                },
+                stream: true
+              })
+            });
+            if (retryResp.ok && retryResp.body) {
+              resp = retryResp;
+            } else {
+              const errData = await retryResp.json().catch(() => ({ error: 'Request failed after retry' }));
+              throw new Error(errData.error || errData.message || `HTTP ${retryResp.status}`);
+            }
+          } else {
+            throw new Error('Session expired — please sign in again');
+          }
+        } else {
+          const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
+          throw new Error(errData.error || errData.message || `HTTP ${resp.status}`);
+        }
       }
 
       // Parse SSE events
@@ -815,6 +848,8 @@ export const useEnhancedAIChatDB = () => {
       const assistantDbId = await saveMessage(finalMessage, conversationId);
       if (assistantDbId) {
         setMessages(prev => prev.map(m => m.id === finalMessage.id ? { ...m, id: assistantDbId } : m));
+      } else {
+        toast({ title: "Warning", description: "Response may not persist — try refreshing if it disappears", variant: "destructive" });
       }
 
       // Phase 3 Fix 9: Auto-update conversation title from suggestedTitle

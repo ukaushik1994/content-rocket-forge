@@ -704,8 +704,32 @@ MANDATORY RESPONSE STRUCTURE:
 6. **EMPTY DATA RULE** (CRITICAL):
    - If a tool returns 0 items or empty results, do NOT generate a chart or table with fake/placeholder data.
    - Instead, tell the user what data is missing and suggest the specific action to create it.
-   - Example: If get_content_items returns 0 → "You don't have any content yet. Would you like me to help you create your first article?"
-   - NEVER fabricate numbers or show empty charts.`;
+    - Example: If get_content_items returns 0 → "You don't have any content yet. Would you like me to help you create your first article?"
+    - NEVER fabricate numbers or show empty charts.
+
+7. **Suggested Follow-Ups** (OPTIONAL — include ONLY when genuinely useful):
+   If there is a clear, valuable next step the user might want to take, include this JSON block at the very end of your response on its own line:
+   \`\`\`json
+   {"suggestedFollowUps": ["Follow-up 1", "Follow-up 2"]}
+   \`\`\`
+   
+   RULES:
+   - Max 2-3 suggestions, each under 8 words
+   - Must be specific to the conversation context, NOT generic
+   - OMIT entirely if the response is self-contained or a simple acknowledgment
+   - NEVER include for greetings, confirmations, or simple answers
+   - Each suggestion should lead to a meaningfully different direction
+   - Use action verbs: "Analyze...", "Compare...", "Create...", "Show..."
+   - NEVER suggest what the user just asked for
+   
+   GOOD examples:
+   - After showing content performance → ["Compare with last month", "Find underperforming posts"]
+   - After creating a blog draft → ["Optimize for SEO", "Generate social media versions"]
+   
+   BAD examples (NEVER do these):
+   - Generic: ["Tell me more", "What else can you do?", "Help me with something"]
+   - Repetitive: ["Show my content" after already showing content]
+   - Vague: ["Learn more about this topic"]`;
 
 // Tool usage module with dynamic counts - ~600 tokens
 const TOOL_USAGE_MODULE = `
@@ -4647,11 +4671,32 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
       console.warn('Token usage logging error (non-critical):', logErr);
     }
 
+    // ===== Parse suggestedFollowUps from AI response into deepDivePrompts =====
+    let enrichedVisualData = visualData || undefined;
+    try {
+      const followUpMatch = finalContent.match(/```json\s*\n?\s*\{\s*"suggestedFollowUps"\s*:\s*(\[.*?\])\s*\}\s*\n?\s*```/s);
+      if (followUpMatch) {
+        const followUps = JSON.parse(followUpMatch[1]);
+        if (Array.isArray(followUps) && followUps.length > 0 && followUps.every((f: any) => typeof f === 'string')) {
+          if (!enrichedVisualData) {
+            enrichedVisualData = { type: 'summary' } as any;
+          }
+          if (!enrichedVisualData.deepDivePrompts || enrichedVisualData.deepDivePrompts.length === 0) {
+            enrichedVisualData.deepDivePrompts = followUps.slice(0, 3);
+            console.log(`💡 Injected ${followUps.length} AI-generated follow-ups`);
+          }
+          finalContent = finalContent.replace(/\n?\s*```json\s*\n?\s*\{\s*"suggestedFollowUps"\s*:\s*\[.*?\]\s*\}\s*\n?\s*```\s*$/s, '').trim();
+        }
+      }
+    } catch (fuErr) {
+      console.warn('suggestedFollowUps parsing failed (non-critical):', fuErr);
+    }
+
     const responseData = {
       message: finalContent,
       content: finalContent,
       actions: actions || undefined,
-      visualData: visualData || undefined,
+      visualData: enrichedVisualData,
       allVisualData: allCharts,
       serpData: serpData || undefined,
       insights: aiInsights.length > 0 ? aiInsights : undefined,
@@ -4659,8 +4704,8 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
       metadata: {
         processed_at: new Date().toISOString(),
         has_actions: !!actions,
-        has_visual_data: !!visualData,
-        visual_data_count: allCharts ? allCharts.length : (visualData ? 1 : 0),
+        has_visual_data: !!enrichedVisualData,
+        visual_data_count: allCharts ? allCharts.length : (enrichedVisualData ? 1 : 0),
         has_serp_data: !!serpData,
         insights_generated: aiInsights.length,
         serp_keywords: serpData?.keywords || [],
