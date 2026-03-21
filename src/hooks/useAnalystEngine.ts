@@ -508,45 +508,7 @@ function computeCrossSignals(
         });
       }
 
-      // 13. Seasonal gap awareness
-      const currentMonth = now.getMonth();
-      const seasonalTopics: Record<number, string[]> = {
-        0: ['new year', 'resolutions', 'planning', 'goals'],
-        1: ['valentine', 'engagement', 'relationship'],
-        2: ['spring', 'renewal', 'launch', 'q1 review'],
-        3: ['spring', 'tax', 'q2 planning'],
-        4: ['summer', 'midyear', 'review'],
-        5: ['midyear', 'summer', 'half-year'],
-        6: ['summer', 'back to school'],
-        7: ['back to school', 'fall prep', 'q3'],
-        8: ['fall', 'autumn', 'q4 planning', 'holiday prep'],
-        9: ['halloween', 'black friday prep', 'holiday'],
-        10: ['thanksgiving', 'black friday', 'cyber monday'],
-        11: ['christmas', 'holiday', 'year-end', 'gift'],
-      };
-
-      if (totalContent >= 5 && contentKeywords) {
-        const currentSeasonalTopics = seasonalTopics[currentMonth] || [];
-        if (currentSeasonalTopics.length > 0) {
-          const allKws = contentKeywords.map(c => {
-            const kwArr = Array.isArray(c.keywords) ? c.keywords : [];
-            return (kwArr[0] as string || c.meta_title || '').toLowerCase();
-          });
-          const hasSeasonalContent = currentSeasonalTopics.some(st => 
-            allKws.some(kw => kw.includes(st))
-          );
-          if (!hasSeasonalContent) {
-            signals.push({
-              id: `cross-seasonal-gap-${now.getTime()}`,
-              content: `🗓️ No content targeting seasonal trends (${currentSeasonalTopics.slice(0, 3).join(', ')}). Seasonal content can capture trending search volume.`,
-              type: 'opportunity',
-              source: 'cross-signal',
-              timestamp: now,
-              urgency: 'low',
-            });
-          }
-        }
-      }
+      // 13. Seasonal detection removed — irrelevant for B2B users (Phase 5)
 
       // ─── Fix 6: Content-to-Business Attribution ─────────────────────────
 
