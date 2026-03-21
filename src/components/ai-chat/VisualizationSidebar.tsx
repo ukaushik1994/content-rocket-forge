@@ -705,7 +705,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   <div className="mt-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Topics Discussed</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Topics Discussed</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {analystState.topics.map((topic) => (
