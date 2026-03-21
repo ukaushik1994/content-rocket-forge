@@ -22,6 +22,7 @@ interface ContextAwareMessageInputProps {
   onSendMessage: (message: string, displayMessage?: string) => void;
   isLoading: boolean;
   placeholder?: string;
+  centered?: boolean;
   onTypingChange?: (isTyping: boolean) => void;
   onOpenProposals?: () => void;
   onOpenResearch?: () => void;
