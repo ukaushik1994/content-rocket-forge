@@ -1674,8 +1674,22 @@ export function useAnalystEngine(
       };
     }
 
-    // Rule 2: Bad SEO quality
+    // Rule 2: Bad SEO quality — Phase 5: trajectory-aware
+    // Check if recent articles are actually scoring well despite low overall average
+    const recentScoresFromCross = crossSignalInsights.find(i => i.id === 'cross-seo-improving');
     if (avgSeo > 0 && avgSeo < 45 && published >= 3) {
+      if (recentScoresFromCross) {
+        // Recent articles are good but old content drags average down → accelerate, don't fix
+        return {
+          stance: 'accelerate',
+          reasoning: `Your overall SEO average is ${avgSeo}/100, but recent articles are scoring well and trending up. The low average is dragged down by older content. Keep creating — your quality is improving.`,
+          promptQuestion: 'Your recent content quality is improving. Ready to accelerate and let new articles lift your average?',
+          actions: [
+            { label: 'Find New Keywords', prompt: 'My recent articles are performing well. Find untapped keyword opportunities to capitalize on this momentum.', effort: 'medium', impact: 'high' },
+            { label: 'Refresh Old Content', prompt: `My overall SEO avg is ${avgSeo} but recent articles score well. Identify the worst-performing old articles I should update first.`, effort: 'medium', impact: 'high' },
+          ],
+        };
+      }
       return {
         stance: 'fix-quality',
         reasoning: `Your average SEO score is ${avgSeo}/100 across ${published} articles. Publishing more low-quality content won't help — each article needs to compete. Fix what you have before creating more.`,
