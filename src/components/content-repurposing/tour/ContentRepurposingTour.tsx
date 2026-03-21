@@ -123,7 +123,7 @@ export const ContentRepurposingTour: React.FC = () => {
       setCurrentStep(currentStep + 1);
     } else {
       handleCloseTour();
-      navigate('/content-repurposing');
+      navigate('/ai-chat');
     }
   };
 

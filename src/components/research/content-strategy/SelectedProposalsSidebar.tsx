@@ -267,7 +267,7 @@ export const SelectedProposalsSidebar = ({
                                     // Navigate to proposal detail or content strategy page with proposal context
                                     const proposalId = proposal.id || proposal.primary_keyword;
                                     sessionStorage.setItem('selectedProposalId', proposalId);
-                                    navigate(`/content-strategy?proposal=${encodeURIComponent(proposalId)}`);
+                                    navigate(`/ai-proposals?proposal=${encodeURIComponent(proposalId)}`);
                                   }}
                                   className="border-white/20 text-white/80 hover:bg-white/10 text-xs"
                                 >

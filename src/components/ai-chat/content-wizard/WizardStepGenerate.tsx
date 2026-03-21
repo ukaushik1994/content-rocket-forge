@@ -1040,7 +1040,7 @@ export const WizardStepGenerate: React.FC<WizardStepGenerateProps> = ({
         name: wizardState.selectedSolution.name,
       } : null,
     }));
-    navigate('/content');
+    navigate('/repository');
     onClose();
   };
 
