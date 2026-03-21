@@ -14,6 +14,15 @@ export const ContentApprovalView: React.FC = () => {
   
   return (
     <ApprovalProvider>
+      {/* #21: Approval workflow explainer */}
+      <Card className="mb-4 border-border/30 bg-background/40 backdrop-blur-sm">
+        <CardContent className="py-3 px-4">
+          <p className="text-[11px] text-muted-foreground/60">
+            How it works: Create content → Submit for Review (from Repository) → Review here → Approve to Publish
+          </p>
+        </CardContent>
+      </Card>
+
       {contentItems.length === 0 && (
         <Card className="mb-6 border-border/50 bg-background/60 backdrop-blur-xl">
           <CardContent className="flex items-center justify-between py-4">

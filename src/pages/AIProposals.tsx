@@ -24,7 +24,7 @@ const AIProposals = () => {
   const [selectedStatuses, setSelectedStatuses] = useState<ProposalStatus[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProposals, setSelectedProposals] = useState<Record<number, boolean>>({});
-  const [viewMode, setViewMode] = useState<ViewMode>('tiles');
+  const viewMode = 'tiles' as const; // Single view — tiles only
   const [allProposals, setAllProposals] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
 
@@ -133,7 +133,7 @@ const AIProposals = () => {
                 className="pl-9 bg-background/60 backdrop-blur-sm border-border/50"
               />
             </div>
-            <ViewToggle view={viewMode} onViewChange={setViewMode} />
+            {/* View toggle removed — single tiles view */}
           </div>
           <ProposalStatusFilter
             statusCounts={statusCounts}

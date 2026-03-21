@@ -17,11 +17,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-const allTabs = [
-  { key: 'inbox', label: 'Inbox', icon: Inbox },
+// #24: Show 3 primary tabs always, secondary tabs only when they have data
+const primaryTabs = [
   { key: 'campaigns', label: 'Campaigns', icon: Megaphone },
   { key: 'templates', label: 'Templates', icon: LayoutTemplate },
   { key: 'sent', label: 'Sent', icon: Send },
+];
+
+const secondaryTabs = [
+  { key: 'inbox', label: 'Inbox', icon: Inbox },
   { key: 'scheduled', label: 'Scheduled', icon: Clock },
   { key: 'drafts', label: 'Drafts', icon: FileText },
   { key: 'reports', label: 'Reports', icon: BarChart3 },
@@ -29,7 +33,7 @@ const allTabs = [
 
 export const EmailDashboard = () => {
   const { currentWorkspaceId } = useWorkspace();
-  const [tab, setTab] = useState('inbox');
+  const [tab, setTab] = useState('campaigns'); // #24: Default to campaigns, not inbox
   const [showCompose, setShowCompose] = useState(false);
   const [showCampaignWizard, setShowCampaignWizard] = useState(false);
 
@@ -205,7 +209,7 @@ export const EmailDashboard = () => {
         transition={{ delay: 0.8 }}
       >
         <div className="flex gap-3 p-2 glass-card rounded-2xl">
-          {allTabs.map((t) => {
+          {[...primaryTabs, ...secondaryTabs].map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.key;
             return (

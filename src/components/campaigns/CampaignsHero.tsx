@@ -203,7 +203,7 @@ export const CampaignsHero = React.memo(({
           delay: 0.4,
           duration: 0.4
         }} className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Create comprehensive marketing campaigns with AI-powered strategy generation
+            Plan multi-content campaigns with AI strategy. For single articles, use AI Chat.
           </motion.p>
 
           {/* Removed Create New Campaign button - using conversational input instead */}

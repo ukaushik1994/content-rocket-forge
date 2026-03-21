@@ -350,30 +350,39 @@ const Solutions = () => {
       <main className="pt-20 container py-8 rounded-3xl">
         <PageBreadcrumb section="Library" page="Offerings" />
         <motion.div variants={pageItemVariants} className="mb-8 space-y-12">
-          {/* Company Section - Moved to top */}
-          <CompanySection 
-            companyInfo={companyInfo}
-            onSave={handleSaveCompanyInfo}
-          />
-          
-          {/* Solutions Manager */}
-          <ContentBuilderProvider>
-            <ErrorBoundary FallbackComponent={ErrorFallback}>
-              <SolutionManager searchTerm={searchTerm} />
-            </ErrorBoundary>
-          </ContentBuilderProvider>
-          
-          {/* Brand Guidelines Display */}
-          <BrandGuidelinesDisplay
-            guidelines={brandGuidelines}
-            companyId={companyInfo?.id || ''}
-            onSave={handleSaveBrandGuidelines}
-          />
-          
-          {/* Competitor Intelligence Section */}
-          {user && (
-            <CompetitorSection userId={user.id} />
-          )}
+          {/* #18: Numbered workflow steps */}
+          <div>
+            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 1 of 4 — Company Info</p>
+            <CompanySection
+              companyInfo={companyInfo}
+              onSave={handleSaveCompanyInfo}
+            />
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 2 of 4 — Your Solutions</p>
+            <ContentBuilderProvider>
+              <ErrorBoundary FallbackComponent={ErrorFallback}>
+                <SolutionManager searchTerm={searchTerm} />
+              </ErrorBoundary>
+            </ContentBuilderProvider>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 3 of 4 — Brand Voice</p>
+            <BrandGuidelinesDisplay
+              guidelines={brandGuidelines}
+              companyId={companyInfo?.id || ''}
+              onSave={handleSaveBrandGuidelines}
+            />
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 4 of 4 — Competitors</p>
+            {user && (
+              <CompetitorSection userId={user.id} />
+            )}
+          </div>
         </motion.div>
       </main>
     </PageContainer>;

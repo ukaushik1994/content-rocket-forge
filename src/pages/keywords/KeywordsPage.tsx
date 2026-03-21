@@ -20,7 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 const PAGE_SIZE = 20;
 
 const KeywordsPage = () => {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const viewMode = 'grid' as const; // Single view — grid only
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('usage_count');
   const [searchQuery, setSearchQuery] = useState('');
