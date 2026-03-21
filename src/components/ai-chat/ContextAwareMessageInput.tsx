@@ -349,7 +349,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onCancel={() => setShowFileUpload(false)}
           />
 
-          {/* Plus Menu Dropdown — unified for all breakpoints */}
+          {/* Plus Menu Dropdown — unified tools + quick actions */}
           <PlusMenuDropdown
             onAttachFile={handleAttachmentClick}
             onContentWizard={handleContentWizardClick}
@@ -358,48 +358,18 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onAIProposals={handleAIProposalsClick}
             onWebSearch={onWebSearch || handleWebSearchClick}
             onImageGeneration={() => {
-              setMessage('Generate an image of: ');
+              setImageGenMode(true);
+              setWizardMode(false);
+              setWebSearchMode(false);
+              setMessage('');
               setTimeout(() => textareaRef.current?.focus(), 50);
             }}
+            onSendPrompt={(prompt, displayText) => {
+              onSendMessage(prompt, displayText);
+            }}
+            onSetVisualization={onSetVisualization}
             disabled={isLoading}
           />
-
-          {/* Quick Actions Popover */}
-          <Popover open={quickActionsOpen} onOpenChange={setQuickActionsOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={isLoading}
-                aria-label="Quick actions"
-                className={cn(
-                  "text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8 transition-colors",
-                  quickActionsOpen && "text-primary"
-                )}
-              >
-                <Zap className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              side="top"
-              align="start"
-              sideOffset={8}
-              className="w-52 p-1 bg-card border-border/50 rounded-lg shadow-lg"
-            >
-              <EnhancedQuickActions
-                onAction={(action, data) => {
-                  onQuickAction?.(action, data);
-                  setQuickActionsOpen(false);
-                }}
-                onSetVisualization={(v) => {
-                  onSetVisualization?.(v);
-                  setQuickActionsOpen(false);
-                }}
-                onClose={() => setQuickActionsOpen(false)}
-              />
-            </PopoverContent>
-          </Popover>
 
           {/* Message Input */}
           <Textarea
