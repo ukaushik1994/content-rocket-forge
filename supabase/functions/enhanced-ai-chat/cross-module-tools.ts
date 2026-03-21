@@ -545,7 +545,7 @@ export async function executeCrossModuleTool(
 
         return {
           success: true,
-          message: `Published "${content.title}" to ${connection.provider}${publishResult.url || publishResult.link ? ` — ${publishResult.url || publishResult.link}` : ''}\n\n🎉 What's next?`,
+          message: `Published "${content.title}" to ${connection.provider}${publishResult.url || publishResult.link ? ` — ${publishResult.url || publishResult.link}` : ''}${statusWarning}\n\n🎉 What's next?`,
           url: publishResult.url || publishResult.link,
           provider: connection.provider,
           actions: [
