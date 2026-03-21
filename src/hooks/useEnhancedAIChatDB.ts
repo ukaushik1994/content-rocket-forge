@@ -662,7 +662,9 @@ export const useEnhancedAIChatDB = () => {
           messages: conversationHistory,
           context: { 
             conversation_id: conversationId, 
-            analystActive: analystActiveRef.current 
+            analystActive: analystActiveRef.current,
+            // Phase 4: Pass analyst state summary to backend
+            analystSummary: (window as any).__analystSummary || null,
           },
           stream: true
         })
@@ -776,6 +778,33 @@ export const useEnhancedAIChatDB = () => {
             setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, title: suggestedTitle } : c));
           }
         } catch (_) { /* non-blocking */ }
+      }
+
+      // Phase 3: Auto-update conversation goal when topic shifts
+      const responseContentLower = (responseContent || '').toLowerCase();
+      if (conversationId && messages.length >= 4) {
+        try {
+          let detectedGoal: string | null = null;
+          if (/email|campaign|newsletter/.test(responseContentLower) && !/content|article|blog/.test(responseContentLower)) detectedGoal = 'Email Campaign';
+          else if (/keyword|seo|rank|serp/.test(responseContentLower) && !/write|create|draft/.test(responseContentLower)) detectedGoal = 'SEO Research';
+          else if (/competitor|swot|market position/.test(responseContentLower)) detectedGoal = 'Competitive Analysis';
+          
+          if (detectedGoal) {
+            const currentConv = conversations.find(c => c.id === conversationId);
+            if (currentConv && currentConv.goal !== detectedGoal) {
+              await supabase.from('ai_conversations').update({ goal: detectedGoal } as any).eq('id', conversationId);
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+      }
+
+      // Phase 4: Refresh analyst after mutations
+      const mutationKeywords = /\b(Created|Deleted|Published|Scheduled|Sent|Updated|Generated|Approved|Rejected)\b/;
+      if (mutationKeywords.test(responseContent)) {
+        setTimeout(() => {
+          // Trigger analyst refresh via custom event
+          window.dispatchEvent(new CustomEvent('refreshAnalyst'));
+        }, 2000);
       }
 
       // Title already set early (line 392-408) — no duplicate update needed

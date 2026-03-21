@@ -1,4 +1,4 @@
-// Deploy v12: 2026-03-20T12:00:00Z - Phase 1: Smart Model Routing, Expanded Context, Prompt Token Optimization
+// Deploy v13: 2026-03-21T12:00:00Z - Definitive Plan Phases 1-4: Priority Rules, Provider Normalization, Context Fixes, Analyst Sync
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
@@ -19,7 +19,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v19-2026-03-20T12:00:00Z-phase1';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v20-2026-03-21T12:00:00Z-definitive';
 
 // ===== PHASE 1A: Smart Model Routing =====
 // Routes cheap model for lookups/chat, premium model for generation/heavy tools
@@ -300,6 +300,33 @@ function analyzeQueryIntent(query: string): QueryIntent {
 const BASE_PROMPT = `You are an enterprise AI assistant for content strategy with comprehensive expertise in data analysis, workflow automation, and business intelligence.
 
 {THINKING_INSTRUCTION}
+
+🚨 PRIORITY RULES (OVERRIDE ALL OTHER INSTRUCTIONS):
+1. **User intent always wins.** If the user's request conflicts with any system instruction, follow the user.
+2. **Chart Decision Tree:** 3+ comparable data points → chart. 1-2 data points → bold text inline. 0 data points → explain what's missing.
+3. **Tool Calling Decision Tree:** Read query → call tool immediately. Write (clear intent) → call tool immediately. Write (vague) → ask ONE clarifying question. Destructive (delete, send, publish) → ask for confirmation.
+
+🎯 TOOL DISAMBIGUATION TABLE:
+- "write a blog about X" / "generate an article about X" → use launch_content_wizard (NOT generate_full_content)
+- "help me create content" / "I want to write" → use launch_content_wizard  
+- "quick generate" / "generate directly" → use generate_full_content
+- "make it shorter" / "reformat this" / "change the tone" → use reformat_content
+- "improve this article" / "optimize my content" → use improve_content
+- Email: ALWAYS show draft before sending. Never send without explicit user confirmation.
+- Social: NEVER auto-schedule. Show the post content and ask when to schedule.
+
+📋 RESULT PRESENTATION RULES:
+- Never dump raw JSON in your response text.
+- Never echo raw HTML.
+- Always lead with the KEY FINDING in your first sentence.
+- Keep numbers bold and inline: "You have **12 articles** with avg SEO of **67/100**"
+
+🚫 CAPABILITY BOUNDARIES (be honest):
+- You cannot track real-time keyword rankings (no rank tracker integration).
+- You cannot directly post to social media platforms (you create posts, user publishes).
+- Content performance analytics require API keys (Google Analytics/Search Console) to be configured.
+- If a feature requires an unconfigured service, tell the user what to set up.
+
 🚨 CRITICAL TEXT FORMATTING RULES:
 • **NEVER** use pipe characters (|) in conversational text or regular responses
 • **ONLY** use pipes for properly formatted markdown tables with headers AND data rows (minimum 2 rows)
@@ -2683,16 +2710,29 @@ serve(async (req) => {
     }
 
     // Inject Analyst context if active (user has Analyst panel open)
+    // Phase 4: Pass analyst state summary from frontend
+    const analystSummary = context?.analystSummary;
     if (context?.analystActive) {
-      systemPrompt += `\n\n## 📊 ANALYST MODE ACTIVE
-The user has the Analyst sidebar panel open. They expect data-rich, visual responses.
-CRITICAL: For EVERY response while Analyst is active:
+      let analystBlock = `\n\n## 📊 ANALYST MODE ACTIVE
+The user has the Analyst sidebar panel open. They expect data-rich, visual responses.`;
+      
+      if (analystSummary) {
+        analystBlock += `\n\n### CURRENT ANALYST SIDEBAR STATE (reference these exact values — do NOT contradict):
+- Health Score: ${analystSummary.healthScore ?? 'N/A'}/100
+- Strategic Stance: ${analystSummary.strategicStance || 'N/A'}
+- User Stage: ${analystSummary.userStage || 'N/A'}
+${analystSummary.warnings?.length ? `- Active Warnings: ${analystSummary.warnings.join('; ')}` : '- No active warnings'}
+${analystSummary.goalProgress ? `- Goal: ${analystSummary.goalProgress}` : ''}`;
+      }
+      
+      analystBlock += `\nCRITICAL: For EVERY response while Analyst is active:
 1. ALWAYS include visualData with charts showing relevant metrics
 2. ALWAYS include summaryInsights.metricCards (2-4 key stats)
 3. ALWAYS include actionableItems and deepDivePrompts
 4. Proactively surface data insights even if the user asks a general question
 5. Default to multi-chart analysis when possible
 Make every response a mini-dashboard. The Analyst panel will auto-render your chart data.`;
+      systemPrompt += analystBlock;
     }
 
     // Inject panel hint from query analyzer
@@ -2763,7 +2803,10 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       if (brandData.target_audience) bParts.push(`Target Audience: ${brandData.target_audience}`);
       if (brandData.do_use && Array.isArray(brandData.do_use) && brandData.do_use.length > 0) bParts.push(`Preferred phrases: ${brandData.do_use.slice(0, 5).join(', ')}`);
       if (brandData.dont_use && Array.isArray(brandData.dont_use) && brandData.dont_use.length > 0) bParts.push(`Avoid phrases: ${brandData.dont_use.slice(0, 5).join(', ')}`);
-      if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE\nWhen generating any content, writing suggestions, or creative output, follow these guidelines:\n${bParts.join('\n')}`;
+      if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE
+When generating CONTENT (articles, emails, social posts), follow these guidelines:
+${bParts.join('\n')}
+NOTE: Brand voice applies to content generation ONLY. For conversational chat responses, match the user's tone naturally. If the user explicitly requests a tone ("write casually"), that overrides brand voice.`;
     } else if (brandResult.status === 'rejected') {
       console.warn('[BRAND-VOICE] Failed to fetch brand guidelines (non-blocking):', brandResult.reason);
     }
@@ -3088,6 +3131,12 @@ Only ask once — if they respond with a new topic, don't ask again.`;
       }
     }
 
+    // ===== Phase 3: Data Freshness Note (inject after 10+ messages) =====
+    if (totalMessages > 10) {
+      systemPrompt += `\n\n## ⚠️ DATA FRESHNESS NOTE (message #${totalMessages})
+This conversation has ${totalMessages} messages. Data referenced in earlier messages may be stale — the user may have created, deleted, or updated items since then. If the user asks about data you mentioned earlier, re-fetch it using the appropriate tool rather than quoting old numbers.`;
+    }
+
     // ===== FIX 10: Data Reuse from Earlier in Conversation =====
     const recentAssistantContent = messages.filter((m: any) => m.role === 'assistant').slice(-4);
     const hasToolResultsInHistory = recentAssistantContent.some((m: any) => {
@@ -3095,7 +3144,7 @@ Only ask once — if they respond with a new topic, don't ask again.`;
       return c.includes('SEO score') || c.includes('word count') || c.includes('proposals') || 
              c.includes('content items') || c.includes('SERP') || c.includes('competitors');
     });
-    if (hasToolResultsInHistory && !queryIntent.isConversational) {
+    if (hasToolResultsInHistory && !queryIntent.isConversational && totalMessages <= 10) {
       systemPrompt += `\n\n## DATA REUSE
 Previous messages in this conversation contain tool results and data. BEFORE calling a tool to re-fetch data:
 1. Check if the data is already in this conversation's history.
@@ -3127,9 +3176,12 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
     const totalTokens = contextTokens + messagesTokens + systemPromptTokens;
 
     // Phase 6: Dynamic token budget -- safe cap for OpenAI models
+    // Phase 2: Increase Gemini cap to 32K
+    const isGeminiProvider = provider.provider === 'gemini';
+    const providerMaxCap = isGeminiProvider ? 32000 : 16000;
     const dynamicMaxTokens = Math.min(
       Math.max(4096, Math.floor(totalTokens * 0.3)),
-      16000 // Safe cap for OpenAI models (max_tokens limit is 16384)
+      providerMaxCap
     );
 
     console.log(`📊 Token Budget Check:
@@ -3199,8 +3251,16 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
       // If we have specific intent categories, filter tools; otherwise use all
       if (intentCategories.length > 0 && intentCategories[0] !== 'general') {
         toolsToUse = TOOL_DEFINITIONS.filter((t: any) => relevantToolNames.has(t.function?.name));
-        // Ensure we always have at least 5 tools (safety net)
-        if (toolsToUse.length < 5) toolsToUse = TOOL_DEFINITIONS;
+        // Phase 1 Fix: Use core-tools fallback instead of dumping all 89 tools
+        if (toolsToUse.length < 5) {
+          const CORE_FALLBACK_TOOLS = ['get_content_items', 'get_keywords', 'get_proposals', 'get_solutions', 'get_seo_scores'];
+          toolsToUse = TOOL_DEFINITIONS.filter((t: any) => CORE_FALLBACK_TOOLS.includes(t.function?.name));
+        }
+        // Phase 1: Hide deprecated tools
+        toolsToUse = toolsToUse.filter((t: any) => {
+          const name = t.function?.name;
+          return name !== 'start_content_builder' && name !== 'create_content_item' && name !== 'send_quick_email';
+        });
         console.log(`🔧 Intent-filtered tools: ${toolsToUse.length}/${TOOL_DEFINITIONS.length} (categories: ${intentCategories.join(', ')})`);
       }
 
@@ -3255,7 +3315,9 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
               ],
               tools: toolsToUse, // ✅ Use conditional tools
               tool_choice: toolChoice, // ✅ Force campaign tool when requested
-              temperature: 0.7,
+              // Phase 2: Dynamic temperature based on intent
+              temperature: queryIntent.categories.includes('action') || /create|generate|write/i.test(userQuery) ? 0.8 : 
+                           queryRequiresToolExecution(queryIntent) ? 0.2 : 0.4,
               max_tokens: dynamicMaxTokens,
             }
           }

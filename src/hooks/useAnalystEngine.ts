@@ -217,7 +217,7 @@ function computeCrossSignals(
         const avgLast = (scores[scores.length - 2] + scores[scores.length - 1]) / 2;
         if (avgFirst < avgLast - 10) {
           signals.push({
-            id: `cross-seo-declining-${now.getTime()}`,
+            id: `cross-seo-declining`,  // Phase 5: stable anomaly ID
             content: `📉 SEO scores trending down in recent articles (avg ${Math.round(avgFirst)} vs ${Math.round(avgLast)} earlier) — review optimization checklist`,
             type: 'warning',
             source: 'cross-signal',
@@ -226,7 +226,7 @@ function computeCrossSignals(
           });
         } else if (avgFirst > avgLast + 10) {
           signals.push({
-            id: `cross-seo-improving-${now.getTime()}`,
+            id: `cross-seo-improving`,  // Phase 5: stable anomaly ID
             content: `📈 SEO scores improving in recent articles (avg ${Math.round(avgFirst)} vs ${Math.round(avgLast)} earlier) — keep this momentum`,
             type: 'opportunity',
             source: 'cross-signal',
@@ -651,14 +651,16 @@ function computeHealthScore(
   const competitors = platformData.find(d => d.label === 'Tracked Competitors')?.value || 0;
   const proposals = platformData.find(d => d.label === 'Keyword Proposals')?.value || 0;
 
-  // 1. Content Volume (20 pts)
-  const volumeScore = Math.min(20, Math.round((totalContent / 15) * 20));
+  // 1. Content Volume (20 pts) — Phase 5: stage-aware targets
+  const stage = getUserStage(totalContent, published);
+  const volumeTarget = stage === 'starter' ? 5 : 15;
+  const volumeScore = Math.min(20, Math.round((totalContent / volumeTarget) * 20));
   factors.push({
     name: 'Content Volume',
     score: volumeScore,
     maxScore: 20,
     status: volumeScore >= 14 ? 'good' : volumeScore >= 8 ? 'warning' : 'critical',
-    detail: `${totalContent} total pieces (target: 15+)`,
+    detail: `${totalContent} total pieces (target: ${volumeTarget}+)`,
   });
 
   // 2. Publish Velocity (25 pts)
@@ -1315,28 +1317,37 @@ export function useAnalystEngine(
       if (coveredCategories.has('email') || coveredCategories.has('engage')) {
         fetches.push((async () => {
           try {
+            // Phase 5: Add user_id filter via workspace
+            const { data: tm } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
+            if (!tm?.workspace_id) return;
             const { count } = await supabase
               .from('engage_contacts' as any)
-              .select('id', { count: 'exact', head: true });
+              .select('id', { count: 'exact', head: true })
+              .eq('workspace_id', tm.workspace_id);
             if (count !== null) newData.push({ label: 'Contacts', value: count, category: 'engage', fetchedAt: now });
           } catch { /* table may not exist */ }
         })());
         fetches.push((async () => {
           try {
+            // Phase 5: Add workspace filter for email_campaigns
+            const { data: tm } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
+            if (!tm?.workspace_id) return;
             const { count } = await supabase
               .from('email_campaigns' as any)
-              .select('id', { count: 'exact', head: true });
+              .select('id', { count: 'exact', head: true })
+              .eq('workspace_id', tm.workspace_id);
             if (count !== null) newData.push({ label: 'Email Campaigns', value: count, category: 'email', fetchedAt: now });
           } catch { /* table may not exist */ }
         })());
       }
 
-      // Fix 12: Traffic proxy — most engaged content from performance signals
+      // Fix 12: Traffic proxy — Phase 5: Add user_id filter for content_performance_signals
       fetches.push((async () => {
         try {
           const { data: perfSignals } = await supabase
             .from('content_performance_signals' as any)
             .select('content_id, signal_type')
+            .eq('user_id', userId)
             .limit(100);
           if (perfSignals && perfSignals.length > 0) {
             const countMap = new Map<string, number>();
@@ -1436,7 +1447,7 @@ export function useAnalystEngine(
           .limit(3);
         if (lowSeo && lowSeo.length > 0) {
           alerts.push({
-            id: `anomaly-low-seo-${now.getTime()}`,
+            id: `anomaly-low-seo`,  // Phase 5: stable anomaly ID
             content: `⚠️ ${lowSeo.length} published article${lowSeo.length > 1 ? 's' : ''} with SEO score below 40 — consider optimizing "${lowSeo[0].title}"`,
             type: 'warning',
             source: 'platform',
@@ -1453,7 +1464,7 @@ export function useAnalystEngine(
           .lt('updated_at', twoWeeksAgo);
         if (staleDrafts && staleDrafts > 0) {
           alerts.push({
-            id: `anomaly-stale-drafts-${now.getTime()}`,
+            id: `anomaly-stale-drafts`,  // Phase 5: stable anomaly ID
             content: `📝 ${staleDrafts} draft${staleDrafts > 1 ? 's' : ''} haven't been updated in 2+ weeks — finish or archive them`,
             type: 'opportunity',
             source: 'platform',
@@ -1471,7 +1482,7 @@ export function useAnalystEngine(
           .lte('scheduled_date', nextWeek);
         if (scheduledItems === 0) {
           alerts.push({
-            id: `anomaly-empty-calendar-${now.getTime()}`,
+            id: `anomaly-empty-calendar`,  // Phase 5: stable anomaly ID
             content: `📅 No content scheduled for the next 7 days — consider planning ahead`,
             type: 'warning',
             source: 'platform',
@@ -1491,7 +1502,7 @@ export function useAnalystEngine(
             .limit(3);
           if (stalePublished && stalePublished.length > 0) {
             alerts.push({
-              id: `anomaly-stale-content-${now.getTime()}`,
+              id: `anomaly-stale-content`,  // Phase 5: stable anomaly ID
               content: `🕰️ ${stalePublished.length} published article${stalePublished.length > 1 ? 's' : ''} not reviewed in 90+ days — "${stalePublished[0].title}" may need a freshness update`,
               type: 'warning',
               source: 'platform',
@@ -1630,7 +1641,8 @@ export function useAnalystEngine(
               .select('*', { count: 'exact', head: true })
               .eq('user_id', userId)
               .eq('status', 'published')
-              .gte('updated_at', since);
+            // Phase 5: Use created_at to count genuinely new articles
+            .gte('created_at', since);
             currentValue = count || 0;
           } else if (goal.goal_type === 'content_count') {
             const since = goal.starts_at || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -1645,7 +1657,7 @@ export function useAnalystEngine(
             currentValue = avgSeo;
           }
           
-          const percentage = Math.min(100, Math.round((currentValue / goal.target_value) * 100));
+          const percentage = goal.target_value > 0 ? Math.min(100, Math.round((currentValue / goal.target_value) * 100)) : 0; // Phase 5: division by zero guard
           const typeLabels: Record<string, string> = {
             publish_count: 'Publish Articles',
             content_count: 'Create Content',
