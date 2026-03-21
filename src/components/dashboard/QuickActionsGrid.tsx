@@ -161,7 +161,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       title: "SEO Optimization",
       description: "Advanced SEO tools and recommendations to boost your content rankings.",
       icon: <Target className="h-5 w-5 text-rose-400" />,
-      action: () => navigate('/seo-tools'),
+      action: () => navigate('/keywords'),
       buttonText: "SEO Tools",
       buttonIcon: <Zap className="h-4 w-4" />,
       gradient: "from-rose-400/30 to-pink-500/20",
