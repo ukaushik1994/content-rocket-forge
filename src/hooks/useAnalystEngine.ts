@@ -267,7 +267,7 @@ function computeCrossSignals(
       // 3. Publishing consistency gap
       const { data: lastPublished } = await supabase
         .from('content_items')
-        .select('created_at')
+        .select('created_at, title')
         .eq('user_id', userId)
         .eq('status', 'published')
         .order('created_at', { ascending: false })
