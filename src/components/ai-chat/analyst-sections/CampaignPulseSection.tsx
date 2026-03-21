@@ -19,8 +19,8 @@ export const CampaignPulseSection: React.FC<Props> = ({ platformData, onSendMess
   const getHeadline = () => {
     if (!hasData) return <>Campaigns <span className="text-muted-foreground/60">not started</span></>;
     if (campaignCount === 0) return <>Campaigns are <span className="text-muted-foreground/60">idle</span></>;
-    if (queueFailed > 0) return <><span className="text-rose-300">{queueFailed} failure{queueFailed > 1 ? 's' : ''}</span> in queue</>;
-    return <>Campaigns are <span className="text-emerald-400/80">operational</span>{avgSeo > 0 && <span className="text-muted-foreground/50 text-sm ml-1.5">· avg SEO {avgSeo}</span>}</>;
+    if (queueFailed > 0) return <><span className="text-primary/50">{queueFailed} failure{queueFailed > 1 ? 's' : ''}</span> in queue</>;
+    return <>Campaigns are <span className="text-primary/80">operational</span>{avgSeo > 0 && <span className="text-muted-foreground/50 text-sm ml-1.5">· avg SEO {avgSeo}</span>}</>;
   };
 
   return (

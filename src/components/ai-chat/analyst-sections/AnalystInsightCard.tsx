@@ -50,7 +50,7 @@ export const AnalystInsightCard: React.FC<AnalystInsightCardProps> = ({
         <div className="flex items-center gap-1.5">
           <p className="text-xs font-medium text-foreground/80 leading-relaxed flex-1">{title}</p>
           {urgency === 'critical' && (
-            <span className="text-[8px] font-bold text-rose-400 uppercase tracking-wider flex-shrink-0">Urgent</span>
+            <span className="text-[8px] font-bold text-primary/60 uppercase tracking-wider flex-shrink-0">Urgent</span>
           )}
           {urgency === 'high' && (
             <span className="text-[8px] font-bold text-primary uppercase tracking-wider flex-shrink-0">High</span>

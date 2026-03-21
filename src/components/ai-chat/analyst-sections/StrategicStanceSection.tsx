@@ -47,13 +47,13 @@ export const StrategicStanceSection: React.FC<Props> = ({ analystState, onSendMe
   const getHeadline = () => {
     switch (rec.stance) {
       case 'stop-creating':
-        return <>Stop creating. <span className="text-rose-300">Start publishing.</span></>;
+        return <>Stop creating. <span className="text-primary/60">Start publishing.</span></>;
       case 'fix-quality':
         return <>Quality first, <span className="text-primary/80">then scale.</span></>;
       case 'accelerate':
-        return <>Everything's working. <span className="text-emerald-400/80">Accelerate.</span></>;
+        return <>Everything's working. <span className="text-neon-blue">Accelerate.</span></>;
       case 'build-foundation':
-        return <>Build your <span className="text-cyan-400">foundation</span> first.</>;
+        return <>Build your <span className="text-neon-blue">foundation</span> first.</>;
     }
   };
 

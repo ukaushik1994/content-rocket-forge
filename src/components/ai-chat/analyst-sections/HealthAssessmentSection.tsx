@@ -60,7 +60,7 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
                 <div
                   className={`h-full rounded-full transition-all ${
                     factor.status === 'good' ? 'bg-primary/50' :
-                    factor.status === 'warning' ? 'bg-primary/40' : 'bg-rose-300/50'
+                    factor.status === 'warning' ? 'bg-primary/40' : 'bg-primary/30'
                   }`}
                   style={{ width: `${(factor.score / factor.maxScore) * 100}%` }}
                 />

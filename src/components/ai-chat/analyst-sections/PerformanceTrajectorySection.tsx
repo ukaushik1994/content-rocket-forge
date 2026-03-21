@@ -57,25 +57,25 @@ export const PerformanceTrajectorySection: React.FC<Props> = ({ analystState, ch
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
               <defs>
-                <linearGradient id="perfGradCyan" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
+                <linearGradient id="perfGradPrimary" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#9b87f5" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#9b87f5" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="perfGradPurple" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#a855f7" stopOpacity={0.2} />
                   <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
                 </linearGradient>
-                <linearGradient id="perfGradGreen" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                <linearGradient id="perfGradNeon" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#33C3F0" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#33C3F0" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} opacity={0.4} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} width={28} opacity={0.4} />
               <RechartsTooltip contentStyle={tooltipStyle} />
               {dataKeys.slice(0, 3).map((key, idx) => {
-                const colors = ['#06b6d4', '#a855f7', '#22c55e'];
-                const gradients = ['url(#perfGradCyan)', 'url(#perfGradPurple)', 'url(#perfGradGreen)'];
+                const colors = ['#9b87f5', '#a855f7', '#33C3F0'];
+                const gradients = ['url(#perfGradPrimary)', 'url(#perfGradPurple)', 'url(#perfGradNeon)'];
                 return (
                   <Area key={key} type="natural" dataKey={key} stroke={colors[idx]} strokeWidth={2} fill={gradients[idx]} dot={false} />
                 );
