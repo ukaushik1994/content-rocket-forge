@@ -282,7 +282,6 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   // Navigation items for collapsed view
   const libraryItems = [
     { icon: <FolderOpen className="h-4 w-4" />, label: 'Repository', action: () => handleNavigation('/repository') },
-    { icon: <Package className="h-4 w-4" />, label: 'Offerings', action: () => handleNavigation('/offerings') },
     { icon: <CheckCircle className="h-4 w-4" />, label: 'Approvals', action: () => handleNavigation('/content-approval') },
     { icon: <Sparkles className="h-4 w-4" />, label: 'AI Proposals', action: () => handleNavigation('/ai-proposals') },
   ];
@@ -733,6 +732,11 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
         {/* Bottom: Calendar + Profile */}
         <div className="p-3 border-t border-border/8 space-y-0.5">
+          <SidebarNavItem 
+            icon={<Package className="h-4 w-4" />} 
+            label="Offerings" 
+            onClick={() => handleNavigation('/offerings')} 
+          />
           <SidebarNavItem 
             icon={<CalendarDays className="h-4 w-4" />} 
             label="Content Calendar" 
