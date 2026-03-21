@@ -217,7 +217,7 @@ function computeCrossSignals(
         const avgLast = (scores[scores.length - 2] + scores[scores.length - 1]) / 2;
         if (avgFirst < avgLast - 10) {
           signals.push({
-            id: `cross-seo-declining-${now.getTime()}`,
+            id: `cross-seo-declining`,  // Phase 5: stable anomaly ID
             content: `📉 SEO scores trending down in recent articles (avg ${Math.round(avgFirst)} vs ${Math.round(avgLast)} earlier) — review optimization checklist`,
             type: 'warning',
             source: 'cross-signal',
@@ -226,7 +226,7 @@ function computeCrossSignals(
           });
         } else if (avgFirst > avgLast + 10) {
           signals.push({
-            id: `cross-seo-improving-${now.getTime()}`,
+            id: `cross-seo-improving`,  // Phase 5: stable anomaly ID
             content: `📈 SEO scores improving in recent articles (avg ${Math.round(avgFirst)} vs ${Math.round(avgLast)} earlier) — keep this momentum`,
             type: 'opportunity',
             source: 'cross-signal',
