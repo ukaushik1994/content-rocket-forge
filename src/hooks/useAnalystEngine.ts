@@ -1464,7 +1464,7 @@ export function useAnalystEngine(
           .lt('updated_at', twoWeeksAgo);
         if (staleDrafts && staleDrafts > 0) {
           alerts.push({
-            id: `anomaly-stale-drafts-${now.getTime()}`,
+            id: `anomaly-stale-drafts`,  // Phase 5: stable anomaly ID
             content: `📝 ${staleDrafts} draft${staleDrafts > 1 ? 's' : ''} haven't been updated in 2+ weeks — finish or archive them`,
             type: 'opportunity',
             source: 'platform',
