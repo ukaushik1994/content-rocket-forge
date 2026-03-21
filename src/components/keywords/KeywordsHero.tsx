@@ -75,16 +75,16 @@ export const KeywordsHero: React.FC<KeywordsHeroProps> = ({
         }} />
           
           <div className="relative">
-            
-
-
-
-
-
-
-
-
-          
+            <motion.div className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8" whileHover={{
+            scale: 1.05
+          }} transition={{
+            type: "spring",
+            stiffness: 300
+          }}>
+              <Database className="h-5 w-5 text-primary" />
+              <span className="text-sm font-medium">Keyword Repository</span>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            </motion.div>
             
             <motion.h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent" initial={{
             opacity: 0,
@@ -190,7 +190,7 @@ export const KeywordsHero: React.FC<KeywordsHeroProps> = ({
         delay: 1.0
       }}>
           <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
-            {quickFilters.map((filter) => <motion.button key={filter.key} onClick={() => onQuickFilter(filter.key)} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeFilter === filter.key ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-background/80'}`} whileHover={{
+            {quickFilters.map(filter => <motion.button key={filter.key} onClick={() => onQuickFilter(filter.key)} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeFilter === filter.key ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-background/80'}`} whileHover={{
             scale: 1.02
           }} whileTap={{
             scale: 0.98
