@@ -727,7 +727,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="inline-flex items-center text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] backdrop-blur-sm text-muted-foreground/70">
-                        <Database className="w-3 h-3 mr-1 text-amber-300/50" />
+                        <Database className="w-3 h-3 mr-1 text-primary/40" />
                         {dataInfo.source}
                       </span>
                       {dataInfo.points > 0 && (
