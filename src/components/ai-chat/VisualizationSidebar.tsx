@@ -668,7 +668,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               onClick={() => onInteract?.()}
               className={cn(
-                "fixed top-20 right-0 bottom-24 z-[35]",
+                "fixed top-16 right-0 bottom-24 z-[35]",
                 "w-full sm:w-[400px] lg:w-[520px] xl:w-[600px]",
                 "bg-background/90 backdrop-blur-md",
                 "border-l border-border/10",
