@@ -277,7 +277,7 @@ function computeCrossSignals(
         const daysSinceLast = Math.floor((now.getTime() - new Date(lastPublished[0].created_at).getTime()) / (1000 * 60 * 60 * 24));
         if (daysSinceLast > 14) {
           signals.push({
-            id: `cross-publish-gap-${now.getTime()}`,
+            id: `cross-publish-gap`,
             content: `⏰ ${daysSinceLast} days since last published content — consistency drives SEO growth`,
             type: 'warning',
             source: 'cross-signal',
