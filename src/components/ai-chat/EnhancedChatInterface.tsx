@@ -243,7 +243,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   }, [currentMatchIndex, messageSearchResults]);
 
 
-  const { pendingPanel, setPendingPanel, isSidebarOpen } = useSidebarContext();
+  const { pendingPanel, setPendingPanel, isSidebarOpen, setSidebarOpen } = useSidebarContext();
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const [isExtractingContext, setIsExtractingContext] = useState(false);
@@ -551,6 +551,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
 
   const handleSendMessage = async (message: string) => {
+    setSidebarOpen(false);
     await sendMessage(message);
   };
 
