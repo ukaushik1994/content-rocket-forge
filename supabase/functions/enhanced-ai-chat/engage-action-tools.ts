@@ -436,23 +436,32 @@ export async function executeEngageActionTool(
 
       case 'tag_contacts': {
         let taggedCount = 0;
+        let failedCount = 0;
         for (const contactId of (toolArgs.contact_ids || [])) {
-          const { data: contact } = await supabase.from('engage_contacts')
-            .select('tags')
-            .eq('id', contactId)
-            .eq('workspace_id', workspaceId)
-            .single();
+          try {
+            const { data: contact } = await supabase.from('engage_contacts')
+              .select('tags')
+              .eq('id', contactId)
+              .eq('workspace_id', workspaceId)
+              .single();
 
-          if (contact) {
-            const existingTags = contact.tags || [];
-            const newTags = [...new Set([...existingTags, ...(toolArgs.tags || [])])];
-            await supabase.from('engage_contacts')
-              .update({ tags: newTags, updated_at: new Date().toISOString() })
-              .eq('id', contactId);
-            taggedCount++;
+            if (contact) {
+              const existingTags = contact.tags || [];
+              const newTags = [...new Set([...existingTags, ...(toolArgs.tags || [])])];
+              await supabase.from('engage_contacts')
+                .update({ tags: newTags, updated_at: new Date().toISOString() })
+                .eq('id', contactId);
+              taggedCount++;
+            } else {
+              failedCount++;
+            }
+          } catch {
+            failedCount++;
           }
         }
-        return { success: true, message: `Tagged ${taggedCount} contact(s) with: ${(toolArgs.tags || []).join(', ')}` };
+        // M7: Report partial failures
+        const failMsg = failedCount > 0 ? ` (${failedCount} failed — contacts may not exist)` : '';
+        return { success: taggedCount > 0, message: `Tagged ${taggedCount} contact(s) with: ${(toolArgs.tags || []).join(', ')}${failMsg}` };
       }
 
       case 'create_segment': {
