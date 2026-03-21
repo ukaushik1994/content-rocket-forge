@@ -1518,7 +1518,7 @@ export function useAnalystEngine(
   // ─── Enhancement D: Load session memory on activation ───────────────────
   useEffect(() => {
     if (isActive && !prevActiveRef.current && insightsFeed.length === 0) {
-      const memoryInsights = loadSessionMemory();
+      const memoryInsights = loadSessionMemory(topics);
       if (memoryInsights.length > 0) {
         setPreviousSessionInsights(memoryInsights);
       }
