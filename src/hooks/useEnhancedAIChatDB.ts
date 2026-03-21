@@ -817,6 +817,8 @@ export const useEnhancedAIChatDB = () => {
       const assistantDbId = await saveMessage(finalMessage, conversationId);
       if (assistantDbId) {
         setMessages(prev => prev.map(m => m.id === finalMessage.id ? { ...m, id: assistantDbId } : m));
+      } else {
+        toast({ title: "Warning", description: "Response may not persist — try refreshing if it disappears", variant: "destructive" });
       }
 
       // Phase 3 Fix 9: Auto-update conversation title from suggestedTitle
