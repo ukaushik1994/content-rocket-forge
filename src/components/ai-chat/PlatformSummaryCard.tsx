@@ -58,27 +58,29 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = () => {
 
   return (
     <motion.div
-      className="flex justify-center gap-10 sm:gap-12"
+      className="flex justify-center gap-4 sm:gap-5"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.3, duration: 0.4 }}
     >
-      {metrics.map((metric) => (
+      {metrics.map((metric, index) => (
         <motion.button
           key={metric.label}
-          className="flex flex-col items-center gap-2 cursor-pointer group"
+          className="glass-card glass-card-hover flex flex-col items-center gap-2.5 px-5 py-4 cursor-pointer border border-white/[0.08] backdrop-blur-md"
           onClick={() => navigate(metric.route)}
-          whileHover={{ y: -2 }}
-          transition={{ duration: 0.2 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 + index * 0.08, duration: 0.35, ease: 'easeOut' }}
+          whileHover={{ y: -3, scale: 1.02 }}
         >
           <div
-            className="w-14 h-14 rounded-full flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
+            className="w-11 h-11 rounded-full flex items-center justify-center"
             style={{ background: metric.bg }}
           >
-            <metric.icon className={`h-6 w-6 ${metric.color}`} />
+            <metric.icon className={`h-5 w-5 ${metric.color}`} />
           </div>
-          <div className="text-2xl font-bold text-foreground">{metric.value}</div>
-          <div className="text-xs text-muted-foreground">{metric.label}</div>
+          <div className="text-xl font-semibold font-mono text-foreground tabular-nums">{metric.value}</div>
+          <div className="text-[11px] text-muted-foreground/70 uppercase tracking-wider">{metric.label}</div>
         </motion.button>
       ))}
     </motion.div>
