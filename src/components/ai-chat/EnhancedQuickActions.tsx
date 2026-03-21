@@ -85,9 +85,11 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
         type: 'content_wizard',
         keyword: '',
       });
+      onClose?.();
       return;
     }
     onAction(`send:${item.prompt}`, { displayText: item.text });
+    onClose?.();
   };
 
   return (
