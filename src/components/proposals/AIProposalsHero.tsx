@@ -98,28 +98,28 @@ export const AIProposalsHero = React.memo(({ stats }: AIProposalsHeroProps) => {
         }
 
         {/* Feature Tags */}
-        <motion.div
-          className="flex flex-wrap justify-center gap-4 mt-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.8 }}>
-          
-          {[
-          { icon: Target, label: 'Keyword Targeting', color: 'from-blue-500/20 to-purple-500/20' },
-          { icon: TrendingUp, label: 'Traffic Estimation', color: 'from-green-500/20 to-emerald-500/20' },
-          { icon: CalendarPlus, label: 'Calendar Scheduling', color: 'from-orange-500/20 to-red-500/20' }].
-          map((feature, index) =>
-          <motion.div
-            key={feature.label}
-            className={`inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r ${feature.color} backdrop-blur-xl rounded-full border border-white/10 shadow-lg`}
-            whileHover={{ scale: 1.05, y: -2 }}
-            transition={{ type: 'spring', stiffness: 300, delay: index * 0.1 }}>
-            
-              <feature.icon className="h-4 w-4" />
-              <span className="text-sm font-medium">{feature.label}</span>
-            </motion.div>
-          )}
-        </motion.div>
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
       </div>
     </div>);
 
