@@ -119,7 +119,7 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
               }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors hover:bg-muted/50 group"
             >
-              <item.icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+              <item.icon className={`h-3.5 w-3.5 flex-shrink-0 ${item.iconColor}`} />
               <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
             </button>
           ))}
