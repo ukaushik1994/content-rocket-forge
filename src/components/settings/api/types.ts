@@ -144,7 +144,7 @@ export const API_PROVIDERS: ApiProvider[] = [
   {
     id: 'runway_video',
     name: 'Runway ML',
-    description: 'AI-powered video generation and editing',
+    description: 'AI-powered video generation and editing (Beta)',
     serviceKey: 'runway_video',
     icon: Video,
     link: 'https://runwayml.com/api/',
@@ -155,7 +155,7 @@ export const API_PROVIDERS: ApiProvider[] = [
   {
     id: 'kling_video',
     name: 'Kling AI',
-    description: 'Advanced video generation with Kling models',
+    description: 'Advanced video generation with Kling models (Beta)',
     serviceKey: 'kling_video',
     icon: Video,
     link: 'https://klingai.com/',
@@ -166,7 +166,7 @@ export const API_PROVIDERS: ApiProvider[] = [
   {
     id: 'replicate_video',
     name: 'Replicate',
-    description: 'Run open-source video models via API',
+    description: 'Run open-source video models via API (Beta)',
     serviceKey: 'replicate_video',
     icon: Video,
     link: 'https://replicate.com/account/api-tokens',

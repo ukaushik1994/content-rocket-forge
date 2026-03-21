@@ -10,6 +10,7 @@ import { KeywordsFilters } from '@/components/keywords/KeywordsFilters';
 import { KeywordCard } from '@/components/keywords/KeywordCard';
 import { KeywordListItem } from '@/components/keywords/KeywordListItem';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
 import { Database } from 'lucide-react';
@@ -25,6 +26,7 @@ const KeywordsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [keywords, setKeywords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
@@ -56,12 +58,14 @@ const KeywordsPage = () => {
   const loadKeywords = async () => {
     try {
       setLoading(true);
+      setLoadError(false);
       const result = await keywordLibraryService.getKeywords({}, 1, PAGE_SIZE);
       setKeywords(result.keywords);
       setHasMore(result.keywords.length === PAGE_SIZE);
       setPage(1);
     } catch (error) {
       console.error('Error loading keywords:', error);
+      setLoadError(true);
       toast.error('Failed to load keywords');
     } finally {
       setLoading(false);
@@ -193,6 +197,15 @@ const KeywordsPage = () => {
                   <Skeleton className="h-4 w-2/3" />
                 </Card>
               ))}
+            </div>
+          ) : loadError ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Database className="h-10 w-10 text-destructive/40 mb-3" />
+              <h3 className="text-lg font-medium text-foreground/80 mb-1">Failed to load keywords</h3>
+              <p className="text-sm text-muted-foreground mb-4">Something went wrong. Please try again.</p>
+              <Button variant="outline" size="sm" onClick={loadKeywords}>
+                Retry
+              </Button>
             </div>
           ) : filteredAndSortedKeywords.length === 0 ? (
             <UnifiedEmptyState

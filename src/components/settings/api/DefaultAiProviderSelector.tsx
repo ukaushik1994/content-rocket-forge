@@ -58,7 +58,9 @@ export function DefaultAiProviderSelector() {
       await supabase.from('ai_service_providers').upsert({ user_id: user.id, provider: id, status: 'active', api_key: '', priority: 1, updated_at: new Date().toISOString() }, { onConflict: 'user_id,provider' });
       setActiveProvider(id);
       document.dispatchEvent(new Event('provider-changed'));
-      toast.success(`Switched to ${AI_PROVIDERS.find(p => p.id === id)?.label}`);
+      toast.success(`Switched to ${AI_PROVIDERS.find(p => p.id === id)?.label}`, {
+        description: 'New messages will use this provider. Any in-progress response will complete with the previous one.'
+      });
     } catch {
       toast.error('Failed to switch provider');
     } finally {
