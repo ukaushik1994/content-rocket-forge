@@ -748,22 +748,13 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* Circular Stats */}
                     <PlatformSummaryCard onAction={handleLegacyAction} />
 
-                    {/* 3-Column Layout: Actions | Insights | Recommended */}
+                    {/* 2-Column Layout: Insights | Recommended */}
                     <motion.div
-                      className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-3xl"
+                      className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-3xl"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.3, duration: 0.4 }}
                     >
-                      {/* Column 1: Quick Actions */}
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3">Quick Actions</span>
-                        <EnhancedQuickActions 
-                          onAction={handleLegacyAction} 
-                          onSetVisualization={handleSetVisualization}
-                          
-                        />
-                      </div>
 
                       {/* Column 2: Insights */}
                       <div className="flex flex-col gap-1">
@@ -917,11 +908,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             }
           }}
           onWebSearch={() => {
-
-
             // Web search mode is handled in ContextAwareMessageInput
             // The [web-search] prefix is detected by the backend
-          }} />
+          }}
+          onQuickAction={handleLegacyAction}
+          onSetVisualization={handleSetVisualization}
+        />
         </div>
       </div>
 

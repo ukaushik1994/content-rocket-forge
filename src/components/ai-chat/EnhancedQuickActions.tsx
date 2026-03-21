@@ -4,6 +4,7 @@ import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle, FileText, Awar
 interface EnhancedQuickActionsProps {
   onAction: (action: string, data?: any) => void;
   onSetVisualization?: (visualData: any) => void;
+  onClose?: () => void;
   contentCount?: number;
   publishedCount?: number;
   draftCount?: number;
@@ -12,6 +13,7 @@ interface EnhancedQuickActionsProps {
 export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ 
   onAction, 
   onSetVisualization,
+  onClose,
   contentCount = -1,
   publishedCount = -1,
   draftCount = -1,
@@ -84,9 +86,11 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
         type: 'content_wizard',
         keyword: '',
       });
+      onClose?.();
       return;
     }
     onAction(`send:${item.prompt}`, { displayText: item.text });
+    onClose?.();
   };
 
   return (

@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X, PenLine, Globe, Square } from 'lucide-react';
+import { Send, X, PenLine, Globe, Square, Zap } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { PlusMenuDropdown } from './PlusMenuDropdown';
+import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { FileUploadHandler } from './FileUploadHandler';
 import { cn } from '@/lib/utils';
 import { VoiceInputHandler } from './VoiceInputHandler';
@@ -28,6 +30,8 @@ interface ContextAwareMessageInputProps {
   onOpenAnalyst?: () => void;
   onLaunchWizard?: (userPrompt: string) => void;
   onWebSearch?: () => void;
+  onQuickAction?: (action: string, data?: any) => void;
+  onSetVisualization?: (visualData: any) => void;
 }
 
 export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> = ({
@@ -39,11 +43,14 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   onOpenResearch,
   onOpenAnalyst,
   onLaunchWizard,
-  onWebSearch
+  onWebSearch,
+  onQuickAction,
+  onSetVisualization
 }) => {
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [wizardMode, setWizardMode] = useState(false);
   const [webSearchMode, setWebSearchMode] = useState(false);
@@ -356,6 +363,43 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             }}
             disabled={isLoading}
           />
+
+          {/* Quick Actions Popover */}
+          <Popover open={quickActionsOpen} onOpenChange={setQuickActionsOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={isLoading}
+                aria-label="Quick actions"
+                className={cn(
+                  "text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8 transition-colors",
+                  quickActionsOpen && "text-primary"
+                )}
+              >
+                <Zap className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="top"
+              align="start"
+              sideOffset={8}
+              className="w-52 p-1 bg-card border-border/50 rounded-lg shadow-lg"
+            >
+              <EnhancedQuickActions
+                onAction={(action, data) => {
+                  onQuickAction?.(action, data);
+                  setQuickActionsOpen(false);
+                }}
+                onSetVisualization={(v) => {
+                  onSetVisualization?.(v);
+                  setQuickActionsOpen(false);
+                }}
+                onClose={() => setQuickActionsOpen(false)}
+              />
+            </PopoverContent>
+          </Popover>
 
           {/* Message Input */}
           <Textarea
