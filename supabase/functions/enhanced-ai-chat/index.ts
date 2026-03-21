@@ -2710,16 +2710,29 @@ serve(async (req) => {
     }
 
     // Inject Analyst context if active (user has Analyst panel open)
+    // Phase 4: Pass analyst state summary from frontend
+    const analystSummary = context?.analystSummary;
     if (context?.analystActive) {
-      systemPrompt += `\n\n## 📊 ANALYST MODE ACTIVE
-The user has the Analyst sidebar panel open. They expect data-rich, visual responses.
-CRITICAL: For EVERY response while Analyst is active:
+      let analystBlock = `\n\n## 📊 ANALYST MODE ACTIVE
+The user has the Analyst sidebar panel open. They expect data-rich, visual responses.`;
+      
+      if (analystSummary) {
+        analystBlock += `\n\n### CURRENT ANALYST SIDEBAR STATE (reference these exact values — do NOT contradict):
+- Health Score: ${analystSummary.healthScore ?? 'N/A'}/100
+- Strategic Stance: ${analystSummary.strategicStance || 'N/A'}
+- User Stage: ${analystSummary.userStage || 'N/A'}
+${analystSummary.warnings?.length ? `- Active Warnings: ${analystSummary.warnings.join('; ')}` : '- No active warnings'}
+${analystSummary.goalProgress ? `- Goal: ${analystSummary.goalProgress}` : ''}`;
+      }
+      
+      analystBlock += `\nCRITICAL: For EVERY response while Analyst is active:
 1. ALWAYS include visualData with charts showing relevant metrics
 2. ALWAYS include summaryInsights.metricCards (2-4 key stats)
 3. ALWAYS include actionableItems and deepDivePrompts
 4. Proactively surface data insights even if the user asks a general question
 5. Default to multi-chart analysis when possible
 Make every response a mini-dashboard. The Analyst panel will auto-render your chart data.`;
+      systemPrompt += analystBlock;
     }
 
     // Inject panel hint from query analyzer
