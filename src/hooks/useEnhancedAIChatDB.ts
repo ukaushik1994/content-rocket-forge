@@ -683,7 +683,7 @@ export const useEnhancedAIChatDB = () => {
       abortControllerRef.current = abortController;
       const timeoutId = setTimeout(() => abortController.abort(), 90000); // 90s timeout
 
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
+      let resp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
         method: 'POST',
         signal: abortController.signal,
         headers,
