@@ -817,7 +817,7 @@ function saveSessionMemory(
   }
 }
 
-function loadSessionMemory(): InsightItem[] {
+function loadSessionMemory(currentTopics?: AnalystTopic[]): InsightItem[] {
   try {
     const raw = localStorage.getItem(SESSION_MEMORY_KEY);
     if (!raw) return [];
@@ -829,13 +829,34 @@ function loadSessionMemory(): InsightItem[] {
     const ageMs = Date.now() - memory.timestamp;
     const ageHours = Math.floor(ageMs / (1000 * 60 * 60));
     const ageStr = ageHours < 1 ? 'Recently' : ageHours < 24 ? `${ageHours}h ago` : `${Math.floor(ageHours / 24)}d ago`;
-    return memory.insights.map(i => ({
-      ...i,
-      id: `prev-${i.id}`,
-      content: `${ageStr}: ${i.content}`,
-      source: 'memory' as const,
-      timestamp: new Date(i.timestamp || memory.timestamp),
-    }));
+    
+    // Phase 6: Filter restored insights by current topic relevance
+    const currentCategories = currentTopics ? new Set(currentTopics.map(t => t.category)) : null;
+    
+    return memory.insights
+      .filter(i => {
+        // Critical/high urgency always passes through regardless of topic
+        if (i.urgency === 'critical' || i.urgency === 'high') return true;
+        // If no current topics yet, show all
+        if (!currentCategories || currentCategories.size === 0) return true;
+        // Filter: check if insight content relates to current conversation topics
+        const lower = i.content.toLowerCase();
+        if (currentCategories.has('content') && /content|article|blog|draft|publish|seo/.test(lower)) return true;
+        if (currentCategories.has('email') && /email|newsletter|subscriber|campaign email/.test(lower)) return true;
+        if (currentCategories.has('keywords') && /keyword|seo|search|rank|serp/.test(lower)) return true;
+        if (currentCategories.has('competitors') && /competitor|rival|market/.test(lower)) return true;
+        if (currentCategories.has('campaigns') && /campaign|generation|queue/.test(lower)) return true;
+        if (currentCategories.has('social') && /social|instagram|twitter|linkedin/.test(lower)) return true;
+        if (currentCategories.has('analytics') && /analytics|metrics|traffic|performance/.test(lower)) return true;
+        return false;
+      })
+      .map(i => ({
+        ...i,
+        id: `prev-${i.id}`,
+        content: `${ageStr}: ${i.content}`,
+        source: 'memory' as const,
+        timestamp: new Date(i.timestamp || memory.timestamp),
+      }));
   } catch {
     return [];
   }
