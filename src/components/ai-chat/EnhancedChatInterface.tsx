@@ -551,6 +551,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
 
   const handleSendMessage = async (message: string) => {
+    setSidebarOpen(false);
     await sendMessage(message);
   };
 
