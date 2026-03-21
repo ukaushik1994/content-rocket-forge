@@ -41,7 +41,6 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
         text: `Review ${draftCount} drafts`,
         prompt: `I have ${draftCount} draft articles. Show me the ones closest to being ready to publish.`,
         icon: FileText,
-        iconColor: 'text-amber-400',
         priority: 1,
       });
     }
