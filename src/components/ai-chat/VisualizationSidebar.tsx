@@ -746,9 +746,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       </Select>
                       <span className={cn(
                         "inline-flex items-center text-[10px] px-2 py-0.5 rounded-full border backdrop-blur-sm",
-                        qualityConfig.label === 'High' ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400/80' :
-                        qualityConfig.label === 'Medium' ? 'bg-amber-300/10 border-amber-300/20 text-amber-300/80' :
-                        'bg-rose-300/10 border-rose-300/20 text-rose-300/80'
+                        qualityConfig.label === 'High' ? 'bg-primary/10 border-primary/20 text-primary/80' :
+                        qualityConfig.label === 'Medium' ? 'bg-primary/10 border-primary/20 text-primary/60' :
+                        'bg-primary/10 border-primary/20 text-primary/40'
                       )}>{qualityConfig.label}</span>
                       {isTrendLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/40" />}
                     </div>
