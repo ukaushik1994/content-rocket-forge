@@ -684,46 +684,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
 
 
-          {/* Message Search Bar (toggleable) */}
-          {messages.length > 0 &&
-        <div className="mx-6 mt-2">
-              <div className="flex items-center gap-2">
-                <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowMessageSearch(!showMessageSearch)}
-              className="text-muted-foreground hover:text-foreground">
-              
-                  <Search className="h-4 w-4 mr-1" />
-                  Search
-                </Button>
-              </div>
-              
-              <AnimatePresence>
-                {showMessageSearch &&
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-2">
-              
-                    <MessageSearchBar
-                searchQuery={messageSearchQuery}
-                onSearchChange={setMessageSearchQuery}
-                onExportConversation={(format) => activeConversation && exportConversation(activeConversation, format as 'json' | 'markdown' | 'txt')}
-                onShowAnalytics={() => setShowAnalyticsModal(true)}
-                messageCount={messages.length}
-                filteredCount={messageSearchResults.length}
-                onNavigateMatch={handleNavigateMatch}
-                currentMatch={currentMatchIndex + 1}
-                totalMatches={messageSearchResults.length} />
-              
-                  </motion.div>
-            }
-              </AnimatePresence>
-            </div>
-        }
-          
+
           {/* Messages Area - with ref for proper scrolling (Issue #1 fix) */}
           <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
             <div className="max-w-6xl mx-auto py-6 space-y-8">
