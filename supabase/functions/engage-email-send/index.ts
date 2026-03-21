@@ -279,8 +279,24 @@ Deno.serve(async (req) => {
       }
     }
 
+    // H12: Always update campaign status in finally-like block
     for (const cid of campaignIds) {
-      await updateCampaignStats(supabase, cid);
+      try {
+        await updateCampaignStats(supabase, cid);
+        // If all messages for this campaign are done (sent or failed), mark campaign complete
+        const { data: pendingMsgs } = await supabase.from("email_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("campaign_id", cid)
+          .eq("status", "queued");
+        if (!pendingMsgs || (pendingMsgs as any) === 0) {
+          await supabase.from("email_campaigns")
+            .update({ status: failed > 0 && sent === 0 ? "failed" : "complete", completed_at: new Date().toISOString() })
+            .eq("id", cid)
+            .in("status", ["sending", "active", "queued"]);
+        }
+      } catch (e) {
+        console.error(`Error finalizing campaign ${cid}:`, e);
+      }
     }
 
     // Phase 3: Notify workspace owner about send results

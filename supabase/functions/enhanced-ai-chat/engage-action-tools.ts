@@ -803,7 +803,12 @@ export async function executeEngageActionTool(
           status: toolArgs.scheduled_at ? 'pending' : 'draft'
         }));
 
-        await supabase.from('social_post_targets').insert(targets);
+        // H14: If targets insert fails, clean up orphaned post
+        const { error: targetsError } = await supabase.from('social_post_targets').insert(targets);
+        if (targetsError) {
+          await supabase.from('social_posts').delete().eq('id', socialPost.id);
+          throw new Error(`Failed to set target platforms: ${targetsError.message}. Social post was rolled back.`);
+        }
 
         return {
           success: true,
