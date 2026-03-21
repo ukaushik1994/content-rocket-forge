@@ -21,10 +21,10 @@ export const ContentIntelligenceSection: React.FC<Props> = ({ platformData, onSe
 
   const getHeadline = () => {
     if (totalContent === 0) return <>Content pipeline is <span className="text-muted-foreground/60">empty</span></>;
-    if (avgSeo > 0 && avgSeo < 40) return <>Content quality needs <span className="text-rose-300">attention</span></>;
+    if (avgSeo > 0 && avgSeo < 40) return <>Content quality needs <span className="text-primary/50">attention</span></>;
     if (publishRate < 30) return <>Many drafts are <span className="text-primary/80">waiting</span></>;
-    if (avgSeo >= 70) return <>Content pipeline is <span className="text-emerald-400/80">high quality</span></>;
-    return <>Your content pipeline is <span className="text-emerald-400/80">active</span></>;
+    if (avgSeo >= 70) return <>Content pipeline is <span className="text-primary/80">high quality</span></>;
+    return <>Your content pipeline is <span className="text-primary/80">active</span></>;
   };
 
   return (

@@ -10,8 +10,8 @@ interface Props {
 
 export const GoalProgressSection: React.FC<Props> = ({ goalProgress, onSendMessage }) => {
   const getHeadline = () => {
-    if (goalProgress.status === 'completed') return <>Goal <span className="text-emerald-400/80">achieved</span> 🎉</>;
-    if (goalProgress.status === 'nearly_done') return <>Almost <span className="text-emerald-400/80">there</span></>;
+    if (goalProgress.status === 'completed') return <>Goal <span className="text-primary/80">achieved</span> 🎉</>;
+    if (goalProgress.status === 'nearly_done') return <>Almost <span className="text-primary/80">there</span></>;
     if (goalProgress.percentage > 30) return <>Making <span className="text-primary/80">progress</span></>;
     return <>Goal is <span className="text-primary/80">just starting</span></>;
   };

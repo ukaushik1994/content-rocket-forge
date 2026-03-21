@@ -14,16 +14,16 @@ interface AnalystDataCardProps {
 }
 
 const trendColorMap = {
-  up: 'text-emerald-400/80',
-  down: 'text-rose-300',
+  up: 'text-primary/80',
+  down: 'text-primary/50',
   neutral: 'text-muted-foreground',
 };
 
 const progressColorMap = {
   default: 'bg-primary/50',
-  green: 'bg-emerald-400/60',
+  green: 'bg-primary/60',
   amber: 'bg-primary/50',
-  red: 'bg-rose-300/60',
+  red: 'bg-primary/30',
   blue: 'bg-primary/50',
 };
 

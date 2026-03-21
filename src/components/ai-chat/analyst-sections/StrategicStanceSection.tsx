@@ -13,9 +13,9 @@ interface Props {
 const stanceConfig = {
   'stop-creating': {
     icon: ShieldAlert,
-    color: 'text-rose-300',
-    bgColor: 'bg-rose-400/10',
-    borderColor: 'border-rose-400/20',
+    color: 'text-primary/60',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
   },
   'fix-quality': {
     icon: Target,
@@ -25,15 +25,15 @@ const stanceConfig = {
   },
   'accelerate': {
     icon: Rocket,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-400/10',
-    borderColor: 'border-emerald-400/20',
+    color: 'text-neon-blue',
+    bgColor: 'bg-neon-blue/10',
+    borderColor: 'border-neon-blue/20',
   },
   'build-foundation': {
     icon: Zap,
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-400/10',
-    borderColor: 'border-cyan-400/20',
+    color: 'text-neon-blue',
+    bgColor: 'bg-neon-blue/10',
+    borderColor: 'border-neon-blue/20',
   },
 } as const;
 
@@ -47,13 +47,13 @@ export const StrategicStanceSection: React.FC<Props> = ({ analystState, onSendMe
   const getHeadline = () => {
     switch (rec.stance) {
       case 'stop-creating':
-        return <>Stop creating. <span className="text-rose-300">Start publishing.</span></>;
+        return <>Stop creating. <span className="text-primary/60">Start publishing.</span></>;
       case 'fix-quality':
         return <>Quality first, <span className="text-primary/80">then scale.</span></>;
       case 'accelerate':
-        return <>Everything's working. <span className="text-emerald-400/80">Accelerate.</span></>;
+        return <>Everything's working. <span className="text-neon-blue">Accelerate.</span></>;
       case 'build-foundation':
-        return <>Build your <span className="text-cyan-400">foundation</span> first.</>;
+        return <>Build your <span className="text-neon-blue">foundation</span> first.</>;
     }
   };
 

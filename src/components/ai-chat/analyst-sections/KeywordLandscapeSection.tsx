@@ -19,9 +19,9 @@ export const KeywordLandscapeSection: React.FC<Props> = ({ topics, platformData,
   const hasData = trackedKw > 0 || kwProposals > 0 || keywordTopics.length > 0;
 
   const getHeadline = () => {
-    if (trackedKw > 0) return <><span className="text-emerald-400/80">{trackedKw} keyword{trackedKw !== 1 ? 's' : ''}</span> tracked</>;
+    if (trackedKw > 0) return <><span className="text-primary/80">{trackedKw} keyword{trackedKw !== 1 ? 's' : ''}</span> tracked</>;
     if (kwProposals > 0) return <><span className="text-primary/80">{kwProposals} proposal{kwProposals !== 1 ? 's' : ''}</span> available</>;
-    return <>Keyword presence is a <span className="text-rose-300">blind spot</span></>;
+    return <>Keyword presence is a <span className="text-primary/50">blind spot</span></>;
   };
 
   return (

@@ -28,9 +28,9 @@ export const CompetitivePositionSection: React.FC<Props> = ({ topics, platformDa
   const hasData = competitorData.length > 0 || competitorTopics.length > 0;
 
   const getHeadline = () => {
-    if (competitorData.length > 0) return <><span className="text-emerald-400/80">{trackedCount}</span> competitor{trackedCount !== 1 ? 's' : ''} tracked</>;
+    if (competitorData.length > 0) return <><span className="text-primary/80">{trackedCount}</span> competitor{trackedCount !== 1 ? 's' : ''} tracked</>;
     if (competitorTopics.length > 0) return <><span className="text-primary/80">{competitorTopics.length} signal{competitorTopics.length > 1 ? 's' : ''}</span> detected</>;
-    return <>Competitive landscape is a <span className="text-rose-300">blind spot</span></>;
+    return <>Competitive landscape is a <span className="text-primary/50">blind spot</span></>;
   };
 
   const getCompetitorDescription = (comp: typeof competitorData[0]) => {
