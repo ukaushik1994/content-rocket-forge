@@ -45,8 +45,8 @@ Deno.serve(async (req) => {
     let processed = 0;
     let skipped = 0;
 
-    for (const step of steps) {
-      if (step.journey_enrollments?.status !== "active") continue;
+    for (const step of stepsToProcess) {
+      if (step.journey_enrollments?.status !== "active") { skipped++; continue; }
 
       const journeyId = step.journey_enrollments.journey_id;
       const contactId = step.journey_enrollments.contact_id;
