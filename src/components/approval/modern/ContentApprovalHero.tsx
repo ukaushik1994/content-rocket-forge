@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Sparkles, TrendingUp, BarChart3, Zap, CheckCircle2, Clock, AlertCircle, FileText, Brain, Target, XCircle, ArrowRight } from 'lucide-react';
+import { Sparkles, TrendingUp, BarChart3, Zap, Target } from 'lucide-react';
 
 interface ContentStats {
   all: number;
