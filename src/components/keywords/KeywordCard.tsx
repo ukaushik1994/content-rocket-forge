@@ -168,9 +168,16 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {hasCannibalization && (
-                  <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                  <Badge
+                    className="bg-orange-500/20 text-orange-400 border-orange-500/30 cursor-pointer hover:bg-orange-500/30 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/ai-chat?prompt=${encodeURIComponent(`Help me differentiate my ${publishedCount} articles targeting "${keyword.keyword}" to avoid keyword cannibalization`)}`);
+                    }}
+                    title="Click to fix: opens AI Chat with a differentiation prompt"
+                  >
                     <AlertTriangle className="h-3 w-3 mr-1" />
-                    Warning
+                    Fix Cannibalization
                   </Badge>
                 )}
                 <DifficultyBadge count={totalPieces} />

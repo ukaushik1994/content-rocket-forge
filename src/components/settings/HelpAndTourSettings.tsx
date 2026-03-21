@@ -74,7 +74,11 @@ export const HelpAndTourSettings = () => {
               Perfect for learning what CreAiter can do for you.
             </p>
             <div className="flex items-center gap-3 mt-4">
-              <Button onClick={handleStartTour} className="gap-2">
+              <Button onClick={() => {
+                // Reset onboarding completion so it re-triggers
+                localStorage.removeItem('creAiter-onboarding-completed');
+                handleStartTour();
+              }} className="gap-2">
                 <PlayCircle className="h-4 w-4" />
                 {hasCompletedTour ? 'Restart Tour' : 'Start Tour'}
               </Button>

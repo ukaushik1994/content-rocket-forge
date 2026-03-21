@@ -213,6 +213,13 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
 
   return (
     <div>
+      {/* #35: Data source + freshness label */}
+      {dataAgeLabel && (
+        <p className="text-[10px] text-muted-foreground/40 mb-3 px-1">
+          Data from your content library • Updated {dataAgeLabel}
+        </p>
+      )}
+
       <div className="space-y-8">
       {orderedSections.map((section) =>
         <div key={section.id} onClick={() => !section.fixed && handleSectionClick(section.id)}>

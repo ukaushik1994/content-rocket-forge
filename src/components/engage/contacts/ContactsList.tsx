@@ -258,7 +258,7 @@ export const ContactsList = () => {
         badge="Contact Management"
         title="Contacts"
         titleAccent="Hub"
-        subtitle={`${totalCount} contacts in your workspace — manage, segment, and engage`}
+        subtitle={`${totalCount} contacts — Tags = labels you apply. Segments = auto-filtered groups based on rules.`}
         gradientFrom="from-emerald-400"
         gradientTo="to-teal-400"
         stats={[
