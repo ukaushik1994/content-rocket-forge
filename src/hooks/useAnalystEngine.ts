@@ -1317,28 +1317,37 @@ export function useAnalystEngine(
       if (coveredCategories.has('email') || coveredCategories.has('engage')) {
         fetches.push((async () => {
           try {
+            // Phase 5: Add user_id filter via workspace
+            const { data: tm } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
+            if (!tm?.workspace_id) return;
             const { count } = await supabase
               .from('engage_contacts' as any)
-              .select('id', { count: 'exact', head: true });
+              .select('id', { count: 'exact', head: true })
+              .eq('workspace_id', tm.workspace_id);
             if (count !== null) newData.push({ label: 'Contacts', value: count, category: 'engage', fetchedAt: now });
           } catch { /* table may not exist */ }
         })());
         fetches.push((async () => {
           try {
+            // Phase 5: Add workspace filter for email_campaigns
+            const { data: tm } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
+            if (!tm?.workspace_id) return;
             const { count } = await supabase
               .from('email_campaigns' as any)
-              .select('id', { count: 'exact', head: true });
+              .select('id', { count: 'exact', head: true })
+              .eq('workspace_id', tm.workspace_id);
             if (count !== null) newData.push({ label: 'Email Campaigns', value: count, category: 'email', fetchedAt: now });
           } catch { /* table may not exist */ }
         })());
       }
 
-      // Fix 12: Traffic proxy — most engaged content from performance signals
+      // Fix 12: Traffic proxy — Phase 5: Add user_id filter for content_performance_signals
       fetches.push((async () => {
         try {
           const { data: perfSignals } = await supabase
             .from('content_performance_signals' as any)
             .select('content_id, signal_type')
+            .eq('user_id', userId)
             .limit(100);
           if (perfSignals && perfSignals.length > 0) {
             const countMap = new Map<string, number>();

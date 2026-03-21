@@ -302,6 +302,33 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const isAnalystVisible = showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst';
   const analystState = useAnalystEngine(messages, user?.id || null, isAnalystVisible || messages.length > 0, activeConvObj?.title || null, activeConversation);
 
+  // Phase 4: Expose analyst state summary to window for useEnhancedAIChatDB to read
+  useEffect(() => {
+    if (analystState.healthScore || analystState.strategicRecommendation) {
+      (window as any).__analystSummary = {
+        healthScore: analystState.healthScore?.total ?? null,
+        strategicStance: analystState.strategicRecommendation?.stance ?? null,
+        userStage: analystState.userStage ?? null,
+        warnings: analystState.insightsFeed
+          .filter(i => i.type === 'warning' && i.urgency && ['critical', 'high'].includes(i.urgency))
+          .slice(0, 3)
+          .map(i => i.content.slice(0, 100)),
+        goalProgress: analystState.goalProgress
+          ? `${analystState.goalProgress.goalName}: ${analystState.goalProgress.percentage}%`
+          : null,
+      };
+    } else {
+      (window as any).__analystSummary = null;
+    }
+  }, [analystState.healthScore, analystState.strategicRecommendation, analystState.userStage, analystState.insightsFeed, analystState.goalProgress]);
+
+  // Phase 4: Listen for analyst refresh events from useEnhancedAIChatDB
+  useEffect(() => {
+    const handler = () => analystState.triggerRefresh();
+    window.addEventListener('refreshAnalyst', handler);
+    return () => window.removeEventListener('refreshAnalyst', handler);
+  }, [analystState.triggerRefresh]);
+
   // Handle manual expand visualization (kept for backwards compatibility)
   const handleExpandVisualization = (visualData: any, chartConfig: ChartConfiguration) => {
     setVisualizationData({
