@@ -3131,6 +3131,12 @@ Only ask once — if they respond with a new topic, don't ask again.`;
       }
     }
 
+    // ===== Phase 3: Data Freshness Note (inject after 10+ messages) =====
+    if (totalMessages > 10) {
+      systemPrompt += `\n\n## ⚠️ DATA FRESHNESS NOTE (message #${totalMessages})
+This conversation has ${totalMessages} messages. Data referenced in earlier messages may be stale — the user may have created, deleted, or updated items since then. If the user asks about data you mentioned earlier, re-fetch it using the appropriate tool rather than quoting old numbers.`;
+    }
+
     // ===== FIX 10: Data Reuse from Earlier in Conversation =====
     const recentAssistantContent = messages.filter((m: any) => m.role === 'assistant').slice(-4);
     const hasToolResultsInHistory = recentAssistantContent.some((m: any) => {
@@ -3138,7 +3144,7 @@ Only ask once — if they respond with a new topic, don't ask again.`;
       return c.includes('SEO score') || c.includes('word count') || c.includes('proposals') || 
              c.includes('content items') || c.includes('SERP') || c.includes('competitors');
     });
-    if (hasToolResultsInHistory && !queryIntent.isConversational) {
+    if (hasToolResultsInHistory && !queryIntent.isConversational && totalMessages <= 10) {
       systemPrompt += `\n\n## DATA REUSE
 Previous messages in this conversation contain tool results and data. BEFORE calling a tool to re-fetch data:
 1. Check if the data is already in this conversation's history.
