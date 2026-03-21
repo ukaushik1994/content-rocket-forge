@@ -34,42 +34,49 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
       label: 'Attach File',
       description: 'Upload a file to analyze',
       onClick: onAttachFile,
+      iconColor: 'text-blue-400',
     },
     {
       icon: PenLine,
       label: 'Content Wizard',
       description: 'Create content from a topic',
       onClick: onContentWizard,
+      iconColor: 'text-purple-400',
     },
     ...(onResearchIntelligence ? [{
       icon: BookOpen,
       label: 'Research Intelligence',
       description: 'Plan content strategy & gaps',
       onClick: onResearchIntelligence,
+      iconColor: 'text-rose-400',
     }] : []),
     ...(onAnalyst ? [{
       icon: BarChart3,
       label: 'Analyst',
       description: 'Charts & insights companion',
       onClick: onAnalyst,
+      iconColor: 'text-orange-400',
     }] : []),
     ...(onAIProposals ? [{
       icon: Lightbulb,
       label: 'AI Proposals',
       description: 'Generate smart proposals',
       onClick: onAIProposals,
+      iconColor: 'text-amber-400',
     }] : []),
     ...(onWebSearch ? [{
       icon: Globe,
       label: 'Web Search',
       description: 'Search the web for info',
       onClick: onWebSearch,
+      iconColor: 'text-emerald-400',
     }] : []),
     ...(onImageGeneration ? [{
       icon: Image,
       label: 'Generate Image',
       description: 'Create an AI-generated image',
       onClick: onImageGeneration,
+      iconColor: 'text-cyan-400',
     }] : []),
   ];
 
@@ -112,7 +119,7 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
               }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors hover:bg-muted/50 group"
             >
-              <item.icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+              <item.icon className={`h-3.5 w-3.5 flex-shrink-0 ${item.iconColor}`} />
               <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
             </button>
           ))}
