@@ -700,10 +700,26 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </Tooltip>
                 </div>
 
-                {/* Topic tags from analyst engine */}
+              </div>
+
+              {/* ─── Scrollable Content — Narrative Timeline ─────────── */}
+              <ScrollArea className="flex-1">
+                <div className="p-6 pb-8">
+                  <AnalystNarrativeTimeline
+                    analystState={analystState || null}
+                    chartData={chartData}
+                    dataKeys={dataKeys}
+                    deepDivePrompts={deepDivePrompts.map(p => p.text)}
+                    onSendMessage={onSendMessage || (() => {})}
+                  />
+                </div>
+              </ScrollArea>
+
+              {/* ─── Footer: Metadata ─────────────────────────────────── */}
+              <div className="flex-shrink-0 border-t border-border/10 px-6 py-4 max-h-[240px] overflow-y-auto">
                 {analystState && analystState.topics.length > 0 && (
-                  <div className="mt-4">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
                       <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Topics Discussed</span>
                     </div>
@@ -718,10 +734,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </div>
                 )}
 
-                {/* Data context badges + timeframe */}
                 {hasCurrentResponseData && (
-                  <div className="mt-4">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className={cn(analystState && analystState.topics.length > 0 && "mt-2")}>
+                    <div className="flex items-center gap-2 mb-1.5">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
                       <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Data Source</span>
                     </div>
@@ -755,9 +770,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   </div>
                 )}
 
-                {/* Goal Progress */}
                 {analystState?.goalProgress && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 glass-card p-3 space-y-2">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-2 glass-card p-3 space-y-2">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
                       <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Goal Progress</span>
@@ -786,23 +800,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </div>
                   </motion.div>
                 )}
-
-                {/* Divider between header metadata and narrative content */}
-                <div className="mt-4 border-b border-white/[0.04]" />
               </div>
-
-              {/* ─── Scrollable Content — Narrative Timeline ─────────── */}
-              <ScrollArea className="flex-1">
-                <div className="p-6 pb-28">
-                  <AnalystNarrativeTimeline
-                    analystState={analystState || null}
-                    chartData={chartData}
-                    dataKeys={dataKeys}
-                    deepDivePrompts={deepDivePrompts.map(p => p.text)}
-                    onSendMessage={onSendMessage || (() => {})}
-                  />
-                </div>
-              </ScrollArea>
             </motion.div>
           </>
         </TooltipProvider>
