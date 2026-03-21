@@ -728,16 +728,20 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               {/* Welcome State - Claude-Inspired Centered Layout */}
               <AnimatePresence>
               {messages.length === 0 && !isLoadingConversation && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[70vh] py-12 sm:py-16 lg:py-24 space-y-8">
-                    {/* Hero Badge Pill */}
+                    {/* Hero Icon Block */}
                     <motion.div
-                  className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-background/60 backdrop-blur-xl rounded-full border border-border/50"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, type: "spring" }}>
-                  
-                      <Brain className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">AI Command Centre</span>
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      className="flex flex-col items-center gap-3"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.6, type: "spring" }}
+                    >
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-[hsl(var(--neon-blue))] flex items-center justify-center shadow-[0_0_30px_rgba(155,135,245,0.25)] animate-pulse-subtle">
+                        <Brain className="h-8 w-8 text-white" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground/60">AI Command Centre</span>
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                      </div>
                     </motion.div>
 
                     {/* Dynamic Rotating Greeting */}
