@@ -3367,8 +3367,26 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
     }
 
     const data = aiProxyResult.data;
-    let aiMessage = data?.choices?.[0]?.message?.content;
-    let toolCalls = data?.choices?.[0]?.message?.tool_calls;
+    
+    // Phase 5: Response safety check — handle missing/malformed responses
+    let aiMessage: string | null = null;
+    let toolCalls: any[] | undefined = undefined;
+    
+    if (data?.choices?.[0]?.message) {
+      aiMessage = data.choices[0].message.content;
+      toolCalls = data.choices[0].message.tool_calls;
+    } else if (data?.candidates?.[0]?.content?.parts) {
+      // Raw Gemini fallback
+      console.warn('⚠️ Extracting from raw Gemini format');
+      aiMessage = data.candidates[0].content.parts.map((p: any) => p.text || '').join('');
+    } else if (data?.content) {
+      // Raw Anthropic fallback
+      console.warn('⚠️ Extracting from raw Anthropic format');
+      aiMessage = (Array.isArray(data.content) ? data.content : []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('\n');
+    } else {
+      console.error('⚠️ No parseable message in AI response:', JSON.stringify(data)?.substring(0, 500));
+      aiMessage = "I'm sorry, I wasn't able to generate a response. Please try again.";
+    }
 
     // Declare request-scoped variables for promoted actions and fallback charts
     let requestPromotedActions: any[] = [];

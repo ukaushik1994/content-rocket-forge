@@ -548,7 +548,7 @@ const WRITE_TOOL_CACHE_INVALIDATION: Record<string, string[]> = {
   create_social_post: ['get_social_posts'],
   schedule_social_from_repurpose: ['get_social_posts'],
   enroll_contacts_in_journey: ['get_engage_journeys'],
-  send_quick_email: [],
+  
   trigger_content_gap_analysis: ['get_keywords', 'get_content_items', 'get_content_gaps'],
   start_content_builder: [],
   launch_content_wizard: [],
