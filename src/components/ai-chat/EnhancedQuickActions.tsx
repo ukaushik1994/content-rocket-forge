@@ -57,12 +57,12 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
 
     // 4. Contextual defaults (fill remaining slots)
     const defaults = [
-      { text: 'Write content', prompt: 'I want to write a new blog post. What topic should I write about?', directWizard: true, icon: PenTool, iconColor: 'text-purple-400', priority: 2 },
-      { text: 'Research keywords', prompt: 'Help me research and find the best keywords for my niche', icon: Search, iconColor: 'text-amber-400', priority: 2 },
-      { text: 'Run a campaign', prompt: 'Help me set up and run a new campaign', icon: Megaphone, iconColor: 'text-emerald-400', priority: 2 },
-      { text: 'Draft an email', prompt: 'Create a new email campaign for my latest content', icon: Mail, iconColor: 'text-blue-400', priority: 2 },
-      { text: 'Check performance', prompt: 'Show me my campaign dashboard with live queue status', icon: BarChart3, iconColor: 'text-orange-400', priority: 2 },
-      { text: 'What can you do?', prompt: '/help', icon: HelpCircle, iconColor: 'text-violet-400', priority: 3 },
+      { text: 'Write content', prompt: 'I want to write a new blog post. What topic should I write about?', directWizard: true, icon: PenTool, priority: 2 },
+      { text: 'Research keywords', prompt: 'Help me research and find the best keywords for my niche', icon: Search, priority: 2 },
+      { text: 'Run a campaign', prompt: 'Help me set up and run a new campaign', icon: Megaphone, priority: 2 },
+      { text: 'Draft an email', prompt: 'Create a new email campaign for my latest content', icon: Mail, priority: 2 },
+      { text: 'Check performance', prompt: 'Show me my campaign dashboard with live queue status', icon: BarChart3, priority: 2 },
+      { text: 'What can you do?', prompt: '/help', icon: HelpCircle, priority: 3 },
     ];
 
     // Add defaults that don't duplicate existing items
