@@ -18,12 +18,12 @@ export const NarrativePromptCard: React.FC<NarrativePromptCardProps> = ({
   onSendMessage,
 }) => {
   return (
-    <div className="glass-card p-3.5 border-l-2 border-primary/30">
-      <p className="text-xs text-foreground/60 italic mb-3 leading-relaxed">{question}</p>
-      <div className="flex flex-col gap-2">
+    <div className="glass-card p-3 border-l-2 border-primary/30">
+      <p className="text-[11px] text-foreground/60 italic mb-2 leading-relaxed">{question}</p>
+      <div className="flex flex-col gap-1.5">
         <button
           onClick={() => onSendMessage(primaryAction)}
-          className="w-full px-4 py-2 rounded-full text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 transition-colors"
+          className="w-full px-3 py-1.5 rounded-full text-[11px] font-semibold bg-gradient-to-r from-primary/80 to-primary text-primary-foreground hover:from-primary/90 hover:to-primary transition-all"
         >
           {primaryLabel}
         </button>
@@ -34,7 +34,7 @@ export const NarrativePromptCard: React.FC<NarrativePromptCardProps> = ({
                 onSendMessage(secondaryAction);
               }
             }}
-            className="w-full px-4 py-2 rounded-full text-xs font-medium border border-white/15 text-foreground/60 hover:text-foreground hover:border-white/25 transition-colors"
+            className="w-full px-3 py-1.5 rounded-full text-[11px] font-medium border border-white/10 text-foreground/50 hover:text-foreground/80 hover:border-white/20 transition-all"
           >
             {secondaryLabel}
           </button>
