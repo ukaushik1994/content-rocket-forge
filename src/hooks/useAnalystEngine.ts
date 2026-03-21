@@ -302,7 +302,7 @@ function computeCrossSignals(
       const drafts = totalContent - published;
       if (totalContent > 3 && drafts > published * 2) {
         signals.push({
-          id: `cross-draft-ratio-${now.getTime()}`,
+          id: `cross-draft-ratio`,
           content: `✏️ ${drafts} drafts vs ${published} published — consider a publish sprint to clear the backlog`,
           type: 'opportunity',
           source: 'cross-signal',
