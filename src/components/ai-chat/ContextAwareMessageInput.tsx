@@ -385,7 +385,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
               side="top"
               align="start"
               sideOffset={8}
-              className="w-52 p-1 bg-card border-border/50 rounded-lg shadow-lg"
+              className="w-48 p-1 bg-card border-border/50 rounded-lg shadow-lg"
             >
               <EnhancedQuickActions
                 onAction={(action, data) => {

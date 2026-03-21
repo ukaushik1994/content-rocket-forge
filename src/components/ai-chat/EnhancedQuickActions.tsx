@@ -91,18 +91,18 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
 
   return (
     <div
-      className="flex flex-col gap-0.5 w-full"
+      className="space-y-px w-full"
       role="group"
       aria-label="Quick actions"
     >
       {actions.map((item) => (
         <button
           key={item.text}
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors cursor-pointer text-left"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors hover:bg-muted/50 group"
           onClick={() => handleClick(item)}
         >
-          <item.icon className={`h-4 w-4 ${item.iconColor} shrink-0`} />
-          {item.text}
+          <item.icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+          <span className="text-xs font-medium text-foreground truncate">{item.text}</span>
         </button>
       ))}
     </div>
