@@ -20,7 +20,7 @@ import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EngagePageHero } from '../shared/EngagePageHero';
+
 import { EngageFilterBar } from '../shared/EngageFilterBar';
 import { EngageContentCard } from '../shared/EngageContentCard';
 import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
@@ -324,25 +324,61 @@ export const JourneysList = () => {
         <title>Journeys | Creaiter</title>
         <meta name="description" content="Design and manage customer journey workflows with visual builders." />
       </Helmet>
-      <EngagePageHero
-        icon={GitBranch}
-        badge="Journey Builder"
-        title="Journeys"
-        titleAccent="Builder"
-        subtitle="Visual customer journey flows — automate engagement at scale"
-        gradientFrom="from-purple-400"
-        gradientTo="to-blue-400"
-        stats={[
-          { icon: Play, label: 'Active', value: stats.active },
-          { icon: GitBranch, label: 'Draft', value: stats.draft },
-          { icon: Users, label: 'Enrolled', value: totalEnrolled },
-          { icon: TrendingUp, label: 'Completion', value: `${avgCompletion}%` },
-        ]}
-        actions={
-          canEdit ? (
+      <div className="text-center relative pt-16 pb-8">
+        {/* Ambient glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-purple-500/[0.06] rounded-full blur-3xl" />
+        </div>
+
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0, type: 'spring', stiffness: 100, damping: 18 }}
+          className="flex justify-center mb-6"
+        >
+          <div className="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full shadow-sm">
+            <GitBranch className="h-5 w-5 text-purple-400" />
+            <span className="text-sm font-medium text-foreground">Journey Builder</span>
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          </div>
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 100, damping: 18 }}
+          className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-foreground via-purple-400 to-violet-500 bg-clip-text text-transparent"
+        >
+          Journeys
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, type: 'spring', stiffness: 100, damping: 18 }}
+          className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto mb-8"
+        >
+          Visual customer journey flows — automate engagement at scale
+        </motion.p>
+
+        {/* Action Buttons */}
+        {canEdit && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, type: 'spring', stiffness: 100, damping: 18 }}
+            className="flex items-center justify-center gap-3 mb-10"
+          >
             <Dialog open={showCreate} onOpenChange={o => { setShowCreate(o); if (!o) { setName(''); setDescription(''); setSelectedTemplate(null); } }}>
               <DialogTrigger asChild>
-                <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> New Journey</EngageButton>
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+                  <Button className="h-11 px-6 bg-gradient-to-r from-purple-400 to-violet-500 text-white hover:shadow-lg hover:shadow-purple-500/25 transition-shadow border-0">
+                    <Plus className="h-4 w-4 mr-2" /> New Journey
+                  </Button>
+                </motion.div>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <EngageDialogHeader icon={GitBranch} title="Create Journey" gradientFrom="from-purple-400" gradientTo="to-blue-400" iconColor="text-purple-400" />
@@ -375,9 +411,32 @@ export const JourneysList = () => {
                 </div>
               </DialogContent>
             </Dialog>
-          ) : undefined
-        }
-      />
+          </motion.div>
+        )}
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, type: 'spring', stiffness: 100, damping: 18 }}
+          className="flex justify-center gap-4 flex-wrap mb-8"
+        >
+          {[
+            { icon: Play, label: 'Active', value: stats.active },
+            { icon: GitBranch, label: 'Draft', value: stats.draft },
+            { icon: Users, label: 'Enrolled', value: totalEnrolled },
+            { icon: TrendingUp, label: 'Completion', value: `${avgCompletion}%` },
+          ].map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
+                <stat.icon className="h-5 w-5 text-purple-400" />
+              </div>
+              <p className="text-lg font-bold text-foreground">{stat.value}</p>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
+        </motion.div>
+      </div>
 
       {/* Search */}
       <EngageFilterBar

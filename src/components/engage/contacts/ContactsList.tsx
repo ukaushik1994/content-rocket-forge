@@ -23,7 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ContactDetailDialog } from './ContactDetailDialog';
 import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
-import { EngagePageHero } from '../shared/EngagePageHero';
+
 import { EngageFilterBar } from '../shared/EngageFilterBar';
 import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
 import { engageStagger } from '../shared/engageAnimations';
@@ -253,98 +253,157 @@ export const ContactsList = () => {
         <title>Contacts | Creaiter</title>
         <meta name="description" content="Manage your contact database, tags, and audience segments." />
       </Helmet>
-      <EngagePageHero
-        icon={Users}
-        badge="Contact Management"
-        title="Contacts"
-        titleAccent="Hub"
-        subtitle={`${totalCount} contacts — Tags = labels you apply. Segments = auto-filtered groups based on rules.`}
-        gradientFrom="from-emerald-400"
-        gradientTo="to-teal-400"
-        stats={[
-          { icon: Users, label: 'Total', value: totalCount },
-          { icon: UserCheck, label: 'Active', value: activeCount },
-          { icon: UserX, label: 'Unsubscribed', value: unsubCount },
-        ]}
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => exportContacts(filtered)} className="bg-background/40 border-border/50">
-              <Download className="h-3.5 w-3.5 mr-1" /> Export
+      <div className="text-center relative pt-16 pb-8">
+        {/* Ambient glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-emerald-500/[0.06] rounded-full blur-3xl" />
+        </div>
+
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0, type: 'spring', stiffness: 100, damping: 18 }}
+          className="flex justify-center mb-6"
+        >
+          <div className="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full shadow-sm">
+            <Users className="h-5 w-5 text-emerald-400" />
+            <span className="text-sm font-medium text-foreground">Contact Management</span>
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          </div>
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 100, damping: 18 }}
+          className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-foreground via-emerald-400 to-teal-400 bg-clip-text text-transparent"
+        >
+          Contacts
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, type: 'spring', stiffness: 100, damping: 18 }}
+          className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto mb-8"
+        >
+          {totalCount} contacts — Tags = labels you apply. Segments = auto-filtered groups based on rules.
+        </motion.p>
+
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, type: 'spring', stiffness: 100, damping: 18 }}
+          className="flex items-center justify-center gap-3 mb-10"
+        >
+          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+            <Button variant="outline" size="sm" onClick={() => exportContacts(filtered)} className="h-11 px-5 glass-card hover:bg-white/[0.08]">
+              <Download className="h-4 w-4 mr-2" /> Export
             </Button>
-            {canEdit && (
-              <Dialog open={showAdd} onOpenChange={setShowAdd}>
-                <DialogTrigger asChild>
-                  <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> Add Contact</EngageButton>
-                </DialogTrigger>
-                <DialogContent>
-                  <EngageDialogHeader icon={Users} title="Add Contacts" gradientFrom="from-emerald-400" gradientTo="to-teal-400" iconColor="text-emerald-400" />
-                  <Tabs value={addTab} onValueChange={setAddTab}>
-                    <TabsList className="h-8 w-full">
-                      <TabsTrigger value="single" className="text-xs flex-1">Single</TabsTrigger>
-                      <TabsTrigger value="bulk" className="text-xs flex-1"><Upload className="h-3 w-3 mr-1" /> Bulk CSV</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="single" className="mt-3 space-y-3">
-                      <div><Label>Email *</Label><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div><Label>First Name</Label><Input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} /></div>
-                        <div><Label>Last Name</Label><Input value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} /></div>
-                      </div>
-                      <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
-                      <div><Label>Tags (comma separated)</Label><Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="lead, newsletter" /></div>
-                      <EngageButton onClick={() => addContact.mutate()} disabled={!form.email} className="w-full">Add Contact</EngageButton>
-                    </TabsContent>
-                    <TabsContent value="bulk" className="mt-3 space-y-3">
-                      <div>
-                        <Label>Upload CSV File</Label>
-                        <label
-                          className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-border/50 rounded-lg cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
-                          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const file = e.dataTransfer.files[0];
-                            if (file && (file.name.endsWith('.csv') || file.type === 'text/csv')) {
+          </motion.div>
+          {canEdit && (
+            <Dialog open={showAdd} onOpenChange={setShowAdd}>
+              <DialogTrigger asChild>
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+                  <Button className="h-11 px-6 bg-gradient-to-r from-emerald-400 to-teal-400 text-white hover:shadow-lg hover:shadow-emerald-500/25 transition-shadow border-0">
+                    <Plus className="h-4 w-4 mr-2" /> Add Contact
+                  </Button>
+                </motion.div>
+              </DialogTrigger>
+              <DialogContent>
+                <EngageDialogHeader icon={Users} title="Add Contacts" gradientFrom="from-emerald-400" gradientTo="to-teal-400" iconColor="text-emerald-400" />
+                <Tabs value={addTab} onValueChange={setAddTab}>
+                  <TabsList className="h-8 w-full">
+                    <TabsTrigger value="single" className="text-xs flex-1">Single</TabsTrigger>
+                    <TabsTrigger value="bulk" className="text-xs flex-1"><Upload className="h-3 w-3 mr-1" /> Bulk CSV</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="single" className="mt-3 space-y-3">
+                    <div><Label>Email *</Label><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label>First Name</Label><Input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} /></div>
+                      <div><Label>Last Name</Label><Input value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} /></div>
+                    </div>
+                    <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                    <div><Label>Tags (comma separated)</Label><Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="lead, newsletter" /></div>
+                    <EngageButton onClick={() => addContact.mutate()} disabled={!form.email} className="w-full">Add Contact</EngageButton>
+                  </TabsContent>
+                  <TabsContent value="bulk" className="mt-3 space-y-3">
+                    <div>
+                      <Label>Upload CSV File</Label>
+                      <label
+                        className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-border/50 rounded-lg cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const file = e.dataTransfer.files[0];
+                          if (file && (file.name.endsWith('.csv') || file.type === 'text/csv')) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => setCsvText(ev.target?.result as string || '');
+                            reader.readAsText(file);
+                          } else {
+                            toast.error('Please upload a .csv file');
+                          }
+                        }}
+                      >
+                        <Upload className="h-5 w-5 text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground">Drop a .csv file here or click to browse</span>
+                        <input
+                          type="file"
+                          accept=".csv,text/csv"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
                               const reader = new FileReader();
                               reader.onload = (ev) => setCsvText(ev.target?.result as string || '');
                               reader.readAsText(file);
-                            } else {
-                              toast.error('Please upload a .csv file');
                             }
                           }}
-                        >
-                          <Upload className="h-5 w-5 text-muted-foreground mb-1" />
-                          <span className="text-xs text-muted-foreground">Drop a .csv file here or click to browse</span>
-                          <input
-                            type="file"
-                            accept=".csv,text/csv"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (ev) => setCsvText(ev.target?.result as string || '');
-                                reader.readAsText(file);
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                      <div>
-                        <Label>CSV Data</Label>
-                        <p className="text-[10px] text-muted-foreground mb-1">Format: email, first_name, last_name, tags (semicolon-separated)</p>
-                        <Textarea value={csvText} onChange={e => setCsvText(e.target.value)} rows={6} className="font-mono text-xs" placeholder={"john@example.com, John, Doe, lead;newsletter\njane@example.com, Jane, Smith, customer"} />
-                      </div>
-                      <Button onClick={() => bulkImport.mutate()} disabled={!csvText.trim() || bulkImport.isPending} className="w-full">
-                        <Upload className="h-3.5 w-3.5 mr-1" /> Import Contacts
-                      </Button>
-                    </TabsContent>
-                  </Tabs>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        }
-      />
+                        />
+                      </label>
+                    </div>
+                    <div>
+                      <Label>CSV Data</Label>
+                      <p className="text-[10px] text-muted-foreground mb-1">Format: email, first_name, last_name, tags (semicolon-separated)</p>
+                      <Textarea value={csvText} onChange={e => setCsvText(e.target.value)} rows={6} className="font-mono text-xs" placeholder={"john@example.com, John, Doe, lead;newsletter\njane@example.com, Jane, Smith, customer"} />
+                    </div>
+                    <Button onClick={() => bulkImport.mutate()} disabled={!csvText.trim() || bulkImport.isPending} className="w-full">
+                      <Upload className="h-3.5 w-3.5 mr-1" /> Import Contacts
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+              </DialogContent>
+            </Dialog>
+          )}
+        </motion.div>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, type: 'spring', stiffness: 100, damping: 18 }}
+          className="flex justify-center gap-4 flex-wrap mb-8"
+        >
+          {[
+            { icon: Users, label: 'Total', value: totalCount },
+            { icon: UserCheck, label: 'Active', value: activeCount },
+            { icon: UserX, label: 'Unsubscribed', value: unsubCount },
+          ].map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
+                <stat.icon className="h-5 w-5 text-emerald-400" />
+              </div>
+              <p className="text-lg font-bold text-foreground">{stat.value}</p>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
+        </motion.div>
+      </div>
 
       {/* Filter Bar */}
       <EngageFilterBar
