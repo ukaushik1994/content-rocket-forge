@@ -271,11 +271,13 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const activePlaceholder = webSearchMode
-    ? "What do you want to search the web for?"
-    : wizardMode
-      ? "Enter a topic or keyword to write about..."
-      : placeholder;
+  const activePlaceholder = imageGenMode
+    ? "Describe the image you want to generate..."
+    : webSearchMode
+      ? "What do you want to search the web for?"
+      : wizardMode
+        ? "Enter a topic or keyword to write about..."
+        : placeholder;
 
   return (
     <motion.div
