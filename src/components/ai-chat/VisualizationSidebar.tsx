@@ -775,9 +775,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     <div className="flex items-center gap-1.5">
                       <span className={cn(
                         "text-[9px] px-1.5 py-0.5 rounded-full font-medium",
-                        analystState.goalProgress.status === 'completed' ? 'bg-emerald-400/10 text-emerald-400/80' :
-                        analystState.goalProgress.status === 'nearly_done' ? 'bg-emerald-400/10 text-emerald-400/70' :
-                        analystState.goalProgress.status === 'in_progress' ? 'bg-amber-300/10 text-amber-300/70' :
+                        analystState.goalProgress.status === 'completed' ? 'bg-primary/10 text-primary/80' :
+                        analystState.goalProgress.status === 'nearly_done' ? 'bg-primary/10 text-primary/70' :
+                        analystState.goalProgress.status === 'in_progress' ? 'bg-neon-blue/10 text-neon-blue/70' :
                         'bg-white/[0.04] text-muted-foreground/60'
                       )}>
                         {analystState.goalProgress.status.replace('_', ' ')}
