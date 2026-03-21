@@ -116,6 +116,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const handleCancelWizard = useCallback(() => {
     setWizardMode(false);
     setWebSearchMode(false);
+    setImageGenMode(false);
     setMessage('');
   }, []);
 
