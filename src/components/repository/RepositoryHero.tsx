@@ -21,22 +21,22 @@ export const RepositoryHero = React.memo(({ onCreate, stats }: RepositoryHeroPro
       
       
       <div className="relative">
-        <motion.div
-          className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, type: "spring" }}
-          whileHover={{ scale: 1.05 }}>
-          
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}>
-            
-            <Sparkles className="h-5 w-5 text-primary" />
-          </motion.div>
-          <span className="text-sm font-medium">Content Management Hub</span>
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-        </motion.div>
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
         
         <motion.h1
           className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent"
