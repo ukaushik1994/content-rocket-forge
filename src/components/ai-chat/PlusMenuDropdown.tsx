@@ -79,12 +79,6 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
 
   const quickItems = onSendPrompt ? [
     {
-      icon: Search,
-      label: 'Research keywords',
-      onClick: () => onSendPrompt('Help me research and find the best keywords for my niche', 'Research keywords'),
-      iconColor: 'text-amber-400',
-    },
-    {
       icon: Megaphone,
       label: 'Run a campaign',
       onClick: () => onSendPrompt('Help me set up and run a new campaign', 'Run a campaign'),
