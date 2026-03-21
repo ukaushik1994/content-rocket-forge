@@ -3252,9 +3252,14 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
       if (intentCategories.length > 0 && intentCategories[0] !== 'general') {
         toolsToUse = TOOL_DEFINITIONS.filter((t: any) => relevantToolNames.has(t.function?.name));
         // Phase 1 Fix: Use core-tools fallback instead of dumping all 89 tools
-        if (toolsToUse.length < 5) {
-          const CORE_FALLBACK_TOOLS = ['get_content_items', 'get_keywords', 'get_proposals', 'get_solutions', 'get_seo_scores'];
-          toolsToUse = TOOL_DEFINITIONS.filter((t: any) => CORE_FALLBACK_TOOLS.includes(t.function?.name));
+        if (toolsToUse.length < 3) {
+          const CORE_FALLBACK_TOOLS = ['get_content_items', 'get_keywords', 'get_proposals', 'get_competitors', 'generate_full_content'];
+          const coreTools = TOOL_DEFINITIONS.filter((t: any) => CORE_FALLBACK_TOOLS.includes(t.function?.name));
+          // Additive merge: keep what we have + add missing core tools
+          const existingNames = new Set(toolsToUse.map((t: any) => t.function?.name));
+          for (const ct of coreTools) {
+            if (!existingNames.has(ct.function?.name)) toolsToUse.push(ct);
+          }
         }
         // Phase 1: Hide deprecated tools
         toolsToUse = toolsToUse.filter((t: any) => {
