@@ -22,8 +22,9 @@ interface AppLayoutProps {
 }
 
 const SearchIconButton: React.FC = () => {
+  const location = useLocation();
   const chatSearch = useChatSearch();
-  if (!chatSearch) return null;
+  if (!chatSearch || location.pathname !== '/ai-chat') return null;
 
   const { showSearch, toggleSearch, searchQuery, setSearchQuery, currentMatch, totalMatches, navigateMatch, messageCount, onExportConversation, onShowAnalytics } = chatSearch;
 
