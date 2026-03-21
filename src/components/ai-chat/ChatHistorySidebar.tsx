@@ -733,6 +733,11 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         {/* Bottom: Calendar + Profile */}
         <div className="p-3 border-t border-border/8 space-y-0.5">
           <SidebarNavItem 
+            icon={<Package className="h-4 w-4" />} 
+            label="Offerings" 
+            onClick={() => handleNavigation('/offerings')} 
+          />
+          <SidebarNavItem 
             icon={<CalendarDays className="h-4 w-4" />} 
             label="Content Calendar" 
             onClick={() => handleNavigation('/calendar')} 
