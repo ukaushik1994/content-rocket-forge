@@ -180,43 +180,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Analyst engine: per-conversation — isActive is deferred to after sidebar state declared
   const activeConvObj = conversations.find(c => c.id === activeConversation);
 
-  // Message search state
-  const [messageSearchQuery, setMessageSearchQuery] = useState('');
-  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
-  const [showMessageSearch, setShowMessageSearch] = useState(false);
-  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  // Message search state — synced with ChatSearchContext
+  const { useChatSearch } = await import('@/contexts/ChatSearchContext') as any;
 
-  // Derive search results as a pure memo (no setState inside useMemo)
-  const messageSearchResults = React.useMemo(() => {
-    if (!messageSearchQuery.trim()) return [];
-    const q = messageSearchQuery.toLowerCase();
-    return messages.filter((m) => m.content.toLowerCase().includes(q)).map((m) => m.id);
-  }, [messages, messageSearchQuery]);
-
-
-  // Handle search navigation
-  const handleNavigateMatch = (direction: 'prev' | 'next') => {
-    if (messageSearchResults.length === 0) return;
-
-    if (direction === 'next') {
-      setCurrentMatchIndex((prev) =>
-      prev >= messageSearchResults.length - 1 ? 0 : prev + 1
-      );
-    } else {
-      setCurrentMatchIndex((prev) =>
-      prev <= 0 ? messageSearchResults.length - 1 : prev - 1
-      );
-    }
-  };
-
-  // Scroll to current match
-  useEffect(() => {
-    if (messageSearchResults.length > 0 && currentMatchIndex < messageSearchResults.length) {
-      const matchId = messageSearchResults[currentMatchIndex];
-      const element = document.getElementById(`message-${matchId}`);
-      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [currentMatchIndex, messageSearchResults]);
 
   const { pendingPanel, setPendingPanel, isSidebarOpen } = useSidebarContext();
   const [contextSources, setContextSources] = useState<any[]>([]);
