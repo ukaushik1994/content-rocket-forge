@@ -179,7 +179,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       title: "Brand Guidelines",
       description: "Define and maintain your brand voice, style, and visual identity.",
       icon: <Shield className="h-5 w-5 text-purple-400" />,
-      action: () => navigate('/brand-guidelines'),
+      action: () => navigate('/offerings'),
       buttonText: "Brand Guide",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-purple-400/30 to-fuchsia-500/20",
