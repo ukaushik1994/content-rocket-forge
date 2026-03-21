@@ -1,71 +1,50 @@
 
 
-# Unify Analyst Sidebar Colors to Hero Theme
+# Unify Sidebar Header Colors to Primary Theme
 
 ## Problem
-The analyst sidebar still uses `emerald-400` (green), `rose-300/400` (red), and `cyan-400` across headlines, data cards, insight cards, strategic stance, badges, and chart gradients. These should all use the hero's palette: `primary` (#9b87f5 purple), `neon-blue` (#33C3F0), and opacity variations.
+The top section of the Intelligence Panel (Topics Discussed, Goal Progress, Data Source badges) still uses the old amber/gold and emerald/rose colors, while the sections below now use the unified primary/neon-blue theme.
 
-## Color mapping
-- `text-emerald-400/80` (positive) → `text-primary/80`
-- `text-rose-300` (negative/warning) → `text-primary/50` (dimmed primary for contrast)
-- `text-cyan-400` → `text-neon-blue`
-- `bg-emerald-400/60` → `bg-primary/60`
-- `bg-rose-300/60` → `bg-primary/30`
-- `border-emerald-400` → `border-primary`
-- `border-rose-400` → `border-primary/40`
-- Chart gradients: replace `#06b6d4` (cyan) → `#9b87f5`, `#22c55e` (green) → `#33C3F0`
+## Changes in `src/components/ai-chat/VisualizationSidebar.tsx`
 
-## Files & changes
+### Line 708 — "Topics Discussed" label
+- `text-amber-300/70` → `text-primary/50`
 
-### 1. `AnalystDataCard.tsx`
-- `trendColorMap.up`: `text-emerald-400/80` → `text-primary/80`
-- `trendColorMap.down`: `text-rose-300` → `text-primary/50`
-- `progressColorMap.green`: `bg-emerald-400/60` → `bg-primary/60`
-- `progressColorMap.red`: `bg-rose-300/60` → `bg-primary/30`
+### Line 714 — Topic mention count
+- `text-amber-300/70` → `text-primary/60`
 
-### 2. `AnalystInsightCard.tsx`
-- `iconColorMap.green`: `text-emerald-400/70` → `text-primary/70`
-- `iconColorMap.red`: `text-rose-300/70` → `text-primary/50`
-- Urgent label: `text-rose-400` → `text-primary/60`
+### Line 726 — "Data Source" label
+- `text-amber-300/70` → `text-primary/50`
 
-### 3. `StrategicStanceSection.tsx`
-- `stop-creating` config: `text-rose-300` → `text-primary/60`, `bg-rose-400/10` → `bg-primary/10`, `border-rose-400/20` → `border-primary/20`
-- `accelerate` config: `text-emerald-400` → `text-neon-blue`, `bg-emerald-400/10` → `bg-neon-blue/10`, `border-emerald-400/20` → `border-neon-blue/20`
-- `build-foundation` config: `text-cyan-400` → `text-neon-blue`, `bg-cyan-400/10` → `bg-neon-blue/10`, `border-cyan-400/20` → `border-neon-blue/20`
-- Headlines: replace `text-rose-300`, `text-emerald-400/80`, `text-cyan-400` → `text-primary/60`, `text-neon-blue`, `text-neon-blue`
+### Line 730 — Database icon
+- `text-amber-300/50` → `text-primary/40`
 
-### 4. `HealthAssessmentSection.tsx`
-- Headlines: `text-emerald-400/80` → `text-primary/80`, `text-rose-300` → `text-primary/50`
-- Factor bars: `bg-rose-300/50` → `bg-primary/30`
+### Line 738 — Clock icon
+- `text-amber-300/50` → `text-primary/40`
 
-### 5. `PerformanceTrajectorySection.tsx`
-- Headlines: `text-emerald-400/80` → `text-primary/80`, `text-rose-300` → `text-primary/50`
-- Badge: `text-emerald-400/80 border-emerald-400/15 bg-emerald-500/5` → `text-primary/80 border-primary/15 bg-primary/5`
-- Badge negative: `text-rose-300 border-rose-300/15 bg-rose-300/5` → `text-primary/50 border-primary/15 bg-primary/5`
-- Chart gradients: `#06b6d4` → `#9b87f5`, `#22c55e` → `#33C3F0`, keep `#a855f7`
-- Gradient IDs: rename to match
+### Lines 749-751 — Quality badge (High/Medium/Low)
+- High: `bg-emerald-400/10 border-emerald-400/20 text-emerald-400/80` → `bg-primary/10 border-primary/20 text-primary/80`
+- Medium: `bg-amber-300/10 border-amber-300/20 text-amber-300/80` → `bg-primary/10 border-primary/20 text-primary/60`
+- Low: `bg-rose-300/10 border-rose-300/20 text-rose-300/80` → `bg-primary/10 border-primary/20 text-primary/40`
 
-### 6. `ContentIntelligenceSection.tsx`
-- Headlines: `text-rose-300` → `text-primary/50`, `text-emerald-400/80` → `text-primary/80`
+### Line 763 — "Goal Progress" label
+- `text-amber-300/70` → `text-primary/50`
 
-### 7. `GoalProgressSection.tsx`
-- Headlines: `text-emerald-400/80` → `text-primary/80`
+### Line 767 — Goal percentage
+- `text-amber-300/80` → `text-primary/80`
 
-### 8. `CompetitivePositionSection.tsx`
-- Headlines: `text-emerald-400/80` → `text-primary/80`, `text-rose-300` → `text-primary/50`
+### Line 771 — Goal progress bar gradient
+- `from-amber-300/60 to-amber-400/40` → `from-primary/60 to-primary/40`
 
-### 9. `KeywordLandscapeSection.tsx`
-- Headlines: `text-emerald-400/80` → `text-primary/80`, `text-rose-300` → `text-primary/50`
+### Lines 778-781 — Goal status badges
+- completed: `bg-emerald-400/10 text-emerald-400/80` → `bg-primary/10 text-primary/80`
+- nearly_done: `bg-emerald-400/10 text-emerald-400/70` → `bg-primary/10 text-primary/70`
+- in_progress: `bg-amber-300/10 text-amber-300/70` → `bg-neon-blue/10 text-neon-blue/70`
+- default: stays as-is (muted)
 
-### 10. `StrategicDivergenceSection.tsx`
-- Headlines: `text-rose-300` → `text-primary/50`
-
-### 11. `CampaignPulseSection.tsx`
-- Headlines: `text-rose-300` → `text-primary/50`, `text-emerald-400/80` → `text-primary/80`
-
-### 12. `EngagementMetricsSection.tsx`
-- Headlines: `text-emerald-400/80` → `text-primary/80`
+## Files
+- `src/components/ai-chat/VisualizationSidebar.tsx` (single file, ~15 color replacements)
 
 ## Result
-Every color in the analyst sidebar will use only `primary` (with opacity variations for semantic differences) and `neon-blue` as an accent — matching the AI chat hero gradient palette exactly. No more green, red, or cyan.
+The entire sidebar — header and content sections — will use a consistent primary/neon-blue palette.
 
