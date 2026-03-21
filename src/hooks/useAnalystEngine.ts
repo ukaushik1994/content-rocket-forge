@@ -1447,7 +1447,7 @@ export function useAnalystEngine(
           .limit(3);
         if (lowSeo && lowSeo.length > 0) {
           alerts.push({
-            id: `anomaly-low-seo-${now.getTime()}`,
+            id: `anomaly-low-seo`,  // Phase 5: stable anomaly ID
             content: `⚠️ ${lowSeo.length} published article${lowSeo.length > 1 ? 's' : ''} with SEO score below 40 — consider optimizing "${lowSeo[0].title}"`,
             type: 'warning',
             source: 'platform',
