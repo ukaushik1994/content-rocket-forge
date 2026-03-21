@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OnboardingContextType {
   isActive: boolean;
@@ -74,7 +75,28 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const skipOnboarding = useCallback(() => {
+  const skipOnboarding = useCallback(async () => {
+    // H11: Insert default company_info if none exists so downstream features don't crash
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: existing } = await supabase
+          .from('company_info')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+        
+        if (!existing) {
+          await supabase.from('company_info').insert({
+            user_id: user.id,
+            name: 'My Company',
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Failed to ensure company_info on skip (non-critical):', e);
+    }
     endOnboarding();
   }, [endOnboarding]);
 

@@ -501,7 +501,10 @@ export const useEnhancedAIChatDB = () => {
       let conversationId = activeConversation;
       if (!conversationId) {
         conversationId = await createConversation('Capabilities');
-        if (!conversationId) return;
+        if (!conversationId) {
+          toast({ title: "Error", description: "Failed to create conversation. Please try again.", variant: "destructive" });
+          return;
+        }
       }
 
       const userMsg: EnhancedChatMessage = {
@@ -528,7 +531,10 @@ export const useEnhancedAIChatDB = () => {
     let conversationId = activeConversation;
     if (!conversationId) {
       conversationId = await createConversation((displayContent || content).slice(0, 50));
-      if (!conversationId) return;
+      if (!conversationId) {
+        toast({ title: "Error", description: "Failed to create conversation. Please try again.", variant: "destructive" });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -656,7 +662,7 @@ export const useEnhancedAIChatDB = () => {
         if (sessionData?.session) {
           const expiresAt = sessionData.session.expires_at || 0;
           const nowSecs = Math.floor(Date.now() / 1000);
-          if (expiresAt - nowSecs < 120) {
+          if (expiresAt - nowSecs < 300) {
             await supabase.auth.refreshSession();
           }
         }
@@ -747,7 +753,30 @@ export const useEnhancedAIChatDB = () => {
         } catch (_) { /* not valid JSON */ }
       }
 
-      if (!response) throw new Error('No response received from AI');
+      // C2: Handle empty response — update assistant bubble with error instead of blank
+      if (!response) {
+        const emptyMsg: EnhancedChatMessage = {
+          id: assistantId,
+          role: 'assistant',
+          content: '⚠️ Connection lost — no response received from the AI service. Please check your internet connection and try again.',
+          timestamp: new Date(),
+          messageStatus: 'error',
+          actions: [
+            {
+              id: 'retry-' + assistantId,
+              type: 'button' as const,
+              label: '🔄 Retry',
+              action: 'send_message',
+              data: { message: content }
+            }
+          ]
+        };
+        setMessages(prev => prev.map(m => m.id === assistantId ? emptyMsg : m));
+        if (conversationId) {
+          await saveMessage(emptyMsg, conversationId);
+        }
+        return;
+      }
 
       const responseContent = response?.message || response?.content || 'No response received';
       const responseActions = response?.actions || [];
@@ -848,7 +877,33 @@ export const useEnhancedAIChatDB = () => {
       const errorMsg = error?.message || '';
       const isRateLimit = errorMsg.includes('429') || errorMsg.toLowerCase().includes('rate limit');
       const isContextLength = errorMsg.toLowerCase().includes('token') || errorMsg.toLowerCase().includes('context length');
+      const isNoProvider = errorMsg.includes('400') || errorMsg.toLowerCase().includes('no ai provider') || errorMsg.toLowerCase().includes('api key');
       
+      // C1: No AI provider — direct user to settings
+      if (isNoProvider && !isRateLimit) {
+        const providerMsg: EnhancedChatMessage = {
+          id: assistantId,
+          role: 'assistant',
+          content: '⚙️ No AI provider configured. Please go to **Settings → API Keys** and add your API key to start chatting.',
+          timestamp: new Date(),
+          messageStatus: 'error',
+          actions: [
+            {
+              id: 'settings-' + assistantId,
+              type: 'button' as const,
+              label: '⚙️ Open API Settings',
+              action: 'open_settings',
+              data: { tab: 'api' }
+            }
+          ]
+        };
+        setMessages(prev => [...prev.filter(m => m.id !== assistantId), providerMsg]);
+        if (conversationId) {
+          await saveMessage(providerMsg, conversationId);
+        }
+        return;
+      }
+
       // Auto-retry on rate limit
       if (isRateLimit) {
         const retryMsg: EnhancedChatMessage = {

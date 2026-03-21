@@ -1406,7 +1406,12 @@ export function useAnalystEngine(
     const interval = setInterval(() => {
       // Skip refresh when tab is hidden to reduce unnecessary queries
       if (document.hidden) return;
-      fetchPlatformData(true);
+      // M4: Wrap in try/catch to prevent refresh loop crashes
+      try {
+        fetchPlatformData(true);
+      } catch (err) {
+        console.warn('⚠️ Analyst refresh failed (non-critical):', err);
+      }
     }, 120000);
     return () => clearInterval(interval);
   }, [isActive, userId, fetchPlatformData]);

@@ -389,6 +389,18 @@ export async function executeEngageActionTool(
     // Note: workspaceNotice will be appended to the first success message below
     switch (toolName) {
       case 'create_contact': {
+        // M6: Check for duplicate email before inserting
+        const { data: existing } = await supabase.from('engage_contacts')
+          .select('id, email')
+          .eq('workspace_id', workspaceId)
+          .eq('email', toolArgs.email)
+          .limit(1)
+          .maybeSingle();
+        
+        if (existing) {
+          return { success: false, message: `A contact with email "${toolArgs.email}" already exists (ID: ${existing.id}). Use update_contact to modify it.` };
+        }
+
         const { data, error } = await supabase.from('engage_contacts').insert({
           workspace_id: workspaceId,
           email: toolArgs.email,
@@ -424,23 +436,32 @@ export async function executeEngageActionTool(
 
       case 'tag_contacts': {
         let taggedCount = 0;
+        let failedCount = 0;
         for (const contactId of (toolArgs.contact_ids || [])) {
-          const { data: contact } = await supabase.from('engage_contacts')
-            .select('tags')
-            .eq('id', contactId)
-            .eq('workspace_id', workspaceId)
-            .single();
+          try {
+            const { data: contact } = await supabase.from('engage_contacts')
+              .select('tags')
+              .eq('id', contactId)
+              .eq('workspace_id', workspaceId)
+              .single();
 
-          if (contact) {
-            const existingTags = contact.tags || [];
-            const newTags = [...new Set([...existingTags, ...(toolArgs.tags || [])])];
-            await supabase.from('engage_contacts')
-              .update({ tags: newTags, updated_at: new Date().toISOString() })
-              .eq('id', contactId);
-            taggedCount++;
+            if (contact) {
+              const existingTags = contact.tags || [];
+              const newTags = [...new Set([...existingTags, ...(toolArgs.tags || [])])];
+              await supabase.from('engage_contacts')
+                .update({ tags: newTags, updated_at: new Date().toISOString() })
+                .eq('id', contactId);
+              taggedCount++;
+            } else {
+              failedCount++;
+            }
+          } catch {
+            failedCount++;
           }
         }
-        return { success: true, message: `Tagged ${taggedCount} contact(s) with: ${(toolArgs.tags || []).join(', ')}` };
+        // M7: Report partial failures
+        const failMsg = failedCount > 0 ? ` (${failedCount} failed — contacts may not exist)` : '';
+        return { success: taggedCount > 0, message: `Tagged ${taggedCount} contact(s) with: ${(toolArgs.tags || []).join(', ')}${failMsg}` };
       }
 
       case 'create_segment': {
@@ -782,7 +803,12 @@ export async function executeEngageActionTool(
           status: toolArgs.scheduled_at ? 'pending' : 'draft'
         }));
 
-        await supabase.from('social_post_targets').insert(targets);
+        // H14: If targets insert fails, clean up orphaned post
+        const { error: targetsError } = await supabase.from('social_post_targets').insert(targets);
+        if (targetsError) {
+          await supabase.from('social_posts').delete().eq('id', socialPost.id);
+          throw new Error(`Failed to set target platforms: ${targetsError.message}. Social post was rolled back.`);
+        }
 
         return {
           success: true,

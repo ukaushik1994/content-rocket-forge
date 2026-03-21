@@ -236,8 +236,18 @@ Deno.serve(async (req) => {
         const fromName = providerSettings?.from_name || "Engage";
         const fromEmail = providerSettings?.from_email || "noreply@example.com";
 
-        // Build email body with unsubscribe link
+        // H13: Validate email body is non-empty before sending
         let bodyHtml = msg.body_html || "";
+        if (!bodyHtml.trim()) {
+          await supabase.from("email_messages").update({
+            status: "failed",
+            error: "Email body is empty. Cannot send blank emails.",
+          }).eq("id", msg.id);
+          if (msg.campaign_id) campaignIds.add(msg.campaign_id);
+          failed++;
+          continue;
+        }
+
         const unsub = buildUnsubHeaders(baseUrl, msg.contact_id);
 
         if (msg.contact_id) {
@@ -269,8 +279,24 @@ Deno.serve(async (req) => {
       }
     }
 
+    // H12: Always update campaign status in finally-like block
     for (const cid of campaignIds) {
-      await updateCampaignStats(supabase, cid);
+      try {
+        await updateCampaignStats(supabase, cid);
+        // If all messages for this campaign are done (sent or failed), mark campaign complete
+        const { data: pendingMsgs } = await supabase.from("email_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("campaign_id", cid)
+          .eq("status", "queued");
+        if (!pendingMsgs || (pendingMsgs as any) === 0) {
+          await supabase.from("email_campaigns")
+            .update({ status: failed > 0 && sent === 0 ? "failed" : "complete", completed_at: new Date().toISOString() })
+            .eq("id", cid)
+            .in("status", ["sending", "active", "queued"]);
+        }
+      } catch (e) {
+        console.error(`Error finalizing campaign ${cid}:`, e);
+      }
     }
 
     // Phase 3: Notify workspace owner about send results

@@ -480,7 +480,7 @@ export async function executeCrossModuleTool(
           .single();
 
         if (!connection) {
-          // Mark content as ready_to_publish so it's easy to find later
+          // H8: Stale token guidance — direct user to reconnect
           await supabase.from('content_items')
             .update({ status: 'ready_to_publish' })
             .eq('id', toolArgs.content_id)
@@ -488,8 +488,8 @@ export async function executeCrossModuleTool(
 
           return { 
             success: false, 
-            message: `No active website connection found. Your content "${content.title}" has been marked as **Ready to Publish**.\n\nTo publish directly:\n1. Go to **Settings → Publishing**\n2. Connect your WordPress or Wix site\n3. Then ask me to publish again\n\nAlternatively, you can copy the content and publish manually.`,
-            settingsAction: { tab: 'publishing', label: 'Connect Website' }
+            message: `No active website connection found. Your content "${content.title}" has been marked as **Ready to Publish**.\n\nTo publish directly:\n1. Go to **Settings → Websites** and reconnect your site\n2. If your token expired, re-authorize the connection\n3. Then ask me to publish again\n\nAlternatively, you can copy the content and publish manually.`,
+            settingsAction: { tab: 'publishing', label: 'Reconnect Website' }
           };
         }
 
@@ -521,13 +521,17 @@ export async function executeCrossModuleTool(
 
         const publishResult = await publishResponse.json();
 
-        // 4. Update content status
-        await supabase.from('content_items')
+        // C5: Update content status with error handling
+        const { error: statusUpdateError } = await supabase.from('content_items')
           .update({
             status: 'published',
             metadata: { published_url: publishResult.url || publishResult.link, published_provider: connection.provider, published_at: new Date().toISOString() }
           })
           .eq('id', content.id);
+
+        const statusWarning = statusUpdateError 
+          ? '\n\n⚠️ Content was published successfully but the status update in the database failed. You may need to manually update the status.'
+          : '';
 
         // 3E: Track publish event as performance signal
         try {
@@ -541,7 +545,7 @@ export async function executeCrossModuleTool(
 
         return {
           success: true,
-          message: `Published "${content.title}" to ${connection.provider}${publishResult.url || publishResult.link ? ` — ${publishResult.url || publishResult.link}` : ''}\n\n🎉 What's next?`,
+          message: `Published "${content.title}" to ${connection.provider}${publishResult.url || publishResult.link ? ` — ${publishResult.url || publishResult.link}` : ''}${statusWarning}\n\n🎉 What's next?`,
           url: publishResult.url || publishResult.link,
           provider: connection.provider,
           actions: [

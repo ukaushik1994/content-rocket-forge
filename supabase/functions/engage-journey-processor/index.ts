@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Pick pending steps that are due
+    // C9: Atomically claim pending steps to prevent duplicate processing
     const { data: steps, error: fetchErr } = await supabase
       .from("journey_steps")
       .select("*, journey_enrollments!inner(journey_id, contact_id, status, workspace_id)")
@@ -30,11 +30,23 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ processed: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Atomically claim steps by setting status to 'processing' only if still 'pending'
+    const stepIds = steps.map(s => s.id);
+    const { data: claimedSteps } = await supabase
+      .from("journey_steps")
+      .update({ status: "processing" })
+      .in("id", stepIds)
+      .eq("status", "pending")
+      .select("id");
+    
+    const claimedIds = new Set((claimedSteps || []).map(s => s.id));
+    const stepsToProcess = steps.filter(s => claimedIds.has(s.id));
+
     let processed = 0;
     let skipped = 0;
 
-    for (const step of steps) {
-      if (step.journey_enrollments?.status !== "active") continue;
+    for (const step of stepsToProcess) {
+      if (step.journey_enrollments?.status !== "active") { skipped++; continue; }
 
       const journeyId = step.journey_enrollments.journey_id;
       const contactId = step.journey_enrollments.contact_id;
@@ -54,6 +66,22 @@ Deno.serve(async (req) => {
 
         if (!node) {
           await supabase.from("journey_steps").update({ status: "failed", error: "Node not found" }).eq("id", step.id);
+          
+          // C8: Auto-advance on repeated failures — check if enrollment has 3+ failures
+          const { count: failCount } = await supabase
+            .from("journey_steps")
+            .select("id", { count: "exact", head: true })
+            .eq("enrollment_id", step.enrollment_id)
+            .eq("status", "failed");
+          
+          if ((failCount || 0) >= 3) {
+            await supabase.from("journey_enrollments")
+              .update({ status: "completed", completed_at: new Date().toISOString() })
+              .eq("id", step.enrollment_id);
+            console.log(`[JOURNEY] Auto-completed enrollment ${step.enrollment_id} after ${failCount} failures`);
+          }
+          
+          skipped++;
           continue;
         }
 

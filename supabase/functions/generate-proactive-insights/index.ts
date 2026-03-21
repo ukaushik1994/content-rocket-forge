@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     let totalRecs = 0;
 
     for (const userId of uniqueUserIds) {
+     try { // C7: per-user try/catch so one failure doesn't stop all
       const recommendations: Array<{ user_id: string; type: string; title: string; description: string; action: string; priority: number; priority_score: number }> = [];
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
@@ -188,7 +189,11 @@ Deno.serve(async (req) => {
           .eq('status', 'active')
           .ilike('message', '%empty calendar%');
       }
-    }
+      }
+     } catch (userErr) {
+       console.error(`[PROACTIVE] Error processing user ${userId}:`, userErr);
+       continue; // C7: skip failed user, continue with others
+     }
 
     console.log(`[PROACTIVE] Generated ${totalRecs} recommendations for ${uniqueUserIds.length} users`);
 
