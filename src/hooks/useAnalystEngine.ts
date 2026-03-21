@@ -1632,7 +1632,8 @@ export function useAnalystEngine(
               .select('*', { count: 'exact', head: true })
               .eq('user_id', userId)
               .eq('status', 'published')
-              .gte('updated_at', since);
+            // Phase 5: Use created_at to count genuinely new articles
+            .gte('created_at', since);
             currentValue = count || 0;
           } else if (goal.goal_type === 'content_count') {
             const since = goal.starts_at || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
