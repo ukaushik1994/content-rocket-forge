@@ -552,6 +552,8 @@ export const useEnhancedAIChatDB = () => {
     const userDbId = await saveMessage(userMessage, conversationId);
     if (userDbId) {
       setMessages(prev => prev.map(m => m.id === userMessage.id ? { ...m, id: userDbId } : m));
+    } else {
+      toast({ title: "Warning", description: "Message may not be saved — check your connection", variant: "destructive" });
     }
 
     // Phase 1: Learn from user message patterns (non-blocking)
