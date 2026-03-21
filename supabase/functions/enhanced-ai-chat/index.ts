@@ -1953,6 +1953,30 @@ serve(async (req) => {
       });
     }
 
+    // Rate limiting: max 30 requests per minute per user
+    try {
+      const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+      const { count: recentRequests } = await supabase
+        .from('llm_usage_logs')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', oneMinuteAgo);
+
+      if ((recentRequests || 0) >= 30) {
+        console.warn(`⚠️ Rate limit hit for user ${user.id}: ${recentRequests} requests in last minute`);
+        return new Response(JSON.stringify({
+          error: 'Rate limited — too many requests. Please wait a moment and try again.',
+          retryAfter: 30
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "30" },
+        });
+      }
+    } catch (rlErr) {
+      // Rate limit check failed — don't block the request
+      console.warn('Rate limit check failed (non-blocking):', rlErr);
+    }
+
     // Parse and validate input
     let rawBody: unknown;
     try {

@@ -27,20 +27,19 @@ export function getCorsHeaders(origin: string | null): HeadersInit {
     };
   }
   
-  // For unknown origins, still allow but log for monitoring
-  // This maintains backward compatibility while enabling monitoring
-  console.warn('CORS request from unlisted origin:', origin);
+  // Reject unknown origins — log for monitoring but don't grant access
+  console.warn('⚠️ CORS rejected unknown origin:', origin);
   return {
-    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Origin': 'https://creaiter.lovable.app',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   };
 }
 
-// Legacy static headers for backward compatibility
+// Legacy static headers — uses production origin as default
 // Prefer using getCorsHeaders(origin) for new implementations
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://creaiter.lovable.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
