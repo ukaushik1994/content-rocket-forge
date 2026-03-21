@@ -28,11 +28,11 @@ export const ContentIntelligenceSection: React.FC<Props> = ({ platformData, onSe
   };
 
   return (
-    <AnalystSectionWrapper number="04" label="Content Intelligence" headline={getHeadline()} delay={0.18}>
+    <AnalystSectionWrapper number="04" label="CONTENT INTELLIGENCE" headline={getHeadline()} delay={0.18}>
       <div className="grid grid-cols-2 gap-3">
         {totalContent > 0 && (
           <AnalystDataCard
-            label="Publish Rate"
+            label="PUBLISH RATE"
             value={`${publishRate}%`}
             subtitle={`${published}/${totalContent} pieces`}
             onClick={() => onSendMessage('Analyze my content publish rate and pipeline status')}
@@ -40,7 +40,7 @@ export const ContentIntelligenceSection: React.FC<Props> = ({ platformData, onSe
         )}
         {avgSeo > 0 && (
           <AnalystDataCard
-            label="Avg SEO Score"
+            label="AVG SEO SCORE"
             value={avgSeo}
             color={avgSeo >= 70 ? 'green' : avgSeo >= 40 ? 'amber' : 'red'}
             onClick={() => onSendMessage('Analyze my content SEO scores in detail')}

@@ -36,7 +36,7 @@ export const PerformanceTrajectorySection: React.FC<Props> = ({ analystState, ch
   };
 
   return (
-    <AnalystSectionWrapper number="02" label="Performance Trajectory" headline={getHeadline()} delay={0.1}>
+    <AnalystSectionWrapper number="02" label="PERFORMANCE TRAJECTORY" headline={getHeadline()} delay={0.1}>
       <div className="glass-card p-5">
         <div className="mb-4">
           <p className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground/40 mb-1">{dataKeys[0]?.replace(/_/g, ' ').toUpperCase() || 'PERFORMANCE METRIC'}</p>

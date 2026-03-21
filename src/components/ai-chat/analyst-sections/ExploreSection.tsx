@@ -44,7 +44,7 @@ export const ExploreSection: React.FC<Props> = ({ analystState, deepDivePrompts,
   const finalPrompts = prompts.length > 0 ? prompts.slice(0, 6) : defaultPrompts.map(p => ({ label: p, action: p }));
 
   return (
-    <AnalystSectionWrapper number="12" label="Explore" headline={<>Continue exploring your <span className="text-primary/80">data</span></>} delay={0.35}>
+    <AnalystSectionWrapper number="12" label="EXPLORE" headline={<>Continue exploring your <span className="text-primary/80">data</span></>} delay={0.35}>
       <div className="flex flex-wrap gap-2">
         {finalPrompts.map((prompt, idx) => (
           <button

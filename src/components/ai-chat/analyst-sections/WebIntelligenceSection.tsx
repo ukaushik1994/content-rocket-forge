@@ -16,7 +16,7 @@ export const WebIntelligenceSection: React.FC<Props> = ({ webSearchResults, onSe
   return (
     <AnalystSectionWrapper
       number="11"
-      label="Web Intelligence"
+      label="WEB INTELLIGENCE"
       headline={<>Live signals from the <span className="text-primary/80">web</span></>}
       delay={0.3}
     >

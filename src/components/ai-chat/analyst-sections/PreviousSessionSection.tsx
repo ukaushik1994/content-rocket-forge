@@ -10,7 +10,7 @@ export const PreviousSessionSection: React.FC<Props> = ({ onSendMessage }) => {
   return (
     <AnalystSectionWrapper
       number="10"
-      label="Previous Session"
+      label="PREVIOUS SESSION"
       headline={<>Continuing from your <span className="text-primary/80">last session</span></>}
       delay={0}
     >

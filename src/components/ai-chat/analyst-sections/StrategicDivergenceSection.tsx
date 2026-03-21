@@ -29,7 +29,7 @@ export const StrategicDivergenceSection: React.FC<Props> = ({ insights, onSendMe
   };
 
   return (
-    <AnalystSectionWrapper number="03" label="Strategic Divergence" headline={getHeadline()} delay={0.15}>
+    <AnalystSectionWrapper number="03" label="STRATEGIC DIVERGENCE" headline={getHeadline()} delay={0.15}>
       <div className="space-y-2.5">
         {anomalies.slice(0, 4).map((insight) => (
           <AnalystInsightCard

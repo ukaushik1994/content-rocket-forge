@@ -26,7 +26,7 @@ export const EngagementMetricsSection: React.FC<Props> = ({ platformData, onSend
   return (
     <AnalystSectionWrapper
       number="07"
-      label="Engagement Metrics"
+      label="ENGAGEMENT METRICS"
       headline={getHeadline()}
       delay={0.24}
     >
@@ -34,7 +34,7 @@ export const EngagementMetricsSection: React.FC<Props> = ({ platformData, onSend
         {engageMetrics.slice(0, 4).map((metric) => (
           <AnalystDataCard
             key={metric.label}
-            label={metric.label}
+            label={metric.label.toUpperCase()}
             value={metric.value}
             onClick={() => onSendMessage(`Analyze ${metric.label.toLowerCase()} engagement trends`)}
           />

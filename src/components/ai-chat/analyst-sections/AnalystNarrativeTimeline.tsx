@@ -213,18 +213,6 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
 
   return (
     <div>
-      {/* 5B: Stale data / refresh status */}
-      {dataAgeLabel || analystState?.lastRefreshError
-
-
-
-
-
-
-
-
-
-      }
       <div className="space-y-8">
       {orderedSections.map((section) =>
         <div key={section.id} onClick={() => !section.fixed && handleSectionClick(section.id)}>

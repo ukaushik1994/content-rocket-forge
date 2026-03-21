@@ -25,11 +25,11 @@ export const KeywordLandscapeSection: React.FC<Props> = ({ topics, platformData,
   };
 
   return (
-    <AnalystSectionWrapper number="05" label="Keyword Landscape" headline={getHeadline()} delay={0.2}>
+    <AnalystSectionWrapper number="05" label="KEYWORD LANDSCAPE" headline={getHeadline()} delay={0.2}>
       {keywordMetrics.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
           {keywordMetrics.slice(0, 4).map((metric) => (
-            <AnalystDataCard key={metric.label} label={metric.label} value={metric.value} />
+            <AnalystDataCard key={metric.label} label={metric.label.toUpperCase()} value={metric.value} />
           ))}
         </div>
       )}

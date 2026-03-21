@@ -26,7 +26,7 @@ export const CampaignPulseSection: React.FC<Props> = ({ platformData, onSendMess
   return (
     <AnalystSectionWrapper
       number="06"
-      label="Campaign Pulse"
+      label="CAMPAIGN PULSE"
       headline={getHeadline()}
       delay={0.22}
     >
@@ -36,7 +36,7 @@ export const CampaignPulseSection: React.FC<Props> = ({ platformData, onSendMess
             {campaignMetrics.slice(0, 4).map((metric) => (
               <AnalystDataCard
                 key={metric.label}
-                label={metric.label}
+                label={metric.label.toUpperCase()}
                 value={metric.value}
                 onClick={() => onSendMessage(`Show me details about ${metric.label.toLowerCase()}`)}
               />
