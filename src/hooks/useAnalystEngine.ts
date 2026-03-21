@@ -322,7 +322,7 @@ function computeCrossSignals(
 
       if (thisWeekPublished && thisWeekPublished.length >= 2) {
         signals.push({
-          id: `cross-publish-streak-${now.getTime()}`,
+          id: `cross-publish-streak`,
           content: `🔥 ${thisWeekPublished.length} articles published this week — great momentum! Consistency compounds SEO results.`,
           type: 'opportunity',
           source: 'cross-signal',
