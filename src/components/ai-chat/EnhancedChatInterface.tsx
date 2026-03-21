@@ -879,58 +879,54 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </motion.div>
       </div>
 
-      {/* Input Area - ALWAYS full width, respects left sidebar only on desktop */}
-      <div className={cn(
-      "fixed bottom-0 left-0 right-0 z-40",
-      "border-t border-white/5 bg-background/80 backdrop-blur-md",
-      "transition-all duration-300 ease-out",
-      !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
-    )}>
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          
-          <ContextAwareMessageInput
-          onSendMessage={handleSendMessage}
-          isLoading={isLoading || isExtractingContext}
-          placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask Creaiter anything..." : "Continue the conversation..."}
-          onOpenProposals={() => {
-            handleSetVisualization({
-              type: 'proposal_browser',
-              title: 'AI Proposals',
-              description: 'Browse AI-generated content proposals',
-              step: 'solution_selection'
-            });
-          }}
-          onLaunchWizard={handleLaunchWizard}
-          onOpenResearch={() => {
-            handleSetVisualization({
-              type: 'research_intelligence',
-              title: 'Research Intelligence',
-              description: 'Plan content strategy & identify gaps'
-            });
-          }}
-          onOpenAnalyst={() => {
-            // Toggle behavior: if sidebar showing analyst, close it; otherwise open
-            if (showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst') {
-              handleCloseSidebar();
-            } else {
-              setAnalystActive(true);
-              handleSetVisualization({
-                type: 'analyst',
-                title: 'Intelligence Panel',
-                description: 'Charts & insights companion'
-              });
-              // Trigger fresh data fetch by resetting analyst engine state
-            }
-          }}
-          onWebSearch={() => {
-            // Web search mode is handled in ContextAwareMessageInput
-            // The [web-search] prefix is detected by the backend
-          }}
-          onQuickAction={handleLegacyAction}
-          onSetVisualization={handleSetVisualization}
-        />
+      {/* Input Area - Only show fixed bottom bar when messages exist */}
+      {messages.length > 0 && (
+        <div className={cn(
+          "fixed bottom-0 left-0 right-0 z-40",
+          "border-t border-white/5 bg-background/80 backdrop-blur-md",
+          "transition-all duration-300 ease-out",
+          !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
+        )}>
+          <div className="max-w-6xl mx-auto px-4 py-3">
+            <ContextAwareMessageInput
+              onSendMessage={handleSendMessage}
+              isLoading={isLoading || isExtractingContext}
+              placeholder={isExtractingContext ? "Analyzing your request..." : "Continue the conversation..."}
+              onOpenProposals={() => {
+                handleSetVisualization({
+                  type: 'proposal_browser',
+                  title: 'AI Proposals',
+                  description: 'Browse AI-generated content proposals',
+                  step: 'solution_selection'
+                });
+              }}
+              onLaunchWizard={handleLaunchWizard}
+              onOpenResearch={() => {
+                handleSetVisualization({
+                  type: 'research_intelligence',
+                  title: 'Research Intelligence',
+                  description: 'Plan content strategy & identify gaps'
+                });
+              }}
+              onOpenAnalyst={() => {
+                if (showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst') {
+                  handleCloseSidebar();
+                } else {
+                  setAnalystActive(true);
+                  handleSetVisualization({
+                    type: 'analyst',
+                    title: 'Intelligence Panel',
+                    description: 'Charts & insights companion'
+                  });
+                }
+              }}
+              onWebSearch={() => {}}
+              onQuickAction={handleLegacyAction}
+              onSetVisualization={handleSetVisualization}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Conversation Analytics Modal */}
       <ConversationAnalyticsModal isOpen={showAnalyticsModal}
