@@ -40,15 +40,21 @@ export const RepositoryBulkBar: React.FC<RepositoryBulkBarProps> = ({
   const handleBulkDelete = async () => {
     setIsDeleting(true);
     let deleted = 0;
+    let failed = 0;
     for (const id of selectedIds) {
       try {
         await deleteContentItem(id);
         deleted++;
       } catch (e) {
+        failed++;
         console.error('Failed to delete', id, e);
       }
     }
-    toast.success(`Deleted ${deleted} item${deleted !== 1 ? 's' : ''}`);
+    if (failed > 0) {
+      toast.error(`Deleted ${deleted}, failed ${failed} — some items may have dependencies`);
+    } else {
+      toast.success(`Deleted ${deleted} item${deleted !== 1 ? 's' : ''}`);
+    }
     onClearSelection();
     setShowDeleteDialog(false);
     setIsDeleting(false);
