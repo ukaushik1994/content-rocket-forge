@@ -802,10 +802,10 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       transition={{ delay: 0.5, duration: 0.4 }}
                     >
                       {[
-                        { label: 'Write content', icon: '✍️', color: 'text-purple-400 border-purple-500/20 hover:bg-purple-500/10', action: 'wizard' },
-                        { label: 'Run a campaign', icon: '📣', color: 'text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10', prompt: 'Help me set up and run a new campaign' },
-                        { label: 'Draft an email', icon: '✉️', color: 'text-blue-400 border-blue-500/20 hover:bg-blue-500/10', prompt: 'Create a new email campaign for my latest content' },
-                        { label: 'What can you do?', icon: '✦', color: 'text-violet-400 border-violet-500/20 hover:bg-violet-500/10', prompt: '/help' },
+                        { label: 'Write content', Icon: PenLine, color: 'text-purple-400 border-purple-500/20 hover:bg-purple-500/10', action: 'wizard' },
+                        { label: 'Run a campaign', Icon: Megaphone, color: 'text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10', prompt: 'Help me set up and run a new campaign' },
+                        { label: 'Draft an email', Icon: Mail, color: 'text-blue-400 border-blue-500/20 hover:bg-blue-500/10', prompt: 'Create a new email campaign for my latest content' },
+                        { label: 'What can you do?', Icon: HelpCircle, color: 'text-violet-400 border-violet-500/20 hover:bg-violet-500/10', prompt: '/help' },
                       ].map((chip) => (
                         <button
                           key={chip.label}
@@ -821,11 +821,44 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                             chip.color
                           )}
                         >
-                          <span>{chip.icon}</span>
+                          <chip.Icon className="w-3.5 h-3.5" />
                           <span>{chip.label}</span>
                         </button>
                       ))}
                     </motion.div>
+
+                    {/* Proactive Insights */}
+                    {proactiveInsights.length > 0 && (
+                      <motion.div 
+                        className="flex flex-col items-center gap-2.5 mt-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.6, duration: 0.4 }}
+                      >
+                        <span className="text-[11px] uppercase tracking-widest text-muted-foreground/40 font-medium">
+                          Insights
+                        </span>
+                        {proactiveInsights.map((insight, i) => {
+                          const insightColor = insight.type === 'stale' ? 'text-amber-400' 
+                            : insight.type === 'failed' ? 'text-rose-400'
+                            : insight.type === 'empty_cal' ? 'text-blue-400'
+                            : 'text-emerald-400';
+                          return (
+                            <motion.button
+                              key={insight.type}
+                              className="flex items-center gap-2.5 text-sm text-muted-foreground/70 hover:text-foreground transition-colors"
+                              initial={{ opacity: 0, y: 4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.7 + i * 0.08 }}
+                              onClick={() => handleSendMessage(insight.label)}
+                            >
+                              <span className={insightColor}>{insight.icon}</span>
+                              <span>{insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}</span>
+                            </motion.button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
                   </motion.div>}
               </AnimatePresence>
 
