@@ -810,7 +810,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                             if (chip.action === 'wizard' && handleLaunchWizard) {
                               handleLaunchWizard('');
                             } else if (chip.prompt) {
-                              handleSendMessage(chip.prompt, chip.label);
+                              handleSendMessage(chip.prompt);
                             }
                           }}
                           className={cn(
