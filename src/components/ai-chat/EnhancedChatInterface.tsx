@@ -745,6 +745,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* SB-10: Getting Started Milestones */}
                     <GettingStartedChecklist />
 
+                    {/* Platform Summary Metrics */}
+                    <PlatformSummaryCard onAction={() => {}} />
+
                     {/* Centered Input */}
                     <motion.div 
                       className="w-full max-w-2xl px-4"
