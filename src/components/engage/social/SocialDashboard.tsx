@@ -5,7 +5,7 @@ import { SocialInbox } from './SocialInbox';
 import { SocialAnalytics } from './SocialAnalytics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { EngagePageHero } from '../shared/EngagePageHero';
+
 import { EngageFilterBar } from '../shared/EngageFilterBar';
 import { EngageSkeletonCards } from '../shared/EngageSkeletonCards';
 import { EngageStatGrid } from '../shared/EngageStatCard';
