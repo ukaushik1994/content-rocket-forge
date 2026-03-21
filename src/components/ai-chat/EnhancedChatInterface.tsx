@@ -17,6 +17,7 @@ import { SolutionRecommendations } from './SolutionRecommendations';
 import { SolutionWorkflowTemplates } from './SolutionWorkflowTemplates';
 import { ConversationAnalyticsModal } from './ConversationAnalyticsModal';
 import { MessageSearchBar } from './MessageSearchBar';
+import { useChatSearch } from '@/contexts/ChatSearchContext';
 import { useSharedAIChatDB } from '@/contexts/AIChatDBContext';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { ScrollArea } from '@/components/ui/scroll-area';
