@@ -724,9 +724,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 </div>
               )}
 
-              {/* Welcome State - Premium Minimal */}
+              {/* Welcome State - Claude-Inspired Centered Layout */}
               <AnimatePresence>
-              {messages.length === 0 && !isLoadingConversation && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[60vh] py-12 sm:py-16 lg:py-24 space-y-8">
+              {messages.length === 0 && !isLoadingConversation && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="flex flex-col items-center justify-center min-h-[70vh] py-12 sm:py-16 lg:py-24 space-y-8">
                     {/* Hero Badge Pill */}
                     <motion.div
                   className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-background/60 backdrop-blur-xl rounded-full border border-border/50"
@@ -745,68 +745,83 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     {/* SB-10: Getting Started Milestones */}
                     <GettingStartedChecklist />
 
-                    {/* Circular Stats */}
-                    <PlatformSummaryCard onAction={handleLegacyAction} />
+                    {/* Centered Input */}
+                    <motion.div 
+                      className="w-full max-w-2xl px-4"
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                    >
+                      <ContextAwareMessageInput
+                        onSendMessage={handleSendMessage}
+                        isLoading={isLoading || isExtractingContext}
+                        placeholder="Ask Creaiter anything..."
+                        centered={true}
+                        onOpenProposals={() => {
+                          handleSetVisualization({
+                            type: 'proposal_browser',
+                            title: 'AI Proposals',
+                            description: 'Browse AI-generated content proposals',
+                            step: 'solution_selection'
+                          });
+                        }}
+                        onLaunchWizard={handleLaunchWizard}
+                        onOpenResearch={() => {
+                          handleSetVisualization({
+                            type: 'research_intelligence',
+                            title: 'Research Intelligence',
+                            description: 'Plan content strategy & identify gaps'
+                          });
+                        }}
+                        onOpenAnalyst={() => {
+                          if (showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst') {
+                            handleCloseSidebar();
+                          } else {
+                            setAnalystActive(true);
+                            handleSetVisualization({
+                              type: 'analyst',
+                              title: 'Intelligence Panel',
+                              description: 'Charts & insights companion'
+                            });
+                          }
+                        }}
+                        onWebSearch={() => {}}
+                        onQuickAction={handleLegacyAction}
+                        onSetVisualization={handleSetVisualization}
+                      />
+                    </motion.div>
 
-                    {/* 2-Column Layout: Insights | Recommended */}
-                    <motion.div
-                      className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-3xl"
+                    {/* Quick Action Chips */}
+                    <motion.div 
+                      className="flex flex-wrap items-center justify-center gap-2"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3, duration: 0.4 }}
+                      transition={{ delay: 0.5, duration: 0.4 }}
                     >
-
-                      {/* Column 2: Insights */}
-                      <div className="flex flex-col gap-1">
-                        {proactiveInsights.length > 0 && (
-                          <>
-                            <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3">Insights</span>
-                            {proactiveInsights.map((insight) => (
-                              <button
-                                key={insight.type}
-                                onClick={() => {
-                                  const prompts: Record<string, string> = {
-                                    stale: 'Show me my stale drafts that need attention',
-                                    failed: 'What content generation tasks failed?',
-                                    empty_cal: 'Help me plan content for this week',
-                                    approvals: 'Show me content pending my review'
-                                  };
-                                  sendMessage(prompts[insight.type] || '');
-                                }}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors text-left"
-                              >
-                                <span className="shrink-0">{insight.icon}</span>
-                                <span>{insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}</span>
-                              </button>
-                            ))}
-                          </>
-                        )}
-                      </div>
-
-                      {/* Column 3: Recommended */}
-                      <div className="flex flex-col gap-1">
-                        {aiRecommendations.length > 0 && (
-                          <>
-                            <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3">Recommended</span>
-                            {aiRecommendations.map((rec) => (
-                              <button
-                                key={rec.id}
-                                onClick={() => {
-                                  sendMessage(rec.action);
-                                  (supabase as any).from('proactive_recommendations')
-                                    .update({ acted_on: true })
-                                    .eq('id', rec.id).then(() => {});
-                                  setAiRecommendations(prev => prev.filter(r => r.id !== rec.id));
-                                }}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-colors text-left"
-                              >
-                                <span className="shrink-0 text-primary">✦</span>
-                                <span>{rec.title}</span>
-                              </button>
-                            ))}
-                          </>
-                        )}
-                      </div>
+                      {[
+                        { label: 'Write content', icon: '✍️', color: 'text-purple-400 border-purple-500/20 hover:bg-purple-500/10', action: 'wizard' },
+                        { label: 'Run a campaign', icon: '📣', color: 'text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10', prompt: 'Help me set up and run a new campaign' },
+                        { label: 'Draft an email', icon: '✉️', color: 'text-blue-400 border-blue-500/20 hover:bg-blue-500/10', prompt: 'Create a new email campaign for my latest content' },
+                        { label: 'What can you do?', icon: '✦', color: 'text-violet-400 border-violet-500/20 hover:bg-violet-500/10', prompt: '/help' },
+                      ].map((chip) => (
+                        <button
+                          key={chip.label}
+                          onClick={() => {
+                            if (chip.action === 'wizard' && handleLaunchWizard) {
+                              handleLaunchWizard('');
+                            } else if (chip.prompt) {
+                              handleSendMessage(chip.prompt);
+                            }
+                          }}
+                          className={cn(
+                            "inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-transparent text-sm font-medium transition-all duration-200",
+                            chip.color
+                          )}
+                        >
+                          <span>{chip.icon}</span>
+                          <span>{chip.label}</span>
+                        </button>
+                      ))}
                     </motion.div>
                   </motion.div>}
               </AnimatePresence>
@@ -864,58 +879,54 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </motion.div>
       </div>
 
-      {/* Input Area - ALWAYS full width, respects left sidebar only on desktop */}
-      <div className={cn(
-      "fixed bottom-0 left-0 right-0 z-40",
-      "border-t border-white/5 bg-background/80 backdrop-blur-md",
-      "transition-all duration-300 ease-out",
-      !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
-    )}>
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          
-          <ContextAwareMessageInput
-          onSendMessage={handleSendMessage}
-          isLoading={isLoading || isExtractingContext}
-          placeholder={isExtractingContext ? "Analyzing your request..." : messages.length === 0 ? "Ask Creaiter anything..." : "Continue the conversation..."}
-          onOpenProposals={() => {
-            handleSetVisualization({
-              type: 'proposal_browser',
-              title: 'AI Proposals',
-              description: 'Browse AI-generated content proposals',
-              step: 'solution_selection'
-            });
-          }}
-          onLaunchWizard={handleLaunchWizard}
-          onOpenResearch={() => {
-            handleSetVisualization({
-              type: 'research_intelligence',
-              title: 'Research Intelligence',
-              description: 'Plan content strategy & identify gaps'
-            });
-          }}
-          onOpenAnalyst={() => {
-            // Toggle behavior: if sidebar showing analyst, close it; otherwise open
-            if (showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst') {
-              handleCloseSidebar();
-            } else {
-              setAnalystActive(true);
-              handleSetVisualization({
-                type: 'analyst',
-                title: 'Intelligence Panel',
-                description: 'Charts & insights companion'
-              });
-              // Trigger fresh data fetch by resetting analyst engine state
-            }
-          }}
-          onWebSearch={() => {
-            // Web search mode is handled in ContextAwareMessageInput
-            // The [web-search] prefix is detected by the backend
-          }}
-          onQuickAction={handleLegacyAction}
-          onSetVisualization={handleSetVisualization}
-        />
+      {/* Input Area - Only show fixed bottom bar when messages exist */}
+      {messages.length > 0 && (
+        <div className={cn(
+          "fixed bottom-0 left-0 right-0 z-40",
+          "border-t border-white/5 bg-background/80 backdrop-blur-md",
+          "transition-all duration-300 ease-out",
+          !isMobile && (isSidebarOpen ? "sm:left-72 lg:left-80" : "sm:left-14")
+        )}>
+          <div className="max-w-6xl mx-auto px-4 py-3">
+            <ContextAwareMessageInput
+              onSendMessage={handleSendMessage}
+              isLoading={isLoading || isExtractingContext}
+              placeholder={isExtractingContext ? "Analyzing your request..." : "Continue the conversation..."}
+              onOpenProposals={() => {
+                handleSetVisualization({
+                  type: 'proposal_browser',
+                  title: 'AI Proposals',
+                  description: 'Browse AI-generated content proposals',
+                  step: 'solution_selection'
+                });
+              }}
+              onLaunchWizard={handleLaunchWizard}
+              onOpenResearch={() => {
+                handleSetVisualization({
+                  type: 'research_intelligence',
+                  title: 'Research Intelligence',
+                  description: 'Plan content strategy & identify gaps'
+                });
+              }}
+              onOpenAnalyst={() => {
+                if (showVisualizationSidebar && visualizationData?.visualData?.type === 'analyst') {
+                  handleCloseSidebar();
+                } else {
+                  setAnalystActive(true);
+                  handleSetVisualization({
+                    type: 'analyst',
+                    title: 'Intelligence Panel',
+                    description: 'Charts & insights companion'
+                  });
+                }
+              }}
+              onWebSearch={() => {}}
+              onQuickAction={handleLegacyAction}
+              onSetVisualization={handleSetVisualization}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Conversation Analytics Modal */}
       <ConversationAnalyticsModal isOpen={showAnalyticsModal}
