@@ -502,7 +502,7 @@ export const useEnhancedAIChatDB = () => {
       if (!conversationId) {
         conversationId = await createConversation('Capabilities');
         if (!conversationId) {
-          toast.error('Failed to create conversation. Please try again.');
+          toast({ title: "Error", description: "Failed to create conversation. Please try again.", variant: "destructive" });
           return;
         }
       }
