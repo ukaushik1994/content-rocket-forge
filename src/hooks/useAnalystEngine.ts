@@ -527,7 +527,7 @@ function computeCrossSignals(
           );
           if (uncoveredSolutions.length > 0) {
             signals.push({
-              id: `cross-solution-gap-${now.getTime()}`,
+              id: `cross-solution-gap`,
               content: `🏢 ${uncoveredSolutions.length} of your ${solutions.length} solutions have no dedicated content — "${uncoveredSolutions[0].name}" could use an article to support sales.`,
               type: 'opportunity',
               source: 'cross-signal',
