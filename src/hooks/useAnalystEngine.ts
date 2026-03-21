@@ -583,7 +583,7 @@ function computeCrossSignals(
         for (const [query, count] of queryCount) {
           if (count >= 3 && !accountabilityAdded) {
             signals.push({
-              id: `cross-accountability-${now.getTime()}`,
+              id: `cross-accountability`,
               content: `🔄 You've asked about "${query}" ${count} times this session. Want to take action instead of analyzing further? Let me create a concrete plan.`,
               type: 'opportunity',
               source: 'cross-signal',
