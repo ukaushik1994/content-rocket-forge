@@ -14,10 +14,10 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
   if (!health) return null;
 
   const getHeadline = () => {
-    if (health.total >= 80) return <>Your workspace is <span className="text-emerald-400/80">thriving</span></>;
+    if (health.total >= 80) return <>Your workspace is <span className="text-primary/80">thriving</span></>;
     if (health.total >= 60) return <>Health is <span className="text-primary/80">steady</span> — room to grow</>;
     if (health.total >= 40) return <>Performance needs <span className="text-primary/80">attention</span></>;
-    return <>Critical areas require <span className="text-rose-300">immediate action</span></>;
+    return <>Critical areas require <span className="text-primary/50">immediate action</span></>;
   };
 
   const trendLabel = health.trend === 'improving' ? 'Improving' : health.trend === 'declining' ? 'Declining' : 'Stable';
