@@ -760,25 +760,37 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       <div className="flex flex-col gap-1">
                         {proactiveInsights.length > 0 && (
                           <>
-                            <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3">Insights</span>
-                            {proactiveInsights.map((insight) => (
-                              <button
-                                key={insight.type}
-                                onClick={() => {
-                                  const prompts: Record<string, string> = {
-                                    stale: 'Show me my stale drafts that need attention',
-                                    failed: 'What content generation tasks failed?',
-                                    empty_cal: 'Help me plan content for this week',
-                                    approvals: 'Show me content pending my review'
-                                  };
-                                  sendMessage(prompts[insight.type] || '');
-                                }}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors text-left"
-                              >
-                                <span className="shrink-0">{insight.icon}</span>
-                                <span>{insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}</span>
-                              </button>
-                            ))}
+                            <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3 pb-2 border-b border-white/[0.06]">Insights</span>
+                            {proactiveInsights.map((insight, index) => {
+                              const insightColors: Record<string, string> = {
+                                stale: 'text-amber-400',
+                                failed: 'text-rose-400',
+                                empty_cal: 'text-blue-400',
+                                approvals: 'text-emerald-400',
+                              };
+                              const iconColor = insightColors[insight.type] || 'text-muted-foreground';
+                              return (
+                                <motion.button
+                                  key={insight.type}
+                                  initial={{ opacity: 0, x: -8 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: 0.4 + index * 0.06, duration: 0.3, ease: 'easeOut' }}
+                                  onClick={() => {
+                                    const prompts: Record<string, string> = {
+                                      stale: 'Show me my stale drafts that need attention',
+                                      failed: 'What content generation tasks failed?',
+                                      empty_cal: 'Help me plan content for this week',
+                                      approvals: 'Show me content pending my review'
+                                    };
+                                    sendMessage(prompts[insight.type] || '');
+                                  }}
+                                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.04] hover:backdrop-blur-sm transition-all text-left border-l-2 border-transparent hover:border-primary/30"
+                                >
+                                  <span className={`shrink-0 ${iconColor}`}>{insight.icon}</span>
+                                  <span>{insight.label}{insight.count > 0 ? ` (${insight.count})` : ''}</span>
+                                </motion.button>
+                              );
+                            })}
                           </>
                         )}
                       </div>
@@ -787,10 +799,13 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       <div className="flex flex-col gap-1">
                         {aiRecommendations.length > 0 && (
                           <>
-                            <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3">Recommended</span>
-                            {aiRecommendations.map((rec) => (
-                              <button
+                            <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider mb-2 px-3 pb-2 border-b border-white/[0.06]">Recommended</span>
+                            {aiRecommendations.map((rec, index) => (
+                              <motion.button
                                 key={rec.id}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.4 + index * 0.06, duration: 0.3, ease: 'easeOut' }}
                                 onClick={() => {
                                   sendMessage(rec.action);
                                   (supabase as any).from('proactive_recommendations')
@@ -798,11 +813,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                                     .eq('id', rec.id).then(() => {});
                                   setAiRecommendations(prev => prev.filter(r => r.id !== rec.id));
                                 }}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-colors text-left"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.04] hover:backdrop-blur-sm transition-all text-left border-l-2 border-transparent hover:border-primary/30"
                               >
-                                <span className="shrink-0 text-primary">✦</span>
+                                <Sparkles className="shrink-0 h-3.5 w-3.5 text-primary/60" />
                                 <span>{rec.title}</span>
-                              </button>
+                              </motion.button>
                             ))}
                           </>
                         )}
