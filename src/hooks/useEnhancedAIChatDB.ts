@@ -656,7 +656,7 @@ export const useEnhancedAIChatDB = () => {
         if (sessionData?.session) {
           const expiresAt = sessionData.session.expires_at || 0;
           const nowSecs = Math.floor(Date.now() / 1000);
-          if (expiresAt - nowSecs < 120) {
+          if (expiresAt - nowSecs < 300) {
             await supabase.auth.refreshSession();
           }
         }
