@@ -908,11 +908,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             }
           }}
           onWebSearch={() => {
-
-
             // Web search mode is handled in ContextAwareMessageInput
             // The [web-search] prefix is detected by the backend
-          }} />
+          }}
+          onQuickAction={handleLegacyAction}
+          onSetVisualization={handleSetVisualization}
+        />
         </div>
       </div>
 
