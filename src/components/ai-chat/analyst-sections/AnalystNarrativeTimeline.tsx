@@ -212,10 +212,10 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
 
 
   return (
-    <div className="space-y-12">
+    <div>
       {/* 5B: Stale data / refresh status */}
       {(dataAgeLabel || analystState?.lastRefreshError) && (
-        <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground/50">
+        <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground/50 mb-4">
           {dataAgeLabel && <span>Updated {dataAgeLabel}</span>}
           {analystState?.lastRefreshError && (
             <span className="flex items-center gap-1 text-destructive/60">
@@ -225,6 +225,7 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
           )}
         </div>
       )}
+      <div className="space-y-8">
       {orderedSections.map(section => (
         <div key={section.id} onClick={() => !section.fixed && handleSectionClick(section.id)}>
           {section.render()}
