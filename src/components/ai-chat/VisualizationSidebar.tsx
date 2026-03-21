@@ -764,7 +764,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-medium text-foreground/80">{analystState.goalProgress.goalName}</span>
-                      <span className="text-[11px] font-bold text-amber-300/80">{analystState.goalProgress.percentage}%</span>
+                      <span className="text-[11px] font-bold text-primary/80">{analystState.goalProgress.percentage}%</span>
                     </div>
                     <div className="w-full h-1.5 bg-muted/20 rounded-full overflow-hidden">
                       <div
