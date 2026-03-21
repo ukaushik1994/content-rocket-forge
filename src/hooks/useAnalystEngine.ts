@@ -1745,7 +1745,7 @@ export function useAnalystEngine(
         { label: 'Content Strategy 101', prompt: 'I\'m just starting out. Give me a simple content strategy to build my first 5 articles with maximum impact.', effort: 'low', impact: 'medium' },
       ],
     };
-  }, [isActive, platformData]);
+  }, [isActive, platformData, crossSignalInsights]);
 
   // ─── User Stage & Benchmarks ────────────────────────────────────────────
   const userStage = useMemo<UserStage | null>(() => {
