@@ -1502,7 +1502,7 @@ export function useAnalystEngine(
             .limit(3);
           if (stalePublished && stalePublished.length > 0) {
             alerts.push({
-              id: `anomaly-stale-content-${now.getTime()}`,
+              id: `anomaly-stale-content`,  // Phase 5: stable anomaly ID
               content: `🕰️ ${stalePublished.length} published article${stalePublished.length > 1 ? 's' : ''} not reviewed in 90+ days — "${stalePublished[0].title}" may need a freshness update`,
               type: 'warning',
               source: 'platform',
