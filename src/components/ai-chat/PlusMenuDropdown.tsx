@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Paperclip, PenLine, BookOpen, BarChart3, Lightbulb, Globe, Image, X } from 'lucide-react';
+import { Plus, Paperclip, PenLine, BookOpen, BarChart3, Lightbulb, Globe, Image, X, Search, Megaphone, Mail, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PlusMenuDropdownProps {
@@ -13,6 +13,8 @@ interface PlusMenuDropdownProps {
   onAIProposals?: () => void;
   onWebSearch?: () => void;
   onImageGeneration?: () => void;
+  onSendPrompt?: (prompt: string, displayText?: string) => void;
+  onSetVisualization?: (visualData: any) => void;
   disabled?: boolean;
 }
 
@@ -24,61 +26,98 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
   onAIProposals,
   onWebSearch,
   onImageGeneration,
+  onSendPrompt,
+  onSetVisualization,
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const menuItems = [
+  const toolItems = [
     {
       icon: Paperclip,
       label: 'Attach File',
-      description: 'Upload a file to analyze',
       onClick: onAttachFile,
       iconColor: 'text-blue-400',
     },
     {
       icon: PenLine,
       label: 'Content Wizard',
-      description: 'Create content from a topic',
       onClick: onContentWizard,
       iconColor: 'text-purple-400',
     },
     ...(onResearchIntelligence ? [{
       icon: BookOpen,
       label: 'Research Intelligence',
-      description: 'Plan content strategy & gaps',
       onClick: onResearchIntelligence,
       iconColor: 'text-rose-400',
     }] : []),
     ...(onAnalyst ? [{
       icon: BarChart3,
       label: 'Analyst',
-      description: 'Charts & insights companion',
       onClick: onAnalyst,
       iconColor: 'text-orange-400',
     }] : []),
     ...(onAIProposals ? [{
       icon: Lightbulb,
       label: 'AI Proposals',
-      description: 'Generate smart proposals',
       onClick: onAIProposals,
       iconColor: 'text-amber-400',
     }] : []),
     ...(onWebSearch ? [{
       icon: Globe,
       label: 'Web Search',
-      description: 'Search the web for info',
       onClick: onWebSearch,
       iconColor: 'text-emerald-400',
     }] : []),
     ...(onImageGeneration ? [{
       icon: Image,
       label: 'Generate Image',
-      description: 'Create an AI-generated image',
       onClick: onImageGeneration,
       iconColor: 'text-cyan-400',
     }] : []),
   ];
+
+  const quickItems = onSendPrompt ? [
+    {
+      icon: Search,
+      label: 'Research keywords',
+      onClick: () => onSendPrompt('Help me research and find the best keywords for my niche', 'Research keywords'),
+      iconColor: 'text-amber-400',
+    },
+    {
+      icon: Megaphone,
+      label: 'Run a campaign',
+      onClick: () => onSendPrompt('Help me set up and run a new campaign', 'Run a campaign'),
+      iconColor: 'text-emerald-400',
+    },
+    {
+      icon: Mail,
+      label: 'Draft an email',
+      onClick: () => onSendPrompt('Create a new email campaign for my latest content', 'Draft an email'),
+      iconColor: 'text-blue-400',
+    },
+    {
+      icon: HelpCircle,
+      label: 'What can you do?',
+      onClick: () => onSendPrompt('/help', 'What can you do?'),
+      iconColor: 'text-violet-400',
+    },
+  ] : [];
+
+  const renderItem = (item: typeof toolItems[0], index: number) => (
+    <button
+      key={index}
+      type="button"
+      onClick={() => {
+        item.onClick();
+        setIsOpen(false);
+      }}
+      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors hover:bg-accent/5 group"
+    >
+      <item.icon className={`h-4 w-4 flex-shrink-0 ${item.iconColor}`} />
+      <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground truncate">{item.label}</span>
+    </button>
+  );
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -106,23 +145,16 @@ export const PlusMenuDropdown: React.FC<PlusMenuDropdownProps> = ({
         side="top"
         align="start"
         sideOffset={8}
-        className="w-48 p-1 bg-card border-border/50 rounded-lg shadow-lg"
+        className="w-52 p-1 bg-card border-border/50 rounded-lg shadow-lg"
       >
-        <div className="space-y-px">
-          {menuItems.map((item, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => {
-                item.onClick();
-                setIsOpen(false);
-              }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors hover:bg-muted/50 group"
-            >
-              <item.icon className={`h-3.5 w-3.5 flex-shrink-0 ${item.iconColor}`} />
-              <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
-            </button>
-          ))}
+        <div className="flex flex-col gap-0.5">
+          {toolItems.map((item, index) => renderItem(item, index))}
+          {quickItems.length > 0 && (
+            <>
+              <div className="border-t border-border/30 my-1" />
+              {quickItems.map((item, index) => renderItem(item, toolItems.length + index))}
+            </>
+          )}
         </div>
       </PopoverContent>
     </Popover>

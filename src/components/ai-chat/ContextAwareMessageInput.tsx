@@ -2,11 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X, PenLine, Globe, Square, Zap } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Send, X, PenLine, Globe, Square, Image as ImageIcon } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { PlusMenuDropdown } from './PlusMenuDropdown';
-import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { FileUploadHandler } from './FileUploadHandler';
 import { cn } from '@/lib/utils';
 import { VoiceInputHandler } from './VoiceInputHandler';
@@ -50,7 +48,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [imageGenMode, setImageGenMode] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [wizardMode, setWizardMode] = useState(false);
   const [webSearchMode, setWebSearchMode] = useState(false);
@@ -118,6 +116,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const handleCancelWizard = useCallback(() => {
     setWizardMode(false);
     setWebSearchMode(false);
+    setImageGenMode(false);
     setMessage('');
   }, []);
 
@@ -167,6 +166,9 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     if (webSearchMode) {
       onSendMessage(`[web-search] ${trimmed}`);
       setWebSearchMode(false);
+    } else if (imageGenMode) {
+      onSendMessage(`[image-gen] ${trimmed}`);
+      setImageGenMode(false);
     } else if (wizardMode && onLaunchWizard) {
       onLaunchWizard(trimmed);
       setWizardMode(false);
@@ -182,7 +184,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     
     // Re-focus textarea after send to prevent needing to click again
     requestAnimationFrame(() => textareaRef.current?.focus());
-  }, [message, isLoading, wizardMode, onLaunchWizard, onSendMessage, handleTypingBroadcast]);
+  }, [message, isLoading, wizardMode, imageGenMode, webSearchMode, onLaunchWizard, onSendMessage, handleTypingBroadcast]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -190,7 +192,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
       handleSubmit();
     }
     if (e.key === 'Escape') {
-      if (wizardMode || webSearchMode) {
+      if (wizardMode || webSearchMode || imageGenMode) {
         handleCancelWizard();
       } else {
         setShowSuggestions(false);
@@ -269,11 +271,13 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const activePlaceholder = webSearchMode
-    ? "What do you want to search the web for?"
-    : wizardMode
-      ? "Enter a topic or keyword to write about..."
-      : placeholder;
+  const activePlaceholder = imageGenMode
+    ? "Describe the image you want to generate..."
+    : webSearchMode
+      ? "What do you want to search the web for?"
+      : wizardMode
+        ? "Enter a topic or keyword to write about..."
+        : placeholder;
 
   return (
     <motion.div
@@ -294,9 +298,9 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
         )}
       </AnimatePresence>
 
-      {/* Mode Chip (Wizard or Web Search) */}
+      {/* Mode Chip (Wizard, Web Search, or Image Gen) */}
       <AnimatePresence>
-        {(wizardMode || webSearchMode) && (
+        {(wizardMode || webSearchMode || imageGenMode) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -306,13 +310,15 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
           >
             <div className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium",
-              webSearchMode
-                ? "bg-accent/10 border-accent/20 text-accent"
-                : "bg-primary/10 border-primary/20 text-primary"
+              imageGenMode
+                ? "bg-cyan-500/10 border-cyan-500/20 text-cyan-400"
+                : webSearchMode
+                  ? "bg-accent/10 border-accent/20 text-accent"
+                  : "bg-primary/10 border-primary/20 text-primary"
             )}>
-              {webSearchMode ? <Globe className="h-3 w-3" /> : <PenLine className="h-3 w-3" />}
-              <span>{webSearchMode ? 'Web Search' : 'Content Wizard'}</span>
-              <span className={webSearchMode ? "text-accent/60" : "text-primary/60"}>
+              {imageGenMode ? <ImageIcon className="h-3 w-3" /> : webSearchMode ? <Globe className="h-3 w-3" /> : <PenLine className="h-3 w-3" />}
+              <span>{imageGenMode ? 'Generate Image' : webSearchMode ? 'Web Search' : 'Content Wizard'}</span>
+              <span className={imageGenMode ? "text-cyan-400/60" : webSearchMode ? "text-accent/60" : "text-primary/60"}>
                 — type your query and press Enter
               </span>
               <button
@@ -320,7 +326,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
                 onClick={handleCancelWizard}
                 className={cn(
                   "ml-1 rounded-full p-0.5 transition-colors",
-                  webSearchMode ? "hover:bg-accent/20" : "hover:bg-primary/20"
+                  imageGenMode ? "hover:bg-cyan-500/20" : webSearchMode ? "hover:bg-accent/20" : "hover:bg-primary/20"
                 )}
               >
                 <X className="h-3 w-3" />
@@ -333,13 +339,15 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
       <form onSubmit={handleSubmit} className="relative">
         <div 
           className={`relative flex items-center gap-2 p-2.5 bg-background/60 backdrop-blur-xl border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
-            webSearchMode
-              ? 'border-accent/30 ring-1 ring-accent/10'
-              : wizardMode
-                ? 'border-primary/30 ring-1 ring-primary/10'
-                : isFocused 
-                  ? 'border-white/[0.15] shadow-[0_0_20px_rgba(255,255,255,0.03)]' 
-                  : 'border-white/[0.08] hover:border-white/[0.15]'
+            imageGenMode
+              ? 'border-cyan-500/30 ring-1 ring-cyan-500/10'
+              : webSearchMode
+                ? 'border-accent/30 ring-1 ring-accent/10'
+                : wizardMode
+                  ? 'border-primary/30 ring-1 ring-primary/10'
+                  : isFocused 
+                    ? 'border-white/[0.15] shadow-[0_0_20px_rgba(255,255,255,0.03)]' 
+                    : 'border-white/[0.08] hover:border-white/[0.15]'
           }`}
         >
           {/* File Upload Handler */}
@@ -349,7 +357,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onCancel={() => setShowFileUpload(false)}
           />
 
-          {/* Plus Menu Dropdown — unified for all breakpoints */}
+          {/* Plus Menu Dropdown — unified tools + quick actions */}
           <PlusMenuDropdown
             onAttachFile={handleAttachmentClick}
             onContentWizard={handleContentWizardClick}
@@ -358,48 +366,18 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onAIProposals={handleAIProposalsClick}
             onWebSearch={onWebSearch || handleWebSearchClick}
             onImageGeneration={() => {
-              setMessage('Generate an image of: ');
+              setImageGenMode(true);
+              setWizardMode(false);
+              setWebSearchMode(false);
+              setMessage('');
               setTimeout(() => textareaRef.current?.focus(), 50);
             }}
+            onSendPrompt={(prompt, displayText) => {
+              onSendMessage(prompt, displayText);
+            }}
+            onSetVisualization={onSetVisualization}
             disabled={isLoading}
           />
-
-          {/* Quick Actions Popover */}
-          <Popover open={quickActionsOpen} onOpenChange={setQuickActionsOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={isLoading}
-                aria-label="Quick actions"
-                className={cn(
-                  "text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8 transition-colors",
-                  quickActionsOpen && "text-primary"
-                )}
-              >
-                <Zap className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              side="top"
-              align="start"
-              sideOffset={8}
-              className="w-52 p-1 bg-card border-border/50 rounded-lg shadow-lg"
-            >
-              <EnhancedQuickActions
-                onAction={(action, data) => {
-                  onQuickAction?.(action, data);
-                  setQuickActionsOpen(false);
-                }}
-                onSetVisualization={(v) => {
-                  onSetVisualization?.(v);
-                  setQuickActionsOpen(false);
-                }}
-                onClose={() => setQuickActionsOpen(false)}
-              />
-            </PopoverContent>
-          </Popover>
 
           {/* Message Input */}
           <Textarea
