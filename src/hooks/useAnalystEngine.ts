@@ -443,7 +443,7 @@ function computeCrossSignals(
             const daysOfRunway = Math.round(currentDrafts * avgDaysBetween);
             if (daysOfRunway < 14) {
               signals.push({
-                id: `cross-draft-depletion-${now.getTime()}`,
+                id: `cross-draft-depletion`,
                 content: `⏳ At your current pace (1 article every ${Math.round(avgDaysBetween)} days), your ${currentDrafts} drafts will run out in ~${daysOfRunway} days. Start creating new content now.`,
                 type: 'warning',
                 source: 'cross-signal',
