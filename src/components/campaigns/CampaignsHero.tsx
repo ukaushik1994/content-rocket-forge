@@ -135,7 +135,7 @@ export const CampaignsHero = React.memo(({
     }
   };
   const hasVoiceSupport = typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
-  return <motion.div className="relative min-h-[60vh] flex items-center justify-center w-full" initial={{
+  return <motion.div className="relative w-full" initial={{
     opacity: 0
   }} animate={{
     opacity: 1
@@ -143,96 +143,48 @@ export const CampaignsHero = React.memo(({
     duration: 0.8,
     ease: "easeOut"
   }}>
-      <div className="relative z-10 w-full px-6 pt-8 pb-12">
-        <div className="text-center space-y-8 max-w-5xl mx-auto">
-          <motion.div className="absolute inset-0 bg-gradient-to-r from-neon-purple/10 via-transparent to-neon-blue/10 rounded-3xl blur-3xl" animate={{
-          opacity: [0.5, 0.8, 0.5]
-        }} transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }} />
+      <div className="relative z-10 w-full px-6 pt-12 pb-8">
+        <div className="text-center space-y-6 max-w-5xl mx-auto">
+          {/* Ambient glow */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-[600px] h-[400px] bg-green-500/[0.06] rounded-full blur-3xl" />
+          </div>
 
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: 0.2,
-          duration: 0.4
-        }} className="flex items-center justify-center">
-            
-
-
-
-
-
-
-
-
-          
+          {/* Badge */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, type: "spring", stiffness: 200 }} className="flex items-center justify-center">
+            <div className="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full">
+              <Megaphone className="h-5 w-5 text-green-400" />
+              <span className="text-sm font-medium">Campaign Command Center</span>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            </div>
           </motion.div>
 
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: 0.3,
-          duration: 0.4
-        }} className="relative space-y-2">
-            <h1 className="text-4xl md:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-neon-purple via-neon-blue to-neon-cyan bg-clip-text text-transparent">
-                Campaigns
-              </span>{' '}
-              
-            </h1>
-          </motion.div>
+          {/* Title */}
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, type: "spring", stiffness: 200 }} className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-foreground via-green-400 to-teal-500 bg-clip-text text-transparent">
+            Campaigns
+          </motion.h1>
 
-          <motion.p initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: 0.4,
-          duration: 0.4
-        }} className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
+          {/* Subtitle */}
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
             Plan multi-content campaigns with AI strategy. For single articles, use AI Chat.
           </motion.p>
 
-          {/* Removed Create New Campaign button - using conversational input instead */}
-
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: 0.8,
-          duration: 0.4
-        }} className="flex justify-center gap-8 mt-12">
+          {/* Stats */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="flex justify-center gap-8">
             {[
-          { icon: Target, value: statsLoading ? '-' : activeCampaigns, label: 'Active', color: 'text-emerald-400' },
-          { icon: TrendingUp, value: statsLoading ? '-' : contentPiecesCreated, label: 'Content Created', color: 'text-teal-400' },
-          { icon: Sparkles, value: statsLoading ? '-' : completedCampaigns, label: 'Completed', color: 'text-green-400' }].
-          map((stat) =>
-          <div key={stat.label} className="flex flex-col items-center gap-2">
+              { icon: Target, value: statsLoading ? '-' : activeCampaigns, label: 'Active', color: 'text-emerald-400' },
+              { icon: TrendingUp, value: statsLoading ? '-' : contentPiecesCreated, label: 'Content Created', color: 'text-teal-400' },
+              { icon: Sparkles, value: statsLoading ? '-' : completedCampaigns, label: 'Completed', color: 'text-green-400' }
+            ].map((stat) =>
+              <div key={stat.label} className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
                   <stat.icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
                 <p className="text-lg font-bold text-foreground">{stat.value}</p>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
-          )}
+            )}
           </motion.div>
-
           {/* Mode Toggle */}
           <motion.div
           initial={{ opacity: 0, y: 20 }}

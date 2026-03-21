@@ -352,137 +352,107 @@ const Analytics = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}>
           
-          <div className="relative z-10 w-full px-6 pt-4 pb-4">
-            <motion.div
-              className="text-center mb-6 relative"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}>
-              
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
-                animate={{ opacity: [0.5, 0.8, 0.5] }}
-                transition={{ duration: 4, repeat: Infinity }} />
-              
-              
-              <div className="relative">
-                <motion.div
-                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-4"
-                  whileHover={{ scale: 1.05 }}>
-                  
-                  <BarChart3 className="h-5 w-5 text-primary" />
+          <div className="relative z-10 w-full px-6 pt-12 pb-8">
+            <div className="text-center space-y-6 max-w-5xl mx-auto relative">
+              {/* Ambient glow */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-[600px] h-[400px] bg-cyan-500/[0.06] rounded-full blur-3xl" />
+              </div>
+
+              {/* Badge */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, type: "spring", stiffness: 200 }} className="flex items-center justify-center relative">
+                <div className="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full">
+                  <BarChart3 className="h-5 w-5 text-cyan-400" />
                   <span className="text-sm font-medium">Real-time Performance Tracking</span>
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                </motion.div>
-                
-                <motion.h1
-                  className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
-                  
-                  Analytics Hub
-                  <br />
-                  <span className="text-primary">Performance</span>
-                </motion.h1>
-                
-                <motion.p
-                  className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed">
-                  
-                  Track content performance, discover insights, and optimize your strategy 
-                  with integrated analytics and Search Console data
-                </motion.p>
+                </div>
+              </motion.div>
 
-                <motion.div className="flex gap-4 justify-center mb-6">
-                  <Button
-                    onClick={refreshAnalytics}
-                    disabled={loading}
-                    size="lg"
-                    className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl">
-                    
-                    <RefreshCcw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh Data
-                    <TrendingUp className="h-5 w-5 ml-2" />
-                  </Button>
-                  <Button
-                    onClick={handleExportCSV}
-                    disabled={!realMetrics}
-                    size="lg"
-                    variant="outline"
-                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold">
-                    
-                    <Download className="h-5 w-5 mr-2" />
-                    Export CSV
-                  </Button>
-                  <Button
-                    onClick={handleExportPDF}
-                    disabled={!realMetrics}
-                    size="lg"
-                    variant="outline"
-                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold">
-                    
-                    <FileText className="h-5 w-5 mr-2" />
-                    Export Image
-                  </Button>
-                </motion.div>
+              {/* Title */}
+              <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, type: "spring", stiffness: 200 }} className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-foreground via-cyan-400 to-blue-500 bg-clip-text text-transparent relative">
+                Analytics
+              </motion.h1>
 
-                <motion.div
-                  className="flex justify-center gap-8 mb-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}>
-                  
-                  {[
-                  { icon: Eye, label: "Page Views", value: realMetrics?.totalAnalytics.pageViews.toLocaleString() || '0' },
-                  { icon: Users, label: "Sessions", value: realMetrics?.totalAnalytics.sessions.toLocaleString() || '0' },
-                  { icon: TrendingUp, label: "Impressions", value: realMetrics?.totalSearchConsole.impressions.toLocaleString() || '0' }].
-                  map((stat) =>
-                  <motion.div
-                    key={stat.label}
-                    className="text-center"
-                    whileHover={{ scale: 1.05 }}>
-                    
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
-                        <stat.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="text-sm font-bold text-foreground">{stat.value}</div>
-                      <div className="text-xs text-muted-foreground">{stat.label}</div>
-                    </motion.div>
-                  )}
-                </motion.div>
-              </div>
-            </motion.div>
+              {/* Subtitle */}
+              <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto relative">
+                Track content performance, discover insights, and optimize your strategy
+              </motion.p>
 
-            <motion.div
-              className="flex justify-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.0 }}>
-              
-              <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
+              {/* CTA Buttons */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, type: "spring", stiffness: 200 }} className="flex gap-4 justify-center relative">
+                <Button
+                  onClick={refreshAnalytics}
+                  disabled={loading}
+                  size="lg"
+                  className="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white px-8 py-4 text-lg font-semibold shadow-2xl">
+                  <RefreshCcw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh Data
+                </Button>
+                <Button
+                  onClick={handleExportCSV}
+                  disabled={!realMetrics}
+                  size="lg"
+                  variant="outline"
+                  className="glass-card px-8 py-4 text-lg font-semibold">
+                  <Download className="h-5 w-5 mr-2" />
+                  Export CSV
+                </Button>
+                <Button
+                  onClick={handleExportPDF}
+                  disabled={!realMetrics}
+                  size="lg"
+                  variant="outline"
+                  className="glass-card px-8 py-4 text-lg font-semibold">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Export Image
+                </Button>
+              </motion.div>
+
+              {/* Stats */}
+              <motion.div className="flex justify-center gap-8 relative" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
                 {[
-                { key: '24h', label: '24 Hours' },
-                { key: '7days', label: '7 Days' },
-                { key: '30days', label: '30 Days' },
-                { key: '90days', label: '90 Days' }].
-                map((filter) =>
-                <motion.button
-                  key={filter.key}
-                  onClick={() => handleTimeRangeChange(filter.key)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                  timeRange === filter.key ?
-                  'bg-primary text-primary-foreground shadow-lg' :
-                  'hover:bg-background/80'}`
-                  }
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}>
-                  
-                    <CalendarRange className="h-4 w-4" />
-                    <span className="font-medium">{filter.label}</span>
-                  </motion.button>
+                  { icon: Eye, label: "Page Views", value: realMetrics?.totalAnalytics.pageViews.toLocaleString() || '0', color: 'text-cyan-400' },
+                  { icon: Users, label: "Sessions", value: realMetrics?.totalAnalytics.sessions.toLocaleString() || '0', color: 'text-blue-400' },
+                  { icon: TrendingUp, label: "Impressions", value: realMetrics?.totalSearchConsole.impressions.toLocaleString() || '0', color: 'text-sky-400' }
+                ].map((stat) =>
+                  <motion.div key={stat.label} className="flex flex-col items-center gap-2" whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 300 }}>
+                    <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
+                      <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                    </div>
+                    <div className="text-lg font-bold text-foreground">{stat.value}</div>
+                    <div className="text-xs text-muted-foreground">{stat.label}</div>
+                  </motion.div>
                 )}
-              </div>
-            </motion.div>
+              </motion.div>
+
+              {/* Time Range Pills */}
+              <motion.div className="flex justify-center relative" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
+                <div className="flex gap-3 p-2 glass-card rounded-2xl">
+                  {[
+                    { key: '24h', label: '24 Hours' },
+                    { key: '7days', label: '7 Days' },
+                    { key: '30days', label: '30 Days' },
+                    { key: '90days', label: '90 Days' }
+                  ].map((filter) =>
+                    <motion.button
+                      key={filter.key}
+                      onClick={() => handleTimeRangeChange(filter.key)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                        timeRange === filter.key ?
+                        'bg-primary text-primary-foreground shadow-lg' :
+                        'hover:bg-background/80'
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}>
+                      <CalendarRange className="h-4 w-4" />
+                      <span className="font-medium">{filter.label}</span>
+                    </motion.button>
+                  )}
+                </div>
+              </motion.div>
+            </div>
           </div>
         </motion.div>
-
               {/* Key Metrics Cards - 8 Real Metrics */}
               <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
