@@ -256,11 +256,31 @@ export const TemplatesList = () => {
           ))}
         </div>
       ) : templates.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 space-y-4">
           <div className="h-12 w-12 rounded-2xl bg-muted/40 flex items-center justify-center mx-auto">
             <FileText className="h-6 w-6 text-muted-foreground/40" />
           </div>
-          <p className="text-muted-foreground text-sm">No templates yet</p>
+          <p className="text-muted-foreground text-sm">No templates yet — start with a starter template</p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {[
+              { name: 'Newsletter', subject: 'Your Weekly Update from {{company}}', body: '<h2>This Week\'s Highlights</h2><p>Here\'s what\'s new this week...</p><h3>Featured Article</h3><p>{{article_title}}</p><p>{{article_summary}}</p><hr/><p>Thanks for reading,<br/>The {{company}} Team</p>' },
+              { name: 'Product Update', subject: '🚀 New Feature: {{feature_name}}', body: '<h2>Introducing {{feature_name}}</h2><p>We\'ve been working hard on something special...</p><h3>What\'s New</h3><ul><li>Feature 1</li><li>Feature 2</li><li>Feature 3</li></ul><p><a href="{{cta_url}}">Try it now →</a></p>' },
+              { name: 'Welcome Email', subject: 'Welcome to {{company}}! 🎉', body: '<h2>Welcome aboard, {{first_name}}!</h2><p>We\'re excited to have you. Here\'s how to get started:</p><ol><li>Set up your profile</li><li>Explore key features</li><li>Create your first content</li></ol><p>Need help? Just reply to this email.</p>' },
+            ].map(seed => (
+              <Button
+                key={seed.name}
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1"
+                onClick={() => {
+                  setForm({ name: seed.name, subject: seed.subject, body_html: seed.body, variables: [] });
+                  setShowEditor(true);
+                }}
+              >
+                <Plus className="h-3 w-3" /> {seed.name}
+              </Button>
+            ))}
+          </div>
         </motion.div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">

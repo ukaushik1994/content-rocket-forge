@@ -745,6 +745,25 @@ export const AutomationsList = () => {
           </motion.div>
         )}
 
+        {/* Empty state with preset quickstart */}
+        {automations.length === 0 && !isLoading && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8 space-y-4 mb-8">
+            <p className="text-sm text-muted-foreground">No automations yet — start with a template</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl mx-auto">
+              {automationPresets.slice(0, 3).map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => { applyPreset(p); setShowCreate(true); }}
+                  className="text-left p-3 rounded-xl border border-border/30 bg-background/40 hover:bg-background/60 hover:border-primary/30 transition-all"
+                >
+                  <span className="text-sm font-medium">{p.name}</span>
+                  <p className="text-[10px] text-muted-foreground mt-1">{p.description}</p>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* Stats Cards */}
         {automations.length > 0 && (
           <motion.div

@@ -415,8 +415,30 @@ export const JourneysList = () => {
             <p className="font-semibold text-foreground">{searchQuery ? 'No matching journeys' : 'No journeys yet'}</p>
             <p className="text-sm text-muted-foreground">Build visual customer journeys to automate engagement</p>
           </div>
-          {/* F1: EngageButton instead of plain Button */}
-          {canEdit && !searchQuery && <EngageButton size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</EngageButton>}
+          {canEdit && !searchQuery && (
+            <div className="space-y-3">
+              <EngageButton size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</EngageButton>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {[
+                  { name: 'Welcome Series', desc: '3-email welcome sequence for new contacts' },
+                  { name: 'Re-engagement', desc: 'Win back inactive contacts with a targeted flow' },
+                  { name: 'Onboarding', desc: 'Guide new users through your product step-by-step' },
+                ].map(t => (
+                  <button
+                    key={t.name}
+                    onClick={() => {
+                      setForm((f: any) => ({ ...f, name: t.name, description: t.desc }));
+                      setShowCreate(true);
+                    }}
+                    className="text-left px-3 py-2 rounded-lg border border-border/30 bg-background/40 hover:bg-background/60 hover:border-primary/30 transition-all text-xs"
+                  >
+                    <span className="font-medium">{t.name}</span>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{t.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </motion.div>
       ) : (
         <div className="grid gap-3 max-w-7xl mx-auto">
