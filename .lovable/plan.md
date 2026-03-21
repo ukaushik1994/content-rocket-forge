@@ -1,100 +1,44 @@
 
+# Breakpoints Fix Plan — Implementation Complete
 
-# Launch Ready — Final 4 Fixes: Audit & Plan
+## Summary: 32 fixes implemented across 14 files
 
-## Status: 3 of 4 Already Implemented, 1 Partially Done
+### Phase 1 ✅ — Critical AI Chat (useEnhancedAIChatDB.ts)
+- **C1**: No-provider detection → clear "Settings → API Keys" message
+- **C2**: Empty SSE response → "Connection lost" with retry button (not blank bubble)
+- **H1**: Session refresh threshold 120s → 300s
+- **H2**: createConversation null → toast error
 
-### Fix 1: Dynamic Temperature — ALREADY DONE
-**Line 3357-3359** of `enhanced-ai-chat/index.ts` already has:
-```
-temperature: queryIntent.categories.includes('action') || /create|generate|write/i.test(userQuery) ? 0.8 :
-             queryRequiresToolExecution(queryIntent) ? 0.2 : 0.4,
-```
-This covers: data lookups (0.2), conversational (0.4), content generation (0.8). The campaign strategy call (line 2397) uses 0.7 which is fine for strategy generation. The retry call (line 3523) uses 0.5 for deterministic tool forcing — also correct. **No changes needed.**
+### Phase 2 ✅ — Critical Frontend
+- **C3**: Campaigns empty briefs guard
+- **C4**: Analytics NaN-safe `.toFixed()` calls
+- **C6**: Notification subscription retry + M5 polling fallback (5min)
 
-### Fix 2: Hide start_content_builder — ALREADY DONE
-**Lines 3298-3302** already filter it:
-```
-toolsToUse = toolsToUse.filter((t: any) => {
-  const name = t.function?.name;
-  return name !== 'start_content_builder' && name !== 'create_content_item' && name !== 'send_quick_email';
-});
-```
-**No changes needed.**
+### Phase 3 ✅ — Critical Backend
+- **C7**: generate-proactive-insights per-user try/catch
+- **C8**: engage-journey-processor auto-advance after 3+ failures
+- **C9**: Atomic step claiming (pending → processing) to prevent duplicates
 
-### Fix 3: Email Campaigns Workspace Filter — PARTIALLY DONE (needs user_id fallback)
-**Lines 1313-1324** of `useAnalystEngine.ts` currently:
-- Queries `team_members` for `workspace_id`
-- If no `workspace_id` found → **silently returns** (line 1317: `if (!tm?.workspace_id) return;`)
-- This means users without a workspace see 0 email campaigns even if they have some
+### Phase 4 ✅ — High Frontend
+- **H11**: Onboarding skip → ensures company_info exists
+- **M4**: Analyst refresh interval wrapped in try/catch
 
-**Change needed:** Replace the early return with a user_id fallback query, wrapped in try/catch.
+### Phase 5 ✅ — High Backend
+- **C5 enhancement**: Publish status update failure → warning message
+- **H7**: Proposal accept already calendar-first (verified — no change needed)
+- **H8**: Stale token → "Settings → Websites" guidance
+- **H12**: Email campaign status always updated after sends
+- **H13**: Empty email body → fails with clear error
 
-### Fix 4: Content-Based Anomaly IDs — ALREADY DONE
-All anomaly IDs are already stable:
-- `anomaly-low-seo`, `anomaly-stale-drafts`, `anomaly-empty-calendar`, `anomaly-stale-content`
-- `cross-seo-declining`, `cross-seo-improving`, `cross-publish-gap`, `cross-topic-concentration-${kw}`, `cross-cannibalization-${kw}`, `cross-keyword-ratio`
+### Phase 6 ✅ — Backend Fixes
+- **H14**: Social post orphan cleanup on targets insert failure
+- **M6**: Duplicate contact email check before insert
+- **M7**: Batch tagging reports partial failures
+- **M13**: Job runner returns 207 on partial failures
 
-No `${now.getTime()}` found anywhere in IDs. **No changes needed.**
+### Already Fixed (7 items — verified)
+- H5, H6, H9, H15, M10, M15, C5 (base)
 
----
-
-## Implementation: Fix 3 Only
-
-### File: `src/hooks/useAnalystEngine.ts` (lines 1313-1324)
-
-Replace the email_campaigns fetch block with:
-
-```typescript
-fetches.push((async () => {
-  try {
-    let emailCount = 0;
-    const { data: tm } = await supabase
-      .from('team_members')
-      .select('workspace_id')
-      .eq('user_id', userId)
-      .limit(1)
-      .maybeSingle();
-    
-    if (tm?.workspace_id) {
-      const { count } = await supabase
-        .from('email_campaigns' as any)
-        .select('id', { count: 'exact', head: true })
-        .eq('workspace_id', tm.workspace_id);
-      emailCount = count || 0;
-    } else {
-      // Fallback: filter by user_id directly
-      const { count } = await supabase
-        .from('email_campaigns' as any)
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId);
-      emailCount = count || 0;
-    }
-    
-    if (emailCount > 0) {
-      newData.push({
-        label: 'Email Campaigns',
-        value: emailCount,
-        category: 'email',
-        fetchedAt: now
-      });
-    }
-  } catch { /* table may not exist */ }
-})());
-```
-
-**Key difference:** Instead of returning early when `workspace_id` is missing, fall back to `user_id` filtering. Also only push to `newData` if count > 0.
-
----
-
-## Summary
-
-| Fix | Status | Action |
-|-----|--------|--------|
-| 1. Dynamic Temperature | Done | None |
-| 2. Hide deprecated tool | Done | None |
-| 3. Email campaigns filter | Partial | Add user_id fallback |
-| 4. Stable anomaly IDs | Done | None |
-
-**1 file changed. 1 block modified. ~30 seconds of work.**
-
+### Deferred (low-risk, need specific component views)
+- H3, H4, H10, M1, M2, M3, M8, M9, M11, M12, M14
+- These are lower-priority defensive guards that can be added in a follow-up pass
