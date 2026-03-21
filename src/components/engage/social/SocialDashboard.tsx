@@ -273,27 +273,96 @@ export const SocialDashboard = () => {
         <title>Social Media | Creaiter</title>
         <meta name="description" content="Schedule and manage social posts across all channels." />
       </Helmet>
-      <EngagePageHero
-        icon={Share2}
-        badge="Social Command Center"
-        title="Social"
-        titleAccent="Media"
-        subtitle="Schedule and manage social posts across all channels"
-        gradientFrom="from-pink-400"
-        gradientTo="to-purple-400"
-        stats={[
-          { icon: Clock, label: 'Scheduled', value: stats.scheduled },
-          { icon: CheckCircle2, label: 'Posted', value: stats.posted },
-          { icon: Zap, label: 'Connected', value: stats.connected },
-        ]}
-        quickFilters={[
-          { key: 'publish', label: 'Publish' },
-          { key: 'inbox', label: 'Inbox' },
-          { key: 'analytics', label: 'Analytics' },
-        ]}
-        activeFilter={mainTab}
-        onFilterChange={setMainTab}
-      />
+      <div className="text-center relative pt-16 pb-8">
+        {/* Ambient glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-pink-500/[0.06] rounded-full blur-3xl" />
+        </div>
+
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0, type: 'spring', stiffness: 100, damping: 18 }}
+          className="flex justify-center mb-6"
+        >
+          <div className="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full shadow-sm">
+            <Share2 className="h-5 w-5 text-pink-400" />
+            <span className="text-sm font-medium text-foreground">Social Command Center</span>
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          </div>
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 100, damping: 18 }}
+          className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-foreground via-pink-400 to-rose-500 bg-clip-text text-transparent"
+        >
+          Social Media
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, type: 'spring', stiffness: 100, damping: 18 }}
+          className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto mb-8"
+        >
+          Schedule and manage social posts across all channels
+        </motion.p>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, type: 'spring', stiffness: 100, damping: 18 }}
+          className="flex justify-center gap-4 flex-wrap mb-8"
+        >
+          {[
+            { icon: Clock, label: 'Scheduled', value: stats.scheduled },
+            { icon: CheckCircle2, label: 'Posted', value: stats.posted },
+            { icon: Zap, label: 'Connected', value: stats.connected },
+          ].map((stat) => (
+            <div key={stat.label} className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 glass-card rounded-xl flex items-center justify-center">
+                <stat.icon className="h-5 w-5 text-pink-400" />
+              </div>
+              <p className="text-lg font-bold text-foreground">{stat.value}</p>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Tab Navigation */}
+      <motion.div
+        className="flex justify-center mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+      >
+        <div className="flex gap-2 p-1.5 glass-card rounded-2xl">
+          {[
+            { key: 'publish', label: 'Publish' },
+            { key: 'inbox', label: 'Inbox' },
+            { key: 'analytics', label: 'Analytics' },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setMainTab(t.key)}
+              className={`relative px-4 py-2.5 rounded-xl transition-colors duration-200 text-sm font-medium ${
+                mainTab === t.key
+                  ? 'bg-primary text-primary-foreground shadow-lg'
+                  : 'hover:bg-background/80 text-muted-foreground'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </motion.div>
 
       {mainTab === 'inbox' && <SocialInbox />}
       {mainTab === 'analytics' && <SocialAnalytics />}
