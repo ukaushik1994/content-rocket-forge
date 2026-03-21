@@ -4,6 +4,7 @@ import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle, FileText, Awar
 interface EnhancedQuickActionsProps {
   onAction: (action: string, data?: any) => void;
   onSetVisualization?: (visualData: any) => void;
+  onClose?: () => void;
   contentCount?: number;
   publishedCount?: number;
   draftCount?: number;
