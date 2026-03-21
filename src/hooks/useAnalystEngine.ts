@@ -651,14 +651,16 @@ function computeHealthScore(
   const competitors = platformData.find(d => d.label === 'Tracked Competitors')?.value || 0;
   const proposals = platformData.find(d => d.label === 'Keyword Proposals')?.value || 0;
 
-  // 1. Content Volume (20 pts)
-  const volumeScore = Math.min(20, Math.round((totalContent / 15) * 20));
+  // 1. Content Volume (20 pts) — Phase 5: stage-aware targets
+  const stage = getUserStage(totalContent, published);
+  const volumeTarget = stage === 'starter' ? 5 : 15;
+  const volumeScore = Math.min(20, Math.round((totalContent / volumeTarget) * 20));
   factors.push({
     name: 'Content Volume',
     score: volumeScore,
     maxScore: 20,
     status: volumeScore >= 14 ? 'good' : volumeScore >= 8 ? 'warning' : 'critical',
-    detail: `${totalContent} total pieces (target: 15+)`,
+    detail: `${totalContent} total pieces (target: ${volumeTarget}+)`,
   });
 
   // 2. Publish Velocity (25 pts)
