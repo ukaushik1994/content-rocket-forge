@@ -15,6 +15,7 @@ import { ChatSearchProvider, useChatSearch } from '@/contexts/ChatSearchContext'
 import { MessageSearchBar } from '@/components/ai-chat/MessageSearchBar';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { OnboardingProvider, useOnboarding, OnboardingCarousel } from '@/components/onboarding';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -67,6 +68,22 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
 
   // Global due content notifications — runs for all authenticated pages
   useDueContentNotifications();
+
+  // #49: Auto-trigger onboarding for first-time users
+  const { isActive: isOnboardingActive, startOnboarding, hasCompletedOnboarding } = useOnboarding();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+
+  useEffect(() => {
+    if (!onboardingChecked && !hasCompletedOnboarding) {
+      // Small delay to let the page render first
+      const timer = setTimeout(() => {
+        startOnboarding();
+        setOnboardingChecked(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+    setOnboardingChecked(true);
+  }, [hasCompletedOnboarding, onboardingChecked, startOnboarding]);
 
   const {
     conversations,
@@ -155,6 +172,9 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {/* #49: Onboarding overlay for first-time users */}
+      {isOnboardingActive && <OnboardingCarousel />}
+
       <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
         <ActiveProviderIndicator />
         <NotificationBell />
@@ -190,10 +210,12 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
-    <AIChatDBProvider>
-      <ChatSearchProvider>
-        <AppLayoutInner>{children}</AppLayoutInner>
-      </ChatSearchProvider>
-    </AIChatDBProvider>
+    <OnboardingProvider>
+      <AIChatDBProvider>
+        <ChatSearchProvider>
+          <AppLayoutInner>{children}</AppLayoutInner>
+        </ChatSearchProvider>
+      </AIChatDBProvider>
+    </OnboardingProvider>
   );
 };

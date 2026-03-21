@@ -6,9 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Sparkles, Loader2, Twitter, Linkedin, Instagram, Facebook, Copy, Check } from 'lucide-react';
+import { Sparkles, Loader2, Twitter, Linkedin, Instagram, Facebook, Copy, Check, ImagePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 interface AISocialWriterDialogProps {
   open: boolean;
@@ -29,6 +30,8 @@ export const AISocialWriterDialog = ({ open, onOpenChange, onInsert }: AISocialW
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Record<string, any> | null>(null);
   const [copiedPlatform, setCopiedPlatform] = useState<string | null>(null);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
@@ -98,6 +101,38 @@ export const AISocialWriterDialog = ({ open, onOpenChange, onInsert }: AISocialW
                   </SelectContent>
                 </Select>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-1.5 mb-2"
+                disabled={imageLoading || !topic.trim()}
+                onClick={async () => {
+                  setImageLoading(true);
+                  try {
+                    const ImageGenService = (await import('@/services/imageGenService')).default;
+                    const result = await ImageGenService.generateImage({
+                      prompt: `Social media visual for: ${topic}. Modern, clean, eye-catching design suitable for social media posts.`,
+                      size: '1024x1024'
+                    });
+                    if (result?.url) {
+                      setGeneratedImageUrl(result.url);
+                      toast.success('Image generated! It will be included with your posts.');
+                    }
+                  } catch {
+                    toast.error('Image generation failed — check your image API key in Settings');
+                  } finally {
+                    setImageLoading(false);
+                  }
+                }}
+              >
+                {imageLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
+                {imageLoading ? 'Generating Image...' : generatedImageUrl ? 'Regenerate Image' : 'Generate Image with AI'}
+              </Button>
+              {generatedImageUrl && (
+                <div className="rounded-lg overflow-hidden border border-border/50 mb-2">
+                  <img src={generatedImageUrl} alt="Generated" className="w-full h-32 object-cover" />
+                </div>
+              )}
               <EngageButton onClick={handleGenerate} disabled={loading || !topic.trim()} className="w-full">
                 {loading ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating for all platforms...</>

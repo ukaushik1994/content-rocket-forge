@@ -90,79 +90,126 @@ const Analytics = () => {
     }
   };
 
+  // #55: Metric context helper — green/yellow/red indicator + what the number means
+  const getMetricContext = (id: string, rawValue: number): { status: 'good' | 'ok' | 'attention'; hint: string } => {
+    switch (id) {
+      case 'bounceRate': {
+        const pct = rawValue * 100;
+        if (pct === 0) return { status: 'ok', hint: 'No data yet' };
+        if (pct < 40) return { status: 'good', hint: 'Great — visitors are engaging' };
+        if (pct < 60) return { status: 'ok', hint: 'Average — room to improve' };
+        return { status: 'attention', hint: 'High — visitors leaving quickly' };
+      }
+      case 'ctr': {
+        const pct = rawValue * 100;
+        if (pct === 0) return { status: 'ok', hint: 'No data yet' };
+        if (pct > 5) return { status: 'good', hint: 'Strong click-through rate' };
+        if (pct > 2) return { status: 'ok', hint: 'Average CTR' };
+        return { status: 'attention', hint: 'Low — improve titles and meta descriptions' };
+      }
+      case 'position':
+        if (rawValue === 0) return { status: 'ok', hint: 'No data yet' };
+        if (rawValue <= 3) return { status: 'good', hint: 'Top 3 — excellent visibility' };
+        if (rawValue <= 10) return { status: 'ok', hint: 'Page 1 — good position' };
+        return { status: 'attention', hint: 'Page 2+ — needs SEO work' };
+      case 'sessionDuration':
+        if (rawValue === 0) return { status: 'ok', hint: 'No data yet' };
+        if (rawValue > 180) return { status: 'good', hint: '3+ min — highly engaging' };
+        if (rawValue > 60) return { status: 'ok', hint: 'Average engagement' };
+        return { status: 'attention', hint: 'Under 1 min — content may not retain' };
+      default:
+        if (rawValue === 0) return { status: 'ok', hint: 'No data yet — connect analytics in Settings' };
+        return { status: 'good', hint: '' };
+    }
+  };
+
+  const statusColors = {
+    good: 'bg-green-500',
+    ok: 'bg-yellow-500',
+    attention: 'bg-red-500'
+  };
+
   // Convert real metrics to display format (8 metrics from GA4 + Search Console)
   const metricsDisplay = realMetrics ? [
-    { 
-      id: 'pageViews', 
-      label: 'Page Views', 
-      value: realMetrics.totalAnalytics.pageViews.toLocaleString(), 
+    {
+      id: 'pageViews',
+      label: 'Page Views',
+      value: realMetrics.totalAnalytics.pageViews.toLocaleString(),
       icon: Eye,
       color: 'from-blue-500 to-cyan-400',
       bgPattern: 'from-blue-500/5 to-cyan-400/10',
-      source: 'Content Analytics'
+      source: 'Content Analytics',
+      ...getMetricContext('pageViews', realMetrics.totalAnalytics.pageViews)
     },
-    { 
-      id: 'sessions', 
-      label: 'Sessions', 
-      value: realMetrics.totalAnalytics.sessions.toLocaleString(), 
+    {
+      id: 'sessions',
+      label: 'Sessions',
+      value: realMetrics.totalAnalytics.sessions.toLocaleString(),
       icon: Users,
       color: 'from-emerald-500 to-teal-400',
       bgPattern: 'from-emerald-500/5 to-teal-400/10',
-      source: 'Content Analytics'
+      source: 'Content Analytics',
+      ...getMetricContext('sessions', realMetrics.totalAnalytics.sessions)
     },
-    { 
-      id: 'impressions', 
-      label: 'Search Impressions', 
-      value: realMetrics.totalSearchConsole.impressions.toLocaleString(), 
+    {
+      id: 'impressions',
+      label: 'Search Impressions',
+      value: realMetrics.totalSearchConsole.impressions.toLocaleString(),
       icon: TrendingUp,
       color: 'from-violet-500 to-purple-400',
       bgPattern: 'from-violet-500/5 to-purple-400/10',
-      source: 'Search Console'
+      source: 'Search Console',
+      ...getMetricContext('impressions', realMetrics.totalSearchConsole.impressions)
     },
-    { 
-      id: 'clicks', 
-      label: 'Search Clicks', 
-      value: realMetrics.totalSearchConsole.clicks.toLocaleString(), 
+    {
+      id: 'clicks',
+      label: 'Search Clicks',
+      value: realMetrics.totalSearchConsole.clicks.toLocaleString(),
       icon: MousePointer,
       color: 'from-orange-500 to-pink-400',
       bgPattern: 'from-orange-500/5 to-pink-400/10',
-      source: 'Search Console'
+      source: 'Search Console',
+      ...getMetricContext('clicks', realMetrics.totalSearchConsole.clicks)
     },
-    { 
-      id: 'bounceRate', 
-      label: 'Avg. Bounce Rate', 
-      value: `${(isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate * 100).toFixed(1)}%`, 
+    {
+      id: 'bounceRate',
+      label: 'Avg. Bounce Rate',
+      value: `${(isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate * 100).toFixed(1)}%`,
       icon: Activity,
       color: 'from-red-500 to-rose-400',
       bgPattern: 'from-red-500/5 to-rose-400/10',
-      source: 'Content Analytics'
+      source: 'Content Analytics',
+      ...getMetricContext('bounceRate', isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate)
     },
-    { 
-      id: 'sessionDuration', 
-      label: 'Avg. Session', 
-      value: `${Math.floor((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) / 60)}:${((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) % 60).toFixed(0).padStart(2, '0')}`, 
+    {
+      id: 'sessionDuration',
+      label: 'Avg. Session',
+      value: `${Math.floor((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) / 60)}:${((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) % 60).toFixed(0).padStart(2, '0')}`,
       icon: Clock,
       color: 'from-yellow-500 to-amber-400',
       bgPattern: 'from-yellow-500/5 to-amber-400/10',
-      source: 'Content Analytics'
+      source: 'Content Analytics',
+      ...getMetricContext('sessionDuration', isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration)
     },
-    { 
-      id: 'ctr', 
-      label: 'Avg. CTR', 
-      value: `${(isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR * 100).toFixed(1)}%`, 
+    {
+      id: 'ctr',
+      label: 'Avg. CTR',
+      value: `${(isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR * 100).toFixed(1)}%`,
       icon: Target,
       color: 'from-green-500 to-emerald-400',
       bgPattern: 'from-green-500/5 to-emerald-400/10',
-      source: 'Search Console'
+      source: 'Search Console',
+      ...getMetricContext('ctr', isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR)
     },
-    { 
-      id: 'position', 
-      label: 'Avg. Position', 
-      value: (isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition).toFixed(1), 
+    {
+      id: 'position',
+      label: 'Avg. Position',
+      value: (isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition).toFixed(1),
       icon: Zap,
       color: 'from-indigo-500 to-blue-400',
       bgPattern: 'from-indigo-500/5 to-blue-400/10',
-      source: 'Search Console'
+      source: 'Search Console',
+      ...getMetricContext('position', isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition)
     }
   ] : [];
 
@@ -478,8 +525,16 @@ const Analytics = () => {
                           </div>
                           
                           <div className="space-y-1">
-                            <h3 className="text-2xl font-bold text-foreground">{metric.value}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-2xl font-bold text-foreground">{metric.value}</h3>
+                              {(metric as any).status && (
+                                <div className={`w-2 h-2 rounded-full ${statusColors[(metric as any).status as keyof typeof statusColors]}`} />
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground">{metric.label}</p>
+                            {(metric as any).hint && (
+                              <p className="text-[10px] text-muted-foreground/60">{(metric as any).hint}</p>
+                            )}
                           </div>
                         </CardContent>
 

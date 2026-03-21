@@ -169,6 +169,25 @@ export const BlockInspector: React.FC<BlockInspectorProps> = ({ block, onUpdate,
         return (
           <>
             <Field label="Image URL"><Input className="h-8 text-xs" value={p.url} onChange={e => set('url', e.target.value)} placeholder="https://..." /></Field>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-7 text-[10px] gap-1 mb-2"
+              onClick={async () => {
+                const prompt = window.prompt('Describe the image you want to generate:');
+                if (!prompt) return;
+                try {
+                  const ImageGenService = (await import('@/services/imageGenService')).default;
+                  const result = await ImageGenService.generateImage({ prompt, size: '1024x1024' });
+                  if (result?.url) {
+                    set('url', result.url);
+                    set('alt', prompt);
+                  }
+                } catch { /* toast shown by service */ }
+              }}
+            >
+              <Sparkles className="h-3 w-3" /> Generate with AI
+            </Button>
             <Field label="Alt Text"><Input className="h-8 text-xs" value={p.alt} onChange={e => set('alt', e.target.value)} /></Field>
             <Field label="Link URL"><Input className="h-8 text-xs" value={p.linkUrl} onChange={e => set('linkUrl', e.target.value)} placeholder="Optional" /></Field>
             <Field label="Width"><Input className="h-8 text-xs" value={p.width} onChange={e => set('width', e.target.value)} placeholder="100% or 300px" /></Field>
