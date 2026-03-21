@@ -2202,6 +2202,26 @@ serve(async (req) => {
       panelHint: queryIntent.panelHint || 'none'
     });
 
+    // Phase 4: Auto-update conversation goal on topic shift
+    if (!queryIntent.isConversational && conversationId && queryIntent.categories.length > 0) {
+      const CATEGORY_TO_GOAL: Record<string, string> = {
+        content: 'content_creation', keywords: 'seo_optimization', engage: 'email_marketing',
+        campaigns: 'campaign_management', competitors: 'competitive_analysis', social: 'social_media',
+        analytics: 'performance_analysis', proposals: 'strategy_planning', calendar: 'content_planning',
+        approvals: 'content_review'
+      };
+      const detectedGoal = CATEGORY_TO_GOAL[queryIntent.categories[0]];
+      if (detectedGoal) {
+        try {
+          const { data: conv } = await supabaseClient.from('ai_conversations').select('goal').eq('id', conversationId).single();
+          if (conv && conv.goal !== detectedGoal) {
+            await supabaseClient.from('ai_conversations').update({ goal: detectedGoal }).eq('id', conversationId);
+            console.log(`🎯 Updated conversation goal: ${conv.goal} → ${detectedGoal}`);
+          }
+        } catch (e) { /* non-blocking */ }
+      }
+    }
+
     // Runtime-safe alias to prevent out-of-scope ReferenceError in any prompt path
     const isVisualPromptRequired = queryIntent?.requiresVisualData === true;
     
@@ -3252,9 +3272,14 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
       if (intentCategories.length > 0 && intentCategories[0] !== 'general') {
         toolsToUse = TOOL_DEFINITIONS.filter((t: any) => relevantToolNames.has(t.function?.name));
         // Phase 1 Fix: Use core-tools fallback instead of dumping all 89 tools
-        if (toolsToUse.length < 5) {
-          const CORE_FALLBACK_TOOLS = ['get_content_items', 'get_keywords', 'get_proposals', 'get_solutions', 'get_seo_scores'];
-          toolsToUse = TOOL_DEFINITIONS.filter((t: any) => CORE_FALLBACK_TOOLS.includes(t.function?.name));
+        if (toolsToUse.length < 3) {
+          const CORE_FALLBACK_TOOLS = ['get_content_items', 'get_keywords', 'get_proposals', 'get_competitors', 'generate_full_content'];
+          const coreTools = TOOL_DEFINITIONS.filter((t: any) => CORE_FALLBACK_TOOLS.includes(t.function?.name));
+          // Additive merge: keep what we have + add missing core tools
+          const existingNames = new Set(toolsToUse.map((t: any) => t.function?.name));
+          for (const ct of coreTools) {
+            if (!existingNames.has(ct.function?.name)) toolsToUse.push(ct);
+          }
         }
         // Phase 1: Hide deprecated tools
         toolsToUse = toolsToUse.filter((t: any) => {
@@ -3362,8 +3387,26 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
     }
 
     const data = aiProxyResult.data;
-    let aiMessage = data?.choices?.[0]?.message?.content;
-    let toolCalls = data?.choices?.[0]?.message?.tool_calls;
+    
+    // Phase 5: Response safety check — handle missing/malformed responses
+    let aiMessage: string | null = null;
+    let toolCalls: any[] | undefined = undefined;
+    
+    if (data?.choices?.[0]?.message) {
+      aiMessage = data.choices[0].message.content;
+      toolCalls = data.choices[0].message.tool_calls;
+    } else if (data?.candidates?.[0]?.content?.parts) {
+      // Raw Gemini fallback
+      console.warn('⚠️ Extracting from raw Gemini format');
+      aiMessage = data.candidates[0].content.parts.map((p: any) => p.text || '').join('');
+    } else if (data?.content) {
+      // Raw Anthropic fallback
+      console.warn('⚠️ Extracting from raw Anthropic format');
+      aiMessage = (Array.isArray(data.content) ? data.content : []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('\n');
+    } else {
+      console.error('⚠️ No parseable message in AI response:', JSON.stringify(data)?.substring(0, 500));
+      aiMessage = "I'm sorry, I wasn't able to generate a response. Please try again.";
+    }
 
     // Declare request-scoped variables for promoted actions and fallback charts
     let requestPromotedActions: any[] = [];

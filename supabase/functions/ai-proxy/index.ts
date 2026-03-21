@@ -578,10 +578,41 @@ async function chatAnthropic(apiKey: string, params: any) {
         throw new Error(`Anthropic chat failed: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const rawData = await response.json();
       console.log('✅ Anthropic chat successful');
       
-      const result: any = { success: true, data, provider: 'Anthropic' };
+      // Normalize Anthropic response to OpenAI format
+      const normalizedData = (() => {
+        try {
+          const textParts = (rawData.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text);
+          const toolUseParts = (rawData.content || []).filter((c: any) => c.type === 'tool_use');
+          
+          const message: any = {
+            role: 'assistant',
+            content: textParts.join('\n') || null,
+          };
+          
+          if (toolUseParts.length > 0) {
+            message.tool_calls = toolUseParts.map((t: any) => ({
+              id: t.id,
+              type: 'function',
+              function: { name: t.name, arguments: JSON.stringify(t.input || {}) }
+            }));
+          }
+          
+          return {
+            choices: [{ index: 0, message, finish_reason: rawData.stop_reason === 'end_turn' ? 'stop' : (rawData.stop_reason === 'tool_use' ? 'tool_calls' : rawData.stop_reason) }],
+            usage: rawData.usage ? { prompt_tokens: rawData.usage.input_tokens, completion_tokens: rawData.usage.output_tokens, total_tokens: (rawData.usage.input_tokens || 0) + (rawData.usage.output_tokens || 0) } : undefined,
+            model: rawData.model,
+            _originalProvider: 'anthropic'
+          };
+        } catch (e) {
+          console.warn('⚠️ Anthropic normalization failed, returning raw:', e);
+          return rawData;
+        }
+      })();
+      
+      const result: any = { success: true, data: normalizedData, provider: 'Anthropic' };
       if (model !== originalModel) result._autoDetectedModel = model;
       return result;
     } catch (error: any) {
