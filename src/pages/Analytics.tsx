@@ -17,12 +17,12 @@ import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 import { DateRange } from 'react-day-picker';
 import { useSettings } from '@/contexts/SettingsContext';
 import { toast } from 'sonner';
-import { 
-  BarChart3, 
-  CalendarRange, 
-  RefreshCcw, 
-  Download, 
-  FileText, 
+import {
+  BarChart3,
+  CalendarRange,
+  RefreshCcw,
+  Download,
+  FileText,
   Activity,
   TrendingUp,
   Eye,
@@ -31,8 +31,8 @@ import {
   MousePointer,
   Zap,
   Target,
-  Search,
-} from 'lucide-react';
+  Search } from
+'lucide-react';
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
@@ -59,30 +59,30 @@ const Analytics = () => {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
-      transition: { 
+      transition: {
         staggerChildren: 0.05,
-        delayChildren: 0.1,
+        delayChildren: 0.1
       }
     }
   };
-  
+
   const itemVariants = {
     hidden: { opacity: 0, y: 30, scale: 0.95 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
+    visible: {
+      opacity: 1,
+      y: 0,
       scale: 1,
-      transition: { 
+      transition: {
         duration: 0.5,
         ease: [0.22, 1, 0.36, 1]
-      } 
+      }
     }
   };
 
   const cardHoverVariants = {
-    hover: { 
+    hover: {
       y: -8,
       scale: 1.02,
       boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
@@ -91,22 +91,22 @@ const Analytics = () => {
   };
 
   // #55: Metric context helper — green/yellow/red indicator + what the number means
-  const getMetricContext = (id: string, rawValue: number): { status: 'good' | 'ok' | 'attention'; hint: string } => {
+  const getMetricContext = (id: string, rawValue: number): {status: 'good' | 'ok' | 'attention';hint: string;} => {
     switch (id) {
-      case 'bounceRate': {
-        const pct = rawValue * 100;
-        if (pct === 0) return { status: 'ok', hint: 'No data yet — connect Google Analytics' };
-        if (pct < 40) return { status: 'good', hint: 'Great — visitors are engaging with your content' };
-        if (pct < 60) return { status: 'ok', hint: 'Average — try stronger intros and faster page loads' };
-        return { status: 'attention', hint: 'High bounce — improve intro paragraphs and page load speed' };
-      }
-      case 'ctr': {
-        const pct = rawValue * 100;
-        if (pct === 0) return { status: 'ok', hint: 'No data yet' };
-        if (pct > 5) return { status: 'good', hint: 'Strong click-through rate' };
-        if (pct > 2) return { status: 'ok', hint: 'Average CTR' };
-        return { status: 'attention', hint: 'Low — improve titles and meta descriptions' };
-      }
+      case 'bounceRate':{
+          const pct = rawValue * 100;
+          if (pct === 0) return { status: 'ok', hint: 'No data yet — connect Google Analytics' };
+          if (pct < 40) return { status: 'good', hint: 'Great — visitors are engaging with your content' };
+          if (pct < 60) return { status: 'ok', hint: 'Average — try stronger intros and faster page loads' };
+          return { status: 'attention', hint: 'High bounce — improve intro paragraphs and page load speed' };
+        }
+      case 'ctr':{
+          const pct = rawValue * 100;
+          if (pct === 0) return { status: 'ok', hint: 'No data yet' };
+          if (pct > 5) return { status: 'good', hint: 'Strong click-through rate' };
+          if (pct > 2) return { status: 'ok', hint: 'Average CTR' };
+          return { status: 'attention', hint: 'Low — improve titles and meta descriptions' };
+        }
       case 'position':
         if (rawValue === 0) return { status: 'ok', hint: 'No data yet' };
         if (rawValue <= 3) return { status: 'good', hint: 'Top 3 — excellent visibility' };
@@ -131,87 +131,87 @@ const Analytics = () => {
 
   // Convert real metrics to display format (8 metrics from GA4 + Search Console)
   const metricsDisplay = realMetrics ? [
-    {
-      id: 'pageViews',
-      label: 'Page Views',
-      value: realMetrics.totalAnalytics.pageViews.toLocaleString(),
-      icon: Eye,
-      color: 'from-blue-500 to-cyan-400',
-      bgPattern: 'from-blue-500/5 to-cyan-400/10',
-      source: 'Content Analytics',
-      ...getMetricContext('pageViews', realMetrics.totalAnalytics.pageViews)
-    },
-    {
-      id: 'sessions',
-      label: 'Sessions',
-      value: realMetrics.totalAnalytics.sessions.toLocaleString(),
-      icon: Users,
-      color: 'from-emerald-500 to-teal-400',
-      bgPattern: 'from-emerald-500/5 to-teal-400/10',
-      source: 'Content Analytics',
-      ...getMetricContext('sessions', realMetrics.totalAnalytics.sessions)
-    },
-    {
-      id: 'impressions',
-      label: 'Search Impressions',
-      value: realMetrics.totalSearchConsole.impressions.toLocaleString(),
-      icon: TrendingUp,
-      color: 'from-violet-500 to-purple-400',
-      bgPattern: 'from-violet-500/5 to-purple-400/10',
-      source: 'Search Console',
-      ...getMetricContext('impressions', realMetrics.totalSearchConsole.impressions)
-    },
-    {
-      id: 'clicks',
-      label: 'Search Clicks',
-      value: realMetrics.totalSearchConsole.clicks.toLocaleString(),
-      icon: MousePointer,
-      color: 'from-orange-500 to-pink-400',
-      bgPattern: 'from-orange-500/5 to-pink-400/10',
-      source: 'Search Console',
-      ...getMetricContext('clicks', realMetrics.totalSearchConsole.clicks)
-    },
-    {
-      id: 'bounceRate',
-      label: 'Avg. Bounce Rate',
-      value: `${(isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate * 100).toFixed(1)}%`,
-      icon: Activity,
-      color: 'from-red-500 to-rose-400',
-      bgPattern: 'from-red-500/5 to-rose-400/10',
-      source: 'Content Analytics',
-      ...getMetricContext('bounceRate', isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate)
-    },
-    {
-      id: 'sessionDuration',
-      label: 'Avg. Session',
-      value: `${Math.floor((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) / 60)}:${((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) % 60).toFixed(0).padStart(2, '0')}`,
-      icon: Clock,
-      color: 'from-yellow-500 to-amber-400',
-      bgPattern: 'from-yellow-500/5 to-amber-400/10',
-      source: 'Content Analytics',
-      ...getMetricContext('sessionDuration', isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration)
-    },
-    {
-      id: 'ctr',
-      label: 'Avg. CTR',
-      value: `${(isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR * 100).toFixed(1)}%`,
-      icon: Target,
-      color: 'from-green-500 to-emerald-400',
-      bgPattern: 'from-green-500/5 to-emerald-400/10',
-      source: 'Search Console',
-      ...getMetricContext('ctr', isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR)
-    },
-    {
-      id: 'position',
-      label: 'Avg. Position',
-      value: (isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition).toFixed(1),
-      icon: Zap,
-      color: 'from-indigo-500 to-blue-400',
-      bgPattern: 'from-indigo-500/5 to-blue-400/10',
-      source: 'Search Console',
-      ...getMetricContext('position', isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition)
-    }
-  ] : [];
+  {
+    id: 'pageViews',
+    label: 'Page Views',
+    value: realMetrics.totalAnalytics.pageViews.toLocaleString(),
+    icon: Eye,
+    color: 'from-blue-500 to-cyan-400',
+    bgPattern: 'from-blue-500/5 to-cyan-400/10',
+    source: 'Content Analytics',
+    ...getMetricContext('pageViews', realMetrics.totalAnalytics.pageViews)
+  },
+  {
+    id: 'sessions',
+    label: 'Sessions',
+    value: realMetrics.totalAnalytics.sessions.toLocaleString(),
+    icon: Users,
+    color: 'from-emerald-500 to-teal-400',
+    bgPattern: 'from-emerald-500/5 to-teal-400/10',
+    source: 'Content Analytics',
+    ...getMetricContext('sessions', realMetrics.totalAnalytics.sessions)
+  },
+  {
+    id: 'impressions',
+    label: 'Search Impressions',
+    value: realMetrics.totalSearchConsole.impressions.toLocaleString(),
+    icon: TrendingUp,
+    color: 'from-violet-500 to-purple-400',
+    bgPattern: 'from-violet-500/5 to-purple-400/10',
+    source: 'Search Console',
+    ...getMetricContext('impressions', realMetrics.totalSearchConsole.impressions)
+  },
+  {
+    id: 'clicks',
+    label: 'Search Clicks',
+    value: realMetrics.totalSearchConsole.clicks.toLocaleString(),
+    icon: MousePointer,
+    color: 'from-orange-500 to-pink-400',
+    bgPattern: 'from-orange-500/5 to-pink-400/10',
+    source: 'Search Console',
+    ...getMetricContext('clicks', realMetrics.totalSearchConsole.clicks)
+  },
+  {
+    id: 'bounceRate',
+    label: 'Avg. Bounce Rate',
+    value: `${(isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate * 100).toFixed(1)}%`,
+    icon: Activity,
+    color: 'from-red-500 to-rose-400',
+    bgPattern: 'from-red-500/5 to-rose-400/10',
+    source: 'Content Analytics',
+    ...getMetricContext('bounceRate', isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate)
+  },
+  {
+    id: 'sessionDuration',
+    label: 'Avg. Session',
+    value: `${Math.floor((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) / 60)}:${((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) % 60).toFixed(0).padStart(2, '0')}`,
+    icon: Clock,
+    color: 'from-yellow-500 to-amber-400',
+    bgPattern: 'from-yellow-500/5 to-amber-400/10',
+    source: 'Content Analytics',
+    ...getMetricContext('sessionDuration', isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration)
+  },
+  {
+    id: 'ctr',
+    label: 'Avg. CTR',
+    value: `${(isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR * 100).toFixed(1)}%`,
+    icon: Target,
+    color: 'from-green-500 to-emerald-400',
+    bgPattern: 'from-green-500/5 to-emerald-400/10',
+    source: 'Search Console',
+    ...getMetricContext('ctr', isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR)
+  },
+  {
+    id: 'position',
+    label: 'Avg. Position',
+    value: (isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition).toFixed(1),
+    icon: Zap,
+    color: 'from-indigo-500 to-blue-400',
+    bgPattern: 'from-indigo-500/5 to-blue-400/10',
+    source: 'Search Console',
+    ...getMetricContext('position', isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition)
+  }] :
+  [];
 
   const handleMetricClick = (metric: any) => {
     setDrilldownData({
@@ -244,17 +244,17 @@ const Analytics = () => {
       return;
     }
     const rows = [
-      ['Metric', 'Value', 'Source'],
-      ['Page Views', String(realMetrics.totalAnalytics.pageViews), 'Content Analytics'],
-      ['Sessions', String(realMetrics.totalAnalytics.sessions), 'Content Analytics'],
-      ['Bounce Rate', `${(isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate * 100).toFixed(1)}%`, 'Content Analytics'],
-      ['Avg Session Duration (s)', String(isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration), 'Content Analytics'],
-      ['Search Impressions', String(realMetrics.totalSearchConsole.impressions), 'Search Console'],
-      ['Search Clicks', String(realMetrics.totalSearchConsole.clicks), 'Search Console'],
-      ['CTR', `${(isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR * 100).toFixed(1)}%`, 'Search Console'],
-      ['Avg Position', (isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition).toFixed(1), 'Search Console'],
-    ];
-    const csv = rows.map(r => r.join(',')).join('\n');
+    ['Metric', 'Value', 'Source'],
+    ['Page Views', String(realMetrics.totalAnalytics.pageViews), 'Content Analytics'],
+    ['Sessions', String(realMetrics.totalAnalytics.sessions), 'Content Analytics'],
+    ['Bounce Rate', `${(isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate * 100).toFixed(1)}%`, 'Content Analytics'],
+    ['Avg Session Duration (s)', String(isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration), 'Content Analytics'],
+    ['Search Impressions', String(realMetrics.totalSearchConsole.impressions), 'Search Console'],
+    ['Search Clicks', String(realMetrics.totalSearchConsole.clicks), 'Search Console'],
+    ['CTR', `${(isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR * 100).toFixed(1)}%`, 'Search Console'],
+    ['Avg Position', (isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition).toFixed(1), 'Search Console']];
+
+    const csv = rows.map((r) => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -267,7 +267,7 @@ const Analytics = () => {
 
   const handleExportPDF = async () => {
     const el = document.getElementById('analytics-dashboard');
-    if (!el) { toast.error('Nothing to export'); return; }
+    if (!el) {toast.error('Nothing to export');return;}
     try {
       const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(el, { backgroundColor: '#0f172a', scale: 2 });
@@ -287,7 +287,7 @@ const Analytics = () => {
 
   const timeRangeLabels = {
     '24h': 'Last 24 hours',
-    '7days': 'Last 7 days', 
+    '7days': 'Last 7 days',
     '30days': 'Last 30 days',
     '90days': 'Last 90 days'
   };
@@ -313,8 +313,8 @@ const Analytics = () => {
             </CardContent>
           </Card>
         </main>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -330,113 +330,113 @@ const Analytics = () => {
       <main className="flex-1 container px-6 pt-6 pb-12 relative z-10">
         <PageBreadcrumb section="Tools" page="Analytics" />
         {/* Internal Content Metrics — always shown, no external API needed */}
-        {internalMetrics && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-5 rounded-xl border border-border/30 bg-background/40 backdrop-blur-sm"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground/80">Your Content Performance</h3>
-              <span className="text-[10px] text-muted-foreground/50">From your content library</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{internalMetrics.totalContent}</p>
-                <p className="text-[10px] text-muted-foreground">Total Articles</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-green-400">{internalMetrics.published}</p>
-                <p className="text-[10px] text-muted-foreground">Published</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-blue-400">{internalMetrics.drafts}</p>
-                <p className="text-[10px] text-muted-foreground">Drafts</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{internalMetrics.avgSeoScore}<span className="text-xs text-muted-foreground">/100</span></p>
-                <p className="text-[10px] text-muted-foreground">Avg SEO</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">
-                  {internalMetrics.contentCreatedThisMonth}
-                  {internalMetrics.contentCreatedTrend !== 0 && (
-                    <span className={`text-xs ml-1 ${internalMetrics.contentCreatedTrend > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {internalMetrics.contentCreatedTrend > 0 ? '↑' : '↓'}{Math.abs(internalMetrics.contentCreatedTrend)}%
-                    </span>
-                  )}
-                </p>
-                <p className="text-[10px] text-muted-foreground">Created (30d)</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">
-                  {internalMetrics.contentPublishedThisMonth}
-                  {internalMetrics.contentPublishedTrend !== 0 && (
-                    <span className={`text-xs ml-1 ${internalMetrics.contentPublishedTrend > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {internalMetrics.contentPublishedTrend > 0 ? '↑' : '↓'}{Math.abs(internalMetrics.contentPublishedTrend)}%
-                    </span>
-                  )}
-                </p>
-                <p className="text-[10px] text-muted-foreground">Published (30d)</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
+        {internalMetrics
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        }
 
         {/* External Analytics Banner */}
-        {realMetrics && realMetrics.totalAnalytics.pageViews === 0 && realMetrics.totalSearchConsole.impressions === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-4 rounded-lg border border-border/50 bg-background/60 backdrop-blur-xl flex items-center gap-3"
-          >
+        {realMetrics && realMetrics.totalAnalytics.pageViews === 0 && realMetrics.totalSearchConsole.impressions === 0 &&
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 p-4 rounded-lg border border-border/50 bg-background/60 backdrop-blur-xl flex items-center gap-3">
+          
             <Activity className="h-5 w-5 text-muted-foreground shrink-0" />
             <p className="text-sm text-muted-foreground">
               Connect Google Analytics in Settings → API Keys for traffic, bounce rate, and search console data.
             </p>
           </motion.div>
-        )}
+        }
         {/* Hero Section */}
-        <motion.div 
+        <motion.div
           className="w-full relative mb-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-        >
+          transition={{ duration: 0.8 }}>
+          
           <div className="relative z-10 w-full px-6 pt-4 pb-4">
-            <motion.div 
+            <motion.div
               className="text-center mb-6 relative"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
+              transition={{ duration: 0.8 }}>
+              
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
                 animate={{ opacity: [0.5, 0.8, 0.5] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              />
+                transition={{ duration: 4, repeat: Infinity }} />
+              
               
               <div className="relative">
-                <motion.div 
+                <motion.div
                   className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-4"
-                  whileHover={{ scale: 1.05 }}
-                >
+                  whileHover={{ scale: 1.05 }}>
+                  
                   <BarChart3 className="h-5 w-5 text-primary" />
                   <span className="text-sm font-medium">Real-time Performance Tracking</span>
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 </motion.div>
                 
-                <motion.h1 
-                  className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent"
-                >
+                <motion.h1
+                  className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+                  
                   Analytics Hub
                   <br />
                   <span className="text-primary">Performance</span>
                 </motion.h1>
                 
-                <motion.p 
-                  className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed"
-                >
+                <motion.p
+                  className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed">
+                  
                   Track content performance, discover insights, and optimize your strategy 
                   with integrated analytics and Search Console data
                 </motion.p>
@@ -446,8 +446,8 @@ const Analytics = () => {
                     onClick={refreshAnalytics}
                     disabled={loading}
                     size="lg"
-                    className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl"
-                  >
+                    className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl">
+                    
                     <RefreshCcw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
                     Refresh Data
                     <TrendingUp className="h-5 w-5 ml-2" />
@@ -457,8 +457,8 @@ const Analytics = () => {
                     disabled={!realMetrics}
                     size="lg"
                     variant="outline"
-                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
-                  >
+                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold">
+                    
                     <Download className="h-5 w-5 mr-2" />
                     Export CSV
                   </Button>
@@ -467,83 +467,83 @@ const Analytics = () => {
                     disabled={!realMetrics}
                     size="lg"
                     variant="outline"
-                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
-                  >
+                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold">
+                    
                     <FileText className="h-5 w-5 mr-2" />
                     Export Image
                   </Button>
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                   className="flex justify-center gap-8 mb-8"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                >
+                  transition={{ delay: 0.8 }}>
+                  
                   {[
-                    { icon: Eye, label: "Page Views", value: realMetrics?.totalAnalytics.pageViews.toLocaleString() || '0' },
-                    { icon: Users, label: "Sessions", value: realMetrics?.totalAnalytics.sessions.toLocaleString() || '0' },
-                    { icon: TrendingUp, label: "Impressions", value: realMetrics?.totalSearchConsole.impressions.toLocaleString() || '0' }
-                  ].map((stat) => (
-                    <motion.div 
-                      key={stat.label}
-                      className="text-center"
-                      whileHover={{ scale: 1.05 }}
-                    >
+                  { icon: Eye, label: "Page Views", value: realMetrics?.totalAnalytics.pageViews.toLocaleString() || '0' },
+                  { icon: Users, label: "Sessions", value: realMetrics?.totalAnalytics.sessions.toLocaleString() || '0' },
+                  { icon: TrendingUp, label: "Impressions", value: realMetrics?.totalSearchConsole.impressions.toLocaleString() || '0' }].
+                  map((stat) =>
+                  <motion.div
+                    key={stat.label}
+                    className="text-center"
+                    whileHover={{ scale: 1.05 }}>
+                    
                       <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
                         <stat.icon className="h-5 w-5 text-primary" />
                       </div>
                       <div className="text-sm font-bold text-foreground">{stat.value}</div>
                       <div className="text-xs text-muted-foreground">{stat.label}</div>
                     </motion.div>
-                  ))}
+                  )}
                 </motion.div>
               </div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="flex justify-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.0 }}
-            >
+              transition={{ delay: 1.0 }}>
+              
               <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
                 {[
-                  { key: '24h', label: '24 Hours' },
-                  { key: '7days', label: '7 Days' },
-                  { key: '30days', label: '30 Days' },
-                  { key: '90days', label: '90 Days' }
-                ].map((filter) => (
-                  <motion.button
-                    key={filter.key}
-                    onClick={() => handleTimeRangeChange(filter.key)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                      timeRange === filter.key 
-                        ? 'bg-primary text-primary-foreground shadow-lg' 
-                        : 'hover:bg-background/80'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
+                { key: '24h', label: '24 Hours' },
+                { key: '7days', label: '7 Days' },
+                { key: '30days', label: '30 Days' },
+                { key: '90days', label: '90 Days' }].
+                map((filter) =>
+                <motion.button
+                  key={filter.key}
+                  onClick={() => handleTimeRangeChange(filter.key)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                  timeRange === filter.key ?
+                  'bg-primary text-primary-foreground shadow-lg' :
+                  'hover:bg-background/80'}`
+                  }
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}>
+                  
                     <CalendarRange className="h-4 w-4" />
                     <span className="font-medium">{filter.label}</span>
                   </motion.button>
-                ))}
+                )}
               </div>
             </motion.div>
           </div>
         </motion.div>
 
               {/* Key Metrics Cards - 8 Real Metrics */}
-              <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                {loading ? (
-                  Array.from({ length: 8 }).map((_, index) => (
-                    <Card key={`loading-${index}`} className="bg-background/60 backdrop-blur-xl border-border/50">
+              <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}>
+          
+                {loading ?
+          Array.from({ length: 8 }).map((_, index) =>
+          <Card key={`loading-${index}`} className="bg-background/60 backdrop-blur-xl border-border/50">
                       <CardContent className="p-6">
                         <div className="animate-pulse space-y-3">
                           <div className="w-12 h-12 bg-muted rounded-xl" />
@@ -552,21 +552,21 @@ const Analytics = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  ))
-                ) : (
-                  metricsDisplay.map((metric, index) => (
-                    <motion.div
-                      key={metric.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      className="h-full"
-                    >
+          ) :
+
+          metricsDisplay.map((metric, index) =>
+          <motion.div
+            key={metric.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            className="h-full">
+            
                       <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full">
                         <motion.div
-                          className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
-                        />
+                className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+              
                         
                         <CardContent className="p-6 relative z-10">
                           <div className="flex items-start justify-between mb-4">
@@ -581,44 +581,44 @@ const Analytics = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <h3 className="text-2xl font-bold text-foreground">{metric.value}</h3>
-                              {(metric as any).status && (
-                                <div className={`w-2 h-2 rounded-full ${statusColors[(metric as any).status as keyof typeof statusColors]}`} />
-                              )}
+                              {(metric as any).status &&
+                    <div className={`w-2 h-2 rounded-full ${statusColors[(metric as any).status as keyof typeof statusColors]}`} />
+                    }
                             </div>
                             <p className="text-sm text-muted-foreground">{metric.label}</p>
-                            {(metric as any).hint && (
-                              <p className="text-[10px] text-muted-foreground/60">{(metric as any).hint}</p>
-                            )}
+                            {(metric as any).hint &&
+                  <p className="text-[10px] text-muted-foreground/60">{(metric as any).hint}</p>
+                  }
                           </div>
                         </CardContent>
 
                         <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                        />
+                className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              
                       </Card>
                     </motion.div>
-                  ))
-                )}
+          )
+          }
               </motion.div>
 
               {/* Search and Filters */}
               <motion.div
-                className="mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}>
+          
                 <Card className="bg-background/60 backdrop-blur-xl border-border/50">
                   <CardContent className="p-6">
                     <div className="flex flex-col lg:flex-row gap-4">
                       <div className="flex-1 relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Search analytics data..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-10 bg-background/40 border-border/50"
-                        />
+                    placeholder="Search analytics data..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 bg-background/40 border-border/50" />
+                  
                       </div>
                       
                       <div className="flex gap-2">
@@ -634,10 +634,10 @@ const Analytics = () => {
                         </Select>
 
                         <Button
-                          variant="outline"
-                          onClick={refreshAnalytics}
-                          className="bg-background/40 border-border/50 hover:bg-background/60"
-                        >
+                    variant="outline"
+                    onClick={refreshAnalytics}
+                    className="bg-background/40 border-border/50 hover:bg-background/60">
+                    
                           <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                           Refresh
                         </Button>
@@ -652,31 +652,31 @@ const Analytics = () => {
                 <div className="glass-card p-1.5 rounded-2xl">
                   <div className="flex w-full">
                     {[
-                      { value: 'overview', icon: BarChart3, label: 'Overview' },
-                      { value: 'content', icon: FileText, label: 'Content' },
-                      { value: 'campaigns', icon: Target, label: 'Campaigns' },
-                    ].map((tab) => (
-                      <button
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={cn(
-                          'relative flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-medium transition-colors duration-200',
-                          activeTab === tab.value
-                            ? 'text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        )}
-                      >
-                        {activeTab === tab.value && (
-                          <motion.div
-                            layoutId="analytics-tab-indicator"
-                            className="absolute inset-0 bg-primary rounded-xl shadow-lg"
-                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                          />
-                        )}
+              { value: 'overview', icon: BarChart3, label: 'Overview' },
+              { value: 'content', icon: FileText, label: 'Content' },
+              { value: 'campaigns', icon: Target, label: 'Campaigns' }].
+              map((tab) =>
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={cn(
+                  'relative flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-medium transition-colors duration-200',
+                  activeTab === tab.value ?
+                  'text-primary-foreground' :
+                  'text-muted-foreground hover:text-foreground'
+                )}>
+                
+                        {activeTab === tab.value &&
+                <motion.div
+                  layoutId="analytics-tab-indicator"
+                  className="absolute inset-0 bg-primary rounded-xl shadow-lg"
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }} />
+
+                }
                         <tab.icon className="h-4 w-4 relative z-10" />
                         <span className="relative z-10">{tab.label}</span>
                       </button>
-                    ))}
+              )}
                   </div>
                 </div>
                   
@@ -696,11 +696,11 @@ const Analytics = () => {
         <ContentDetailModal
           isOpen={!!selectedContent}
           onClose={() => setSelectedContent(null)}
-          content={selectedContent}
-        />
+          content={selectedContent} />
+        
       </main>
-    </PageContainer>
-  );
+    </PageContainer>);
+
 };
 
 export default Analytics;
