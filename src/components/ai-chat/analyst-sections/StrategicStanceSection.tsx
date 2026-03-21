@@ -58,7 +58,7 @@ export const StrategicStanceSection: React.FC<Props> = ({ analystState, onSendMe
   };
 
   return (
-    <AnalystSectionWrapper number="00" label="Strategic Stance" headline={getHeadline()} delay={0}>
+    <AnalystSectionWrapper number="00" label="STRATEGIC STANCE" headline={getHeadline()} delay={0}>
       <div className={cn('glass-card p-5 border-l-2', config.borderColor)}>
         <div className="flex items-start gap-3.5">
           <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', config.bgColor)}>

@@ -25,10 +25,10 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
   const bench = analystState.benchmarks;
 
   return (
-    <AnalystSectionWrapper number="01" label="Health Assessment" headline={getHeadline()} delay={0.05}>
+    <AnalystSectionWrapper number="01" label="HEALTH ASSESSMENT" headline={getHeadline()} delay={0.05}>
       <div className="grid grid-cols-2 gap-3">
         <AnalystDataCard
-          label="Health Score"
+          label="HEALTH SCORE"
           value={health.total}
           trend={health.trend === 'improving' ? 'up' : health.trend === 'declining' ? 'down' : 'neutral'}
           trendValue={trendLabel}
@@ -36,7 +36,7 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
           color={health.total >= 70 ? 'green' : health.total >= 40 ? 'amber' : 'red'}
         />
         <AnalystDataCard
-          label="Factors Passing"
+          label="FACTORS PASSING"
           value={`${health.factors.filter(f => f.status === 'good').length}/${health.factors.length}`}
           subtitle={health.topCritical ? `⚡ ${health.topCritical}` : 'All clear'}
         />

@@ -55,7 +55,7 @@ export const CompetitivePositionSection: React.FC<Props> = ({ topics, platformDa
   return (
     <AnalystSectionWrapper
       number="08"
-      label="Competitive Position"
+      label="COMPETITIVE POSITION"
       headline={getHeadline()}
       delay={0.26}
     >

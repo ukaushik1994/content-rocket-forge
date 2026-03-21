@@ -17,9 +17,9 @@ export const GoalProgressSection: React.FC<Props> = ({ goalProgress, onSendMessa
   };
 
   return (
-    <AnalystSectionWrapper number="09" label="Goal Progress" headline={getHeadline()} delay={0.28}>
+    <AnalystSectionWrapper number="09" label="GOAL PROGRESS" headline={getHeadline()} delay={0.28}>
       <AnalystDataCard
-        label={goalProgress.goalName}
+        label={goalProgress.goalName.toUpperCase()}
         value={`${goalProgress.percentage}%`}
         progress={goalProgress.percentage}
         color={goalProgress.percentage >= 80 ? 'green' : 'amber'}
