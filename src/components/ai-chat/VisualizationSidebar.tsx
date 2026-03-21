@@ -712,95 +712,95 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     deepDivePrompts={deepDivePrompts.map(p => p.text)}
                     onSendMessage={onSendMessage || (() => {})}
                   />
+
+                  {/* ─── Metadata (scrolls with content) ─────────────── */}
+                  <div className="mt-6 pt-4 border-t border-border/10 space-y-3">
+                    {analystState && analystState.topics.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Topics Discussed</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {analystState.topics.map((topic) => (
+                            <span key={topic.name} className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-muted-foreground/70">
+                              {topic.name}
+                              {topic.mentionCount > 1 && <span className="ml-1 text-primary/60">×{topic.mentionCount}</span>}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {hasCurrentResponseData && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Data Source</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] backdrop-blur-sm text-muted-foreground/70">
+                            <Database className="w-3 h-3 mr-1 text-primary/40" />
+                            {dataInfo.source}
+                          </span>
+                          {dataInfo.points > 0 && (
+                            <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-muted-foreground/60">{dataInfo.points} pts</span>
+                          )}
+                          <Select value={selectedTimeframe} onValueChange={(val) => setSelectedTimeframe(val as TimeframeOption)}>
+                            <SelectTrigger className="h-6 text-[10px] border-white/[0.06] bg-white/[0.04] rounded-full w-auto gap-1 px-2.5">
+                              <Clock className="w-3 h-3 text-primary/40" />
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              <SelectItem value="7d" className="text-xs">Last 7 days</SelectItem>
+                              <SelectItem value="30d" className="text-xs">Last 30 days</SelectItem>
+                              <SelectItem value="custom" className="text-xs">Custom</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <span className={cn(
+                            "inline-flex items-center text-[10px] px-2 py-0.5 rounded-full border backdrop-blur-sm",
+                            qualityConfig.label === 'High' ? 'bg-primary/10 border-primary/20 text-primary/80' :
+                            qualityConfig.label === 'Medium' ? 'bg-primary/10 border-primary/20 text-primary/60' :
+                            'bg-primary/10 border-primary/20 text-primary/40'
+                          )}>{qualityConfig.label}</span>
+                          {isTrendLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/40" />}
+                        </div>
+                      </div>
+                    )}
+
+                    {analystState?.goalProgress && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="glass-card p-3 space-y-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Goal Progress</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-foreground/80">{analystState.goalProgress.goalName}</span>
+                          <span className="text-[11px] font-bold text-primary/80">{analystState.goalProgress.percentage}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-muted/20 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-primary/60 to-primary/40 transition-all"
+                            style={{ width: `${Math.min(analystState.goalProgress.percentage, 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn(
+                            "text-[9px] px-1.5 py-0.5 rounded-full font-medium",
+                            analystState.goalProgress.status === 'completed' ? 'bg-primary/10 text-primary/80' :
+                            analystState.goalProgress.status === 'nearly_done' ? 'bg-primary/10 text-primary/70' :
+                            analystState.goalProgress.status === 'in_progress' ? 'bg-neon-blue/10 text-neon-blue/70' :
+                            'bg-white/[0.04] text-muted-foreground/60'
+                          )}>
+                            {analystState.goalProgress.status.replace('_', ' ')}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground/50">Next: {analystState.goalProgress.nextStep}</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
                 </div>
               </ScrollArea>
-
-              {/* ─── Footer: Metadata ─────────────────────────────────── */}
-              <div className="flex-shrink-0 border-t border-border/10 px-6 py-4 max-h-[240px] overflow-y-auto">
-                {analystState && analystState.topics.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Topics Discussed</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {analystState.topics.map((topic) => (
-                        <span key={topic.name} className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-muted-foreground/70">
-                          {topic.name}
-                          {topic.mentionCount > 1 && <span className="ml-1 text-primary/60">×{topic.mentionCount}</span>}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {hasCurrentResponseData && (
-                  <div className={cn(analystState && analystState.topics.length > 0 && "mt-2")}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Data Source</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] backdrop-blur-sm text-muted-foreground/70">
-                        <Database className="w-3 h-3 mr-1 text-primary/40" />
-                        {dataInfo.source}
-                      </span>
-                      {dataInfo.points > 0 && (
-                        <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-muted-foreground/60">{dataInfo.points} pts</span>
-                      )}
-                      <Select value={selectedTimeframe} onValueChange={(val) => setSelectedTimeframe(val as TimeframeOption)}>
-                        <SelectTrigger className="h-6 text-[10px] border-white/[0.06] bg-white/[0.04] rounded-full w-auto gap-1 px-2.5">
-                          <Clock className="w-3 h-3 text-primary/40" />
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border z-50">
-                          <SelectItem value="7d" className="text-xs">Last 7 days</SelectItem>
-                          <SelectItem value="30d" className="text-xs">Last 30 days</SelectItem>
-                          <SelectItem value="custom" className="text-xs">Custom</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <span className={cn(
-                        "inline-flex items-center text-[10px] px-2 py-0.5 rounded-full border backdrop-blur-sm",
-                        qualityConfig.label === 'High' ? 'bg-primary/10 border-primary/20 text-primary/80' :
-                        qualityConfig.label === 'Medium' ? 'bg-primary/10 border-primary/20 text-primary/60' :
-                        'bg-primary/10 border-primary/20 text-primary/40'
-                      )}>{qualityConfig.label}</span>
-                      {isTrendLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/40" />}
-                    </div>
-                  </div>
-                )}
-
-                {analystState?.goalProgress && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-2 glass-card p-3 space-y-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Goal Progress</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium text-foreground/80">{analystState.goalProgress.goalName}</span>
-                      <span className="text-[11px] font-bold text-primary/80">{analystState.goalProgress.percentage}%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-muted/20 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-primary/60 to-primary/40 transition-all"
-                        style={{ width: `${Math.min(analystState.goalProgress.percentage, 100)}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className={cn(
-                        "text-[9px] px-1.5 py-0.5 rounded-full font-medium",
-                        analystState.goalProgress.status === 'completed' ? 'bg-primary/10 text-primary/80' :
-                        analystState.goalProgress.status === 'nearly_done' ? 'bg-primary/10 text-primary/70' :
-                        analystState.goalProgress.status === 'in_progress' ? 'bg-neon-blue/10 text-neon-blue/70' :
-                        'bg-white/[0.04] text-muted-foreground/60'
-                      )}>
-                        {analystState.goalProgress.status.replace('_', ' ')}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground/50">Next: {analystState.goalProgress.nextStep}</span>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
             </motion.div>
           </>
         </TooltipProvider>
