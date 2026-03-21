@@ -243,6 +243,7 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 };
