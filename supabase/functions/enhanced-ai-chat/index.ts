@@ -3293,7 +3293,9 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
               ],
               tools: toolsToUse, // ✅ Use conditional tools
               tool_choice: toolChoice, // ✅ Force campaign tool when requested
-              temperature: 0.7,
+              // Phase 2: Dynamic temperature based on intent
+              temperature: queryIntent.categories.includes('action') || /create|generate|write/i.test(userQuery) ? 0.8 : 
+                           queryRequiresToolExecution(queryIntent) ? 0.2 : 0.4,
               max_tokens: dynamicMaxTokens,
             }
           }
