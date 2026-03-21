@@ -553,7 +553,7 @@ function computeCrossSignals(
           const top3Impressions = topProposals.slice(0, 3).reduce((s, p) => s + (p.estimated_impressions || 0), 0);
           if (totalImpressions > 0 && top3Impressions / totalImpressions >= 0.5) {
             signals.push({
-              id: `cross-pareto-proposals-${now.getTime()}`,
+              id: `cross-pareto-proposals`,
               content: `🎯 Top 3 proposals capture ${Math.round((top3Impressions / totalImpressions) * 100)}% of estimated impressions. Focus on "${topProposals[0].title}" first for maximum impact.`,
               type: 'opportunity',
               source: 'cross-signal',
