@@ -470,7 +470,7 @@ function computeCrossSignals(
         for (const [prefix, count] of prefixMap) {
           if (count >= 4) {
             signals.push({
-              id: `cross-topic-saturation-${prefix}-${now.getTime()}`,
+              id: `cross-topic-saturation-${prefix}`,
               content: `📊 Topic saturation: ${count} articles target "${prefix}..." — diminishing returns likely. Expand into adjacent topics for better coverage.`,
               type: 'warning',
               source: 'cross-signal',
