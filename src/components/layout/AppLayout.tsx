@@ -64,7 +64,7 @@ const SearchIconButton: React.FC = () => {
 const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isSidebarOpen, toggleSidebar, setPendingPanel } = useSidebarContext();
+  const { isSidebarOpen, toggleSidebar, setSidebarOpen, setPendingPanel } = useSidebarContext();
   const { isMobile } = useResponsiveBreakpoint();
 
   // Global due content notifications — runs for all authenticated pages
@@ -193,6 +193,11 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
         )}
 
         <main
+          onClick={() => {
+            if (isSidebarOpen && !isMobile) {
+              setSidebarOpen(false);
+            }
+          }}
           className={cn(
             "flex-1 transition-all duration-300 min-w-0",
             isMobile
