@@ -1,23 +1,19 @@
 
 
-# Remove "View Dashboard" Button & Fix Retry Deleting Messages
+# Refine Chat Bubbles & Content Creation Card
 
-## Issue 1: "View Dashboard" button
-The edge function `supabase/functions/enhanced-ai-chat/index.ts` (line 4331-4337) injects a default "View Dashboard" action button whenever the AI returns no structured actions. This is unnecessary — if the AI has no actions, show nothing.
+## Changes
 
-**Fix**: Remove the fallback action assignment so `actions` stays `null`/empty when no structured data is returned.
+### 1. `src/components/ai-chat/EnhancedMessageBubble.tsx` (line 183)
+- Change AI message width from `'w-full max-w-4xl'` → `'max-w-[85%] sm:max-w-[75%] lg:max-w-[65%]'`
+- This prevents AI responses from stretching to the far right edge
 
-### `supabase/functions/enhanced-ai-chat/index.ts` (lines 4328-4337)
-- Change the `if (!actions && !visualData)` block to NOT assign the "View Dashboard" fallback
-- Just leave the log warning, set `actions` to empty array or leave undefined
-
-## Issue 2: Retry button deletes the error message
-In `EnhancedChatInterface.tsx` (lines 839-846), the retry handler calls `deleteMessage(message.id)` before resending. This deletes the error message from the conversation permanently.
-
-**Fix**: Instead of deleting, just resend the last user message without removing the error. The new response will naturally replace the error in the flow. Or better: delete only the error message from local state (not DB) and then resend.
-
-### `src/components/ai-chat/EnhancedChatInterface.tsx` (lines 839-846)
-- Remove the `await deleteMessage(message.id)` call
-- Just find the last user message before the error and resend it
-- The streaming response will append after, and the error message can be removed from local state only
+### 2. `src/components/ai-chat/ContentCreationChoiceCard.tsx`
+- Replace the bulky `Card` with a compact inline design
+- Smaller text (text-[11px]), tighter padding (p-3), smaller gap
+- Buttons: replace large full-width buttons with compact pill-style buttons using `rounded-full`, `text-xs`, `py-1.5 px-4`
+- Use glassmorphism styling: `bg-white/[0.04] backdrop-blur-sm border-white/[0.08]`
+- Smaller icons (h-3 w-3)
+- AI Proposals button: subtle gradient instead of solid primary fill
+- Overall: refined, compact, premium inline card
 
