@@ -143,7 +143,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       title: "Team Collaboration",
       description: "Collaborate with team members and manage content workflows efficiently.",
       icon: <Users className="h-5 w-5 text-cyan-400" />,
-      action: () => navigate('/team'),
+      action: () => navigate('/ai-chat'),
       buttonText: "Manage Team",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-cyan-400/30 to-teal-500/20",
