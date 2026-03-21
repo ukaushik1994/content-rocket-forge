@@ -501,7 +501,10 @@ export const useEnhancedAIChatDB = () => {
       let conversationId = activeConversation;
       if (!conversationId) {
         conversationId = await createConversation('Capabilities');
-        if (!conversationId) return;
+        if (!conversationId) {
+          toast.error('Failed to create conversation. Please try again.');
+          return;
+        }
       }
 
       const userMsg: EnhancedChatMessage = {
