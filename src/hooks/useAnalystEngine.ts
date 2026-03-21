@@ -1312,14 +1312,22 @@ export function useAnalystEngine(
         })());
         fetches.push((async () => {
           try {
-            // Phase 5: Add workspace filter for email_campaigns
+            let emailCount = 0;
             const { data: tm } = await supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle();
-            if (!tm?.workspace_id) return;
-            const { count } = await supabase
-              .from('email_campaigns' as any)
-              .select('id', { count: 'exact', head: true })
-              .eq('workspace_id', tm.workspace_id);
-            if (count !== null) newData.push({ label: 'Email Campaigns', value: count, category: 'email', fetchedAt: now });
+            if (tm?.workspace_id) {
+              const { count } = await supabase
+                .from('email_campaigns' as any)
+                .select('id', { count: 'exact', head: true })
+                .eq('workspace_id', tm.workspace_id);
+              emailCount = count || 0;
+            } else {
+              const { count } = await supabase
+                .from('email_campaigns' as any)
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', userId);
+              emailCount = count || 0;
+            }
+            if (emailCount > 0) newData.push({ label: 'Email Campaigns', value: emailCount, category: 'email', fetchedAt: now });
           } catch { /* table may not exist */ }
         })());
       }
