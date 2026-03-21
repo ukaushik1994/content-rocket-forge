@@ -4671,11 +4671,32 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
       console.warn('Token usage logging error (non-critical):', logErr);
     }
 
+    // ===== Parse suggestedFollowUps from AI response into deepDivePrompts =====
+    let enrichedVisualData = visualData || undefined;
+    try {
+      const followUpMatch = finalContent.match(/```json\s*\n?\s*\{\s*"suggestedFollowUps"\s*:\s*(\[.*?\])\s*\}\s*\n?\s*```/s);
+      if (followUpMatch) {
+        const followUps = JSON.parse(followUpMatch[1]);
+        if (Array.isArray(followUps) && followUps.length > 0 && followUps.every((f: any) => typeof f === 'string')) {
+          if (!enrichedVisualData) {
+            enrichedVisualData = { type: 'summary' } as any;
+          }
+          if (!enrichedVisualData.deepDivePrompts || enrichedVisualData.deepDivePrompts.length === 0) {
+            enrichedVisualData.deepDivePrompts = followUps.slice(0, 3);
+            console.log(`💡 Injected ${followUps.length} AI-generated follow-ups`);
+          }
+          finalContent = finalContent.replace(/\n?\s*```json\s*\n?\s*\{\s*"suggestedFollowUps"\s*:\s*\[.*?\]\s*\}\s*\n?\s*```\s*$/s, '').trim();
+        }
+      }
+    } catch (fuErr) {
+      console.warn('suggestedFollowUps parsing failed (non-critical):', fuErr);
+    }
+
     const responseData = {
       message: finalContent,
       content: finalContent,
       actions: actions || undefined,
-      visualData: visualData || undefined,
+      visualData: enrichedVisualData,
       allVisualData: allCharts,
       serpData: serpData || undefined,
       insights: aiInsights.length > 0 ? aiInsights : undefined,
@@ -4683,8 +4704,8 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
       metadata: {
         processed_at: new Date().toISOString(),
         has_actions: !!actions,
-        has_visual_data: !!visualData,
-        visual_data_count: allCharts ? allCharts.length : (visualData ? 1 : 0),
+        has_visual_data: !!enrichedVisualData,
+        visual_data_count: allCharts ? allCharts.length : (enrichedVisualData ? 1 : 0),
         has_serp_data: !!serpData,
         insights_generated: aiInsights.length,
         serp_keywords: serpData?.keywords || [],
