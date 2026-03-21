@@ -1,44 +1,58 @@
 
-# Breakpoints Fix Plan — Implementation Complete
 
-## Summary: 32 fixes implemented across 14 files
+# Fix: Repository Infinite Refresh Loop
 
-### Phase 1 ✅ — Critical AI Chat (useEnhancedAIChatDB.ts)
-- **C1**: No-provider detection → clear "Settings → API Keys" message
-- **C2**: Empty SSE response → "Connection lost" with retry button (not blank bubble)
-- **H1**: Session refresh threshold 120s → 300s
-- **H2**: createConversation null → toast error
+## Root Cause
 
-### Phase 2 ✅ — Critical Frontend
-- **C3**: Campaigns empty briefs guard
-- **C4**: Analytics NaN-safe `.toFixed()` calls
-- **C6**: Notification subscription retry + M5 polling fallback (5min)
+In `src/pages/Repository.tsx` line 65, the `useEffect` dependency array is:
+```
+[refreshContent, contentItems.length]
+```
 
-### Phase 3 ✅ — Critical Backend
-- **C7**: generate-proactive-insights per-user try/catch
-- **C8**: engage-journey-processor auto-advance after 3+ failures
-- **C9**: Atomic step claiming (pending → processing) to prevent duplicates
+Every time `refreshContent()` runs, it updates `contentItems`, which changes `contentItems.length`, which re-triggers the effect, which calls `refreshContent()` again — infinite loop.
 
-### Phase 4 ✅ — High Frontend
-- **H11**: Onboarding skip → ensures company_info exists
-- **M4**: Analyst refresh interval wrapped in try/catch
+## Fix
 
-### Phase 5 ✅ — High Backend
-- **C5 enhancement**: Publish status update failure → warning message
-- **H7**: Proposal accept already calendar-first (verified — no change needed)
-- **H8**: Stale token → "Settings → Websites" guidance
-- **H12**: Email campaign status always updated after sends
-- **H13**: Empty email body → fails with clear error
+**File: `src/pages/Repository.tsx` (line 29-65)**
 
-### Phase 6 ✅ — Backend Fixes
-- **H14**: Social post orphan cleanup on targets insert failure
-- **M6**: Duplicate contact email check before insert
-- **M7**: Batch tagging reports partial failures
-- **M13**: Job runner returns 207 on partial failures
+Remove `contentItems.length` from the dependency array. The session storage check logic doesn't need it — it only needs to run once on mount.
 
-### Already Fixed (7 items — verified)
-- H5, H6, H9, H15, M10, M15, C5 (base)
+Change the `useEffect` to run only on mount by using an empty dependency array (or just `[]`), and move `refreshContent` call outside the dependency concern:
 
-### Deferred (low-risk, need specific component views)
-- H3, H4, H10, M1, M2, M3, M8, M9, M11, M12, M14
-- These are lower-priority defensive guards that can be added in a follow-up pass
+```typescript
+useEffect(() => {
+  refreshContent();
+
+  const contentDraftSaved = sessionStorage.getItem('content_draft_saved');
+  const glossarySaved = sessionStorage.getItem('glossary_saved');
+  const strategyContentSaved = sessionStorage.getItem('strategy_content_saved');
+  
+  if (contentDraftSaved === 'true' || glossarySaved === 'true' || strategyContentSaved === 'true') {
+    const toastMessage = strategyContentSaved === 'true' 
+      ? 'Loading your strategy content...'
+      : 'Loading your new content...';
+    const toastId = toast.loading(toastMessage);
+    
+    setTimeout(async () => {
+      await refreshContent();
+      const successMessage = strategyContentSaved === 'true'
+        ? 'Strategy content saved and published successfully!'
+        : 'Content loaded successfully';
+      toast.success(successMessage, { id: toastId });
+    }, 1000);
+  }
+
+  return () => {
+    sessionStorage.removeItem('content_draft_saved');
+    sessionStorage.removeItem('glossary_saved');
+    sessionStorage.removeItem('strategy_content_saved');
+    sessionStorage.removeItem('from_content_builder');
+    sessionStorage.removeItem('from_glossary_builder');
+    sessionStorage.removeItem('content_save_timestamp');
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+```
+
+**1 file, 1 line changed** (the dependency array). This stops the infinite loop while preserving the mount-time refresh and session storage handling.
+
