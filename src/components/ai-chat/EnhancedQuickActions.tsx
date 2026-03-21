@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle, FileText, Award, PartyPopper, AlertTriangle, Sparkles } from 'lucide-react';
+import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle, FileText, PartyPopper } from 'lucide-react';
 
 interface EnhancedQuickActionsProps {
   onAction: (action: string, data?: any) => void;
