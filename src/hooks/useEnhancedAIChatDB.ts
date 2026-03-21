@@ -548,6 +548,27 @@ export const useEnhancedAIChatDB = () => {
       setMessages(prev => prev.map(m => m.id === userMessage.id ? { ...m, id: userDbId } : m));
     }
 
+    // Phase 1: Learn from user message patterns (non-blocking)
+    try {
+      const msgLower = (displayContent || content).toLowerCase();
+      const { learnUserPreference } = await import('@/services/conversationMemory');
+      if (/shorter|concise|brief|too long/i.test(msgLower)) {
+        learnUserPreference('preferred_length', 'short', activeConversation || undefined, 0.6);
+      } else if (/more detail|elaborate|expand|longer/i.test(msgLower)) {
+        learnUserPreference('preferred_length', 'long', activeConversation || undefined, 0.6);
+      }
+      if (/casual|informal|friendly/i.test(msgLower)) {
+        learnUserPreference('preferred_tone', 'casual', activeConversation || undefined, 0.6);
+      } else if (/formal|professional|corporate/i.test(msgLower)) {
+        learnUserPreference('preferred_tone', 'formal', activeConversation || undefined, 0.6);
+      }
+      if (/bullet|list|points/i.test(msgLower)) {
+        learnUserPreference('preferred_format', 'bullet_points', activeConversation || undefined, 0.6);
+      } else if (/no chart|just text|plain text/i.test(msgLower)) {
+        learnUserPreference('preferred_format', 'text_only', activeConversation || undefined, 0.6);
+      }
+    } catch (_) { /* non-blocking */ }
+
     // Track assistant message ID for later insertion (no placeholder in messages array)
     const assistantId = `assistant-${Date.now()}`;
     setProgressText('');
