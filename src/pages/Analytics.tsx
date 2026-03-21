@@ -329,59 +329,8 @@ const Analytics = () => {
       
       <main className="flex-1 container px-6 pt-6 pb-12 relative z-10">
         <PageBreadcrumb section="Tools" page="Analytics" />
-        {/* Internal Content Metrics — always shown, no external API needed */}
-        {internalMetrics
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        }
 
         {/* External Analytics Banner */}
         {realMetrics && realMetrics.totalAnalytics.pageViews === 0 && realMetrics.totalSearchConsole.impressions === 0 &&
