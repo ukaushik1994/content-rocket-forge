@@ -1,53 +1,36 @@
 
 
-# Redesign Repository Cards — Clean Editorial Style
+# Move Quick Filters into a Dropdown Next to Search Bar
 
-## Reference (Image 1)
-The target design is a clean, minimal card:
-- Top row: Platform icon (circle) + platform name badge + status badge (right-aligned)
-- Title: Clean, bold, 2-line clamp
-- Content preview: Muted text, 2-3 lines
-- Source link: Subtle pill with link icon
-- Footer: Timestamp left, "View" button right (solid, rounded)
-- No heavy gradients, no neon glows, no excessive hover effects
+## What Changes
 
-## Current Problems (Image 2)
-- Oversized content-type icon with heavy gradient glow
-- Status badge has neon shadow effects
-- "Video Soon" badge clutters the top-right
-- Footer is cramped with Edit, Delete, View all fighting for space
-- Excessive hover effects (scale 1.03, neon borders, drop shadows)
-- Solution logo competes with content-type icon
+### 1. Remove quick filters from Hero (`ContentApprovalHero.tsx`)
+Delete lines 164-195 (the entire "Quick Filters" `motion.div` block). Also remove the `quickFilters` array definition (lines 45-51) and unused imports (`Clock`, `AlertCircle`, `CheckCircle2`, `XCircle`, `FileText` if no longer used). Remove `onQuickFilter` and `activeFilter` from props.
 
-## Plan — Rewrite `SimplifiedRepositoryCard.tsx`
+### 2. Add Status Filter dropdown in search bar area (`ModernContentApproval.tsx`)
+In the search/filter section (lines 404 area), add a new `Select` dropdown for status filtering next to the existing Sort dropdown:
 
-### Layout (top to bottom):
-1. **Header row**: Content-type icon (40px circle, subtle bg) + content-type label badge + status badge (right-aligned, no glow)
-2. **Solution logo**: If present, small 24px icon in header row (right of status)
-3. **Title**: `text-base font-semibold line-clamp-2`, no hover glow effects
-4. **Preview text**: Strip HTML from `content.content`, show 2-3 lines muted, `text-sm text-muted-foreground line-clamp-3`
-5. **Source link pill**: If `metadata?.sourceUrl` exists, show as a compact pill with link icon
-6. **Repurposed format icons**: Keep existing platform icon row but move into preview area
-7. **Footer**: Timestamp left (`text-xs text-muted-foreground`), View button right (solid `bg-muted/60` rounded pill with Eye icon)
+```tsx
+<Select value={statusFilter} onValueChange={setStatusFilter}>
+  <SelectTrigger className="w-40 bg-background/40 border-border/50">
+    <Filter className="h-4 w-4 mr-2" />
+    <SelectValue placeholder="Status" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">All ({contentStats.all})</SelectItem>
+    <SelectItem value="draft">Draft ({contentStats.draft})</SelectItem>
+    <SelectItem value="pending_review">Pending ({contentStats.pending_review})</SelectItem>
+    <SelectItem value="needs_changes">Changes ({contentStats.needs_changes})</SelectItem>
+    <SelectItem value="approved">Approved ({contentStats.approved})</SelectItem>
+    <SelectItem value="rejected">Rejected ({contentStats.rejected})</SelectItem>
+  </SelectContent>
+</Select>
+```
 
-### Style changes:
-- Card: `glass-card` with simple `hover:border-white/20` — remove `neon-border`, `card-3d`, all `before:` pseudo-element overlays, and `hover:shadow-[0_20px_40px...]`
-- Motion: Keep fade-in, remove `whileHover` scale/translate, keep subtle `whileTap: { scale: 0.98 }`
-- Icon container: `bg-primary/15 rounded-xl p-2.5` — no gradient, no glow shadow
-- Status badge: Simple `bg-white/10 text-xs` — no neon shadow
-- Remove `VideoComingSoonBadge` from card (move to detail view only)
-- Edit/Delete buttons: Move to a hover-revealed overlay or dropdown menu to keep footer clean — or keep just Edit icon + View button
+### 3. Update Hero component call (`ModernContentApproval.tsx` ~line 375)
+Remove `onQuickFilter` and `activeFilter` props from the `<ContentApprovalHero>` usage.
 
-### Footer simplification:
-- Left: repurposed platform icons (if any) + timestamp
-- Right: Edit (ghost icon-only) + View (outline pill button)
-- Delete stays via the existing AlertDialog but triggered from a small trash icon
-
-### Files changed:
-- `src/components/repository/SimplifiedRepositoryCard.tsx` — full rewrite of JSX and styles
-
-### No structural changes to:
-- `RepositoryGrid.tsx` — grid layout stays the same
-- `RepositoryCard.tsx` — passthrough stays the same
-- Props interface — no changes needed
+### Files Changed
+- `src/components/approval/modern/ContentApprovalHero.tsx` — remove filters block + clean props
+- `src/components/approval/modern/ModernContentApproval.tsx` — add status Select dropdown next to search, remove props from Hero call
 
