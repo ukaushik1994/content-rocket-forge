@@ -760,7 +760,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 glass-card p-3 space-y-2">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Goal Progress</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Goal Progress</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-medium text-foreground/80">{analystState.goalProgress.goalName}</span>
