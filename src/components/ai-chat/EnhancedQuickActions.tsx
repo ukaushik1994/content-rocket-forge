@@ -13,6 +13,7 @@ interface EnhancedQuickActionsProps {
 export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ 
   onAction, 
   onSetVisualization,
+  onClose,
   contentCount = -1,
   publishedCount = -1,
   draftCount = -1,
