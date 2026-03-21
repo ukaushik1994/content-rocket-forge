@@ -51,7 +51,6 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
         text: `🎉 ${publishedCount} articles published!`,
         prompt: `I just hit ${publishedCount} published articles! Show me my content performance and what's working best.`,
         icon: PartyPopper,
-        iconColor: 'text-amber-400',
         priority: 1,
       });
     }
