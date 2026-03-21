@@ -1,7 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { PenLine, Sparkles } from 'lucide-react';
 
 interface ContentCreationChoiceCardProps {
@@ -17,35 +15,30 @@ export const ContentCreationChoiceCard: React.FC<ContentCreationChoiceCardProps>
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2, duration: 0.3 }}
-      className="mt-3"
+      transition={{ delay: 0.15, duration: 0.25 }}
+      className="mt-2"
     >
-      <Card className="bg-muted/20 border border-border/30 p-4">
-        <p className="text-xs text-muted-foreground mb-3">
-          How would you like to create content{keyword ? ` about "${keyword}"` : ''}?
-        </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onStartFromScratch}
-            className="flex-1 gap-2 border-border/40 hover:border-primary/50 hover:bg-primary/5"
-          >
-            <PenLine className="h-4 w-4" />
-            Start from Scratch
-          </Button>
-          <Button
-            size="sm"
-            onClick={onAIProposals}
-            className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Sparkles className="h-4 w-4" />
-            AI Proposals
-          </Button>
-        </div>
-      </Card>
+      <div className="inline-flex items-center gap-2 bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-full p-1.5 pl-3">
+        <span className="text-[11px] text-muted-foreground">
+          {keyword ? `"${keyword}"` : 'Create content'}
+        </span>
+        <button
+          onClick={onStartFromScratch}
+          className="inline-flex items-center gap-1.5 text-xs text-foreground/80 hover:text-foreground py-1.5 px-3 rounded-full border border-white/[0.08] hover:bg-white/[0.06] transition-colors"
+        >
+          <PenLine className="h-3 w-3" />
+          Scratch
+        </button>
+        <button
+          onClick={onAIProposals}
+          className="inline-flex items-center gap-1.5 text-xs text-primary-foreground py-1.5 px-3 rounded-full bg-gradient-to-r from-primary/80 to-primary hover:from-primary hover:to-primary transition-all"
+        >
+          <Sparkles className="h-3 w-3" />
+          AI Proposals
+        </button>
+      </div>
     </motion.div>
   );
 };

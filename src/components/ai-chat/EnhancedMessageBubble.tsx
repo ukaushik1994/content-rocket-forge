@@ -180,7 +180,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       {/* Message Content - Responsive widths */}
       <div className={isUser 
         ? 'max-w-[85%] sm:max-w-[75%] lg:max-w-[60%]' 
-        : 'w-full max-w-4xl'
+        : 'max-w-[85%] sm:max-w-[75%] lg:max-w-[65%]'
       }>
         <div className="relative">
           {/* Thinking Indicator - shown while AI is processing */}
