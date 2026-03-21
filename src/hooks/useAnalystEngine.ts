@@ -252,7 +252,7 @@ function computeCrossSignals(
         for (const [kw, count] of keywordCounts) {
           if (count / proposalKeywords.length >= 0.5) {
             signals.push({
-              id: `cross-topic-concentration-${now.getTime()}`,
+              id: `cross-topic-concentration-${kw}`,
               content: `🎯 ${Math.round((count / proposalKeywords.length) * 100)}% of completed proposals target "${kw}" — consider diversifying topics`,
               type: 'warning',
               source: 'cross-signal',
