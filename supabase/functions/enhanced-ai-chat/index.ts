@@ -2202,6 +2202,26 @@ serve(async (req) => {
       panelHint: queryIntent.panelHint || 'none'
     });
 
+    // Phase 4: Auto-update conversation goal on topic shift
+    if (!queryIntent.isConversational && conversationId && queryIntent.categories.length > 0) {
+      const CATEGORY_TO_GOAL: Record<string, string> = {
+        content: 'content_creation', keywords: 'seo_optimization', engage: 'email_marketing',
+        campaigns: 'campaign_management', competitors: 'competitive_analysis', social: 'social_media',
+        analytics: 'performance_analysis', proposals: 'strategy_planning', calendar: 'content_planning',
+        approvals: 'content_review'
+      };
+      const detectedGoal = CATEGORY_TO_GOAL[queryIntent.categories[0]];
+      if (detectedGoal) {
+        try {
+          const { data: conv } = await supabaseClient.from('ai_conversations').select('goal').eq('id', conversationId).single();
+          if (conv && conv.goal !== detectedGoal) {
+            await supabaseClient.from('ai_conversations').update({ goal: detectedGoal }).eq('id', conversationId);
+            console.log(`🎯 Updated conversation goal: ${conv.goal} → ${detectedGoal}`);
+          }
+        } catch (e) { /* non-blocking */ }
+      }
+    }
+
     // Runtime-safe alias to prevent out-of-scope ReferenceError in any prompt path
     const isVisualPromptRequired = queryIntent?.requiresVisualData === true;
     
