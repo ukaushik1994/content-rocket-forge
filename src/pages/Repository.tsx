@@ -62,7 +62,8 @@ const Repository = () => {
       sessionStorage.removeItem('from_glossary_builder');
       sessionStorage.removeItem('content_save_timestamp');
     };
-  }, [refreshContent, contentItems.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleOpenDetailView = (content: ContentItemType) => {
     // Look up the latest version of the content from context to ensure fresh data
