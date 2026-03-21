@@ -3226,8 +3226,16 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
       // If we have specific intent categories, filter tools; otherwise use all
       if (intentCategories.length > 0 && intentCategories[0] !== 'general') {
         toolsToUse = TOOL_DEFINITIONS.filter((t: any) => relevantToolNames.has(t.function?.name));
-        // Ensure we always have at least 5 tools (safety net)
-        if (toolsToUse.length < 5) toolsToUse = TOOL_DEFINITIONS;
+        // Phase 1 Fix: Use core-tools fallback instead of dumping all 89 tools
+        if (toolsToUse.length < 5) {
+          const CORE_FALLBACK_TOOLS = ['get_content_items', 'get_keywords', 'get_proposals', 'get_solutions', 'get_seo_scores'];
+          toolsToUse = TOOL_DEFINITIONS.filter((t: any) => CORE_FALLBACK_TOOLS.includes(t.function?.name));
+        }
+        // Phase 1: Hide deprecated tools
+        toolsToUse = toolsToUse.filter((t: any) => {
+          const name = t.function?.name;
+          return name !== 'start_content_builder' && name !== 'create_content_item' && name !== 'send_quick_email';
+        });
         console.log(`🔧 Intent-filtered tools: ${toolsToUse.length}/${TOOL_DEFINITIONS.length} (categories: ${intentCategories.join(', ')})`);
       }
 
