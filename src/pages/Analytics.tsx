@@ -55,7 +55,7 @@ const Analytics = () => {
   const { openSettings } = useSettings();
 
   // Use real analytics data
-  const { metrics: realMetrics, loading, error, refreshAnalytics } = useAnalyticsData();
+  const { metrics: realMetrics, internalMetrics, loading, error, refreshAnalytics } = useAnalyticsData();
 
   const containerVariants = {
     hidden: { opacity: 0 },

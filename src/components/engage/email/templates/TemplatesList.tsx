@@ -273,7 +273,7 @@ export const TemplatesList = () => {
                 size="sm"
                 className="text-xs gap-1"
                 onClick={() => {
-                  setForm({ name: seed.name, subject: seed.subject, body_html: seed.body, variables: [] });
+                  setForm({ name: seed.name, subject: seed.subject, body_html: seed.body });
                   setShowEditor(true);
                 }}
               >

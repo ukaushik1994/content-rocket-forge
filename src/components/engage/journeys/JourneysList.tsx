@@ -427,7 +427,7 @@ export const JourneysList = () => {
                   <button
                     key={t.name}
                     onClick={() => {
-                      setForm((f: any) => ({ ...f, name: t.name, description: t.desc }));
+                      setName(t.name); setDescription(t.desc);
                       setShowCreate(true);
                     }}
                     className="text-left px-3 py-2 rounded-lg border border-border/30 bg-background/40 hover:bg-background/60 hover:border-primary/30 transition-all text-xs"
