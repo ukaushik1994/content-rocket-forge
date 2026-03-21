@@ -407,7 +407,7 @@ function computeCrossSignals(
             const uniqueIssues = [...new Set(issues)];
             if (uniqueIssues.length > 0) {
               signals.push({
-                id: `cross-seo-diagnosis-${now.getTime()}`,
+                id: `cross-seo-diagnosis`,
                 content: `🔍 Why SEO is declining: Recent articles show ${uniqueIssues.slice(0, 3).join(', ')}. These are the most common causes of low scores.`,
                 type: 'warning',
                 source: 'cross-signal',
