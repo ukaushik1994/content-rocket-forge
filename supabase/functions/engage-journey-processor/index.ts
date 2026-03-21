@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Pick pending steps that are due
+    // C9: Atomically claim pending steps to prevent duplicate processing
     const { data: steps, error: fetchErr } = await supabase
       .from("journey_steps")
       .select("*, journey_enrollments!inner(journey_id, contact_id, status, workspace_id)")
@@ -29,6 +29,18 @@ Deno.serve(async (req) => {
     if (!steps || steps.length === 0) {
       return new Response(JSON.stringify({ processed: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    // Atomically claim steps by setting status to 'processing' only if still 'pending'
+    const stepIds = steps.map(s => s.id);
+    const { data: claimedSteps } = await supabase
+      .from("journey_steps")
+      .update({ status: "processing" })
+      .in("id", stepIds)
+      .eq("status", "pending")
+      .select("id");
+    
+    const claimedIds = new Set((claimedSteps || []).map(s => s.id));
+    const stepsToProcess = steps.filter(s => claimedIds.has(s.id));
 
     let processed = 0;
     let skipped = 0;
