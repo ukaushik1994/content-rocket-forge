@@ -828,6 +828,18 @@ export const useEnhancedAIChatDB = () => {
         }, 2000);
       }
 
+      // Phase 5A: Record learned patterns after assistant response (non-blocking)
+      try {
+        const { recordLearnedPattern } = await import('@/services/conversationMemory');
+        const actionMatch = responseContent.match(/\b(Created|Published|Generated|Scheduled|Sent)\b/);
+        if (actionMatch) {
+          recordLearnedPattern('frequent_action', { action: actionMatch[1] });
+        }
+        if (detectedGoal) {
+          recordLearnedPattern('conversation_topic', { topic: detectedGoal });
+        }
+      } catch (_) { /* non-blocking */ }
+
       // Title already set early (line 392-408) — no duplicate update needed
     } catch (error: any) {
       console.error('Error sending enhanced message:', error);

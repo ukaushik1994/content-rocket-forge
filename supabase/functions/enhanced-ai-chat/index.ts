@@ -2125,7 +2125,7 @@ serve(async (req) => {
           const { data: userPrefs } = await supabase.from('user_preferences')
             .select('preference_type, preference_value, confidence_score')
             .eq('user_id', user.id)
-            .gte('confidence_score', 0.6)
+            .gte('confidence_score', 0.4)
             .order('confidence_score', { ascending: false })
             .limit(5);
           
@@ -2134,8 +2134,22 @@ serve(async (req) => {
             messages.unshift({ role: 'system', content: `[Learned User Preferences (high confidence)]:\n${prefsText}\nAdapt your responses to respect these preferences.` });
             console.log(`🧠 Injected ${userPrefs.length} user preferences into context`);
           }
+
+          // Phase 5B: Read learned patterns
+          const { data: patterns } = await supabase.from('learned_patterns')
+            .select('pattern_type, pattern_data, occurrences')
+            .eq('user_id', user.id)
+            .gte('occurrences', 3)
+            .order('occurrences', { ascending: false })
+            .limit(5);
+
+          if (patterns && patterns.length > 0) {
+            const patternsText = patterns.map((p: any) => `- ${p.pattern_type}: ${JSON.stringify(p.pattern_data)} (seen ${p.occurrences}x)`).join('\n');
+            messages.unshift({ role: 'system', content: `[Learned User Patterns]:\n${patternsText}\nAnticipate these recurring needs.` });
+            console.log(`🧠 Injected ${patterns.length} learned patterns into context`);
+          }
         } catch (prefErr) {
-          console.warn('⚠️ Failed to load user preferences (non-blocking):', prefErr);
+          console.warn('⚠️ Failed to load user preferences/patterns (non-blocking):', prefErr);
         }
       } catch (ctxErr) {
         console.warn('⚠️ Failed to load pinned/feedback/goal context (non-blocking):', ctxErr);
