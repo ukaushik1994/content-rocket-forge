@@ -701,8 +701,39 @@ export const useEnhancedAIChatDB = () => {
       // Don't clear timeout here — wait until stream reading is complete
 
       if (!resp.ok || !resp.body) {
-        const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(errData.error || errData.message || `HTTP ${resp.status}`);
+        // Retry once on 401 with session refresh
+        if (resp.status === 401) {
+          console.log('🔄 Got 401, attempting session refresh and retry...');
+          const { error: refreshErr } = await supabase.auth.refreshSession();
+          if (!refreshErr) {
+            const retryHeaders = await getAuthHeaders();
+            const retryResp = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-ai-chat`, {
+              method: 'POST',
+              headers: retryHeaders,
+              signal: abortControllerRef.current?.signal,
+              body: JSON.stringify({
+                message: content,
+                context: { 
+                  conversation_id: conversationId, 
+                  analystActive: analystActiveRef.current,
+                  analystSummary: (window as any).__analystSummary || null,
+                },
+                stream: true
+              })
+            });
+            if (retryResp.ok && retryResp.body) {
+              resp = retryResp;
+            } else {
+              const errData = await retryResp.json().catch(() => ({ error: 'Request failed after retry' }));
+              throw new Error(errData.error || errData.message || `HTTP ${retryResp.status}`);
+            }
+          } else {
+            throw new Error('Session expired — please sign in again');
+          }
+        } else {
+          const errData = await resp.json().catch(() => ({ error: 'Request failed' }));
+          throw new Error(errData.error || errData.message || `HTTP ${resp.status}`);
+        }
       }
 
       // Parse SSE events
