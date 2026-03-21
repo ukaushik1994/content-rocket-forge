@@ -840,8 +840,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                         const idx = messages.findIndex((m) => m.id === message.id);
                         const lastUserMsg = messages.slice(0, idx).reverse().find((m) => m.role === 'user');
                         if (lastUserMsg) {
-                          // Delete the old assistant response, then resend the original user message
-                          await deleteMessage(message.id);
                           sendMessage(lastUserMsg.content);
                         }
                       }} />

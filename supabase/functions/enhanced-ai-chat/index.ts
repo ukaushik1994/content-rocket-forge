@@ -4326,15 +4326,7 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
     // Only provide basic contextual actions if AI didn't return structured data
     // NO MOCK DATA GENERATION - Let the AI create appropriate responses based on real data
     if (!actions && !visualData) {
-      console.log("⚠️ No structured data returned from AI - providing basic navigation only");
-      
-      actions = [{
-        id: "explore-dashboard",
-        label: "View Dashboard",
-        type: "button", 
-        action: "navigate:/ai-chat",
-        data: {}
-      }];
+      console.log("⚠️ No structured data returned from AI - no actions to display");
     } else if (!actions && visualData) {
       // If we have visualData but no actions, generate contextual actions
       console.log("📊 VisualData present but no actions - generating contextual actions");
