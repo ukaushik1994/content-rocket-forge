@@ -166,6 +166,9 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     if (webSearchMode) {
       onSendMessage(`[web-search] ${trimmed}`);
       setWebSearchMode(false);
+    } else if (imageGenMode) {
+      onSendMessage(`[image-gen] ${trimmed}`);
+      setImageGenMode(false);
     } else if (wizardMode && onLaunchWizard) {
       onLaunchWizard(trimmed);
       setWizardMode(false);
