@@ -21,10 +21,10 @@ export const PerformanceTrajectorySection: React.FC<Props> = ({ analystState, ch
   const delta = lastVal - firstVal;
 
   const getHeadline = () => {
-    if (changePercent > 20) return <>Performance is <span className="text-emerald-400/80">accelerating</span></>;
-    if (changePercent > 0) return <>Reach is expanding <span className="text-emerald-400/80">organically</span></>;
+    if (changePercent > 20) return <>Performance is <span className="text-primary/80">accelerating</span></>;
+    if (changePercent > 0) return <>Reach is expanding <span className="text-primary/80">organically</span></>;
     if (changePercent === 0) return <>Trajectory is <span className="text-primary/80">flat</span></>;
-    return <>Performance is <span className="text-rose-300">contracting</span></>;
+    return <>Performance is <span className="text-primary/50">contracting</span></>;
   };
 
   const tooltipStyle = {
