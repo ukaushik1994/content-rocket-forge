@@ -131,7 +131,7 @@ const Analytics = () => {
     { 
       id: 'bounceRate', 
       label: 'Avg. Bounce Rate', 
-      value: `${(realMetrics.avgBounceRate * 100).toFixed(1)}%`, 
+      value: `${(isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate * 100).toFixed(1)}%`, 
       icon: Activity,
       color: 'from-red-500 to-rose-400',
       bgPattern: 'from-red-500/5 to-rose-400/10',
@@ -140,7 +140,7 @@ const Analytics = () => {
     { 
       id: 'sessionDuration', 
       label: 'Avg. Session', 
-      value: `${Math.floor(realMetrics.avgSessionDuration / 60)}:${(realMetrics.avgSessionDuration % 60).toFixed(0).padStart(2, '0')}`, 
+      value: `${Math.floor((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) / 60)}:${((isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration) % 60).toFixed(0).padStart(2, '0')}`, 
       icon: Clock,
       color: 'from-yellow-500 to-amber-400',
       bgPattern: 'from-yellow-500/5 to-amber-400/10',
@@ -149,7 +149,7 @@ const Analytics = () => {
     { 
       id: 'ctr', 
       label: 'Avg. CTR', 
-      value: `${(realMetrics.avgCTR * 100).toFixed(1)}%`, 
+      value: `${(isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR * 100).toFixed(1)}%`, 
       icon: Target,
       color: 'from-green-500 to-emerald-400',
       bgPattern: 'from-green-500/5 to-emerald-400/10',
@@ -158,7 +158,7 @@ const Analytics = () => {
     { 
       id: 'position', 
       label: 'Avg. Position', 
-      value: realMetrics.avgPosition.toFixed(1), 
+      value: (isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition).toFixed(1), 
       icon: Zap,
       color: 'from-indigo-500 to-blue-400',
       bgPattern: 'from-indigo-500/5 to-blue-400/10',
