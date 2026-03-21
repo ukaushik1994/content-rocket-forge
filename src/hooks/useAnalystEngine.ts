@@ -335,7 +335,7 @@ function computeCrossSignals(
         const scores = recentArticles.map(a => a.seo_score as number);
         if (scores[0] > scores[2] && scores[0] >= 60) {
           signals.push({
-            id: `cross-seo-win-${now.getTime()}`,
+            id: `cross-seo-win`,
             content: `🏆 Your latest articles score ${scores[0]}/100 SEO — up from ${scores[2]} in earlier pieces. Your optimization skills are improving!`,
             type: 'opportunity',
             source: 'cross-signal',
