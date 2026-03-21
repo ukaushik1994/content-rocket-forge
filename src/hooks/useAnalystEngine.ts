@@ -1647,7 +1647,7 @@ export function useAnalystEngine(
             currentValue = avgSeo;
           }
           
-          const percentage = Math.min(100, Math.round((currentValue / goal.target_value) * 100));
+          const percentage = goal.target_value > 0 ? Math.min(100, Math.round((currentValue / goal.target_value) * 100)) : 0; // Phase 5: division by zero guard
           const typeLabels: Record<string, string> = {
             publish_count: 'Publish Articles',
             content_count: 'Create Content',
