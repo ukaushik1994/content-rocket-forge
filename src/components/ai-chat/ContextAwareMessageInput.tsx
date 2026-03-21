@@ -364,6 +364,43 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             disabled={isLoading}
           />
 
+          {/* Quick Actions Popover */}
+          <Popover open={quickActionsOpen} onOpenChange={setQuickActionsOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={isLoading}
+                aria-label="Quick actions"
+                className={cn(
+                  "text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8 transition-colors",
+                  quickActionsOpen && "text-primary"
+                )}
+              >
+                <Zap className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="top"
+              align="start"
+              sideOffset={8}
+              className="w-52 p-1 bg-card border-border/50 rounded-lg shadow-lg"
+            >
+              <EnhancedQuickActions
+                onAction={(action, data) => {
+                  onQuickAction?.(action, data);
+                  setQuickActionsOpen(false);
+                }}
+                onSetVisualization={(v) => {
+                  onSetVisualization?.(v);
+                  setQuickActionsOpen(false);
+                }}
+                onClose={() => setQuickActionsOpen(false)}
+              />
+            </PopoverContent>
+          </Popover>
+
           {/* Message Input */}
           <Textarea
             ref={textareaRef}
