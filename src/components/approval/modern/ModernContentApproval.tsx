@@ -374,8 +374,6 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
       <ContentApprovalHero
         contentStats={contentStats}
         onAnalyzeAll={handleAnalyzeAll}
-        onQuickFilter={setStatusFilter}
-        activeFilter={statusFilter}
         isAnalyzing={isAnalyzingAll}
       />
 
