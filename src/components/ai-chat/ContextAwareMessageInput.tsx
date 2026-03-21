@@ -340,7 +340,9 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
 
       <form onSubmit={handleSubmit} className="relative">
         <div 
-          className={`relative flex items-center gap-2 p-2.5 bg-background/60 backdrop-blur-xl border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200 ${
+          className={cn(
+            "relative flex items-center gap-2 p-2.5 bg-background/60 backdrop-blur-xl border shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-200",
+            centered ? "rounded-2xl p-3" : "rounded-2xl",
             imageGenMode
               ? 'border-cyan-500/30 ring-1 ring-cyan-500/10'
               : webSearchMode
@@ -350,7 +352,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
                   : isFocused 
                     ? 'border-white/[0.15] shadow-[0_0_20px_rgba(255,255,255,0.03)]' 
                     : 'border-white/[0.08] hover:border-white/[0.15]'
-          }`}
+          )}
         >
           {/* File Upload Handler */}
           <FileUploadHandler
