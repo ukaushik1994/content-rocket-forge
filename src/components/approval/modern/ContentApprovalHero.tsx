@@ -80,17 +80,17 @@ export const ContentApprovalHero: React.FC<ContentApprovalHeroProps> = ({
         
 
         {/* Badge */}
-        <motion.div
-          className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, type: 'spring' }}
-          whileHover={{ scale: 1.05 }}>
-          
-          <Brain className="h-5 w-5 text-primary" />
-          <span className="text-sm font-medium">AI-Powered Content Review</span>
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-        </motion.div>
+        
+
+
+
+
+
+
+
+
+
+        
 
         {/* Title */}
         <motion.h1
