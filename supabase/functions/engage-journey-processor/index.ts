@@ -66,6 +66,22 @@ Deno.serve(async (req) => {
 
         if (!node) {
           await supabase.from("journey_steps").update({ status: "failed", error: "Node not found" }).eq("id", step.id);
+          
+          // C8: Auto-advance on repeated failures — check if enrollment has 3+ failures
+          const { count: failCount } = await supabase
+            .from("journey_steps")
+            .select("id", { count: "exact", head: true })
+            .eq("enrollment_id", step.enrollment_id)
+            .eq("status", "failed");
+          
+          if ((failCount || 0) >= 3) {
+            await supabase.from("journey_enrollments")
+              .update({ status: "completed", completed_at: new Date().toISOString() })
+              .eq("id", step.enrollment_id);
+            console.log(`[JOURNEY] Auto-completed enrollment ${step.enrollment_id} after ${failCount} failures`);
+          }
+          
+          skipped++;
           continue;
         }
 

@@ -189,7 +189,11 @@ Deno.serve(async (req) => {
           .eq('status', 'active')
           .ilike('message', '%empty calendar%');
       }
-    }
+      }
+     } catch (userErr) {
+       console.error(`[PROACTIVE] Error processing user ${userId}:`, userErr);
+       continue; // C7: skip failed user, continue with others
+     }
 
     console.log(`[PROACTIVE] Generated ${totalRecs} recommendations for ${uniqueUserIds.length} users`);
 
