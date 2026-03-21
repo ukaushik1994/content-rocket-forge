@@ -548,6 +548,27 @@ export const useEnhancedAIChatDB = () => {
       setMessages(prev => prev.map(m => m.id === userMessage.id ? { ...m, id: userDbId } : m));
     }
 
+    // Phase 1: Learn from user message patterns (non-blocking)
+    try {
+      const msgLower = (displayContent || content).toLowerCase();
+      const { learnUserPreference } = await import('@/services/conversationMemory');
+      if (/shorter|concise|brief|too long/i.test(msgLower)) {
+        learnUserPreference('preferred_length', 'short', activeConversation || undefined, 0.6);
+      } else if (/more detail|elaborate|expand|longer/i.test(msgLower)) {
+        learnUserPreference('preferred_length', 'long', activeConversation || undefined, 0.6);
+      }
+      if (/casual|informal|friendly/i.test(msgLower)) {
+        learnUserPreference('preferred_tone', 'casual', activeConversation || undefined, 0.6);
+      } else if (/formal|professional|corporate/i.test(msgLower)) {
+        learnUserPreference('preferred_tone', 'formal', activeConversation || undefined, 0.6);
+      }
+      if (/bullet|list|points/i.test(msgLower)) {
+        learnUserPreference('preferred_format', 'bullet_points', activeConversation || undefined, 0.6);
+      } else if (/no chart|just text|plain text/i.test(msgLower)) {
+        learnUserPreference('preferred_format', 'text_only', activeConversation || undefined, 0.6);
+      }
+    } catch (_) { /* non-blocking */ }
+
     // Track assistant message ID for later insertion (no placeholder in messages array)
     const assistantId = `assistant-${Date.now()}`;
     setProgressText('');
@@ -782,9 +803,9 @@ export const useEnhancedAIChatDB = () => {
 
       // Phase 3: Auto-update conversation goal when topic shifts
       const responseContentLower = (responseContent || '').toLowerCase();
+      let detectedGoal: string | null = null;
       if (conversationId && messages.length >= 4) {
         try {
-          let detectedGoal: string | null = null;
           if (/email|campaign|newsletter/.test(responseContentLower) && !/content|article|blog/.test(responseContentLower)) detectedGoal = 'Email Campaign';
           else if (/keyword|seo|rank|serp/.test(responseContentLower) && !/write|create|draft/.test(responseContentLower)) detectedGoal = 'SEO Research';
           else if (/competitor|swot|market position/.test(responseContentLower)) detectedGoal = 'Competitive Analysis';
@@ -806,6 +827,18 @@ export const useEnhancedAIChatDB = () => {
           window.dispatchEvent(new CustomEvent('refreshAnalyst'));
         }, 2000);
       }
+
+      // Phase 5A: Record learned patterns after assistant response (non-blocking)
+      try {
+        const { recordLearnedPattern } = await import('@/services/conversationMemory');
+        const actionMatch = responseContent.match(/\b(Created|Published|Generated|Scheduled|Sent)\b/);
+        if (actionMatch) {
+          recordLearnedPattern('frequent_action', { action: actionMatch[1] });
+        }
+        if (detectedGoal) {
+          recordLearnedPattern('conversation_topic', { topic: detectedGoal });
+        }
+      } catch (_) { /* non-blocking */ }
 
       // Title already set early (line 392-408) — no duplicate update needed
     } catch (error: any) {
@@ -1630,6 +1663,25 @@ export const useEnhancedAIChatDB = () => {
         m.id === messageId ? { ...m, feedbackHelpful: newVal } : m
       ));
 
+      // Phase 2: Learn from positive feedback
+      if (newVal === true) {
+        try {
+          const { learnUserPreference } = await import('@/services/conversationMemory');
+          const likedMsg = messages.find(m => m.id === messageId);
+          if (likedMsg) {
+            const wordCount = likedMsg.content?.split(/\s+/).length || 0;
+            if (wordCount < 150) {
+              learnUserPreference('preferred_response_length', 'short', activeConversation || undefined, 0.5);
+            } else if (wordCount > 400) {
+              learnUserPreference('preferred_response_length', 'long', activeConversation || undefined, 0.5);
+            }
+            if (likedMsg.visualData) {
+              learnUserPreference('likes_charts', true, activeConversation || undefined, 0.5);
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+      }
+
       // 3A: Learn from feedback — record preference when user gives negative feedback
       if (newVal === false) {
         try {
@@ -1640,7 +1692,7 @@ export const useEnhancedAIChatDB = () => {
               'disliked_response_style',
               { messagePreview: assistantMsg.content?.substring(0, 200), timestamp: new Date().toISOString() },
               activeConversation || undefined,
-              0.4
+              0.6
             );
           }
         } catch (_) { /* non-blocking */ }
