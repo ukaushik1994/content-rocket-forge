@@ -236,8 +236,18 @@ Deno.serve(async (req) => {
         const fromName = providerSettings?.from_name || "Engage";
         const fromEmail = providerSettings?.from_email || "noreply@example.com";
 
-        // Build email body with unsubscribe link
+        // H13: Validate email body is non-empty before sending
         let bodyHtml = msg.body_html || "";
+        if (!bodyHtml.trim()) {
+          await supabase.from("email_messages").update({
+            status: "failed",
+            error: "Email body is empty. Cannot send blank emails.",
+          }).eq("id", msg.id);
+          if (msg.campaign_id) campaignIds.add(msg.campaign_id);
+          failed++;
+          continue;
+        }
+
         const unsub = buildUnsubHeaders(baseUrl, msg.contact_id);
 
         if (msg.contact_id) {
