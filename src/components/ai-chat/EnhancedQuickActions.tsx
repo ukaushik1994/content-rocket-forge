@@ -24,7 +24,6 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
       prompt: string;
       directWizard?: boolean;
       icon: any;
-      iconColor: string;
       priority: number;
     }> = [];
 
