@@ -176,7 +176,7 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
       {/* #49: Onboarding overlay for first-time users */}
       {isOnboardingActive && <OnboardingCarousel />}
 
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2 transition-all duration-300">
         <ActiveProviderIndicator />
         <NotificationBell />
         <SearchIconButton />
