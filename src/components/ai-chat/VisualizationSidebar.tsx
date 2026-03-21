@@ -768,7 +768,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </div>
                     <div className="w-full h-1.5 bg-muted/20 rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-amber-300/60 to-amber-400/40 transition-all"
+                        className="h-full rounded-full bg-gradient-to-r from-primary/60 to-primary/40 transition-all"
                         style={{ width: `${Math.min(analystState.goalProgress.percentage, 100)}%` }}
                       />
                     </div>
