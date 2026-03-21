@@ -1,82 +1,54 @@
 
 
-# Redesign Engage Hero Sections to Match Automations Style
+# Redesign Campaigns, Keywords, and Analytics Heroes to Match Automations Style
 
-## Current State
-- **Automations**: Custom inline hero with amber/orange gradient, centered layout, glass-card badge, gradient title, action buttons with colored gradient, stat cards with colored icons. Looks great (the screenshot).
-- **Journeys, Contacts, Social**: Use generic `EngagePageHero` component — similar structure but uses `text-primary` for everything (no unique color identity).
-- **Email**: Custom inline hero — uses primary/blue gradient, similar structure but slightly different spacing.
+## Reference Pattern (Automations Hero)
+Centered layout with: ambient glow → glass-card badge → gradient title → subtitle → action buttons → stat cards. Clean, no oversized sections. Uses `glass-card`, spring animations, colored icon stats.
 
-## Plan
+## Color Assignments
 
-Replace the generic `EngagePageHero` usage in Journeys, Contacts, and Social with custom inline heroes matching the Automations pattern. Update Email's existing custom hero to follow the same pattern. Each gets a unique color scheme.
+| Page | Gradient | Icon Color | Glow |
+|------|----------|------------|------|
+| Campaigns | `from-foreground via-green-400 to-teal-500` | `text-green-400` | `green-500/[0.06]` |
+| Keywords | `from-foreground via-indigo-400 to-blue-500` | `text-indigo-400` | `indigo-500/[0.06]` |
+| Analytics | `from-foreground via-cyan-400 to-blue-500` | `text-cyan-400` | `cyan-500/[0.06]` |
 
-### Color Assignments
-| Page | Gradient Colors | Icon Color | Glow Color |
-|------|----------------|------------|------------|
-| Automations | amber-500 → orange-500 | text-amber-400 | amber-500/[0.06] |
-| Email | blue-400 → cyan-400 | text-blue-400 | blue-500/[0.06] |
-| Journeys | purple-400 → violet-500 | text-purple-400 | purple-500/[0.06] |
-| Contacts | emerald-400 → teal-400 | text-emerald-400 | emerald-500/[0.06] |
-| Social | pink-400 → rose-500 | text-pink-400 | pink-500/[0.06] |
+## Changes
 
-### Changes per file
+### 1. `src/components/campaigns/CampaignsHero.tsx` (~lines 138-234)
+Replace the hero section (ambient glow, empty badge div, title, subtitle, stats) with the Automations pattern:
+- Ambient glow: `bg-green-500/[0.06]` centered radial
+- Badge: `Megaphone` icon + "Campaign Command Center" + green dot, using `glass-card`
+- Title: `Campaigns` with green/teal gradient
+- CTA button: `from-green-400 to-teal-500` gradient for primary
+- Stats: Keep existing 3 stats, use green-themed icon colors (`text-emerald-400`, `text-teal-400`, `text-green-400`)
+- Remove `min-h-[60vh]` — use `pt-12 pb-8` like Automations
+- Keep the mode toggle and input sections below (unchanged)
 
-**1. `src/components/engage/email/EmailDashboard.tsx`** (lines 96-200)
-- Change ambient glow from `primary/10...blue-500/10` to `blue-500/[0.06]` radial centered glow
-- Change badge icon color to `text-blue-400`
-- Change title gradient to `from-foreground via-blue-400 to-cyan-400`
-- Change CTA button gradient to `from-blue-400 to-cyan-400`
-- Change stat icon colors to `text-blue-400`
-- Match spacing/animation delays to Automations pattern
+### 2. `src/components/keywords/KeywordsHero.tsx` (~lines 49-208)
+Full rewrite to match Automations pattern:
+- Remove `min-h-[60vh]` and `pt-24` — use `pt-12 pb-8`
+- Ambient glow: `bg-indigo-500/[0.06]`
+- Badge: `Database` icon + "Keyword Repository" + green dot, `glass-card`
+- Title: `Keywords` (single line, no "Dashboard" subtitle), indigo/blue gradient
+- Subtitle: shorter, single line
+- CTA: "Create Content" button with `from-indigo-400 to-blue-500`
+- Stats: Keep 3 stats, use `glass-card` containers, indigo-themed colors
+- Quick filters: Keep, restyle containers to match `glass-card`
+- Remove animated shimmer on CTA button
 
-**2. `src/components/engage/journeys/JourneysList.tsx`** (lines 327-380)
-- Replace `<EngagePageHero>` with inline hero matching Automations structure
-- Purple/violet color scheme
-- Badge: GitBranch icon + "Journey Builder" + green dot
-- Title: "Journeys" with gradient `from-foreground via-purple-400 to-violet-500`
-- Keep existing action buttons (New Journey dialog trigger), restyle primary CTA with `from-purple-400 to-violet-500`
-- Keep existing stats, color icons with `text-purple-400`
+### 3. `src/pages/Analytics.tsx` (~lines 348-484)
+Replace inline hero with Automations pattern:
+- Ambient glow: `bg-cyan-500/[0.06]`
+- Badge: `BarChart3` icon + "Real-time Performance Tracking" + green dot, `glass-card`
+- Title: `Analytics` (single word), cyan/blue gradient
+- Subtitle: shorter
+- CTA buttons: Keep Refresh/Export CSV/Export Image, primary gets `from-cyan-400 to-blue-500`
+- Stats: Keep 3 stats (Page Views, Sessions, Impressions), use cyan-themed icon colors
+- Time range pills: Keep below stats, same styling
 
-**3. `src/components/engage/contacts/ContactsList.tsx`** (lines 256-268)
-- Replace `<EngagePageHero>` with inline hero matching Automations structure
-- Emerald/teal color scheme
-- Badge: Users icon + "Contact Management" + green dot
-- Title: "Contacts" with gradient `from-foreground via-emerald-400 to-teal-400`
-- Keep existing action buttons (Export, Add Contact), restyle with emerald gradient
-- Keep existing stats with emerald-colored icons
-
-**4. `src/components/engage/social/SocialDashboard.tsx`** (lines 276-296)
-- Replace `<EngagePageHero>` with inline hero matching Automations structure
-- Pink/rose color scheme
-- Badge: Share2 icon + "Social Command Center" + green dot
-- Title: "Social Media" with gradient `from-foreground via-pink-400 to-rose-500`
-- Move quickFilters (Publish/Inbox/Analytics tabs) below hero as a separate tab bar (they're functional navigation, not hero content)
-- Keep stats with pink-colored icons
-
-### Pattern (matching Automations exactly)
-```text
-┌─────────────────────────────────────────┐
-│          [radial ambient glow]          │
-│                                         │
-│     ┌─ icon ── Badge Text ── 🟢 ─┐     │
-│     └────────────────────────────┘      │
-│                                         │
-│           Colored Title                 │
-│                                         │
-│         Muted subtitle text             │
-│                                         │
-│    [CTA Button]  [Outline]  [Outline]   │
-│                                         │
-│     📊    📊    📊    📊               │
-│     val   val   val   val               │
-│     lbl   lbl   lbl   lbl              │
-└─────────────────────────────────────────┘
-```
-
-### Files changed: 4
-- `src/components/engage/email/EmailDashboard.tsx`
-- `src/components/engage/journeys/JourneysList.tsx`
-- `src/components/engage/contacts/ContactsList.tsx`
-- `src/components/engage/social/SocialDashboard.tsx`
+### Files changed: 3
+- `src/components/campaigns/CampaignsHero.tsx`
+- `src/components/keywords/KeywordsHero.tsx`
+- `src/pages/Analytics.tsx`
 
