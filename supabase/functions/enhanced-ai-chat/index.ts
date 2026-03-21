@@ -2803,7 +2803,10 @@ This will open the Repurpose panel. Also provide a brief text answer explaining 
       if (brandData.target_audience) bParts.push(`Target Audience: ${brandData.target_audience}`);
       if (brandData.do_use && Array.isArray(brandData.do_use) && brandData.do_use.length > 0) bParts.push(`Preferred phrases: ${brandData.do_use.slice(0, 5).join(', ')}`);
       if (brandData.dont_use && Array.isArray(brandData.dont_use) && brandData.dont_use.length > 0) bParts.push(`Avoid phrases: ${brandData.dont_use.slice(0, 5).join(', ')}`);
-      if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE\nWhen generating any content, writing suggestions, or creative output, follow these guidelines:\n${bParts.join('\n')}`;
+      if (bParts.length > 0) brandVoiceContext = `\n\n## USER'S BRAND VOICE
+When generating CONTENT (articles, emails, social posts), follow these guidelines:
+${bParts.join('\n')}
+NOTE: Brand voice applies to content generation ONLY. For conversational chat responses, match the user's tone naturally. If the user explicitly requests a tone ("write casually"), that overrides brand voice.`;
     } else if (brandResult.status === 'rejected') {
       console.warn('[BRAND-VOICE] Failed to fetch brand guidelines (non-blocking):', brandResult.reason);
     }
