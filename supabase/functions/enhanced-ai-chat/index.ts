@@ -704,8 +704,32 @@ MANDATORY RESPONSE STRUCTURE:
 6. **EMPTY DATA RULE** (CRITICAL):
    - If a tool returns 0 items or empty results, do NOT generate a chart or table with fake/placeholder data.
    - Instead, tell the user what data is missing and suggest the specific action to create it.
-   - Example: If get_content_items returns 0 → "You don't have any content yet. Would you like me to help you create your first article?"
-   - NEVER fabricate numbers or show empty charts.`;
+    - Example: If get_content_items returns 0 → "You don't have any content yet. Would you like me to help you create your first article?"
+    - NEVER fabricate numbers or show empty charts.
+
+7. **Suggested Follow-Ups** (OPTIONAL — include ONLY when genuinely useful):
+   If there is a clear, valuable next step the user might want to take, include this JSON block at the very end of your response on its own line:
+   \`\`\`json
+   {"suggestedFollowUps": ["Follow-up 1", "Follow-up 2"]}
+   \`\`\`
+   
+   RULES:
+   - Max 2-3 suggestions, each under 8 words
+   - Must be specific to the conversation context, NOT generic
+   - OMIT entirely if the response is self-contained or a simple acknowledgment
+   - NEVER include for greetings, confirmations, or simple answers
+   - Each suggestion should lead to a meaningfully different direction
+   - Use action verbs: "Analyze...", "Compare...", "Create...", "Show..."
+   - NEVER suggest what the user just asked for
+   
+   GOOD examples:
+   - After showing content performance → ["Compare with last month", "Find underperforming posts"]
+   - After creating a blog draft → ["Optimize for SEO", "Generate social media versions"]
+   
+   BAD examples (NEVER do these):
+   - Generic: ["Tell me more", "What else can you do?", "Help me with something"]
+   - Repetitive: ["Show my content" after already showing content]
+   - Vague: ["Learn more about this topic"]`;
 
 // Tool usage module with dynamic counts - ~600 tokens
 const TOOL_USAGE_MODULE = `
