@@ -20,10 +20,10 @@ export const ContentApprovalView: React.FC = () => {
             <div className="flex items-center gap-3">
               <FileText className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                Create content in the Content Builder to start the approval workflow.
+                No content pending approval. Create content in AI Chat or the Content Wizard, then submit it for review.
               </p>
             </div>
-            <Button size="sm" onClick={() => navigate('/content-type-selection')}>
+            <Button size="sm" onClick={() => navigate('/ai-chat')}>
               Create Content <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </CardContent>
