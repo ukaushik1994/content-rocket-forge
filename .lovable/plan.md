@@ -1,32 +1,88 @@
 
 
-# Make Hero Icon Fill the Space
+# Smart Suggestions: Kill Regex, Let AI Decide
 
-## What
-The small "AI Command Centre" badge pill with the tiny Brain icon is too compact and doesn't use the visual space well. Replace the small badge with a larger, more prominent branding element that fills the area — a bigger icon with the label below it, similar to the Claude.ai centered welcome pattern.
+## Summary
+Remove the dumb client-side regex follow-up system and let the backend AI generate contextual suggestions only when genuinely useful. Also fix 3 silent failure bugs in the chat hook.
 
-## Changes — 1 file
+## Phase 1: Backend — AI Follow-Up Prompt Injection
+**File:** `supabase/functions/enhanced-ai-chat/index.ts`
 
-### `src/components/ai-chat/EnhancedChatInterface.tsx` (lines 731-741)
+**Step 1a: Add follow-up instruction to RESPONSE_STRUCTURE** (~line 707, before the closing backtick)
 
-Replace the compact badge pill with a larger hero icon element:
+Append a new section to the `RESPONSE_STRUCTURE` template instructing the AI to optionally include a `"suggestedFollowUps"` JSON array (2-3 items, under 8 words each) only when there's a clear next step. Include the GOOD/BAD examples and the 7 rules from the plan. Tell the AI to omit the field entirely when the response is self-contained.
 
-- **Large icon container**: `w-16 h-16` (or similar) rounded-2xl with gradient background, housing a bigger `Brain` or `Sparkles` icon (`h-8 w-8`)
-- **Glow effect**: Subtle animated box-shadow pulse around the icon container
-- **Label below**: "AI Command Centre" text + green dot moved below the icon, not crammed inline
-- Layout: icon block stacked vertically with the greeting below
+**Step 1b: Parse suggestedFollowUps into deepDivePrompts** (~line 4650, in the `responseData` construction)
 
-```text
-Before:  [ ✦ AI Command Centre ● ]   (tiny pill)
+After building `responseData`, extract `suggestedFollowUps` from the AI response text using a JSON regex pattern. If found and `visualData` has no existing `deepDivePrompts`, inject them:
 
-After:   ┌──────────┐
-         │    ✦     │              (large icon block)
-         └──────────┘
-         AI Command Centre ●
+```
+// After cleaning AI response, scan for suggestedFollowUps JSON
+// If found, merge into visualData.deepDivePrompts
+// This reuses the existing deepDivePrompts rendering pipeline
 ```
 
-The icon container uses the existing brand gradient (`from-primary to-neon-blue`) with a soft glow animation, matching the dark glassmorphism theme.
+This means no new frontend rendering code is needed — the existing `deepDivePrompts` display in `EnhancedMessageBubble.tsx` handles it.
 
-### Files changed: 1
-- `src/components/ai-chat/EnhancedChatInterface.tsx`
+## Phase 2: Frontend — Remove Regex System
+**File:** `src/components/ai-chat/EnhancedMessageBubble.tsx`
+
+**Step 2a: Delete `smartFollowUps` useMemo** (lines 64-92)
+Remove the entire regex-based suggestion generator.
+
+**Step 2b: Delete `smartFollowUps` rendering block** (lines 403-421)
+Remove the JSX that renders these generic buttons.
+
+**Keep untouched:** The `deepDivePrompts` rendering block (lines 383-401) — this is the good one that shows AI-generated suggestions.
+
+## Phase 3: Silent Failure Fixes
+**File:** `src/hooks/useEnhancedAIChatDB.ts`
+
+**Step 3a: Ensure `isSendingRef` clears on crash** (~line 981-986)
+The `finally` block already has `isSendingRef.current = false` — verify it's truly in a `finally` (it is, confirmed at line 985). No change needed here.
+
+**Step 3b: Toast on message save failure** (~lines 552, 815)
+After both user message save (line 552) and assistant message save (line 815), add a warning toast when `saveMessage` returns `null`:
+
+```ts
+// Line ~552: after user message save
+if (!userDbId) {
+  toast({ title: "Warning", description: "Message may not be saved — check your connection", variant: "destructive" });
+}
+
+// Line ~815: after assistant message save
+if (!assistantDbId) {
+  toast({ title: "Warning", description: "Response may not persist — try refreshing if it disappears", variant: "destructive" });
+}
+```
+
+**Step 3c: Retry on 401 with session refresh** (~line 701-704)
+Before throwing on `!resp.ok`, add a 401 check that refreshes the session and retries the fetch once:
+
+```ts
+if (resp.status === 401) {
+  const { error: refreshErr } = await supabase.auth.refreshSession();
+  if (!refreshErr) {
+    const retryHeaders = await getAuthHeaders();
+    const retryResp = await fetch(url, { ...options, headers: retryHeaders });
+    if (retryResp.ok && retryResp.body) {
+      // Use retryResp instead, continue normally
+    }
+  }
+}
+```
+
+## Files Changed: 3
+1. `supabase/functions/enhanced-ai-chat/index.ts` — system prompt + response parsing
+2. `src/components/ai-chat/EnhancedMessageBubble.tsx` — delete regex system
+3. `src/hooks/useEnhancedAIChatDB.ts` — save failure toasts + 401 retry
+
+## Implementation Order
+| Step | What | File |
+|------|------|------|
+| 1 | Add follow-up prompt to RESPONSE_STRUCTURE | `enhanced-ai-chat/index.ts` |
+| 2 | Parse suggestedFollowUps → deepDivePrompts | `enhanced-ai-chat/index.ts` |
+| 3 | Delete smartFollowUps useMemo + rendering | `EnhancedMessageBubble.tsx` |
+| 4 | Toast on save failures | `useEnhancedAIChatDB.ts` |
+| 5 | 401 retry with session refresh | `useEnhancedAIChatDB.ts` |
 
