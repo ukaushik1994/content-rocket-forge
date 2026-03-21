@@ -193,6 +193,11 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
         )}
 
         <main
+          onClick={() => {
+            if (isSidebarOpen && !isMobile) {
+              setSidebarOpen(false);
+            }
+          }}
           className={cn(
             "flex-1 transition-all duration-300 min-w-0",
             isMobile
