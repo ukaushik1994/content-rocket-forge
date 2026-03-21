@@ -46,7 +46,7 @@ export const PerformanceTrajectorySection: React.FC<Props> = ({ analystState, ch
             </p>
             <Badge
               variant="outline"
-              className={`text-[10px] px-2 py-0.5 ${isGrowing ? 'text-emerald-400/80 border-emerald-400/15 bg-emerald-500/5' : 'text-rose-300 border-rose-300/15 bg-rose-300/5'}`}
+              className={`text-[10px] px-2 py-0.5 ${isGrowing ? 'text-primary/80 border-primary/15 bg-primary/5' : 'text-primary/50 border-primary/15 bg-primary/5'}`}
             >
               {changePercent > 0 ? '+' : ''}{changePercent}%
             </Badge>
