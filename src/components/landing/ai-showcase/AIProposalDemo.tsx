@@ -113,7 +113,7 @@ export const AIProposalDemo = () => {
         <Button
           size="lg"
           className="w-full sm:w-auto"
-          onClick={() => navigate('/content-strategy')}
+          onClick={() => navigate('/ai-proposals')}
         >
           Generate Proposals
           <ArrowRight className="w-4 h-4 ml-2" />

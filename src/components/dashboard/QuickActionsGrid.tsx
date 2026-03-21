@@ -197,7 +197,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       title: "Content Templates",
       description: "Access pre-built templates and frameworks for faster content creation.",
       icon: <BookOpen className="h-5 w-5 text-emerald-400" />,
-      action: () => navigate('/templates'),
+      action: () => navigate('/engage/email'),
       buttonText: "Browse Templates",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-emerald-400/30 to-green-500/20",
