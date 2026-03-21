@@ -27,7 +27,7 @@ import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicat
 import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { RateLimitBanner } from '@/components/common/RateLimitBanner';
 import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
-import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search, Sparkles, AlertTriangle, Clock, CalendarX, CheckCircle2, Target } from 'lucide-react';
+import { Brain, TrendingUp, History, MoreVertical, Share2, Download, Trash2, Search, Sparkles, AlertTriangle, Clock, CalendarX, CheckCircle2, Target, PenLine, Megaphone, Mail, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
