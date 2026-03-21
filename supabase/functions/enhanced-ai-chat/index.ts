@@ -1,4 +1,4 @@
-// Deploy v12: 2026-03-20T12:00:00Z - Phase 1: Smart Model Routing, Expanded Context, Prompt Token Optimization
+// Deploy v13: 2026-03-21T12:00:00Z - Definitive Plan Phases 1-4: Priority Rules, Provider Normalization, Context Fixes, Analyst Sync
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
