@@ -3154,9 +3154,12 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
     const totalTokens = contextTokens + messagesTokens + systemPromptTokens;
 
     // Phase 6: Dynamic token budget -- safe cap for OpenAI models
+    // Phase 2: Increase Gemini cap to 32K
+    const isGeminiProvider = provider.provider === 'gemini';
+    const providerMaxCap = isGeminiProvider ? 32000 : 16000;
     const dynamicMaxTokens = Math.min(
       Math.max(4096, Math.floor(totalTokens * 0.3)),
-      16000 // Safe cap for OpenAI models (max_tokens limit is 16384)
+      providerMaxCap
     );
 
     console.log(`📊 Token Budget Check:
