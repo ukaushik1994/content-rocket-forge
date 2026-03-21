@@ -1,22 +1,29 @@
 
 
-# Match Quick Actions Popover Style to Plus Menu
+# Move Quick Actions to Chat Input Icon Button
 
-## Problem
-The Quick Actions (⚡) popover items use larger sizing (`text-sm`, `py-2`, `gap-2.5`, `px-3`) and colorful per-item icon colors (`text-purple-400`, `text-amber-400`, etc.), while the Plus menu uses compact sizing (`text-xs`, `py-1.5`, `gap-2`, `px-2.5`) with uniform `text-muted-foreground` icons that highlight to `text-primary` on hover — which looks cleaner and more minimal.
+## What
+Remove the Quick Actions column from the welcome screen's 3-column layout. Add a new icon button (⚡ `Zap` icon) next to the `+` button in the chat input bar. Clicking it opens a popover with the same quick action items, styled to match the PlusMenuDropdown.
 
 ## Changes
 
-### 1. `src/components/ai-chat/EnhancedQuickActions.tsx`
-- Remove all per-item `iconColor` properties (purple, amber, emerald, blue, orange, violet)
-- Match the Plus menu's button class exactly: `px-2.5 py-1.5 rounded-md text-xs font-medium`
-- Icon class: `h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors`
-- Add `group` to button, matching the Plus menu hover pattern
-- Container: `space-y-px` instead of `gap-0.5`
+### 1. `src/components/ai-chat/ContextAwareMessageInput.tsx`
+- Add new props: `onQuickAction`, `onSetVisualization`
+- Import `Zap` from lucide-react and `EnhancedQuickActions` component
+- Add a `Popover` with a `Zap` icon button placed **after** the `PlusMenuDropdown` (left of the textarea)
+- PopoverContent: same style as PlusMenuDropdown (`side="top"`, `w-48`, `bg-card border-border/50`)
+- Render `EnhancedQuickActions` inside, passing `onQuickAction` and `onSetVisualization`
+- Close popover on action click
 
-### 2. `src/components/ai-chat/ContextAwareMessageInput.tsx` (line 388)
-- Change popover width from `w-52` to `w-48` to match Plus menu exactly
+### 2. `src/components/ai-chat/EnhancedChatInterface.tsx` (lines 758-766)
+- Remove the "Column 1: Quick Actions" div from the 3-column welcome layout
+- Change grid from `md:grid-cols-3` to `md:grid-cols-2` (Insights + Recommended remain)
+- Pass `handleLegacyAction` and `handleSetVisualization` down to `ContextAwareMessageInput` as new props
+
+### 3. `src/components/ai-chat/EnhancedQuickActions.tsx`
+- Add an `onClose?: () => void` prop
+- Call `onClose?.()` after `handleClick` so the popover auto-closes on selection
 
 ## Result
-Both popovers will have identical typography, spacing, icon treatment, and hover behavior — unified minimal aesthetic.
+Quick Actions move from the welcome screen to a persistent ⚡ icon in the chat input — always accessible, not just on the empty state.
 

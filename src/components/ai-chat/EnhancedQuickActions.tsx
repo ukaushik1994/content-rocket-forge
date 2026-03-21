@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle, FileText, PartyPopper } from 'lucide-react';
+import { PenTool, Search, Megaphone, Mail, BarChart3, HelpCircle, FileText, Award, PartyPopper, AlertTriangle, Sparkles } from 'lucide-react';
 
 interface EnhancedQuickActionsProps {
   onAction: (action: string, data?: any) => void;
@@ -24,6 +24,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
       prompt: string;
       directWizard?: boolean;
       icon: any;
+      iconColor: string;
       priority: number;
     }> = [];
 
@@ -34,6 +35,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
         prompt: 'I want to write my first blog post. What topic should I write about?',
         directWizard: true,
         icon: PenTool,
+        iconColor: 'text-emerald-400',
         priority: 1,
       });
     } else if (draftCount > 5) {
@@ -41,6 +43,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
         text: `Review ${draftCount} drafts`,
         prompt: `I have ${draftCount} draft articles. Show me the ones closest to being ready to publish.`,
         icon: FileText,
+        iconColor: 'text-amber-400',
         priority: 1,
       });
     }
@@ -51,18 +54,19 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
         text: `🎉 ${publishedCount} articles published!`,
         prompt: `I just hit ${publishedCount} published articles! Show me my content performance and what's working best.`,
         icon: PartyPopper,
+        iconColor: 'text-amber-400',
         priority: 1,
       });
     }
 
     // 4. Contextual defaults (fill remaining slots)
     const defaults = [
-      { text: 'Write content', prompt: 'I want to write a new blog post. What topic should I write about?', directWizard: true, icon: PenTool, priority: 2 },
-      { text: 'Research keywords', prompt: 'Help me research and find the best keywords for my niche', icon: Search, priority: 2 },
-      { text: 'Run a campaign', prompt: 'Help me set up and run a new campaign', icon: Megaphone, priority: 2 },
-      { text: 'Draft an email', prompt: 'Create a new email campaign for my latest content', icon: Mail, priority: 2 },
-      { text: 'Check performance', prompt: 'Show me my campaign dashboard with live queue status', icon: BarChart3, priority: 2 },
-      { text: 'What can you do?', prompt: '/help', icon: HelpCircle, priority: 3 },
+      { text: 'Write content', prompt: 'I want to write a new blog post. What topic should I write about?', directWizard: true, icon: PenTool, iconColor: 'text-purple-400', priority: 2 },
+      { text: 'Research keywords', prompt: 'Help me research and find the best keywords for my niche', icon: Search, iconColor: 'text-amber-400', priority: 2 },
+      { text: 'Run a campaign', prompt: 'Help me set up and run a new campaign', icon: Megaphone, iconColor: 'text-emerald-400', priority: 2 },
+      { text: 'Draft an email', prompt: 'Create a new email campaign for my latest content', icon: Mail, iconColor: 'text-blue-400', priority: 2 },
+      { text: 'Check performance', prompt: 'Show me my campaign dashboard with live queue status', icon: BarChart3, iconColor: 'text-orange-400', priority: 2 },
+      { text: 'What can you do?', prompt: '/help', icon: HelpCircle, iconColor: 'text-violet-400', priority: 3 },
     ];
 
     // Add defaults that don't duplicate existing items
@@ -91,18 +95,18 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({
 
   return (
     <div
-      className="space-y-px w-full"
+      className="flex flex-col gap-0.5 w-full"
       role="group"
       aria-label="Quick actions"
     >
       {actions.map((item) => (
         <button
           key={item.text}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors hover:bg-muted/50 group"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 transition-colors cursor-pointer text-left"
           onClick={() => handleClick(item)}
         >
-          <item.icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-          <span className="text-xs font-medium text-foreground truncate">{item.text}</span>
+          <item.icon className={`h-4 w-4 ${item.iconColor} shrink-0`} />
+          {item.text}
         </button>
       ))}
     </div>
