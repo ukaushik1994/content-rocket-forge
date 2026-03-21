@@ -662,7 +662,9 @@ export const useEnhancedAIChatDB = () => {
           messages: conversationHistory,
           context: { 
             conversation_id: conversationId, 
-            analystActive: analystActiveRef.current 
+            analystActive: analystActiveRef.current,
+            // Phase 4: Pass analyst state summary to backend
+            analystSummary: (window as any).__analystSummary || null,
           },
           stream: true
         })
