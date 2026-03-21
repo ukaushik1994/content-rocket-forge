@@ -480,7 +480,7 @@ export async function executeCrossModuleTool(
           .single();
 
         if (!connection) {
-          // Mark content as ready_to_publish so it's easy to find later
+          // H8: Stale token guidance — direct user to reconnect
           await supabase.from('content_items')
             .update({ status: 'ready_to_publish' })
             .eq('id', toolArgs.content_id)
@@ -488,8 +488,8 @@ export async function executeCrossModuleTool(
 
           return { 
             success: false, 
-            message: `No active website connection found. Your content "${content.title}" has been marked as **Ready to Publish**.\n\nTo publish directly:\n1. Go to **Settings → Publishing**\n2. Connect your WordPress or Wix site\n3. Then ask me to publish again\n\nAlternatively, you can copy the content and publish manually.`,
-            settingsAction: { tab: 'publishing', label: 'Connect Website' }
+            message: `No active website connection found. Your content "${content.title}" has been marked as **Ready to Publish**.\n\nTo publish directly:\n1. Go to **Settings → Websites** and reconnect your site\n2. If your token expired, re-authorize the connection\n3. Then ask me to publish again\n\nAlternatively, you can copy the content and publish manually.`,
+            settingsAction: { tab: 'publishing', label: 'Reconnect Website' }
           };
         }
 
