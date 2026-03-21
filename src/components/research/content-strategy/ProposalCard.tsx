@@ -300,7 +300,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all duration-200"
           >
             <PenLine className="h-4 w-4" />
-            Write This
+            Open in Wizard
           </Button>
         </div>
 

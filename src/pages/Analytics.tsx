@@ -95,10 +95,10 @@ const Analytics = () => {
     switch (id) {
       case 'bounceRate': {
         const pct = rawValue * 100;
-        if (pct === 0) return { status: 'ok', hint: 'No data yet' };
-        if (pct < 40) return { status: 'good', hint: 'Great — visitors are engaging' };
-        if (pct < 60) return { status: 'ok', hint: 'Average — room to improve' };
-        return { status: 'attention', hint: 'High — visitors leaving quickly' };
+        if (pct === 0) return { status: 'ok', hint: 'No data yet — connect Google Analytics' };
+        if (pct < 40) return { status: 'good', hint: 'Great — visitors are engaging with your content' };
+        if (pct < 60) return { status: 'ok', hint: 'Average — try stronger intros and faster page loads' };
+        return { status: 'attention', hint: 'High bounce — improve intro paragraphs and page load speed' };
       }
       case 'ctr': {
         const pct = rawValue * 100;
@@ -329,16 +329,70 @@ const Analytics = () => {
       
       <main className="flex-1 container px-6 pt-6 pb-12 relative z-10">
         <PageBreadcrumb section="Tools" page="Analytics" />
-        {/* Empty State Banner */}
+        {/* Internal Content Metrics — always shown, no external API needed */}
+        {internalMetrics && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-5 rounded-xl border border-border/30 bg-background/40 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground/80">Your Content Performance</h3>
+              <span className="text-[10px] text-muted-foreground/50">From your content library</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="text-center">
+                <p className="text-lg font-bold text-foreground">{internalMetrics.totalContent}</p>
+                <p className="text-[10px] text-muted-foreground">Total Articles</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-green-400">{internalMetrics.published}</p>
+                <p className="text-[10px] text-muted-foreground">Published</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-blue-400">{internalMetrics.drafts}</p>
+                <p className="text-[10px] text-muted-foreground">Drafts</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-foreground">{internalMetrics.avgSeoScore}<span className="text-xs text-muted-foreground">/100</span></p>
+                <p className="text-[10px] text-muted-foreground">Avg SEO</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-foreground">
+                  {internalMetrics.contentCreatedThisMonth}
+                  {internalMetrics.contentCreatedTrend !== 0 && (
+                    <span className={`text-xs ml-1 ${internalMetrics.contentCreatedTrend > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {internalMetrics.contentCreatedTrend > 0 ? '↑' : '↓'}{Math.abs(internalMetrics.contentCreatedTrend)}%
+                    </span>
+                  )}
+                </p>
+                <p className="text-[10px] text-muted-foreground">Created (30d)</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-foreground">
+                  {internalMetrics.contentPublishedThisMonth}
+                  {internalMetrics.contentPublishedTrend !== 0 && (
+                    <span className={`text-xs ml-1 ${internalMetrics.contentPublishedTrend > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {internalMetrics.contentPublishedTrend > 0 ? '↑' : '↓'}{Math.abs(internalMetrics.contentPublishedTrend)}%
+                    </span>
+                  )}
+                </p>
+                <p className="text-[10px] text-muted-foreground">Published (30d)</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* External Analytics Banner */}
         {realMetrics && realMetrics.totalAnalytics.pageViews === 0 && realMetrics.totalSearchConsole.impressions === 0 && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-4 p-4 rounded-lg border border-border/50 bg-background/60 backdrop-blur-xl flex items-center gap-3"
           >
             <Activity className="h-5 w-5 text-muted-foreground shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Publish content and connect analytics integrations to see real performance data here.
+              Connect Google Analytics in Settings → API Keys for traffic, bounce rate, and search console data.
             </p>
           </motion.div>
         )}

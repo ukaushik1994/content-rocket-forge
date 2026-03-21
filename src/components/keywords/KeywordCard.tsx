@@ -303,6 +303,15 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
 
           {/* Action Buttons */}
           <div className="flex gap-2 mt-auto">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => navigate(`/ai-chat?prompt=${encodeURIComponent(`Write a comprehensive blog post about "${keyword.keyword}"`)}`)}
+              className="flex-1 gap-1 text-xs"
+            >
+              <TrendingUp className="h-3 w-3" />
+              Write About This
+            </Button>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -310,10 +319,9 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={handleCopy}
-                    className="flex-1 bg-background/40 hover:bg-background/60 border-border/50"
+                    className="bg-background/40 hover:bg-background/60 border-border/50"
                   >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
+                    <Copy className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>

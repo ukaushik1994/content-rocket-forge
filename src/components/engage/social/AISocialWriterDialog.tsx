@@ -53,9 +53,13 @@ export const AISocialWriterDialog = ({ open, onOpenChange, onInsert }: AISocialW
   };
 
   const handleInsert = (platform: string, content: string) => {
-    onInsert(content, platform);
+    // Append generated image URL if available
+    const finalContent = generatedImageUrl
+      ? `${content}\n\n[Image: ${generatedImageUrl}]`
+      : content;
+    onInsert(finalContent, platform);
     onOpenChange(false);
-    toast.success(`${platform} post inserted`);
+    toast.success(`${platform} post inserted${generatedImageUrl ? ' with AI image' : ''}`);
   };
 
   const handleCopy = (platform: string, content: string) => {

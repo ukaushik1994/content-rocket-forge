@@ -349,8 +349,32 @@ const Solutions = () => {
       
       <main className="pt-20 container py-8 rounded-3xl">
         <PageBreadcrumb section="Library" page="Offerings" />
+
+        {/* Progress indicator */}
+        {(() => {
+          const steps = [
+            { label: 'Company', done: !!companyInfo?.name && companyInfo.name !== 'My Company' },
+            { label: 'Competitors', done: false }, // Can't easily check from here
+            { label: 'Solutions', done: false },
+            { label: 'Brand Voice', done: !!brandGuidelines?.tone },
+          ];
+          const completedCount = steps.filter(s => s.done).length;
+          return (
+            <div className="mb-6 p-3 rounded-lg border border-border/30 bg-background/40">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground">{completedCount} of 4 steps complete</span>
+                <span className="text-[10px] text-muted-foreground/50">This data powers your AI content quality</span>
+              </div>
+              <div className="flex gap-1">
+                {steps.map((step, i) => (
+                  <div key={i} className={`h-1.5 flex-1 rounded-full ${step.done ? 'bg-primary' : 'bg-border/40'}`} />
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         <motion.div variants={pageItemVariants} className="mb-8 space-y-12">
-          {/* #18: Numbered workflow steps */}
           <div>
             <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 1 of 4 — Company Info</p>
             <CompanySection
@@ -360,7 +384,14 @@ const Solutions = () => {
           </div>
 
           <div>
-            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 2 of 4 — Your Solutions</p>
+            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 2 of 4 — Competitors</p>
+            {user && (
+              <CompetitorSection userId={user.id} />
+            )}
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 3 of 4 — Your Solutions</p>
             <ContentBuilderProvider>
               <ErrorBoundary FallbackComponent={ErrorFallback}>
                 <SolutionManager searchTerm={searchTerm} />
@@ -369,19 +400,12 @@ const Solutions = () => {
           </div>
 
           <div>
-            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 3 of 4 — Brand Voice</p>
+            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 4 of 4 — Brand Voice</p>
             <BrandGuidelinesDisplay
               guidelines={brandGuidelines}
               companyId={companyInfo?.id || ''}
               onSave={handleSaveBrandGuidelines}
             />
-          </div>
-
-          <div>
-            <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-3">Step 4 of 4 — Competitors</p>
-            {user && (
-              <CompetitorSection userId={user.id} />
-            )}
           </div>
         </motion.div>
       </main>

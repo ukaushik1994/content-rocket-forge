@@ -259,7 +259,7 @@ export const CampaignsHero = React.memo(({
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Express Mode
+                Quick Setup
               </button>
             </div>
           </motion.div>

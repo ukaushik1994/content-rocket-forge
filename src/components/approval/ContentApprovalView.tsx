@@ -14,12 +14,18 @@ export const ContentApprovalView: React.FC = () => {
   
   return (
     <ApprovalProvider>
-      {/* #21: Approval workflow explainer */}
+      {/* Visual workflow explainer */}
       <Card className="mb-4 border-border/30 bg-background/40 backdrop-blur-sm">
         <CardContent className="py-3 px-4">
-          <p className="text-[11px] text-muted-foreground/60">
-            How it works: Create content → Submit for Review (from Repository) → Review here → Approve to Publish
-          </p>
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
+            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-medium">Create</span>
+            <span>→</span>
+            <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 font-medium">Submit for Review</span>
+            <span>→</span>
+            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Review Here</span>
+            <span>→</span>
+            <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-medium">Publish</span>
+          </div>
         </CardContent>
       </Card>
 
