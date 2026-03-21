@@ -182,7 +182,65 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const activeConvObj = conversations.find(c => c.id === activeConversation);
 
   // Message search state — synced with ChatSearchContext
-  const { useChatSearch } = await import('@/contexts/ChatSearchContext') as any;
+  const chatSearch = useChatSearch();
+  const messageSearchQuery = chatSearch?.searchQuery ?? '';
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+
+  // Derive search results
+  const messageSearchResults = React.useMemo(() => {
+    if (!messageSearchQuery.trim()) return [];
+    const q = messageSearchQuery.toLowerCase();
+    return messages.filter((m) => m.content.toLowerCase().includes(q)).map((m) => m.id);
+  }, [messages, messageSearchQuery]);
+
+  // Handle search navigation
+  const handleNavigateMatch = useCallback((direction: 'prev' | 'next') => {
+    if (messageSearchResults.length === 0) return;
+    if (direction === 'next') {
+      setCurrentMatchIndex((prev) => prev >= messageSearchResults.length - 1 ? 0 : prev + 1);
+    } else {
+      setCurrentMatchIndex((prev) => prev <= 0 ? messageSearchResults.length - 1 : prev - 1);
+    }
+  }, [messageSearchResults.length]);
+
+  // Register handlers with ChatSearchContext
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.registerNavigateMatch(handleNavigateMatch);
+  }, [chatSearch, handleNavigateMatch]);
+
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.setTotalMatches(messageSearchResults.length);
+    chatSearch.setCurrentMatch(currentMatchIndex + 1);
+  }, [chatSearch, messageSearchResults.length, currentMatchIndex]);
+
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.setMessageCount(messages.length);
+  }, [chatSearch, messages.length]);
+
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.registerExport((format) => {
+      if (activeConversation) exportConversation(activeConversation, format);
+    });
+  }, [chatSearch, activeConversation, exportConversation]);
+
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.registerShowAnalytics(() => setShowAnalyticsModal(true));
+  }, [chatSearch]);
+
+  // Scroll to current match
+  useEffect(() => {
+    if (messageSearchResults.length > 0 && currentMatchIndex < messageSearchResults.length) {
+      const matchId = messageSearchResults[currentMatchIndex];
+      const element = document.getElementById(`message-${matchId}`);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [currentMatchIndex, messageSearchResults]);
 
 
   const { pendingPanel, setPendingPanel, isSidebarOpen } = useSidebarContext();
