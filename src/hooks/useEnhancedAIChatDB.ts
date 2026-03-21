@@ -1651,6 +1651,25 @@ export const useEnhancedAIChatDB = () => {
         m.id === messageId ? { ...m, feedbackHelpful: newVal } : m
       ));
 
+      // Phase 2: Learn from positive feedback
+      if (newVal === true) {
+        try {
+          const { learnUserPreference } = await import('@/services/conversationMemory');
+          const likedMsg = messages.find(m => m.id === messageId);
+          if (likedMsg) {
+            const wordCount = likedMsg.content?.split(/\s+/).length || 0;
+            if (wordCount < 150) {
+              learnUserPreference('preferred_response_length', 'short', activeConversation || undefined, 0.5);
+            } else if (wordCount > 400) {
+              learnUserPreference('preferred_response_length', 'long', activeConversation || undefined, 0.5);
+            }
+            if (likedMsg.visualData) {
+              learnUserPreference('likes_charts', true, activeConversation || undefined, 0.5);
+            }
+          }
+        } catch (_) { /* non-blocking */ }
+      }
+
       // 3A: Learn from feedback — record preference when user gives negative feedback
       if (newVal === false) {
         try {
@@ -1661,7 +1680,7 @@ export const useEnhancedAIChatDB = () => {
               'disliked_response_style',
               { messagePreview: assistantMsg.content?.substring(0, 200), timestamp: new Date().toISOString() },
               activeConversation || undefined,
-              0.4
+              0.6
             );
           }
         } catch (_) { /* non-blocking */ }
