@@ -13,9 +13,9 @@ interface Props {
 const stanceConfig = {
   'stop-creating': {
     icon: ShieldAlert,
-    color: 'text-rose-300',
-    bgColor: 'bg-rose-400/10',
-    borderColor: 'border-rose-400/20',
+    color: 'text-primary/60',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
   },
   'fix-quality': {
     icon: Target,
@@ -25,15 +25,15 @@ const stanceConfig = {
   },
   'accelerate': {
     icon: Rocket,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-400/10',
-    borderColor: 'border-emerald-400/20',
+    color: 'text-neon-blue',
+    bgColor: 'bg-neon-blue/10',
+    borderColor: 'border-neon-blue/20',
   },
   'build-foundation': {
     icon: Zap,
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-400/10',
-    borderColor: 'border-cyan-400/20',
+    color: 'text-neon-blue',
+    bgColor: 'bg-neon-blue/10',
+    borderColor: 'border-neon-blue/20',
   },
 } as const;
 
