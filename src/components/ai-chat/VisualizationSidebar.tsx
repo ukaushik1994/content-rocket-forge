@@ -723,7 +723,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   <div className="mt-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-300/70">Data Source</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/50">Data Source</span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="inline-flex items-center text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] backdrop-blur-sm text-muted-foreground/70">
