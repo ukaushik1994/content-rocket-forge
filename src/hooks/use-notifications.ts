@@ -51,28 +51,50 @@ export const useNotifications = (options: UseNotificationsOptions = {}) => {
   }, [user?.id, limit, priority, category]);
 
   // Real-time subscription
+  // C6: Real-time subscription with error handling and retry
   useEffect(() => {
     if (!user?.id || !autoRefresh) return;
 
     fetchNotifications();
 
-    const unsubscribe = subscribeToEnhancedAlerts(
-      user.id,
-      (newNotification) => {
-        setNotifications(prev => [newNotification, ...prev]);
-      },
-      (updatedNotification) => {
-        setNotifications(prev =>
-          prev.map(notification =>
-            notification.id === updatedNotification.id
-              ? updatedNotification
-              : notification
-          )
-        );
-      }
-    );
+    let unsubscribe: (() => void) | null = null;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    return () => unsubscribe();
+    const setupSubscription = () => {
+      try {
+        unsubscribe = subscribeToEnhancedAlerts(
+          user.id,
+          (newNotification) => {
+            setNotifications(prev => [newNotification, ...prev]);
+          },
+          (updatedNotification) => {
+            setNotifications(prev =>
+              prev.map(notification =>
+                notification.id === updatedNotification.id
+                  ? updatedNotification
+                  : notification
+              )
+            );
+          }
+        );
+      } catch (err) {
+        console.warn('⚠️ Notification subscription failed, retrying in 30s:', err);
+        retryTimeout = setTimeout(setupSubscription, 30000);
+      }
+    };
+
+    setupSubscription();
+
+    // M5: Polling fallback — re-fetch every 5 minutes
+    const pollingInterval = setInterval(() => {
+      fetchNotifications();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      unsubscribe?.();
+      if (retryTimeout) clearTimeout(retryTimeout);
+      clearInterval(pollingInterval);
+    };
   }, [user?.id, autoRefresh, fetchNotifications]);
 
   // Push notification

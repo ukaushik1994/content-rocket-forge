@@ -257,6 +257,12 @@ const CampaignsInner = () => {
       
       console.log(`🎯 [Generation] Starting with ${assetIds.length} assets`);
       console.log(`📋 [Generation] Available briefs: ${allBriefs.length}`);
+
+      // C3: Guard against empty briefs
+      if (allBriefs.length === 0) {
+        toast.error('No content briefs available. Please generate a strategy with content briefs first.');
+        return;
+      }
       
       // 2. Build queue items from selected asset IDs
       const items = assetIds.map((assetId, index) => {

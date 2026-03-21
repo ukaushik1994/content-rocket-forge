@@ -200,12 +200,12 @@ const Analytics = () => {
       ['Metric', 'Value', 'Source'],
       ['Page Views', String(realMetrics.totalAnalytics.pageViews), 'Content Analytics'],
       ['Sessions', String(realMetrics.totalAnalytics.sessions), 'Content Analytics'],
-      ['Bounce Rate', `${(realMetrics.avgBounceRate * 100).toFixed(1)}%`, 'Content Analytics'],
-      ['Avg Session Duration (s)', String(realMetrics.avgSessionDuration), 'Content Analytics'],
+      ['Bounce Rate', `${(isNaN(realMetrics.avgBounceRate) ? 0 : realMetrics.avgBounceRate * 100).toFixed(1)}%`, 'Content Analytics'],
+      ['Avg Session Duration (s)', String(isNaN(realMetrics.avgSessionDuration) ? 0 : realMetrics.avgSessionDuration), 'Content Analytics'],
       ['Search Impressions', String(realMetrics.totalSearchConsole.impressions), 'Search Console'],
       ['Search Clicks', String(realMetrics.totalSearchConsole.clicks), 'Search Console'],
-      ['CTR', `${(realMetrics.avgCTR * 100).toFixed(1)}%`, 'Search Console'],
-      ['Avg Position', realMetrics.avgPosition.toFixed(1), 'Search Console'],
+      ['CTR', `${(isNaN(realMetrics.avgCTR) ? 0 : realMetrics.avgCTR * 100).toFixed(1)}%`, 'Search Console'],
+      ['Avg Position', (isNaN(realMetrics.avgPosition) ? 0 : realMetrics.avgPosition).toFixed(1), 'Search Console'],
     ];
     const csv = rows.map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });

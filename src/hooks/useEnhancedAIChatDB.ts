@@ -753,7 +753,30 @@ export const useEnhancedAIChatDB = () => {
         } catch (_) { /* not valid JSON */ }
       }
 
-      if (!response) throw new Error('No response received from AI');
+      // C2: Handle empty response — update assistant bubble with error instead of blank
+      if (!response) {
+        const emptyMsg: EnhancedChatMessage = {
+          id: assistantId,
+          role: 'assistant',
+          content: '⚠️ Connection lost — no response received from the AI service. Please check your internet connection and try again.',
+          timestamp: new Date(),
+          messageStatus: 'error',
+          actions: [
+            {
+              id: 'retry-' + assistantId,
+              type: 'button' as const,
+              label: '🔄 Retry',
+              action: 'send_message',
+              data: { message: content }
+            }
+          ]
+        };
+        setMessages(prev => prev.map(m => m.id === assistantId ? emptyMsg : m));
+        if (conversationId) {
+          await saveMessage(emptyMsg, conversationId);
+        }
+        return;
+      }
 
       const responseContent = response?.message || response?.content || 'No response received';
       const responseActions = response?.actions || [];
