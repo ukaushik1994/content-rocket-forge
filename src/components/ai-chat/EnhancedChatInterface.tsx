@@ -17,6 +17,7 @@ import { SolutionRecommendations } from './SolutionRecommendations';
 import { SolutionWorkflowTemplates } from './SolutionWorkflowTemplates';
 import { ConversationAnalyticsModal } from './ConversationAnalyticsModal';
 import { MessageSearchBar } from './MessageSearchBar';
+import { useChatSearch } from '@/contexts/ChatSearchContext';
 import { useSharedAIChatDB } from '@/contexts/AIChatDBContext';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -180,34 +181,57 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Analyst engine: per-conversation — isActive is deferred to after sidebar state declared
   const activeConvObj = conversations.find(c => c.id === activeConversation);
 
-  // Message search state
-  const [messageSearchQuery, setMessageSearchQuery] = useState('');
+  // Message search state — synced with ChatSearchContext
+  const chatSearch = useChatSearch();
+  const messageSearchQuery = chatSearch?.searchQuery ?? '';
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
-  const [showMessageSearch, setShowMessageSearch] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
 
-  // Derive search results as a pure memo (no setState inside useMemo)
+  // Derive search results
   const messageSearchResults = React.useMemo(() => {
     if (!messageSearchQuery.trim()) return [];
     const q = messageSearchQuery.toLowerCase();
     return messages.filter((m) => m.content.toLowerCase().includes(q)).map((m) => m.id);
   }, [messages, messageSearchQuery]);
 
-
   // Handle search navigation
-  const handleNavigateMatch = (direction: 'prev' | 'next') => {
+  const handleNavigateMatch = useCallback((direction: 'prev' | 'next') => {
     if (messageSearchResults.length === 0) return;
-
     if (direction === 'next') {
-      setCurrentMatchIndex((prev) =>
-      prev >= messageSearchResults.length - 1 ? 0 : prev + 1
-      );
+      setCurrentMatchIndex((prev) => prev >= messageSearchResults.length - 1 ? 0 : prev + 1);
     } else {
-      setCurrentMatchIndex((prev) =>
-      prev <= 0 ? messageSearchResults.length - 1 : prev - 1
-      );
+      setCurrentMatchIndex((prev) => prev <= 0 ? messageSearchResults.length - 1 : prev - 1);
     }
-  };
+  }, [messageSearchResults.length]);
+
+  // Register handlers with ChatSearchContext
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.registerNavigateMatch(handleNavigateMatch);
+  }, [chatSearch, handleNavigateMatch]);
+
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.setTotalMatches(messageSearchResults.length);
+    chatSearch.setCurrentMatch(currentMatchIndex + 1);
+  }, [chatSearch, messageSearchResults.length, currentMatchIndex]);
+
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.setMessageCount(messages.length);
+  }, [chatSearch, messages.length]);
+
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.registerExport((format) => {
+      if (activeConversation) exportConversation(activeConversation, format);
+    });
+  }, [chatSearch, activeConversation, exportConversation]);
+
+  useEffect(() => {
+    if (!chatSearch) return;
+    chatSearch.registerShowAnalytics(() => setShowAnalyticsModal(true));
+  }, [chatSearch]);
 
   // Scroll to current match
   useEffect(() => {
@@ -217,6 +241,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [currentMatchIndex, messageSearchResults]);
+
 
   const { pendingPanel, setPendingPanel, isSidebarOpen } = useSidebarContext();
   const [contextSources, setContextSources] = useState<any[]>([]);
@@ -659,46 +684,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
 
 
-          {/* Message Search Bar (toggleable) */}
-          {messages.length > 0 &&
-        <div className="mx-6 mt-2">
-              <div className="flex items-center gap-2">
-                <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowMessageSearch(!showMessageSearch)}
-              className="text-muted-foreground hover:text-foreground">
-              
-                  <Search className="h-4 w-4 mr-1" />
-                  Search
-                </Button>
-              </div>
-              
-              <AnimatePresence>
-                {showMessageSearch &&
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-2">
-              
-                    <MessageSearchBar
-                searchQuery={messageSearchQuery}
-                onSearchChange={setMessageSearchQuery}
-                onExportConversation={(format) => activeConversation && exportConversation(activeConversation, format as 'json' | 'markdown' | 'txt')}
-                onShowAnalytics={() => setShowAnalyticsModal(true)}
-                messageCount={messages.length}
-                filteredCount={messageSearchResults.length}
-                onNavigateMatch={handleNavigateMatch}
-                currentMatch={currentMatchIndex + 1}
-                totalMatches={messageSearchResults.length} />
-              
-                  </motion.div>
-            }
-              </AnimatePresence>
-            </div>
-        }
-          
+
           {/* Messages Area - with ref for proper scrolling (Issue #1 fix) */}
           <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
             <div className="max-w-6xl mx-auto py-6 space-y-8">

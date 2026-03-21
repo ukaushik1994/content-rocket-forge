@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { Search } from 'lucide-react';
 import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
 import { AIChatDBProvider, useSharedAIChatDB } from '@/contexts/AIChatDBContext';
 import { useSidebarContext } from '@/contexts/SidebarContext';
@@ -10,10 +11,53 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ActiveProviderIndicator } from '@/components/ai/ActiveProviderIndicator';
 import { useDueContentNotifications } from '@/hooks/useDueContentNotifications';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
+import { ChatSearchProvider, useChatSearch } from '@/contexts/ChatSearchContext';
+import { MessageSearchBar } from '@/components/ai-chat/MessageSearchBar';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
+
+const SearchIconButton: React.FC = () => {
+  const chatSearch = useChatSearch();
+  if (!chatSearch) return null;
+
+  const { showSearch, toggleSearch, searchQuery, setSearchQuery, currentMatch, totalMatches, navigateMatch, messageCount, onExportConversation, onShowAnalytics } = chatSearch;
+
+  return (
+    <Popover open={showSearch} onOpenChange={(open) => { if (open !== showSearch) toggleSearch(); }}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full border border-border relative transition-transform duration-200 hover:scale-105 bg-background/80 backdrop-blur-md shadow-lg h-9 w-9"
+          title="Search messages"
+        >
+          <Search className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-80 p-0 bg-background/95 backdrop-blur-sm border-border/50 shadow-xl"
+      >
+        <MessageSearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onExportConversation={(format) => onExportConversation?.(format)}
+          onShowAnalytics={() => onShowAnalytics?.()}
+          messageCount={messageCount}
+          filteredCount={totalMatches}
+          onNavigateMatch={navigateMatch}
+          currentMatch={currentMatch}
+          totalMatches={totalMatches}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
@@ -114,6 +158,7 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
       <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
         <ActiveProviderIndicator />
         <NotificationBell />
+        <SearchIconButton />
       </div>
       <div className="flex-1 flex relative">
         {isMobile ? (
@@ -146,7 +191,9 @@ const AppLayoutInner: React.FC<AppLayoutProps> = ({ children }) => {
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <AIChatDBProvider>
-      <AppLayoutInner>{children}</AppLayoutInner>
+      <ChatSearchProvider>
+        <AppLayoutInner>{children}</AppLayoutInner>
+      </ChatSearchProvider>
     </AIChatDBProvider>
   );
 };
