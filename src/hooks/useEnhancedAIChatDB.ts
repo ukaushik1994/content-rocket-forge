@@ -803,9 +803,9 @@ export const useEnhancedAIChatDB = () => {
 
       // Phase 3: Auto-update conversation goal when topic shifts
       const responseContentLower = (responseContent || '').toLowerCase();
+      let detectedGoal: string | null = null;
       if (conversationId && messages.length >= 4) {
         try {
-          let detectedGoal: string | null = null;
           if (/email|campaign|newsletter/.test(responseContentLower) && !/content|article|blog/.test(responseContentLower)) detectedGoal = 'Email Campaign';
           else if (/keyword|seo|rank|serp/.test(responseContentLower) && !/write|create|draft/.test(responseContentLower)) detectedGoal = 'SEO Research';
           else if (/competitor|swot|market position/.test(responseContentLower)) detectedGoal = 'Competitive Analysis';
