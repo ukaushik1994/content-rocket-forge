@@ -19,7 +19,7 @@ import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
 
-const DEPLOY_VERSION = 'enhanced-ai-chat-v19-2026-03-20T12:00:00Z-phase1';
+const DEPLOY_VERSION = 'enhanced-ai-chat-v20-2026-03-21T12:00:00Z-definitive';
 
 // ===== PHASE 1A: Smart Model Routing =====
 // Routes cheap model for lookups/chat, premium model for generation/heavy tools
