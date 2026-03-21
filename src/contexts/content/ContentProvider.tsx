@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../AuthContext';
 import { toast } from 'sonner';
@@ -12,6 +12,7 @@ const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 export const ContentProvider = ({ children }: { children: ReactNode }) => {
   const [contentItems, setContentItems] = useState<ContentItemType[]>([]);
+  const contentItemsRef = useRef<ContentItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const { user } = useAuth();
@@ -38,7 +39,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       
-      const offset = append ? contentItems.length : 0;
+      const offset = append ? contentItemsRef.current.length : 0;
       
       // First, fetch the content items
       const { data: contentData, error: contentError } = await supabase
@@ -62,9 +63,14 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       // Process the content items with keywords and ensure no duplicates
       const processedItems = await processContentItems(contentData);
       if (append) {
-        setContentItems(prev => deduplicateItems([...prev, ...processedItems]));
+        setContentItems(prev => {
+          const merged = deduplicateItems([...prev, ...processedItems]);
+          contentItemsRef.current = merged;
+          return merged;
+        });
       } else {
         const uniqueItems = deduplicateItems(processedItems);
+        contentItemsRef.current = uniqueItems;
         setContentItems(uniqueItems);
       }
     } catch (error: any) {
@@ -74,7 +80,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [user, contentItems.length]);
+  }, [user]); // Removed contentItems.length — was causing infinite re-fetch loop
 
   // Initial loading of content
   useEffect(() => {
