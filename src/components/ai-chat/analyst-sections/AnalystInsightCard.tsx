@@ -19,9 +19,9 @@ const iconMap = {
 };
 
 const iconColorMap = {
-  green: 'text-emerald-400/70',
+  green: 'text-primary/70',
   amber: 'text-primary/60',
-  red: 'text-rose-300/70',
+  red: 'text-primary/50',
   blue: 'text-primary/60',
   purple: 'text-muted-foreground/60',
 };
