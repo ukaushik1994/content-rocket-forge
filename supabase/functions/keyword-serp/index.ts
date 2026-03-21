@@ -62,7 +62,7 @@ serve(async (req) => {
 
       if (cached) {
         const cacheAge = Date.now() - new Date(cached.updated_at).getTime();
-        const cacheExpiry = 24 * 60 * 60 * 1000; // 24 hours
+        const cacheExpiry = 7 * 24 * 60 * 60 * 1000; // 7 days — keyword metrics don't change daily
         
         if (cacheAge < cacheExpiry) {
           console.log(`Using cached data for ${keyword} (${Math.round(cacheAge / 1000 / 60)} minutes old)`);

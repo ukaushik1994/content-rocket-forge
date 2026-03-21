@@ -92,6 +92,51 @@ export const KEYWORD_ACTION_TOOL_DEFINITIONS = [
   }
 ];
 
+// Phase 1: Extract keyword metrics from SERP data we already fetch (zero extra API calls)
+function estimateKeywordMetrics(serpData: any): { volume: number; difficulty: number; opportunity: number; volumeLabel: string } {
+  const totalResults = serpData?.search_information?.total_results || serpData?.search_metadata?.total_results || 0;
+  const organicResults = serpData?.organic_results || [];
+  const paaCount = (serpData?.related_questions || serpData?.people_also_ask || []).length;
+  const relatedCount = (serpData?.related_searches || []).length;
+
+  // Volume estimate from total results (logarithmic scale)
+  let volumeLabel = 'Low';
+  let volume = 100;
+  if (totalResults > 1_000_000_000) { volumeLabel = 'Very High'; volume = 50000; }
+  else if (totalResults > 100_000_000) { volumeLabel = 'High'; volume = 10000; }
+  else if (totalResults > 10_000_000) { volumeLabel = 'Medium-High'; volume = 5000; }
+  else if (totalResults > 1_000_000) { volumeLabel = 'Medium'; volume = 1000; }
+  else if (totalResults > 100_000) { volumeLabel = 'Low-Medium'; volume = 500; }
+  else if (totalResults > 10_000) { volumeLabel = 'Low'; volume = 200; }
+  else { volumeLabel = 'Very Low'; volume = 50; }
+
+  // Boost estimate if PAA/related searches exist (indicates search interest)
+  if (paaCount >= 4) volume = Math.round(volume * 1.3);
+  if (relatedCount >= 5) volume = Math.round(volume * 1.2);
+
+  // Difficulty estimate from top-ranking domain authority
+  const topDomains = organicResults.slice(0, 5).map((r: any) => {
+    try { return new URL(r.link || r.url || '').hostname; } catch { return ''; }
+  });
+  const authorityDomains = ['wikipedia.org', 'forbes.com', 'hubspot.com', 'nytimes.com',
+    'amazon.com', 'linkedin.com', 'medium.com', 'youtube.com', 'reddit.com', 'quora.com',
+    'bbc.com', 'cnn.com', 'techcrunch.com', 'investopedia.com', 'healthline.com', 'webmd.com'];
+  const authorityCount = topDomains.filter((d: string) =>
+    authorityDomains.some(a => d.includes(a)) || d.endsWith('.gov') || d.endsWith('.edu')
+  ).length;
+
+  const difficulty = Math.min(95, Math.round(
+    (authorityCount / 5) * 50 +
+    (totalResults > 10_000_000 ? 20 : totalResults > 1_000_000 ? 10 : 0) +
+    (organicResults.length >= 10 ? 15 : 5)
+  ));
+
+  // Opportunity = high volume + low difficulty = good target
+  const opportunity = Math.round(Math.max(0, Math.min(100, (100 - difficulty) * (volume / 5000) * 10)));
+
+  return { volume, difficulty, opportunity, volumeLabel };
+}
+
 export const KEYWORD_ACTION_TOOL_NAMES = [
   'add_keywords', 'remove_keywords', 'trigger_serp_analysis',
   'trigger_content_gap_analysis', 'create_topic_cluster'
@@ -208,6 +253,21 @@ export async function executeKeywordActionTool(
         }
 
         const serpData = await response.json();
+
+        // Phase 1: Extract keyword metrics from SERP data and save to keywords table
+        try {
+          const metrics = estimateKeywordMetrics(serpData);
+          await supabase.from('keywords').upsert({
+            user_id: userId,
+            keyword: toolArgs.keyword,
+            search_volume: metrics.volume,
+            difficulty: metrics.difficulty,
+          }, { onConflict: 'user_id,keyword' });
+          console.log(`📊 Keyword metrics saved: ${toolArgs.keyword} → volume=${metrics.volume}, difficulty=${metrics.difficulty}, opportunity=${metrics.opportunity}`);
+        } catch (metricsErr) {
+          console.warn('Keyword metrics save failed (non-blocking):', metricsErr);
+        }
+
         return {
           success: true,
           message: `SERP analysis complete for "${toolArgs.keyword}"`,

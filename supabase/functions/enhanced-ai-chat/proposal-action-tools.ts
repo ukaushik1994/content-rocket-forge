@@ -137,6 +137,27 @@ export async function executeProposalActionTool(
       }
 
       case 'create_proposal': {
+        // Phase 3: Back impression estimates with SERP volume data when available
+        let estimatedImpressions = toolArgs.estimated_impressions || null;
+        let impressionSource = 'ai_estimate';
+
+        if (toolArgs.primary_keyword) {
+          try {
+            const { data: kwData } = await supabase
+              .from('keywords')
+              .select('search_volume, difficulty')
+              .eq('user_id', userId)
+              .ilike('keyword', toolArgs.primary_keyword)
+              .maybeSingle();
+
+            if (kwData?.search_volume && kwData.search_volume > 0) {
+              // Estimate impressions: volume * 4% CTR (typical position 3-5)
+              estimatedImpressions = Math.round(kwData.search_volume * 0.04);
+              impressionSource = 'serp_estimate';
+            }
+          } catch { /* non-blocking */ }
+        }
+
         const { data, error } = await supabase
           .from('ai_strategy_proposals')
           .insert({
@@ -146,9 +167,10 @@ export async function executeProposalActionTool(
             description: toolArgs.description || '',
             content_type: toolArgs.content_type || 'blog',
             priority_tag: toolArgs.priority_tag || 'medium',
-            estimated_impressions: toolArgs.estimated_impressions || null,
+            estimated_impressions: estimatedImpressions,
             solution_id: toolArgs.solution_id || null,
-            status: 'available'
+            status: 'available',
+            metadata: { impression_source: impressionSource }
           })
           .select('id, title, primary_keyword, content_type, priority_tag, status, created_at')
           .single();

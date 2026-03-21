@@ -73,6 +73,8 @@ interface KeywordCardProps {
     content_pieces?: ContentPiece[];
     first_used?: string;
     last_used?: string;
+    search_volume?: number | null;
+    difficulty?: number | null;
   };
   onDelete?: (id: string) => void;
 }
@@ -179,6 +181,26 @@ export const KeywordCard: React.FC<KeywordCardProps> = ({
             </div>
           </div>
           
+          {/* SERP Metrics (from Phase 1 — estimated from SERP data) */}
+          {(keyword.difficulty != null && keyword.difficulty > 0) || (keyword.search_volume != null && keyword.search_volume > 0) ? (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {keyword.difficulty != null && keyword.difficulty > 0 && (
+                <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full font-medium border ${
+                  keyword.difficulty > 70 ? 'bg-red-500/15 text-red-400 border-red-500/30' :
+                  keyword.difficulty > 40 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' :
+                  'bg-green-500/15 text-green-400 border-green-500/30'
+                }`}>
+                  KD: {keyword.difficulty}
+                </span>
+              )}
+              {keyword.search_volume != null && keyword.search_volume > 0 && (
+                <span className="text-[10px] text-muted-foreground/70">
+                  ~{keyword.search_volume.toLocaleString()}/mo est.
+                </span>
+              )}
+            </div>
+          ) : null}
+
           {/* Meta Information */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground mt-3">
             <div className="flex items-center gap-1">

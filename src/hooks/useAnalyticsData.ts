@@ -18,6 +18,20 @@ interface SearchConsoleData {
   averagePosition: number;
 }
 
+export interface InternalMetrics {
+  totalContent: number;
+  published: number;
+  drafts: number;
+  avgSeoScore: number;
+  totalWords: number;
+  contentCreatedThisMonth: number;
+  contentCreatedTrend: number;
+  contentPublishedThisMonth: number;
+  contentPublishedTrend: number;
+  typeDistribution: Record<string, number>;
+  weeklyCreationData: Array<{ week: string; created: number }>;
+}
+
 export interface AggregatedMetrics {
   totalAnalytics: {
     pageViews: number;
@@ -42,6 +56,7 @@ export interface AggregatedMetrics {
 export const useAnalyticsData = () => {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<AggregatedMetrics | null>(null);
+  const [internalMetrics, setInternalMetrics] = useState<InternalMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,6 +139,73 @@ export const useAnalyticsData = () => {
       } else {
         setMetrics(null);
       }
+
+      // Phase 2: Always compute internal metrics from content DB (zero API cost)
+      try {
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
+
+        const [allRes, currentRes, prevRes] = await Promise.all([
+          supabase.from('content_items').select('id, status, seo_score, content_type, created_at')
+            .eq('user_id', user.id).is('deleted_at' as any, null),
+          supabase.from('content_items').select('id, status, seo_score')
+            .eq('user_id', user.id).gte('created_at', thirtyDaysAgo).is('deleted_at' as any, null),
+          supabase.from('content_items').select('id, status, seo_score')
+            .eq('user_id', user.id).gte('created_at', sixtyDaysAgo).lt('created_at', thirtyDaysAgo).is('deleted_at' as any, null),
+        ]);
+
+        const all = allRes.data || [];
+        const current = currentRes.data || [];
+        const prev = prevRes.data || [];
+
+        const published = all.filter(c => c.status === 'published');
+        const drafts = all.filter(c => c.status === 'draft');
+        const avgSeo = published.length > 0
+          ? Math.round(published.reduce((s, c) => s + (c.seo_score || 0), 0) / published.length)
+          : 0;
+
+        const currentCreated = current.length;
+        const prevCreated = prev.length;
+        const createdTrend = prevCreated > 0 ? Math.round(((currentCreated - prevCreated) / prevCreated) * 100) : 0;
+
+        const currentPublished = current.filter(c => c.status === 'published').length;
+        const prevPublished = prev.filter(c => c.status === 'published').length;
+        const publishedTrend = prevPublished > 0 ? Math.round(((currentPublished - prevPublished) / prevPublished) * 100) : 0;
+
+        const typeDistribution: Record<string, number> = {};
+        all.forEach(c => {
+          const t = c.content_type || 'blog';
+          typeDistribution[t] = (typeDistribution[t] || 0) + 1;
+        });
+
+        const weeklyData = [];
+        for (let i = 11; i >= 0; i--) {
+          const wStart = new Date(now.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
+          const wEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+          const count = all.filter(c => {
+            const d = new Date(c.created_at);
+            return d >= wStart && d < wEnd;
+          }).length;
+          weeklyData.push({ week: wStart.toISOString().slice(5, 10), created: count });
+        }
+
+        setInternalMetrics({
+          totalContent: all.length,
+          published: published.length,
+          drafts: drafts.length,
+          avgSeoScore: avgSeo,
+          totalWords: 0, // Would need word_count column — skip for now
+          contentCreatedThisMonth: currentCreated,
+          contentCreatedTrend: createdTrend,
+          contentPublishedThisMonth: currentPublished,
+          contentPublishedTrend: publishedTrend,
+          typeDistribution,
+          weeklyCreationData: weeklyData,
+        });
+      } catch (internalErr) {
+        console.warn('Internal metrics computation failed:', internalErr);
+      }
     } catch (err) {
       console.error('Error fetching analytics data:', err);
       setError('Failed to load analytics data');
@@ -138,6 +220,7 @@ export const useAnalyticsData = () => {
 
   return {
     metrics,
+    internalMetrics,
     loading,
     error,
     refreshAnalytics: fetchAnalytics,

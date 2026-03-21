@@ -622,6 +622,52 @@ async function getPerformanceInternal(supabase: any, userId: string, campaignId:
     .eq('user_id', userId);
 
   if (error || !analytics || analytics.length === 0) {
+    // Phase 4: Fallback to content_performance_signals when no external analytics
+    try {
+      const { data: campaignContent } = await supabase
+        .from('content_items')
+        .select('id, title, seo_score, status')
+        .eq('user_id', userId);
+
+      const contentIds = (campaignContent || []).map((c: any) => c.id);
+
+      if (contentIds.length > 0) {
+        const { data: signals } = await supabase
+          .from('content_performance_signals')
+          .select('content_id, signal_type')
+          .in('content_id', contentIds);
+
+        const signalCounts: Record<string, number> = {};
+        (signals || []).forEach((s: any) => {
+          signalCounts[s.signal_type] = (signalCounts[s.signal_type] || 0) + 1;
+        });
+
+        const totalDistributions = Object.values(signalCounts).reduce((a: number, b: number) => a + b, 0);
+        const published = (campaignContent || []).filter((c: any) => c.status === 'published');
+        const avgSeo = published.length > 0
+          ? Math.round(published.reduce((s: number, c: any) => s + (c.seo_score || 0), 0) / published.length)
+          : 0;
+
+        return {
+          totalViews: 0,
+          totalClicks: 0,
+          totalConversions: 0,
+          engagementRate: 0,
+          byContent: [],
+          // Phase 4: Internal distribution metrics
+          internalMetrics: {
+            totalContent: (campaignContent || []).length,
+            published: published.length,
+            avgSeoScore: avgSeo,
+            timesPublished: signalCounts['publish'] || 0,
+            timesEmailed: signalCounts['email_convert'] || 0,
+            timesRepurposed: signalCounts['social_repurpose'] || 0,
+            totalDistributions,
+          }
+        };
+      }
+    } catch { /* non-blocking */ }
+
     return {
       totalViews: 0,
       totalClicks: 0,

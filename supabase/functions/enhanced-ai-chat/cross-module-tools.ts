@@ -471,6 +471,19 @@ export async function executeCrossModuleTool(
           return { success: false, message: 'Content not found or access denied' };
         }
 
+        // Phase 5: Approval gate — rejected content cannot be published
+        const { data: approvalCheck } = await supabase.from('content_items')
+          .select('approval_status')
+          .eq('id', toolArgs.content_id)
+          .single();
+
+        if (approvalCheck?.approval_status === 'rejected') {
+          return {
+            success: false,
+            message: `"${content.title}" was rejected and cannot be published. Edit it and resubmit for review first.`
+          };
+        }
+
         // 2. Check for active website connection
         const { data: connection } = await supabase.from('website_connections')
           .select('provider, site_url, site_id, is_active')
