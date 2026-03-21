@@ -18,12 +18,12 @@ export const NarrativePromptCard: React.FC<NarrativePromptCardProps> = ({
   onSendMessage,
 }) => {
   return (
-    <div className="glass-card p-5 border-l-2 border-cyan-400/40">
-      <p className="text-xs text-foreground/60 italic mb-4 leading-relaxed">{question}</p>
-      <div className="flex flex-col gap-2.5">
+    <div className="glass-card p-3.5 border-l-2 border-primary/30">
+      <p className="text-xs text-foreground/60 italic mb-3 leading-relaxed">{question}</p>
+      <div className="flex flex-col gap-2">
         <button
           onClick={() => onSendMessage(primaryAction)}
-          className="w-full px-4 py-2.5 rounded-full text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 transition-colors"
+          className="w-full px-4 py-2 rounded-full text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 transition-colors"
         >
           {primaryLabel}
         </button>
@@ -33,9 +33,8 @@ export const NarrativePromptCard: React.FC<NarrativePromptCardProps> = ({
               if (secondaryAction && secondaryAction.trim()) {
                 onSendMessage(secondaryAction);
               }
-              // Empty/whitespace secondaryAction = dismiss (no-op)
             }}
-            className="w-full px-4 py-2.5 rounded-full text-xs font-medium border border-white/15 text-foreground/60 hover:text-foreground hover:border-white/25 transition-colors"
+            className="w-full px-4 py-2 rounded-full text-xs font-medium border border-white/15 text-foreground/60 hover:text-foreground hover:border-white/25 transition-colors"
           >
             {secondaryLabel}
           </button>

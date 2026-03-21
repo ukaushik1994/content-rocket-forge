@@ -20,7 +20,7 @@ export const KeywordLandscapeSection: React.FC<Props> = ({ topics, platformData,
 
   const getHeadline = () => {
     if (trackedKw > 0) return <><span className="text-emerald-400/80">{trackedKw} keyword{trackedKw !== 1 ? 's' : ''}</span> tracked</>;
-    if (kwProposals > 0) return <><span className="text-amber-300">{kwProposals} proposal{kwProposals !== 1 ? 's' : ''}</span> available</>;
+    if (kwProposals > 0) return <><span className="text-primary/80">{kwProposals} proposal{kwProposals !== 1 ? 's' : ''}</span> available</>;
     return <>Keyword presence is a <span className="text-rose-300">blind spot</span></>;
   };
 

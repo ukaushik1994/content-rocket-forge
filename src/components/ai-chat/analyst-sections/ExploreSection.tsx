@@ -32,7 +32,6 @@ export const ExploreSection: React.FC<Props> = ({ analystState, deepDivePrompts,
       prompts.push({ label: action.title, action: action.action || action.title });
     }
 
-    // Cross-signal warning prompts
     const crossWarnings = analystState.crossSignalInsights.filter(i => i.type === 'warning');
     for (const warning of crossWarnings.slice(0, 2)) {
       const shortLabel = warning.content.replace(/^[^\w]*/, '').substring(0, 50);
@@ -45,7 +44,7 @@ export const ExploreSection: React.FC<Props> = ({ analystState, deepDivePrompts,
   const finalPrompts = prompts.length > 0 ? prompts.slice(0, 6) : defaultPrompts.map(p => ({ label: p, action: p }));
 
   return (
-    <AnalystSectionWrapper number="12" label="Explore" headline={<>Continue exploring your <span className="text-amber-300">data</span></>} delay={0.35}>
+    <AnalystSectionWrapper number="12" label="Explore" headline={<>Continue exploring your <span className="text-primary/80">data</span></>} delay={0.35}>
       <div className="flex flex-wrap gap-2">
         {finalPrompts.map((prompt, idx) => (
           <button

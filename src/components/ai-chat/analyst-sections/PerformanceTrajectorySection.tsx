@@ -23,7 +23,7 @@ export const PerformanceTrajectorySection: React.FC<Props> = ({ analystState, ch
   const getHeadline = () => {
     if (changePercent > 20) return <>Performance is <span className="text-emerald-400/80">accelerating</span></>;
     if (changePercent > 0) return <>Reach is expanding <span className="text-emerald-400/80">organically</span></>;
-    if (changePercent === 0) return <>Trajectory is <span className="text-amber-300">flat</span></>;
+    if (changePercent === 0) return <>Trajectory is <span className="text-primary/80">flat</span></>;
     return <>Performance is <span className="text-rose-300">contracting</span></>;
   };
 
@@ -38,11 +38,10 @@ export const PerformanceTrajectorySection: React.FC<Props> = ({ analystState, ch
   return (
     <AnalystSectionWrapper number="02" label="Performance Trajectory" headline={getHeadline()} delay={0.1}>
       <div className="glass-card p-5">
-        {/* Delta hero */}
         <div className="mb-4">
           <p className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground/40 mb-1">{dataKeys[0]?.replace(/_/g, ' ').toUpperCase() || 'PERFORMANCE METRIC'}</p>
           <div className="flex items-end justify-between">
-            <p className="text-2xl font-bold text-foreground">
+            <p className="text-lg font-bold text-foreground">
               {delta > 0 ? '+' : ''}{typeof delta === 'number' ? delta.toLocaleString() : delta} <span className="text-sm font-normal text-muted-foreground/40">Delta</span>
             </p>
             <Badge
