@@ -521,13 +521,17 @@ export async function executeCrossModuleTool(
 
         const publishResult = await publishResponse.json();
 
-        // 4. Update content status
-        await supabase.from('content_items')
+        // C5: Update content status with error handling
+        const { error: statusUpdateError } = await supabase.from('content_items')
           .update({
             status: 'published',
             metadata: { published_url: publishResult.url || publishResult.link, published_provider: connection.provider, published_at: new Date().toISOString() }
           })
           .eq('id', content.id);
+
+        const statusWarning = statusUpdateError 
+          ? '\n\n⚠️ Content was published successfully but the status update in the database failed. You may need to manually update the status.'
+          : '';
 
         // 3E: Track publish event as performance signal
         try {
