@@ -214,16 +214,16 @@ export const AnalystNarrativeTimeline: React.FC<Props> = ({
   return (
     <div>
       {/* 5B: Stale data / refresh status */}
-      {(dataAgeLabel || analystState?.lastRefreshError) &&
-      <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground/50 mb-4">
-          {dataAgeLabel}
-          {analystState?.lastRefreshError &&
-        <span className="flex items-center gap-1 text-destructive/60">
-              <AlertTriangle className="w-3 h-3" />
-              Refresh failed
-            </span>
-        }
-        </div>
+      {dataAgeLabel || analystState?.lastRefreshError
+
+
+
+
+
+
+
+
+
       }
       <div className="space-y-8">
       {orderedSections.map((section) =>
