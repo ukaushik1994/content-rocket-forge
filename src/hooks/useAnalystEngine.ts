@@ -252,7 +252,7 @@ function computeCrossSignals(
         for (const [kw, count] of keywordCounts) {
           if (count / proposalKeywords.length >= 0.5) {
             signals.push({
-              id: `cross-topic-concentration-${now.getTime()}`,
+              id: `cross-topic-concentration-${kw}`,
               content: `🎯 ${Math.round((count / proposalKeywords.length) * 100)}% of completed proposals target "${kw}" — consider diversifying topics`,
               type: 'warning',
               source: 'cross-signal',
@@ -277,7 +277,7 @@ function computeCrossSignals(
         const daysSinceLast = Math.floor((now.getTime() - new Date(lastPublished[0].created_at).getTime()) / (1000 * 60 * 60 * 24));
         if (daysSinceLast > 14) {
           signals.push({
-            id: `cross-publish-gap-${now.getTime()}`,
+            id: `cross-publish-gap`,
             content: `⏰ ${daysSinceLast} days since last published content — consistency drives SEO growth`,
             type: 'warning',
             source: 'cross-signal',
@@ -290,7 +290,7 @@ function computeCrossSignals(
       // 4. Content-to-keyword ratio (untargeted proposals)
       if (proposals > 0 && published > 0 && proposals > published * 3) {
         signals.push({
-          id: `cross-keyword-ratio-${now.getTime()}`,
+          id: `cross-keyword-ratio`,
           content: `📊 ${proposals} keyword proposals but only ${published} published articles — ${proposals - published} opportunities waiting for content`,
           type: 'opportunity',
           source: 'cross-signal',
@@ -302,7 +302,7 @@ function computeCrossSignals(
       const drafts = totalContent - published;
       if (totalContent > 3 && drafts > published * 2) {
         signals.push({
-          id: `cross-draft-ratio-${now.getTime()}`,
+          id: `cross-draft-ratio`,
           content: `✏️ ${drafts} drafts vs ${published} published — consider a publish sprint to clear the backlog`,
           type: 'opportunity',
           source: 'cross-signal',
@@ -322,7 +322,7 @@ function computeCrossSignals(
 
       if (thisWeekPublished && thisWeekPublished.length >= 2) {
         signals.push({
-          id: `cross-publish-streak-${now.getTime()}`,
+          id: `cross-publish-streak`,
           content: `🔥 ${thisWeekPublished.length} articles published this week — great momentum! Consistency compounds SEO results.`,
           type: 'opportunity',
           source: 'cross-signal',
@@ -335,7 +335,7 @@ function computeCrossSignals(
         const scores = recentArticles.map(a => a.seo_score as number);
         if (scores[0] > scores[2] && scores[0] >= 60) {
           signals.push({
-            id: `cross-seo-win-${now.getTime()}`,
+            id: `cross-seo-win`,
             content: `🏆 Your latest articles score ${scores[0]}/100 SEO — up from ${scores[2]} in earlier pieces. Your optimization skills are improving!`,
             type: 'opportunity',
             source: 'cross-signal',
@@ -368,7 +368,7 @@ function computeCrossSignals(
         for (const [kw, titles] of kwMap) {
           if (titles.length >= 2) {
             signals.push({
-              id: `cross-cannibalization-${kw}-${now.getTime()}`,
+              id: `cross-cannibalization-${kw}`,
               content: `⚠️ Keyword cannibalization: ${titles.length} articles target "${kw}" — they may compete against each other in search. Consider consolidating or differentiating.`,
               type: 'warning',
               source: 'cross-signal',
@@ -407,7 +407,7 @@ function computeCrossSignals(
             const uniqueIssues = [...new Set(issues)];
             if (uniqueIssues.length > 0) {
               signals.push({
-                id: `cross-seo-diagnosis-${now.getTime()}`,
+                id: `cross-seo-diagnosis`,
                 content: `🔍 Why SEO is declining: Recent articles show ${uniqueIssues.slice(0, 3).join(', ')}. These are the most common causes of low scores.`,
                 type: 'warning',
                 source: 'cross-signal',
@@ -443,7 +443,7 @@ function computeCrossSignals(
             const daysOfRunway = Math.round(currentDrafts * avgDaysBetween);
             if (daysOfRunway < 14) {
               signals.push({
-                id: `cross-draft-depletion-${now.getTime()}`,
+                id: `cross-draft-depletion`,
                 content: `⏳ At your current pace (1 article every ${Math.round(avgDaysBetween)} days), your ${currentDrafts} drafts will run out in ~${daysOfRunway} days. Start creating new content now.`,
                 type: 'warning',
                 source: 'cross-signal',
@@ -470,7 +470,7 @@ function computeCrossSignals(
         for (const [prefix, count] of prefixMap) {
           if (count >= 4) {
             signals.push({
-              id: `cross-topic-saturation-${prefix}-${now.getTime()}`,
+              id: `cross-topic-saturation-${prefix}`,
               content: `📊 Topic saturation: ${count} articles target "${prefix}..." — diminishing returns likely. Expand into adjacent topics for better coverage.`,
               type: 'warning',
               source: 'cross-signal',
@@ -499,7 +499,7 @@ function computeCrossSignals(
         const oldestTitle = oldArticles[0].title;
         const daysSince = Math.floor((now.getTime() - new Date(oldArticles[0].created_at).getTime()) / (1000 * 60 * 60 * 24));
         signals.push({
-          id: `cross-content-aging-${now.getTime()}`,
+          id: `cross-content-aging`,
           content: `📅 "${oldestTitle}" is ${daysSince} days old. ${oldArticles.length > 1 ? `${oldArticles.length} articles` : 'This article'} may need refreshing to maintain rankings.`,
           type: 'opportunity',
           source: 'cross-signal',
@@ -508,45 +508,7 @@ function computeCrossSignals(
         });
       }
 
-      // 13. Seasonal gap awareness
-      const currentMonth = now.getMonth();
-      const seasonalTopics: Record<number, string[]> = {
-        0: ['new year', 'resolutions', 'planning', 'goals'],
-        1: ['valentine', 'engagement', 'relationship'],
-        2: ['spring', 'renewal', 'launch', 'q1 review'],
-        3: ['spring', 'tax', 'q2 planning'],
-        4: ['summer', 'midyear', 'review'],
-        5: ['midyear', 'summer', 'half-year'],
-        6: ['summer', 'back to school'],
-        7: ['back to school', 'fall prep', 'q3'],
-        8: ['fall', 'autumn', 'q4 planning', 'holiday prep'],
-        9: ['halloween', 'black friday prep', 'holiday'],
-        10: ['thanksgiving', 'black friday', 'cyber monday'],
-        11: ['christmas', 'holiday', 'year-end', 'gift'],
-      };
-
-      if (totalContent >= 5 && contentKeywords) {
-        const currentSeasonalTopics = seasonalTopics[currentMonth] || [];
-        if (currentSeasonalTopics.length > 0) {
-          const allKws = contentKeywords.map(c => {
-            const kwArr = Array.isArray(c.keywords) ? c.keywords : [];
-            return (kwArr[0] as string || c.meta_title || '').toLowerCase();
-          });
-          const hasSeasonalContent = currentSeasonalTopics.some(st => 
-            allKws.some(kw => kw.includes(st))
-          );
-          if (!hasSeasonalContent) {
-            signals.push({
-              id: `cross-seasonal-gap-${now.getTime()}`,
-              content: `🗓️ No content targeting seasonal trends (${currentSeasonalTopics.slice(0, 3).join(', ')}). Seasonal content can capture trending search volume.`,
-              type: 'opportunity',
-              source: 'cross-signal',
-              timestamp: now,
-              urgency: 'low',
-            });
-          }
-        }
-      }
+      // 13. Seasonal detection removed — irrelevant for B2B users (Phase 5)
 
       // ─── Fix 6: Content-to-Business Attribution ─────────────────────────
 
@@ -565,7 +527,7 @@ function computeCrossSignals(
           );
           if (uncoveredSolutions.length > 0) {
             signals.push({
-              id: `cross-solution-gap-${now.getTime()}`,
+              id: `cross-solution-gap`,
               content: `🏢 ${uncoveredSolutions.length} of your ${solutions.length} solutions have no dedicated content — "${uncoveredSolutions[0].name}" could use an article to support sales.`,
               type: 'opportunity',
               source: 'cross-signal',
@@ -591,7 +553,7 @@ function computeCrossSignals(
           const top3Impressions = topProposals.slice(0, 3).reduce((s, p) => s + (p.estimated_impressions || 0), 0);
           if (totalImpressions > 0 && top3Impressions / totalImpressions >= 0.5) {
             signals.push({
-              id: `cross-pareto-proposals-${now.getTime()}`,
+              id: `cross-pareto-proposals`,
               content: `🎯 Top 3 proposals capture ${Math.round((top3Impressions / totalImpressions) * 100)}% of estimated impressions. Focus on "${topProposals[0].title}" first for maximum impact.`,
               type: 'opportunity',
               source: 'cross-signal',
@@ -621,7 +583,7 @@ function computeCrossSignals(
         for (const [query, count] of queryCount) {
           if (count >= 3 && !accountabilityAdded) {
             signals.push({
-              id: `cross-accountability-${now.getTime()}`,
+              id: `cross-accountability`,
               content: `🔄 You've asked about "${query}" ${count} times this session. Want to take action instead of analyzing further? Let me create a concrete plan.`,
               type: 'opportunity',
               source: 'cross-signal',
@@ -855,7 +817,7 @@ function saveSessionMemory(
   }
 }
 
-function loadSessionMemory(): InsightItem[] {
+function loadSessionMemory(currentTopics?: AnalystTopic[]): InsightItem[] {
   try {
     const raw = localStorage.getItem(SESSION_MEMORY_KEY);
     if (!raw) return [];
@@ -867,13 +829,34 @@ function loadSessionMemory(): InsightItem[] {
     const ageMs = Date.now() - memory.timestamp;
     const ageHours = Math.floor(ageMs / (1000 * 60 * 60));
     const ageStr = ageHours < 1 ? 'Recently' : ageHours < 24 ? `${ageHours}h ago` : `${Math.floor(ageHours / 24)}d ago`;
-    return memory.insights.map(i => ({
-      ...i,
-      id: `prev-${i.id}`,
-      content: `${ageStr}: ${i.content}`,
-      source: 'memory' as const,
-      timestamp: new Date(i.timestamp || memory.timestamp),
-    }));
+    
+    // Phase 6: Filter restored insights by current topic relevance
+    const currentCategories = currentTopics ? new Set(currentTopics.map(t => t.category)) : null;
+    
+    return memory.insights
+      .filter(i => {
+        // Critical/high urgency always passes through regardless of topic
+        if (i.urgency === 'critical' || i.urgency === 'high') return true;
+        // If no current topics yet, show all
+        if (!currentCategories || currentCategories.size === 0) return true;
+        // Filter: check if insight content relates to current conversation topics
+        const lower = i.content.toLowerCase();
+        if (currentCategories.has('content') && /content|article|blog|draft|publish|seo/.test(lower)) return true;
+        if (currentCategories.has('email') && /email|newsletter|subscriber|campaign email/.test(lower)) return true;
+        if (currentCategories.has('keywords') && /keyword|seo|search|rank|serp/.test(lower)) return true;
+        if (currentCategories.has('competitors') && /competitor|rival|market/.test(lower)) return true;
+        if (currentCategories.has('campaigns') && /campaign|generation|queue/.test(lower)) return true;
+        if (currentCategories.has('social') && /social|instagram|twitter|linkedin/.test(lower)) return true;
+        if (currentCategories.has('analytics') && /analytics|metrics|traffic|performance/.test(lower)) return true;
+        return false;
+      })
+      .map(i => ({
+        ...i,
+        id: `prev-${i.id}`,
+        content: `${ageStr}: ${i.content}`,
+        source: 'memory' as const,
+        timestamp: new Date(i.timestamp || memory.timestamp),
+      }));
   } catch {
     return [];
   }
@@ -1535,7 +1518,7 @@ export function useAnalystEngine(
   // ─── Enhancement D: Load session memory on activation ───────────────────
   useEffect(() => {
     if (isActive && !prevActiveRef.current && insightsFeed.length === 0) {
-      const memoryInsights = loadSessionMemory();
+      const memoryInsights = loadSessionMemory(topics);
       if (memoryInsights.length > 0) {
         setPreviousSessionInsights(memoryInsights);
       }
@@ -1712,8 +1695,22 @@ export function useAnalystEngine(
       };
     }
 
-    // Rule 2: Bad SEO quality
+    // Rule 2: Bad SEO quality — Phase 5: trajectory-aware
+    // Check if recent articles are actually scoring well despite low overall average
+    const recentScoresFromCross = crossSignalInsights.find(i => i.id === 'cross-seo-improving');
     if (avgSeo > 0 && avgSeo < 45 && published >= 3) {
+      if (recentScoresFromCross) {
+        // Recent articles are good but old content drags average down → accelerate, don't fix
+        return {
+          stance: 'accelerate',
+          reasoning: `Your overall SEO average is ${avgSeo}/100, but recent articles are scoring well and trending up. The low average is dragged down by older content. Keep creating — your quality is improving.`,
+          promptQuestion: 'Your recent content quality is improving. Ready to accelerate and let new articles lift your average?',
+          actions: [
+            { label: 'Find New Keywords', prompt: 'My recent articles are performing well. Find untapped keyword opportunities to capitalize on this momentum.', effort: 'medium', impact: 'high' },
+            { label: 'Refresh Old Content', prompt: `My overall SEO avg is ${avgSeo} but recent articles score well. Identify the worst-performing old articles I should update first.`, effort: 'medium', impact: 'high' },
+          ],
+        };
+      }
       return {
         stance: 'fix-quality',
         reasoning: `Your average SEO score is ${avgSeo}/100 across ${published} articles. Publishing more low-quality content won't help — each article needs to compete. Fix what you have before creating more.`,
@@ -1748,7 +1745,7 @@ export function useAnalystEngine(
         { label: 'Content Strategy 101', prompt: 'I\'m just starting out. Give me a simple content strategy to build my first 5 articles with maximum impact.', effort: 'low', impact: 'medium' },
       ],
     };
-  }, [isActive, platformData]);
+  }, [isActive, platformData, crossSignalInsights]);
 
   // ─── User Stage & Benchmarks ────────────────────────────────────────────
   const userStage = useMemo<UserStage | null>(() => {
