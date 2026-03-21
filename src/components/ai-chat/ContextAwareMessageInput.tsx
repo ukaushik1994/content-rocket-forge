@@ -292,9 +292,9 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
         )}
       </AnimatePresence>
 
-      {/* Mode Chip (Wizard or Web Search) */}
+      {/* Mode Chip (Wizard, Web Search, or Image Gen) */}
       <AnimatePresence>
-        {(wizardMode || webSearchMode) && (
+        {(wizardMode || webSearchMode || imageGenMode) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -304,13 +304,15 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
           >
             <div className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium",
-              webSearchMode
-                ? "bg-accent/10 border-accent/20 text-accent"
-                : "bg-primary/10 border-primary/20 text-primary"
+              imageGenMode
+                ? "bg-cyan-500/10 border-cyan-500/20 text-cyan-400"
+                : webSearchMode
+                  ? "bg-accent/10 border-accent/20 text-accent"
+                  : "bg-primary/10 border-primary/20 text-primary"
             )}>
-              {webSearchMode ? <Globe className="h-3 w-3" /> : <PenLine className="h-3 w-3" />}
-              <span>{webSearchMode ? 'Web Search' : 'Content Wizard'}</span>
-              <span className={webSearchMode ? "text-accent/60" : "text-primary/60"}>
+              {imageGenMode ? <ImageIcon className="h-3 w-3" /> : webSearchMode ? <Globe className="h-3 w-3" /> : <PenLine className="h-3 w-3" />}
+              <span>{imageGenMode ? 'Generate Image' : webSearchMode ? 'Web Search' : 'Content Wizard'}</span>
+              <span className={imageGenMode ? "text-cyan-400/60" : webSearchMode ? "text-accent/60" : "text-primary/60"}>
                 — type your query and press Enter
               </span>
               <button
@@ -318,7 +320,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
                 onClick={handleCancelWizard}
                 className={cn(
                   "ml-1 rounded-full p-0.5 transition-colors",
-                  webSearchMode ? "hover:bg-accent/20" : "hover:bg-primary/20"
+                  imageGenMode ? "hover:bg-cyan-500/20" : webSearchMode ? "hover:bg-accent/20" : "hover:bg-primary/20"
                 )}
               >
                 <X className="h-3 w-3" />
