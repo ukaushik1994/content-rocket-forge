@@ -499,7 +499,7 @@ function computeCrossSignals(
         const oldestTitle = oldArticles[0].title;
         const daysSince = Math.floor((now.getTime() - new Date(oldArticles[0].created_at).getTime()) / (1000 * 60 * 60 * 24));
         signals.push({
-          id: `cross-content-aging-${now.getTime()}`,
+          id: `cross-content-aging`,
           content: `📅 "${oldestTitle}" is ${daysSince} days old. ${oldArticles.length > 1 ? `${oldArticles.length} articles` : 'This article'} may need refreshing to maintain rankings.`,
           type: 'opportunity',
           source: 'cross-signal',
