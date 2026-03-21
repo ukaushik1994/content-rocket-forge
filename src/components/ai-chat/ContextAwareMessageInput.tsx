@@ -43,11 +43,14 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   onOpenResearch,
   onOpenAnalyst,
   onLaunchWizard,
-  onWebSearch
+  onWebSearch,
+  onQuickAction,
+  onSetVisualization
 }) => {
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [wizardMode, setWizardMode] = useState(false);
   const [webSearchMode, setWebSearchMode] = useState(false);
