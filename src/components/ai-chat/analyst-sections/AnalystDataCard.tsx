@@ -20,11 +20,11 @@ const trendColorMap = {
 };
 
 const progressColorMap = {
-  default: 'bg-amber-300/60',
+  default: 'bg-primary/50',
   green: 'bg-emerald-400/60',
-  amber: 'bg-amber-300/60',
+  amber: 'bg-primary/50',
   red: 'bg-rose-300/60',
-  blue: 'bg-amber-300/60',
+  blue: 'bg-primary/50',
 };
 
 export const AnalystDataCard: React.FC<AnalystDataCardProps> = ({
@@ -42,7 +42,7 @@ export const AnalystDataCard: React.FC<AnalystDataCardProps> = ({
   return (
     <div
       className={cn(
-        'glass-card p-5',
+        'glass-card p-3.5',
         onClick && 'glass-card-hover cursor-pointer'
       )}
       onClick={onClick}
@@ -51,7 +51,7 @@ export const AnalystDataCard: React.FC<AnalystDataCardProps> = ({
         {label}
       </p>
       <div className="flex items-end justify-between">
-        <p className="text-2xl font-bold text-foreground">
+        <p className="text-lg font-bold text-foreground">
           {typeof value === 'number' ? value.toLocaleString() : value}
         </p>
         {trend && (

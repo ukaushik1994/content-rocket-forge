@@ -20,9 +20,9 @@ const iconMap = {
 
 const iconColorMap = {
   green: 'text-emerald-400/70',
-  amber: 'text-amber-300/70',
+  amber: 'text-primary/60',
   red: 'text-rose-300/70',
-  blue: 'text-amber-300/70',
+  blue: 'text-primary/60',
   purple: 'text-muted-foreground/60',
 };
 
@@ -38,13 +38,13 @@ export const AnalystInsightCard: React.FC<AnalystInsightCardProps> = ({
   return (
     <div
       className={cn(
-        'glass-card p-4 flex items-start gap-3.5',
+        'glass-card p-3 flex items-start gap-3',
         onExplore && 'glass-card-hover cursor-pointer'
       )}
       onClick={onExplore}
     >
-      <div className="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
-        <Icon className={cn('w-4.5 h-4.5', iconColorMap[dotColor])} />
+      <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+        <Icon className={cn('w-4 h-4', iconColorMap[dotColor])} />
       </div>
       <div className="flex-1 min-w-0 pt-0.5">
         <div className="flex items-center gap-1.5">
@@ -53,7 +53,7 @@ export const AnalystInsightCard: React.FC<AnalystInsightCardProps> = ({
             <span className="text-[8px] font-bold text-rose-400 uppercase tracking-wider flex-shrink-0">Urgent</span>
           )}
           {urgency === 'high' && (
-            <span className="text-[8px] font-bold text-amber-400 uppercase tracking-wider flex-shrink-0">High</span>
+            <span className="text-[8px] font-bold text-primary uppercase tracking-wider flex-shrink-0">High</span>
           )}
         </div>
         {description && (
@@ -61,7 +61,7 @@ export const AnalystInsightCard: React.FC<AnalystInsightCardProps> = ({
         )}
       </div>
       {onExplore && (
-        <ArrowRight className="w-4 h-4 text-muted-foreground/30 flex-shrink-0 mt-2.5" />
+        <ArrowRight className="w-4 h-4 text-muted-foreground/30 flex-shrink-0 mt-1.5" />
       )}
     </div>
   );

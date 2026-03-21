@@ -12,8 +12,8 @@ export const GoalProgressSection: React.FC<Props> = ({ goalProgress, onSendMessa
   const getHeadline = () => {
     if (goalProgress.status === 'completed') return <>Goal <span className="text-emerald-400/80">achieved</span> 🎉</>;
     if (goalProgress.status === 'nearly_done') return <>Almost <span className="text-emerald-400/80">there</span></>;
-    if (goalProgress.percentage > 30) return <>Making <span className="text-amber-300">progress</span></>;
-    return <>Goal is <span className="text-amber-300">just starting</span></>;
+    if (goalProgress.percentage > 30) return <>Making <span className="text-primary/80">progress</span></>;
+    return <>Goal is <span className="text-primary/80">just starting</span></>;
   };
 
   return (
@@ -30,7 +30,7 @@ export const GoalProgressSection: React.FC<Props> = ({ goalProgress, onSendMessa
         <div className="glass-card p-4 space-y-2">
           {goalProgress.milestones.map((m, idx) => (
             <div key={idx} className="flex items-center gap-2.5">
-              <div className={`w-1.5 h-1.5 rounded-full ${m.done ? 'bg-amber-300/60' : 'bg-muted-foreground/20'}`} />
+              <div className={`w-1.5 h-1.5 rounded-full ${m.done ? 'bg-primary/50' : 'bg-muted-foreground/20'}`} />
               <span className={`text-[11px] ${m.done ? 'text-muted-foreground/50 line-through' : 'text-foreground/60'}`}>
                 {m.label}
               </span>

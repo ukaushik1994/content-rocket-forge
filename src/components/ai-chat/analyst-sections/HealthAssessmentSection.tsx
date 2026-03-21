@@ -15,8 +15,8 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
 
   const getHeadline = () => {
     if (health.total >= 80) return <>Your workspace is <span className="text-emerald-400/80">thriving</span></>;
-    if (health.total >= 60) return <>Health is <span className="text-amber-300">steady</span> — room to grow</>;
-    if (health.total >= 40) return <>Performance needs <span className="text-amber-300">attention</span></>;
+    if (health.total >= 60) return <>Health is <span className="text-primary/80">steady</span> — room to grow</>;
+    if (health.total >= 40) return <>Performance needs <span className="text-primary/80">attention</span></>;
     return <>Critical areas require <span className="text-rose-300">immediate action</span></>;
   };
 
@@ -42,7 +42,6 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
         />
       </div>
 
-      {/* Stage & benchmark info */}
       {stage && bench && (
         <div className="glass-card px-4 py-2.5">
           <p className="text-[10px] text-muted-foreground/50">
@@ -52,7 +51,6 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
         </div>
       )}
 
-      {/* Factor breakdown */}
       <div className="glass-card p-4 space-y-2.5">
         {health.factors.map((factor) => (
           <div key={factor.name} className="flex items-center justify-between gap-2">
@@ -61,8 +59,8 @@ export const HealthAssessmentSection: React.FC<Props> = ({ analystState, onSendM
               <div className="w-16 h-1 bg-muted/20 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
-                    factor.status === 'good' ? 'bg-amber-300/50' :
-                    factor.status === 'warning' ? 'bg-amber-300/40' : 'bg-rose-300/50'
+                    factor.status === 'good' ? 'bg-primary/50' :
+                    factor.status === 'warning' ? 'bg-primary/40' : 'bg-rose-300/50'
                   }`}
                   style={{ width: `${(factor.score / factor.maxScore) * 100}%` }}
                 />

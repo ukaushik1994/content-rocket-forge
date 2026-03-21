@@ -24,8 +24,8 @@ export const StrategicDivergenceSection: React.FC<Props> = ({ insights, onSendMe
 
   const getHeadline = () => {
     if (anomalies.length >= 3) return <>Multiple signals demand <span className="text-rose-300 underline decoration-2 underline-offset-4">triage</span></>;
-    if (anomalies.some(a => a.type === 'warning')) return <>An anomaly requires <span className="text-amber-300 underline decoration-2 underline-offset-4">attention</span></>;
-    return <>Cross-signals reveal <span className="text-amber-300">divergence</span></>;
+    if (anomalies.some(a => a.type === 'warning')) return <>An anomaly requires <span className="text-primary/80 underline decoration-2 underline-offset-4">attention</span></>;
+    return <>Cross-signals reveal <span className="text-primary/80">divergence</span></>;
   };
 
   return (

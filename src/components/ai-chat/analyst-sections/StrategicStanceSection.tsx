@@ -19,9 +19,9 @@ const stanceConfig = {
   },
   'fix-quality': {
     icon: Target,
-    color: 'text-amber-300',
-    bgColor: 'bg-amber-400/10',
-    borderColor: 'border-amber-400/20',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
   },
   'accelerate': {
     icon: Rocket,
@@ -49,7 +49,7 @@ export const StrategicStanceSection: React.FC<Props> = ({ analystState, onSendMe
       case 'stop-creating':
         return <>Stop creating. <span className="text-rose-300">Start publishing.</span></>;
       case 'fix-quality':
-        return <>Quality first, <span className="text-amber-300">then scale.</span></>;
+        return <>Quality first, <span className="text-primary/80">then scale.</span></>;
       case 'accelerate':
         return <>Everything's working. <span className="text-emerald-400/80">Accelerate.</span></>;
       case 'build-foundation':

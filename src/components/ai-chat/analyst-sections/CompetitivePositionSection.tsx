@@ -12,7 +12,6 @@ interface Props {
 }
 
 export const CompetitivePositionSection: React.FC<Props> = ({ topics, platformData = [], onSendMessage }) => {
-  // Real competitors from DB (platform data)
   const competitorData = platformData
     .filter(d => d.category === 'competitors' && d.label.startsWith('Competitor: '))
     .map(d => ({
@@ -24,14 +23,13 @@ export const CompetitivePositionSection: React.FC<Props> = ({ topics, platformDa
     }));
   const trackedCount = platformData.find(d => d.label === 'Tracked Competitors')?.value || 0;
 
-  // Fallback to topic-parsed mentions
   const competitorTopics = topics.filter(t => t.category === 'competitors');
 
   const hasData = competitorData.length > 0 || competitorTopics.length > 0;
 
   const getHeadline = () => {
     if (competitorData.length > 0) return <><span className="text-emerald-400/80">{trackedCount}</span> competitor{trackedCount !== 1 ? 's' : ''} tracked</>;
-    if (competitorTopics.length > 0) return <><span className="text-amber-300">{competitorTopics.length} signal{competitorTopics.length > 1 ? 's' : ''}</span> detected</>;
+    if (competitorTopics.length > 0) return <><span className="text-primary/80">{competitorTopics.length} signal{competitorTopics.length > 1 ? 's' : ''}</span> detected</>;
     return <>Competitive landscape is a <span className="text-rose-300">blind spot</span></>;
   };
 
