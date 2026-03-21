@@ -753,7 +753,7 @@ export const AutomationsList = () => {
               {automationPresets.slice(0, 3).map(p => (
                 <button
                   key={p.id}
-                  onClick={() => { applyPreset(p); setShowCreate(true); }}
+                  onClick={() => { applyPreset(p); setShowDialog(true); }}
                   className="text-left p-3 rounded-xl border border-border/30 bg-background/40 hover:bg-background/60 hover:border-primary/30 transition-all"
                 >
                   <span className="text-sm font-medium">{p.name}</span>
