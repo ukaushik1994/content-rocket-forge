@@ -184,7 +184,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     
     // Re-focus textarea after send to prevent needing to click again
     requestAnimationFrame(() => textareaRef.current?.focus());
-  }, [message, isLoading, wizardMode, onLaunchWizard, onSendMessage, handleTypingBroadcast]);
+  }, [message, isLoading, wizardMode, imageGenMode, webSearchMode, onLaunchWizard, onSendMessage, handleTypingBroadcast]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
