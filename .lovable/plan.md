@@ -1,25 +1,21 @@
 
 
-# Align Sidebar Top to Chat & Make Header Sticky
+# Move Topics/DataSource/GoalProgress to Bottom of Sidebar
 
-## Problem
-The sidebar starts at `top-20` (80px) while the chat content starts higher, creating a visual misalignment. The header section (Content Overview title, close button, topics, data source, goal progress) scrolls away with the content instead of staying pinned.
+## What
+Move the three metadata sections (Topics Discussed, Data Source, Goal Progress) from the header area to the bottom of the sidebar, below the scrollable narrative content. The header keeps only the title row + close button.
 
-## Changes
+## Changes in `src/components/ai-chat/VisualizationSidebar.tsx`
 
-### `src/components/ai-chat/VisualizationSidebar.tsx`
+### 1. Remove metadata from header (lines 703-791)
+Cut the three blocks (Topics Discussed, Data Source, Goal Progress) and the trailing divider from inside the header `div` (lines 703-791).
 
-**1. Align top position (line 671)**
-- Change `top-20` to `top-16` (64px) to match the overlay and align with the chat area top edge
+### 2. Add metadata as a sticky footer
+After the `ScrollArea` (line 805) and before the closing `motion.div`, add a new `flex-shrink-0` footer div with `border-t border-border/10 px-6 py-4` containing the same three sections (Topics, Data Source, Goal Progress) in a compact layout. Use `max-h-[240px] overflow-y-auto` so it doesn't overwhelm the panel if content is tall.
 
-**2. Make header row sticky**
-The header `div` at line 679 (`flex-shrink-0 px-6 py-5 border-b`) already has `flex-shrink-0` and the sidebar is `flex flex-col`, so it naturally stays at the top while `ScrollArea` below it scrolls. This is already correct — the title + close button won't scroll.
+### 3. Compact spacing
+Reduce `mt-4` gaps to `mt-2` between the three sections in the footer to keep it tight at the bottom.
 
-The only fix needed is the `top` positioning to push the sidebar up by 16px so it aligns with the page top.
-
-### Also update the mobile overlay (line 661)
-Already at `top-16` — no change needed.
-
-## Summary
-Single line change: `top-20` → `top-16` on line 671 of `VisualizationSidebar.tsx`.
+## Result
+Header becomes minimal (icon + title + close). Metadata lives at the bottom, always visible without scrolling, matching the screenshot reference.
 
