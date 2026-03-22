@@ -291,10 +291,10 @@ export const useEnhancedAIChatDB = () => {
         conversation_id: conversationId,
         type: validType,
         content: message.content,
-        visual_data: message.visualData || null,
-        progress_indicator: message.progressIndicator || null,
-        workflow_context: message.workflowContext || null,
-        function_calls: message.actions || null,
+        visual_data: (message.visualData as any) || null,
+        progress_indicator: (message.progressIndicator as any) || null,
+        workflow_context: (message.workflowContext as any) || null,
+        function_calls: (message.actions as any) || null,
         status: message.messageStatus === 'error' ? 'error' : 'completed'
       };
 
