@@ -4,15 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, RefreshCw, Grid3X3, List, Database } from 'lucide-react';
+import { Search, RefreshCw, Database } from 'lucide-react';
 
 interface KeywordsFiltersProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
-  viewMode: 'grid' | 'list';
-  onViewModeChange: (mode: 'grid' | 'list') => void;
   onRefresh?: () => void;
   onBackfillKeywords?: () => void;
 }
@@ -22,8 +20,6 @@ export const KeywordsFilters: React.FC<KeywordsFiltersProps> = ({
   onSearchChange,
   sortBy,
   onSortChange,
-  viewMode,
-  onViewModeChange,
   onRefresh,
   onBackfillKeywords
 }) => {
@@ -60,24 +56,6 @@ export const KeywordsFilters: React.FC<KeywordsFiltersProps> = ({
                 </SelectContent>
               </Select>
 
-              <div className="flex gap-1 p-1 bg-background/40 rounded-lg border border-border/50">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => onViewModeChange('grid')}
-                  className="h-8 w-8 p-0"
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => onViewModeChange('list')}
-                  className="h-8 w-8 p-0"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
 
               {onBackfillKeywords && (
                 <Button
