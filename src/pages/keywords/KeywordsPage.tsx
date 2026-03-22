@@ -7,7 +7,6 @@ import { PageBreadcrumb } from '@/components/shared/PageBreadcrumb';
 import { UnifiedEmptyState } from '@/components/ui/UnifiedEmptyState';
 import { KeywordsHero } from '@/components/keywords/KeywordsHero';
 import { KeywordsFilters } from '@/components/keywords/KeywordsFilters';
-import { KeywordCard } from '@/components/keywords/KeywordCard';
 import { KeywordListItem } from '@/components/keywords/KeywordListItem';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ import { supabase } from '@/integrations/supabase/client';
 const PAGE_SIZE = 20;
 
 const KeywordsPage = () => {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('usage_count');
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,7 +32,6 @@ const KeywordsPage = () => {
     ? `${window.location.origin}/keywords` 
     : '/keywords';
 
-  // Calculate statistics
   const keywordStats = useMemo(() => {
     const total = keywords.length;
     const inPublished = keywords.filter(k => 
@@ -50,7 +47,6 @@ const KeywordsPage = () => {
     return { total, inPublished, inDraft, cannibalization };
   }, [keywords]);
 
-  // Load keywords
   useEffect(() => {
     loadKeywords();
   }, []);
@@ -89,11 +85,9 @@ const KeywordsPage = () => {
       setLoading(true);
       const toastId = toast.loading('Syncing all keywords...');
       
-      // Sync proposal keywords
       const { data: proposalData, error: proposalError } = await supabase.functions.invoke('backfill-proposal-keywords');
       if (proposalError) throw new Error(`Proposals: ${proposalError.message}`);
       
-      // Sync content keywords
       const { data: contentData, error: contentError } = await supabase.functions.invoke('sync-content-keywords');
       if (contentError) throw new Error(`Content: ${contentError.message}`);
       
@@ -109,14 +103,11 @@ const KeywordsPage = () => {
     }
   };
 
-  // Filter and sort keywords
   const filteredAndSortedKeywords = useMemo(() => {
     let filtered = keywords.filter(keyword => {
-      // Apply search filter
       const matchesSearch = searchQuery === '' || 
         keyword.keyword.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Apply status filter
       let matchesStatus = true;
       if (statusFilter === 'published') {
         matchesStatus = keyword.content_pieces?.some((p: any) => p.status === 'published');
@@ -129,7 +120,6 @@ const KeywordsPage = () => {
       return matchesSearch && matchesStatus;
     });
 
-    // Apply sorting
     filtered.sort((a, b) => {
       if (sortBy === 'alphabetical') {
         return a.keyword.localeCompare(b.keyword);
@@ -142,7 +132,6 @@ const KeywordsPage = () => {
         const bCannibal = b.content_pieces?.filter((p: any) => p.status === 'published').length || 0;
         return bCannibal - aCannibal;
       }
-      // Default: usage_count
       return (b.usage_count || 0) - (a.usage_count || 0);
     });
 
@@ -159,114 +148,86 @@ const KeywordsPage = () => {
       
       <AnimatedBackground intensity="medium" />
       
-      {/* Spacing for fixed navbar */}
       <div className="pt-16">
         <div className="px-6">
           <PageBreadcrumb section="Tools" page="Keywords" />
         </div>
-        {/* Hero Section */}
         <KeywordsHero
-        keywordStats={keywordStats}
-        onQuickFilter={setStatusFilter}
-        activeFilter={statusFilter}
-      />
-
-      {/* Content Management Section */}
-      <div className="relative z-10 px-6 pb-12">
-        {/* Filters */}
-        <KeywordsFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onRefresh={loadKeywords}
-          onBackfillKeywords={handleBackfillKeywords}
+          keywordStats={keywordStats}
+          onQuickFilter={setStatusFilter}
+          activeFilter={statusFilter}
         />
 
-        {/* Keywords Grid/List */}
-        <div className="max-w-7xl mx-auto">
-          {loading ? (
-            // Loading State
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="p-6">
-                  <Skeleton className="h-6 w-3/4 mb-4" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3" />
-                </Card>
-              ))}
-            </div>
-          ) : loadError ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Database className="h-10 w-10 text-destructive/40 mb-3" />
-              <h3 className="text-lg font-medium text-foreground/80 mb-1">Failed to load keywords</h3>
-              <p className="text-sm text-muted-foreground mb-4">Something went wrong. Please try again.</p>
-              <Button variant="outline" size="sm" onClick={loadKeywords}>
-                Retry
-              </Button>
-            </div>
-          ) : filteredAndSortedKeywords.length === 0 ? (
-            <UnifiedEmptyState
-              icon={Database}
-              title={searchQuery || statusFilter !== 'all' ? 'No keywords found' : 'No keywords in your content yet'}
-              description={searchQuery || statusFilter !== 'all' 
-                ? 'Try adjusting your search or filters' 
-                : 'Start creating content and adding keywords to build your repository'}
-              actionLabel={!(searchQuery || statusFilter !== 'all') ? 'Sync Keywords' : undefined}
-              onAction={!(searchQuery || statusFilter !== 'all') ? handleBackfillKeywords : undefined}
-            />
-          ) : viewMode === 'list' ? (
-            // Keywords List View
-            <motion.div
-              className="space-y-3"
-              variants={{
-                hidden: { opacity: 0 },
-                show: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.05 }
-                }
-              }}
-              initial="hidden"
-              animate="show"
-            >
-              {filteredAndSortedKeywords.map((keyword) => (
-                <KeywordListItem key={keyword.id} keyword={keyword} />
-              ))}
-            </motion.div>
-          ) : (
-            // Keywords Grid View
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              {filteredAndSortedKeywords.map((keyword, index) => (
-                <motion.div
-                  key={keyword.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <KeywordCard keyword={keyword} />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-          {hasMore && !loading && filteredAndSortedKeywords.length > 0 && (
-            <div className="flex justify-center pt-4">
-              <button
-                onClick={loadMoreKeywords}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors px-6 py-2.5 rounded-lg border border-border/50 hover:border-border bg-card/50 hover:bg-card"
+        <div className="relative z-10 px-6 pb-12">
+          <KeywordsFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            onRefresh={loadKeywords}
+            onBackfillKeywords={handleBackfillKeywords}
+          />
+
+          <div className="max-w-7xl mx-auto">
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className="p-6">
+                    <Skeleton className="h-6 w-3/4 mb-4" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </Card>
+                ))}
+              </div>
+            ) : loadError ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Database className="h-10 w-10 text-destructive/40 mb-3" />
+                <h3 className="text-lg font-medium text-foreground/80 mb-1">Failed to load keywords</h3>
+                <p className="text-sm text-muted-foreground mb-4">Something went wrong. Please try again.</p>
+                <Button variant="outline" size="sm" onClick={loadKeywords}>
+                  Retry
+                </Button>
+              </div>
+            ) : filteredAndSortedKeywords.length === 0 ? (
+              <UnifiedEmptyState
+                icon={Database}
+                title={searchQuery || statusFilter !== 'all' ? 'No keywords found' : 'No keywords in your content yet'}
+                description={searchQuery || statusFilter !== 'all' 
+                  ? 'Try adjusting your search or filters' 
+                  : 'Start creating content and adding keywords to build your repository'}
+                actionLabel={!(searchQuery || statusFilter !== 'all') ? 'Sync Keywords' : undefined}
+                onAction={!(searchQuery || statusFilter !== 'all') ? handleBackfillKeywords : undefined}
+              />
+            ) : (
+              <motion.div
+                className="space-y-3"
+                variants={{
+                  hidden: { opacity: 0 },
+                  show: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.05 }
+                  }
+                }}
+                initial="hidden"
+                animate="show"
               >
-                Load more ({keywords.length} loaded)
-              </button>
-            </div>
-          )}
+                {filteredAndSortedKeywords.map((keyword) => (
+                  <KeywordListItem key={keyword.id} keyword={keyword} />
+                ))}
+              </motion.div>
+            )}
+            {hasMore && !loading && filteredAndSortedKeywords.length > 0 && (
+              <div className="flex justify-center pt-4">
+                <button
+                  onClick={loadMoreKeywords}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors px-6 py-2.5 rounded-lg border border-border/50 hover:border-border bg-card/50 hover:bg-card"
+                >
+                  Load more ({keywords.length} loaded)
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       </div>
     </PageContainer>
   );

@@ -56,24 +56,6 @@ export const KeywordsFilters: React.FC<KeywordsFiltersProps> = ({
                 </SelectContent>
               </Select>
 
-              <div className="flex gap-1 p-1 bg-background/40 rounded-lg border border-border/50">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => onViewModeChange('grid')}
-                  className="h-8 w-8 p-0"
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => onViewModeChange('list')}
-                  className="h-8 w-8 p-0"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
 
               {onBackfillKeywords && (
                 <Button
