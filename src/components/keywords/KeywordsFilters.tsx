@@ -20,8 +20,6 @@ export const KeywordsFilters: React.FC<KeywordsFiltersProps> = ({
   onSearchChange,
   sortBy,
   onSortChange,
-  viewMode,
-  onViewModeChange,
   onRefresh,
   onBackfillKeywords
 }) => {
