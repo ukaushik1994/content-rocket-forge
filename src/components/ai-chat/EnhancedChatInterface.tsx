@@ -799,38 +799,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       />
                     </motion.div>
 
-                    {/* Quick Action Chips */}
-                    <motion.div 
-                      className="flex flex-wrap items-center justify-center gap-2"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5, duration: 0.4 }}
-                    >
-                      {[
-                        { label: 'Write content', Icon: PenLine, color: 'text-purple-400 border-purple-500/20 hover:bg-purple-500/10', action: 'wizard' },
-                        { label: 'Run a campaign', Icon: Megaphone, color: 'text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10', prompt: 'Help me set up and run a new campaign' },
-                        { label: 'Draft an email', Icon: Mail, color: 'text-blue-400 border-blue-500/20 hover:bg-blue-500/10', prompt: 'Create a new email campaign for my latest content' },
-                        { label: 'What can you do?', Icon: HelpCircle, color: 'text-violet-400 border-violet-500/20 hover:bg-violet-500/10', prompt: '/help' },
-                      ].map((chip) => (
-                        <button
-                          key={chip.label}
-                          onClick={() => {
-                            if (chip.action === 'wizard' && handleLaunchWizard) {
-                              handleLaunchWizard('');
-                            } else if (chip.prompt) {
-                              handleSendMessage(chip.prompt);
-                            }
-                          }}
-                          className={cn(
-                            "inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-transparent text-sm font-medium transition-all duration-200",
-                            chip.color
-                          )}
-                        >
-                          <chip.Icon className="w-3.5 h-3.5" />
-                          <span>{chip.label}</span>
-                        </button>
-                      ))}
-                    </motion.div>
+
 
                     {/* Proactive Insights */}
                     {proactiveInsights.length > 0 && (
