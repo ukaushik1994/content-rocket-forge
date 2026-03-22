@@ -182,6 +182,14 @@ const App = () => (
                   <Route path="/research/content-gaps" element={<Navigate to="/ai-chat" replace />} />
                   <Route path="/research/calendar" element={<Navigate to="/calendar" replace />} />
                   <Route path="/research/pipeline" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/content-calendar" element={<Navigate to="/calendar" replace />} />
+                  <Route path="/approvals" element={<Navigate to="/content-approval" replace />} />
+                  <Route path="/content" element={<Navigate to="/repository" replace />} />
+                  <Route path="/content-repurposing" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/content-strategy" element={<Navigate to="/ai-proposals" replace />} />
+                  <Route path="/seo-tools" element={<Navigate to="/keywords" replace />} />
+                  <Route path="/team" element={<Navigate to="/ai-chat" replace />} />
+                  <Route path="/templates" element={<Navigate to="/engage/email" replace />} />
                   <Route path="/research" element={<Navigate to="/ai-chat" replace />} />
 
                   {/* Redirects for legacy routes */}

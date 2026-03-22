@@ -509,7 +509,7 @@ const CampaignsInner = () => {
         onExpressMode={handleExpressMode}
         stats={{
           activeCampaigns: campaigns.filter(c => c.status === 'active' || c.status === 'planned').length,
-          contentPiecesCreated: 0,
+          contentPiecesCreated: campaigns.reduce((sum: number, c: any) => sum + (c.content_count || c.contentBriefs?.length || 0), 0),
           completedCampaigns: campaigns.filter(c => c.status === 'completed').length,
         }}
       />

@@ -58,7 +58,7 @@ export const RepositoryHero = React.memo(({ onCreate, stats }: RepositoryHeroPro
             onClick={() => navigate('/ai-chat')}
             className="bg-gradient-to-r from-violet-400 to-purple-500 hover:from-violet-500 hover:to-purple-600 text-white font-semibold px-8 py-6 rounded-2xl text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
             <FileText className="mr-2 h-5 w-5" />
-            Create Content
+            Create in AI Chat →
           </Button>
         </motion.div>
 

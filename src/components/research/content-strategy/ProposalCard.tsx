@@ -32,11 +32,24 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
   const [scheduleHours, setScheduleHours] = useState(2);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   
-  // Helper to safely extract string from keyword (handles both string and {keyword: string} object)
+  // Helper to safely extract string from keyword — handles string, object, JSON string, array
   const normalizeKeyword = (kw: any): string => {
-    if (typeof kw === 'string') return kw;
-    if (kw && typeof kw === 'object' && kw.keyword) return String(kw.keyword);
-    return String(kw || 'No keyword');
+    if (!kw) return 'No keyword';
+    if (typeof kw === 'string') {
+      // Try parsing JSON strings like '{"keyword":"self-service SQL"}'
+      try {
+        const parsed = JSON.parse(kw);
+        if (typeof parsed === 'object' && parsed.keyword) return String(parsed.keyword);
+        if (typeof parsed === 'string') return parsed;
+      } catch { /* not JSON, use as-is */ }
+      return kw;
+    }
+    if (typeof kw === 'object') {
+      if (kw.keyword) return String(kw.keyword);
+      if (kw.name) return String(kw.name);
+      if (Array.isArray(kw)) return kw.map(normalizeKeyword).join(', ');
+    }
+    return String(kw);
   };
   
   const primaryKw = normalizeKeyword(proposal.primary_keyword);
@@ -230,7 +243,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             <div className="flex flex-wrap gap-1">
               {proposal.related_keywords.slice(0, 3).map((keyword: any, index: number) => (
                 <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
-                  {typeof keyword === 'string' ? keyword : keyword?.keyword ? String(keyword.keyword) : String(keyword)}
+                  {normalizeKeyword(keyword)}
                 </Badge>
               ))}
               {proposal.related_keywords.length > 3 && (

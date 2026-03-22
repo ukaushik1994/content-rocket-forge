@@ -47,6 +47,10 @@ const charLimits: Record<string, number> = {
 const commonHashtags = ['#marketing', '#socialmedia', '#growth', '#brand', '#content', '#digital', '#strategy'];
 
 const statusFilters = ['all', 'draft', 'scheduled', 'posted', 'pending_integration', 'failed'] as const;
+const statusFilterLabels: Record<string, string> = {
+  all: 'All', draft: 'Draft', scheduled: 'Scheduled', posted: 'Posted',
+  pending_integration: 'Saved', failed: 'Failed'
+};
 
 import { engageStagger } from '../shared/engageAnimations';
 const stagger = engageStagger;
@@ -569,8 +573,8 @@ export const SocialDashboard = () => {
               <div className="flex items-center gap-2">
                 <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40">
                   {statusFilters.map(s => (
-                    <Button key={s} variant={statusFilter === s ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-7 text-xs capitalize" onClick={() => setStatusFilter(s)}>
-                      {s}
+                    <Button key={s} variant={statusFilter === s ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-7 text-xs" onClick={() => setStatusFilter(s)}>
+                      {statusFilterLabels[s] || s}
                     </Button>
                   ))}
                 </div>

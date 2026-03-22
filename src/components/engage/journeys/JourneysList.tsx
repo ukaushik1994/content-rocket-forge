@@ -118,6 +118,8 @@ export const JourneysList = () => {
       return data || [];
     },
     enabled: !!currentWorkspaceId,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   // E1: All enrollment data for analytics
