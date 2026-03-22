@@ -289,12 +289,12 @@ export const useEnhancedAIChatDB = () => {
 
       const messageData = {
         conversation_id: conversationId,
-        type: validType, // Ensure valid type for database constraint
+        type: validType,
         content: message.content,
-        visual_data: message.visualData ? JSON.stringify(message.visualData) : null,
-        progress_indicator: message.progressIndicator ? JSON.stringify(message.progressIndicator) : null,
-        workflow_context: message.workflowContext ? JSON.stringify(message.workflowContext) : null,
-        function_calls: message.actions ? JSON.stringify(message.actions) : null, // Use function_calls instead of attachments
+        visual_data: (message.visualData as any) || null,
+        progress_indicator: (message.progressIndicator as any) || null,
+        workflow_context: (message.workflowContext as any) || null,
+        function_calls: (message.actions as any) || null,
         status: message.messageStatus === 'error' ? 'error' : 'completed'
       };
 
@@ -309,10 +309,10 @@ export const useEnhancedAIChatDB = () => {
         return null;
       }
       
-      // Return the DB-generated UUID so callers can update local state
       return insertedData?.id || null;
     } catch (error) {
       console.error('Error saving message:', error);
+      return null;
     }
   }, []);
 

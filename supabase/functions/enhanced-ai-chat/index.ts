@@ -3262,7 +3262,7 @@ For responses over 200 words: use **H2/H3 headings** for sections, **bold** key 
     const isGeminiProvider = provider.provider === 'gemini';
     const providerMaxCap = isGeminiProvider ? 32000 : 16000;
     const dynamicMaxTokens = Math.min(
-      Math.max(4096, Math.floor(totalTokens * 0.3)),
+      Math.max(8192, Math.floor(totalTokens * 0.4)),
       providerMaxCap
     );
 
