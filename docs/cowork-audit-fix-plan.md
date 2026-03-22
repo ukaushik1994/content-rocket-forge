@@ -1,342 +1,150 @@
-# Cowork UX Audit — Fix Plan
+# Cowork UX Audit — Complete Fix Plan
 
-> **Source:** Cowork UX Audit Report dated March 22, 2026
-> **Findings:** 5 bugs + 8 recommendations
-> **Plan:** 4 phases, prioritized by severity
-
----
-
-## PHASE 1: Critical Bugs (30 min)
-
-### Bug 1: Raw JSON in AI Proposals — HIGH
-
-**What Cowork found:** Primary Keyword field shows `{"keyword":"self-service SQL querying for finance"}` instead of just the keyword text. Related Keywords show same raw JSON.
-
-**Current code:** `ProposalCard.tsx` already has a `normalizeKeyword()` function (line 38) that handles object → string extraction. BUT the data stored in the DB may have inconsistent formats — some are strings, some are JSON objects.
-
-**Fix — File:** `src/components/research/content-strategy/ProposalCard.tsx`
-
-The `normalizeKeyword` function exists but may not cover all edge cases. Verify and harden:
-
-```ts
-// Ensure normalizeKeyword handles ALL formats:
-function normalizeKeyword(kw: any): string {
-  if (!kw) return '';
-  if (typeof kw === 'string') {
-    // Try parsing in case it's a JSON string
-    try {
-      const parsed = JSON.parse(kw);
-      if (typeof parsed === 'object' && parsed.keyword) return String(parsed.keyword);
-      if (typeof parsed === 'string') return parsed;
-    } catch { /* not JSON, use as-is */ }
-    return kw;
-  }
-  if (typeof kw === 'object') {
-    if (kw.keyword) return String(kw.keyword);
-    if (kw.name) return String(kw.name);
-    // Last resort: stringify but strip braces
-    return JSON.stringify(kw).replace(/[{}"]/g, '').replace(/keyword:/g, '');
-  }
-  return String(kw);
-}
-```
-
-Also check where Related Keywords render — apply the same normalization to each item in the array.
-
-**Frontend:** `ProposalCard.tsx` — harden normalizeKeyword + apply to related keywords display
-**Backend:** No changes
+> **Source:** Cowork Full UX Audit (15 Phase Reports + Summary), March 22, 2026
+> **Total Issues Found:** 106 (8 Critical, 15 High, 38 Medium, 45 Low)
+> **Plan:** 5 priority tiers, ordered by user impact
 
 ---
 
-### Bug 2: Campaigns Stats vs List Mismatch — HIGH
+## TIER 0: CRITICAL — App Looks Broken (8 issues)
 
-**What Cowork found:** Header shows "4 Active" campaigns but "My Campaigns" section shows empty state.
+These make the tool appear non-functional. Fix immediately.
 
-**Root cause:** Line 511 in `Campaigns.tsx`:
-```ts
-activeCampaigns: campaigns.filter(c => c.status === 'active' || c.status === 'planned').length,
-```
-
-The `campaigns` array comes from a query that may include campaigns from the `ai_strategy_conversations` table (strategy conversations, not actual campaigns) or from a different user's data. The "My Campaigns" list below may filter differently or query a different table.
-
-**Fix — File:** `src/pages/Campaigns.tsx`
-
-1. Verify both the hero stats AND the campaign list query the SAME `campaigns` table with the SAME user_id filter
-2. The stats should be computed FROM the same array that renders the list — not from a separate query
-3. If `campaigns` array is empty but stats show 4, the stats query is pulling from a different source
-
-Check: do the hero stats come from `useCampaignStats()` hook while the list comes from a direct query? If so, make them use the same source.
-
-```ts
-// Both should use the same data:
-const { data: campaigns = [] } = useQuery({
-  queryKey: ['campaigns', user?.id],
-  queryFn: async () => {
-    const { data } = await supabase
-      .from('campaigns')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    return data || [];
-  }
-});
-
-// Stats derived from same array:
-const stats = {
-  activeCampaigns: campaigns.filter(c => c.status === 'active').length,
-  contentPiecesCreated: campaigns.reduce((sum, c) => sum + (c.content_count || 0), 0),
-  completedCampaigns: campaigns.filter(c => c.status === 'completed').length,
-};
-
-// List renders same array:
-{campaigns.length === 0 ? <EmptyState /> : campaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}
-```
-
-**Frontend:** `Campaigns.tsx` — ensure stats and list use identical data source
-**Backend:** No changes
+| ID | Page | Issue | Fix | Frontend | Backend |
+|----|------|-------|-----|----------|---------|
+| P12-01 | Journeys | **Canvas completely blank** — 8-node journey shows empty black canvas | Likely a ReactFlow rendering issue. Check if nodes/edges are loaded but not positioned. May need `reactFlowInstance.fitView()` on mount or default node positions. | `JourneyBuilder.tsx` — add fitView on initial load + verify node positions aren't all (0,0) | None |
+| P4-01 | Proposals | **Raw JSON in Primary Keyword** — shows `{"keyword":"..."}` | Harden `normalizeKeyword()` to handle JSON strings, objects, and nested formats. Parse before display. | `ProposalCard.tsx` — strengthen normalizeKeyword to try JSON.parse on strings | None |
+| P4-02 | Proposals | **Raw JSON in Related Keywords** — same issue for arrays | Apply normalizeKeyword to each item in related keywords array | `ProposalCard.tsx` — map related keywords through normalizeKeyword | None |
+| P5-01 | Campaigns | **Blank screen on conversation submit** — white screen after sending message | The conversation handler likely navigates or crashes. Check `handleSubmit` → `onStartConversation`. May be creating an AI chat conversation that fails. | `Campaigns.tsx` / `CampaignsHero.tsx` — add try-catch around submit, show error toast instead of blank screen | None |
+| P5-02 | Campaigns | **Stats show 4 Active but list is empty** — data source mismatch | Stats and list query different sources. Make both use the same `campaigns` array. | `Campaigns.tsx` — derive stats FROM the same array that renders the list | None |
+| P8-01 | Email | **Inbox tab shows Sent content** — wrong tab renders | Tab key mapping or content component mismatch. Verify each tab key maps to correct component. | `EmailDashboard.tsx` — verify tab key → component mapping is correct | None |
+| P8-02 | Email | **Drafts tab shows Scheduled content** — wrong tab renders | Same root cause as P8-01 | Same fix | None |
+| P2-01 | Repository | **Create Content redirects to /ai-chat** — navigates away | This is by design (content creation IS in AI Chat). But should communicate it: button text should say "Create in AI Chat →" or open wizard inline. | `RepositoryHero.tsx` — change button text to "Create in AI Chat →" or open Content Wizard sidebar inline | None |
 
 ---
 
-### Bug 3: /content-calendar 404 — MEDIUM
+## TIER 1: HIGH — Features Don't Work As Expected (15 issues)
 
-**What Cowork found:** Navigating to `/content-calendar` returns 404. Sidebar button routes to `/calendar`.
-
-**Current state:** No `/content-calendar` route exists in App.tsx. The calendar route is `/calendar`.
-
-**Fix — File:** `src/App.tsx`
-
-Add a redirect:
-
-```tsx
-<Route path="/content-calendar" element={<Navigate to="/calendar" replace />} />
-```
-
-This is a one-line fix. Add it near the other redirect routes (where `/content-type-selection` redirects to `/ai-chat`, etc.).
-
-**Frontend:** `App.tsx` — add redirect
-**Backend:** No changes
-
----
-
-## PHASE 2: Medium Bugs + Quick Wins (20 min)
-
-### Bug 4: AI Chat Blank on Navigation — MEDIUM
-
-**What Cowork found:** Navigating back to `/ai-chat` from another page shows blank content for several seconds.
-
-**Fix:** Add a loading skeleton or quick fallback while the chat interface mounts.
-
-**File:** `src/components/ai-chat/EnhancedChatInterface.tsx`
-
-If there's no loading indicator during initial mount, add one:
-
-```tsx
-// At the top of the component render:
-if (!user) {
-  return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-}
-```
-
-Also check if the `useEnhancedAIChatDB` hook has a loading state that should be shown.
-
-**Frontend:** `EnhancedChatInterface.tsx` — add loading fallback
-**Backend:** No changes
+| ID | Page | Issue | Fix |
+|----|------|-------|-----|
+| P1-01 | Chat | Solution selection gives no visual feedback in wizard | Add `border-primary` + checkmark icon to selected solution option |
+| P1-04 | Chat | Quick-action buttons have imprecise click targets | Increase button padding: `px-4 py-3` minimum, add `min-h-[44px]` |
+| P1-06 | Chat | No loading indicator during AI responses | Already fixed — streaming shows progressive text. Verify InlineProgress component renders. |
+| P2-02 | Repository | Edit Content redirects to /ai-chat | Change button to open inline edit form OR label "Edit in AI Chat →" |
+| P3-01 | Approvals | /approvals returns 404 | Add redirect: `<Route path="/approvals" element={<Navigate to="/content-approval" replace />} />` in App.tsx |
+| P3-02 | Approvals | Run Analysis button non-functional | Verify `handleAnalyzeContent()` handler is wired. May need to call `contentAiAnalysisService.reanalyze()` |
+| P4-03 | Proposals | Status filter tabs don't filter | Verify `onStatusToggle` handler updates filter state AND the filtered array re-renders |
+| P4-04 | Proposals | "Create Content" redirects to /ai-chat | Same as P2-01 — change label to "Create in AI Chat →" |
+| P4-05 | Proposals | Reject button has no confirmation | Add AlertDialog confirmation before `rejectProposal.mutate()` |
+| P5-03 | Campaigns | Suggestion chips don't populate input | Verify `onClick={() => setCampaignIdea(prompt)}` actually fires. May be a click target issue. |
+| P5-04 | Campaigns | Settings gear icon non-functional | Verify `onClick={() => setShowSettings(!showSettings)}` opens `CampaignSettingsPanel` |
+| P6-01 | Keywords | Write About This doesn't pre-fill AI Chat | Currently navigates with `?prompt=...` query param. Verify AI Chat reads and auto-sends the prompt param on mount. |
+| P8-03 | Email | Templates tab initially shows Campaigns content | Tab default or first-render issue. May need `useEffect` to force correct tab content on mount. |
+| P12-02 | Journeys | + Add Node button non-functional | Verify dropdown renders. May be a z-index or Popover issue preventing the dropdown from showing. |
+| P14-01 | Calendar | + Add Content button non-functional | Verify `onClick={() => setDialogOpen(true)}` fires and `CalendarItemDialog` renders. May be a state issue. |
 
 ---
 
-### Bug 5: Sidebar Expand/Collapse — LOW-MEDIUM
+## TIER 2: MEDIUM — UX Issues (38 issues, top 15 listed)
 
-**What Cowork found:** TOOLS and ENGAGE sidebar sections require multiple clicks to expand. Clickable area too narrow.
-
-**Fix — File:** `src/components/ai-chat/ChatHistorySidebar.tsx`
-
-Find the section headers (TOOLS, ENGAGE). Increase the clickable area:
-
-```tsx
-// Change from:
-<button className="text-xs ..." onClick={toggleSection}>
-  TOOLS <ChevronDown />
-</button>
-
-// To (larger hit area):
-<button className="w-full text-left px-3 py-2 text-xs ... hover:bg-muted/20 transition-colors" onClick={toggleSection}>
-  TOOLS <ChevronDown />
-</button>
-```
-
-Ensure `onClick` is on the ENTIRE row, not just the text or icon.
-
-**Frontend:** `ChatHistorySidebar.tsx` — widen clickable area for section headers
-**Backend:** No changes
+| ID | Page | Issue | Fix |
+|----|------|-------|-----|
+| P1-02 | Chat | Stale drafts count mismatch between dashboard and wizard | Both should query same data source |
+| P1-03 | Chat | Stat cards not clickable | Add onClick → navigate to relevant page |
+| P1-07 | Chat | Sidebar auto-collapses unexpectedly | Check sidebar state persistence across navigation |
+| P2-03 | Repository | Markdown preview not rendering | Use a markdown renderer (already have SafeMarkdown component) |
+| P3-03 | Approvals | Stats count doesn't match displayed items | Derive stats from filtered array, not separate query |
+| P3-04 | Approvals | Markdown raw display in analysis cards | Apply SafeMarkdown to AI analysis text |
+| P4-06 | Proposals | Impression data appears static | Already fixed — SERP-backed estimates now used when available |
+| P4-08 | Proposals | Proposal count mismatch between stats and grid | Same root cause as all count mismatches — use same data source |
+| P5-05 | Campaigns | Stat cards not interactive | Add onClick navigation |
+| P6-03 | Keywords | All keywords show Easy difficulty | Already fixed — estimateKeywordMetrics now computes from SERP data. May need SERP analysis run on each keyword. |
+| P8-04 | Email | Merge tag chips don't insert text | Verify `insertVariable()` function. May be a cursor position issue. |
+| P9-01 | Social | 'Pending_Integration' raw enum displayed | Replace underscores + title case: `status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())` |
+| P11-01 | Automations | Three-dot menu non-functional | Verify DropdownMenu renders. May be z-index or portal issue. |
+| P13-01 | Offerings | Progress bar shows 2/4 but all steps have content | Fix completion check logic — check if solutions exist + brand voice has tone |
+| P14-02 | Calendar | Show Analytics button non-functional | Verify handler. May need to toggle analytics panel visibility. |
 
 ---
 
-### Rec 6: Make Home Stats Cards Clickable
+## TIER 3: LOW — Polish Items (45 issues, top 10 listed)
 
-**What Cowork found:** Content (17), Published (4), In Review (0), SEO Score (16%) should link to filtered views.
-
-**Fix — File:** `src/components/ai-chat/EnhancedChatInterface.tsx`
-
-Find where the stats cards render on the welcome screen. Make them clickable:
-
-```tsx
-<div onClick={() => navigate('/repository')} className="cursor-pointer ...">
-  <span>Content</span>
-  <span>17</span>
-</div>
-<div onClick={() => navigate('/repository?status=published')} className="cursor-pointer ...">
-  <span>Published</span>
-  <span>4</span>
-</div>
-<div onClick={() => navigate('/content-approval')} className="cursor-pointer ...">
-  <span>In Review</span>
-  <span>0</span>
-</div>
-<div onClick={() => navigate('/analytics')} className="cursor-pointer ...">
-  <span>SEO Score</span>
-  <span>16%</span>
-</div>
-```
-
-**Frontend:** `EnhancedChatInterface.tsx` — add onClick + cursor-pointer to stats cards
-**Backend:** No changes
+| ID | Page | Issue | Quick Fix |
+|----|------|-------|-----------|
+| P1-08 | Chat | No inline validation in wizard | Add `border-destructive` on empty required fields |
+| P2-04 | Repository | Badge type explanations missing | Add `title` attribute to badges |
+| P3-05 | Approvals | Missing tooltips on metric icons | Add `title` or Tooltip component |
+| P4-10 | Proposals | "High Return" badge criteria unclear | Add tooltip: "Based on keyword volume and low competition" |
+| P6-06 | Keywords | No keyword detail view | Add expandable detail or modal on card click |
+| P8-08 | Email | Missing "Save as Draft" in Compose | Add "Save Draft" button alongside "Send" |
+| P9-04 | Social | Missing character count in post composer | Add `{content.length}/280` counter per platform |
+| P10-03 | Contacts | No CSV import format instructions | Add helper text: "Format: email, first_name, last_name, tags" |
+| P12-07 | Journeys | Left sidebar icons have no labels | Add tooltips to each icon |
+| P15-04 | Settings | No unsaved changes warning | Add `beforeunload` or tab-switch confirmation |
 
 ---
 
-## PHASE 3: Recommendations (15 min)
+## TIER 4: RECURRING PLATFORM-WIDE ISSUES
 
-### Rec 3: Fix page load times (3-5 sec skeletons)
-
-**What Cowork found:** Email, Journeys, Offerings show 3-5 second skeleton states.
-
-**Fix:** Add `staleTime` and `gcTime` to React Query hooks on these pages so data is cached:
-
-```ts
-// In each page's useQuery:
-{
-  staleTime: 30_000, // Don't refetch within 30 seconds
-  gcTime: 5 * 60_000, // Keep in cache for 5 minutes
-}
-```
-
-This prevents re-fetching on every navigation. Data loads instantly from cache on repeat visits.
-
-**Frontend:** Email, Journeys, Offerings page hooks — add staleTime/gcTime
-**Backend:** No changes
+| Issue | Pages Affected | Fix |
+|-------|---------------|-----|
+| **Slow page loads (2-5s)** | All 15 pages | Add `staleTime: 30000` and `gcTime: 300000` to all React Query hooks. Prevents re-fetching on repeat navigation. |
+| **Stat cards never clickable** | Chat, Campaigns, Keywords, Analytics, Contacts, Social, Automations | Add `onClick={() => navigate('/relevant-page')}` + `cursor-pointer` to all stat card components |
+| **Data count mismatches** | Campaigns, Proposals, Approvals, Analytics, Keywords | Root cause: stats computed from one query, list from another. Fix: derive stats FROM the list array. |
+| **Buttons without handlers** | Calendar (+Add), Approvals (Run Analysis), Journeys (+Add Node) | Each is a separate bug — verify onClick handlers are connected. May be Popover/Dialog not rendering. |
+| **Sidebar navigation unreliable** | Offerings, Journeys links | Verify `navigate()` calls in sidebar. May be event propagation issue with nested clickable elements. |
+| **/content-calendar 404** | Calendar | Add `<Route path="/content-calendar" element={<Navigate to="/calendar" replace />} />` |
+| **/approvals 404** | Approvals | Add `<Route path="/approvals" element={<Navigate to="/content-approval" replace />} />` |
 
 ---
 
-### Rec 7: Global Search Enhancement
+## IMPLEMENTATION ORDER
 
-**What Cowork found:** Search only works for chat conversations.
-
-**Current state:** `GlobalSearchResults.tsx` already exists and searches across content, keywords, contacts, campaigns. It's in the chat sidebar.
-
-**The issue:** Users may not find it because it's inside the chat sidebar, not a top-level search bar.
-
-**Fix:** The search icon is already in the top-right corner (`SearchIconButton` in AppLayout). Verify it's visible on ALL pages (not just AI Chat). If it only shows on `/ai-chat`, extend it.
-
-**File:** `src/components/layout/AppLayout.tsx`
-
-Check if `SearchIconButton` renders on all routes or just `/ai-chat`. If conditional:
-
-```tsx
-// Change from conditional to always:
-<SearchIconButton /> // Should render on every page
-```
-
-**Frontend:** `AppLayout.tsx` — verify search button renders globally
-**Backend:** No changes
+| Priority | Items | Scope | Effort |
+|----------|:-----:|-------|--------|
+| **Tier 0** | 8 | Critical — app looks broken | 2-3 hours |
+| **Tier 1** | 15 | High — features don't work | 2-3 hours |
+| **Tier 2** | 15 (of 38) | Medium — UX issues | 2 hours |
+| **Tier 3** | 10 (of 45) | Low — polish | 1 hour |
+| **Tier 4** | 7 | Platform-wide recurring | 1 hour |
+| **Total** | **55** | | **~8-10 hours** |
 
 ---
 
-### Rec 8: Social "Coming Soon" Badge
+## WHAT WE ALREADY FIXED (before this audit)
 
-**What Cowork found:** Social posting isn't functional. Should have a badge.
-
-**Current state:** Honesty banner already exists on social dashboard (SB-6 fix). But the sidebar nav link has no indicator.
-
-**Fix — File:** `src/components/ai-chat/ChatHistorySidebar.tsx`
-
-Find the Social nav item. Add a small badge:
-
-```tsx
-// Next to "Social" label:
-<span>Social</span>
-<span className="text-[8px] px-1 py-0.5 rounded bg-yellow-500/20 text-yellow-400 ml-1">Beta</span>
-```
-
-**Frontend:** `ChatHistorySidebar.tsx` — add Beta badge next to Social nav item
-**Backend:** No changes
-
----
-
-## PHASE 4: Polish (10 min)
-
-### Rec 4: Loading indicators on chat navigation
-
-Already addressed in Phase 2 Bug 4.
-
-### Rec 5: Sidebar fix
-
-Already addressed in Phase 2 Bug 5.
-
-### ContentPiecesCreated always 0
-
-**File:** `src/pages/Campaigns.tsx` line 512
-
-```ts
-contentPiecesCreated: 0, // Hardcoded to 0
-```
-
-**Fix:** Count content items linked to campaigns:
-
-```ts
-contentPiecesCreated: campaigns.reduce((sum, c) => {
-  // Count content items with this campaign_id
-  return sum + (c.content_count || c.contentBriefs?.length || 0);
-}, 0),
-```
-
-Or query the actual count from `content_items` where `campaign_id` is not null.
+| Cowork Finding | Our Status |
+|---------------|-----------|
+| Keyword difficulty all "Easy" | FIXED — estimateKeywordMetrics computes from SERP |
+| Impression data static | FIXED — SERP-backed estimates |
+| No bulk actions in Repository | FIXED — bulk archive + delete + partial failure reporting |
+| Content Wizard validation | FIXED — toast.error on failures |
+| Analytics empty state | FIXED — internal metrics shown as primary |
+| Social "coming soon" messaging | FIXED — honesty banner (SB-6) |
+| Contacts Tags/Segments explanation | FIXED — subtitle explains difference |
+| Progress bar on Offerings | FIXED — 4-step labels + progress bar |
+| Chat suggestions irrelevant | FIXED — removed regex, AI generates contextual follow-ups |
+| Rate limiting | FIXED — 30 req/min |
+| CORS lockdown | FIXED — no wildcard |
+| Onboarding auto-trigger | FIXED — auto-extracts company + competitors |
+| Repository infinite refresh | FIXED — useCallback deps |
+| Dead code cleanup | FIXED — 6 files deleted |
 
 ---
-
-## SUMMARY
-
-| Phase | Items | Time | Priority |
-|-------|:-----:|:----:|----------|
-| 1 | Bug 1 (JSON), Bug 2 (stats mismatch), Bug 3 (/content-calendar 404) | 30 min | Critical |
-| 2 | Bug 4 (blank chat), Bug 5 (sidebar), Rec 6 (clickable stats) | 20 min | Medium |
-| 3 | Rec 3 (load times), Rec 7 (global search), Rec 8 (beta badge) | 15 min | Low |
-| 4 | ContentPiecesCreated fix | 10 min | Low |
-
-**Total: ~1.25 hours**
-
----
-
-## WHAT COWORK GOT RIGHT (already fixed by us)
-
-| Their Finding | Our Status |
-|--------------|-----------|
-| "Stats cards not clickable" | Not yet fixed — in this plan (Rec 6) |
-| "Coming soon features need badges" | Honesty banner exists on social page, video providers marked (Beta) |
-| "Setup banner for Resend clear" | Already done (SB-7) |
-| "Tags vs Segments explanation clear" | Already done (our contacts subtitle change) |
-| "Calendar clean but empty" | Calendar works, "Content Schedule" label updated |
-| "Offerings page well-designed" | Agreed — our progress bar + step labels made it better |
-| "Global search needed" | GlobalSearchResults exists but may be hidden on non-chat pages |
 
 ## WHAT COWORK FOUND THAT WE MISSED
 
-| Their Finding | We Missed It? |
-|--------------|:------------:|
-| Raw JSON in proposals | **YES** — we didn't test the actual data rendering |
-| Campaign stats mismatch | **YES** — we didn't compare hero vs list data sources |
-| /content-calendar 404 | **PARTIAL** — we found other 404s but missed this specific one |
-| Chat blank on navigation | **YES** — we tested functionality but not mount performance |
-| Sidebar click area too narrow | **YES** — we tested buttons work but not click UX |
+| Finding | Category | We Missed? |
+|---------|----------|:----------:|
+| Journey canvas blank | Critical | **YES** — we verified buttons work but didn't test canvas rendering |
+| Campaign conversation crashes | Critical | **YES** — we tested quick setup but not conversation submit |
+| Email tabs show wrong content | Critical | **YES** — we checked tab navigation works but not content correctness |
+| Raw JSON in proposals | Critical | **YES** — we checked normalizeKeyword exists but didn't test with real data |
+| Run Analysis button dead | High | **YES** — not in our button audit results |
+| +Add Content on calendar dead | High | **YES** — our audit said WORKS but Cowork says non-functional |
+| +Add Node on journeys dead | High | **YES** — our audit said WORKS but Cowork says non-functional |
+| Sidebar links unreliable | Medium | **PARTIAL** — we found 404 routes but not click propagation issues |
+| Merge tags don't insert | Medium | **YES** — not tested |
+| 3-dot menus non-functional | Medium | **YES** — we said WORKS but Cowork found them dead |
+
+**Key takeaway:** Our code audit verified handlers exist. Cowork's live testing found that some handlers exist but don't actually fire in the browser. This means there are **rendering/event propagation bugs** that are invisible in code review.
