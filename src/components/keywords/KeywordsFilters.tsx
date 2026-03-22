@@ -11,8 +11,6 @@ interface KeywordsFiltersProps {
   onSearchChange: (query: string) => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
-  viewMode: 'grid' | 'list';
-  onViewModeChange: (mode: 'grid' | 'list') => void;
   onRefresh?: () => void;
   onBackfillKeywords?: () => void;
 }
